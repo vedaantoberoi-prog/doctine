@@ -108,6 +108,14 @@
   .feature p { margin: 0; color: var(--ink-soft); max-width: 30rem; }
   .feature { padding-left: 1.1rem; border-left: 3px solid var(--teal); }
 
+  /* Preview */
+  section.try { padding: 0 0 4.5rem; }
+  .try-box { display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center; background: var(--teal-soft); border-radius: 18px; padding: 2rem 2.2rem; }
+  .try-box h2 { font: 600 clamp(1.5rem, 2.8vw, 2rem)/1.2 var(--serif); color: var(--navy); margin: 0 0 .6rem; }
+  .try-box p { margin: 0 0 .6rem; max-width: 40rem; }
+  .try-box .note { margin: 0; }
+  @media (max-width: 700px) { .try-box { grid-template-columns: 1fr; padding: 1.6rem; } }
+
   /* Privacy band */
   section.yours { background: var(--navy-deep); color: #e8eef6; padding: 4rem 0; }
   section.yours .wrap { display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; align-items: start; }
@@ -140,7 +148,7 @@
 <header class="top">
   <div class="wrap">
     <a class="brand" href="/">Doc<span>tine</span></a>
-    <a class="app-link" href="https://app.doctine.com">Open the app</a>
+    <a class="app-link" href="/app-preview/">Try the preview</a>
   </div>
 </header>
 
@@ -151,8 +159,8 @@
         <h1>Your family's health records, finally readable.</h1>
         <p class="lede">Photograph a prescription or lab report, even a handwritten one, and Doctine turns it into a clear record you can find again. Your medicines come with reminders, for you and the people you look after.</p>
         <div class="actions">
-          <a class="btn" href="https://app.doctine.com">Open the app</a>
-          <span class="note">The app is opening soon. Made in India, for Indian families.</span>
+          <a class="btn" href="/app-preview/">Try the app preview</a>
+          <span class="note">Explore it with made-up sample records. The full app opens soon at app.doctine.com.</span>
         </div>
       </div>
 
@@ -195,6 +203,19 @@
           <h3>Ask in plain language</h3>
           <p>Wondering what a report means or what a medicine is for? Ask, and get a clear explanation of what's on the page, plus the questions worth taking to your doctor.</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="try" aria-labelledby="try-title">
+    <div class="wrap">
+      <div class="try-box">
+        <div>
+          <h2 id="try-title">See it with sample records</h2>
+          <p>The preview is the real Doctine app, filled with a made-up patient's reports, medicines and health profile. Open the medical timeline, read a report, check today's medicines and browse the health profile. Nothing you change is saved, and nothing leaves your browser.</p>
+          <p class="note">The AI assistant and the scanner are switched off in the preview. They open with the app.</p>
+        </div>
+        <a class="btn" href="/app-preview/">Open the preview</a>
       </div>
     </div>
   </section>

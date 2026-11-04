@@ -50,7 +50,11 @@ await check(expectCommit ? `the site serves commit ${expectCommit.slice(0, 12)}`
 if (expectEnv === "staging") await check("evaluation access works with the configured token", async () => {
   must(evalToken, "EVAL_ACCESS_TOKEN is not set for this check");
   must(cfg.environment === "staging", "not sending the token: the site does not report staging");
-  const j = await (await get("/api/chat?eval=1", { headers: { "x-doctine-eval-token": evalToken } })).json();
+  const r = await get("/api/chat?eval=1", { headers: { "x-doctine-eval-token": evalToken } });
+  const j = await r.json().catch(() => ({}));
+  // Only a 200 with eval_access:false means the token itself was refused. Anything else (rate limited, limiter
+  // unavailable, a server error) is reported as it is, so a busy or broken limiter isn't mistaken for a wrong token.
+  must(r.ok || j.eval_access !== undefined, `the site didn't answer the token check (HTTP ${r.status}${j.error ? ", " + j.error : ""}). This is not a token problem${j.error === "limiter_unavailable" ? ": the shared rate limiter (Supabase) couldn't be reached" : ""}.`);
   must(j.eval_access === true, "the site refused the token: EVAL_ACCESS_TOKEN differs between GitHub and the staging site, is shorter than 32 characters, or DOCTINE_ENV is not staging");
   return "accepted";
 });

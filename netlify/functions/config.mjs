@@ -15,7 +15,10 @@ export default async () => {
   const url = process.env.SUPABASE_URL || "";
   const anon = process.env.SUPABASE_ANON_KEY || "";
   if (!url || !anon) return json({ supabaseUrl: null, supabaseAnonKey: null, accounts: "browser_demo", environment: env });
-  return json({ supabaseUrl: url.replace(/\/$/, ""), supabaseAnonKey: anon, accounts: "supabase", environment: env });
+  // AUTH_GOOGLE=true only after Google is switched on in this Supabase project (Authentication → Sign In / Providers);
+  // otherwise the button would send people to an error page.
+  const googleSignIn = String(process.env.AUTH_GOOGLE || "").toLowerCase() === "true";
+  return json({ supabaseUrl: url.replace(/\/$/, ""), supabaseAnonKey: anon, accounts: "supabase", environment: env, googleSignIn });
 };
 
 export const config = { path: "/api/config" };

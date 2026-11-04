@@ -487,7 +487,8 @@ async function initCloud(){
  if(!window.supabase)await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.appendChild(s)}).catch(()=>null);
  if(!window.supabase){toast('Doctine couldn’t load its sign-in service. Check your connection and refresh.');return false}
  CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
- CLOUD.on=true;
+ CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;
+ {const h=new URLSearchParams(location.hash.slice(1));if(h.get('error')){S.oauthErr=/access_denied/.test(h.get('error'))?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}history.replaceState(null,'',location.pathname+location.search)}}
  CLOUD.sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){S.auth='newpw';S.email=null;render()}if(ev==='SIGNED_OUT'&&S.cloud){leaveCloud()}if(ev==='SIGNED_IN'&&session&&S.cloud&&CLOUD.uid&&session.user.id!==CLOUD.uid){leaveCloud();cloudEnter(session.user)}});
  const{data}=await CLOUD.sb.auth.getSession();
  if(data&&data.session&&!S.email)await cloudEnter(data.session.user);else if(!S.email)render();
@@ -495,9 +496,18 @@ async function initCloud(){
 
 const nn=v=>v===''||v==null?null:v;
 const cloudFail=(what,e)=>{CLOUD.err=what+': '+((e&&e.message)||'unknown error');console.error('[cloud]',what,e)};
+async function googleSignIn(){
+ const say=m=>{const a=$('#gerr');if(a)a.innerHTML=`<div class="err mt-3" role="alert">${esc(m)}</div>`};
+ if(!CLOUD.on||!CLOUD.google)return;if(!$('#gack')||!$('#gack').checked)return say('Please tick the box to continue.');
+ S.oauthErr='';try{sessionStorage.setItem('doctine:google-consent','1')}catch{}
+ const b=$('#google');if(b)b.disabled=true;
+ try{const{error}=await CLOUD.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)throw error}
+ catch{try{sessionStorage.removeItem('doctine:google-consent')}catch{}if(b)b.disabled=false;say('Google sign-in isn’t available right now. Try again, or use email and password.')}}
 async function cloudEnter(user){
  const sb=CLOUD.sb;CLOUD.epoch++;CLOUD.uid=user.id;CLOUD.email=user.email;resetCloudState();resetHistory();S.loadingCloud=true;const ep=CLOUD.epoch;
  try{
+  let gc=false;try{gc=sessionStorage.getItem('doctine:google-consent')==='1';sessionStorage.removeItem('doctine:google-consent')}catch{}
+  if(gc)await sb.from('consents').upsert([{user_id:user.id,kind:'cloud_storage',granted:true},{user_id:user.id,kind:'ai_chat',granted:true}],{onConflict:'user_id,kind',ignoreDuplicates:true});
   const[pr,cs,ds,fs,ms,sc,de]=await Promise.all([
    sb.from('health_profiles').select('*').maybeSingle(),sb.from('consents').select('*'),sb.from('documents').select('*').order('created_at',{ascending:false}),
    sb.from('document_files').select('document_id,kind,page,storage_path'),sb.from('medicines').select('*').order('created_at'),sb.from('medication_schedules').select('*'),sb.from('dose_events').select('*')]);
@@ -782,7 +792,8 @@ function cloudAuthView(){
   <label class="flex items-center gap-2 text-sm text-[var(--mute)]"><input type="checkbox" id="showpw"> Show password</label>
   ${m==='register'?`<label class="flex gap-2 text-sm"><input type="checkbox" name="ack" class="mt-1"><span>I agree that Doctine stores my health records in my account, sends what I ask about to an AI provider to answer me, and is not medical advice.</span></label>`:''}
   <div id="aerr"></div><button class="btn pri w-full">${m==='register'?'Create account':'Sign in'}</button></form>
-  <div class="mt-4 flex justify-between text-sm text-[var(--mute)]">${m==='register'?`<button data-auth="login" class="underline">Back to sign in</button>`:`<button data-auth="forgot" class="underline">Forgot password?</button><button data-auth="register" class="underline">Create account</button>`}</div>`;
+  <div class="mt-4 flex justify-between text-sm text-[var(--mute)]">${m==='register'?`<button data-auth="login" class="underline">Back to sign in</button>`:`<button data-auth="forgot" class="underline">Forgot password?</button><button data-auth="register" class="underline">Create account</button>`}</div>
+  ${CLOUD.google?`<div class="mt-5 pt-5" style="border-top:1px solid var(--line)"><label class="flex gap-2 text-sm"><input type="checkbox" id="gack" class="mt-1"><span>To continue with Google, I agree that Doctine stores my health records in my account, sends what I ask about to an AI provider to answer me, and is not medical advice.</span></label><div id="gerr">${S.oauthErr?`<div class="err mt-3" role="alert">${esc(S.oauthErr)}</div>`:''}</div><button type="button" id="google" class="btn w-full mt-3">Continue with Google</button></div>`:''}`;
  return `<div class="max-w-md mx-auto px-5 py-10"><div class="flex items-center gap-2 mb-6">${LOGO}<span class="serif text-2xl">Doctine</span></div><div class="card p-6"><h1 class="text-2xl">${T}</h1>
  <p class="text-sm text-[var(--mute)] mt-2">Your records are saved to your Doctine account and protected so only you can open them.</p>${body}</div>
  <button id="guest" class="btn pri w-full mt-4">Ask a health question without an account</button><button id="samp" class="btn tl w-full mt-2">Explore with sample data (nothing is saved)</button><div class="text-center mt-4"><button class="underline text-sm text-[var(--mute)]" data-auth="about">About Doctine</button></div></div>`}
@@ -1017,7 +1028,7 @@ function render(){
 const exportJson=()=>{S.exp=JSON.stringify({exported_at:new Date().toISOString(),sample:S.sample,profile:S.profile,reports:S.reports,medicines:S.meds,dose_history:S.doses,chat:S.msgs,consent:S.consent},null,2);go('settings')};
 document.addEventListener('click',async e=>{const t=e.target.closest('button');if(S.attMenu&&(!t||!['catt','attcam','attfile'].includes(t.id))){S.attMenu=false;render();if(!t)return}if(!t)return;
  if(t.dataset.auth){S.auth=t.dataset.auth;setHash(S.auth==='about');render();const a=$('#auth');if(a)a.scrollTop=0;return}
- if(t.id==='guest')return enter(null,blank('Guest'),false,true);
+ if(t.id==='google')return googleSignIn();if(t.id==='guest')return enter(null,blank('Guest'),false,true);
  if(t.id==='samp')return enter(null,sampleData(),true);
  if(t.id==='erase'){if(confirm('Erase all demo accounts stored in this browser?')){DB={users:{}};store.set(DB);toast('Demo accounts erased.');S.auth='register';render()}return}
  if(t.dataset.nav)return go(t.dataset.nav);

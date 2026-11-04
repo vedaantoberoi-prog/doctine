@@ -255,6 +255,14 @@ await test("config hands out only the public Supabase settings", async () => {
   r = await config(new Request("https://d/api/config")); j = await r.json();
   assert.equal(j.supabaseUrl, "https://abc.supabase.co"); assert.equal(j.supabaseAnonKey, "anon-key"); assert.ok(!JSON.stringify(j).includes("service-secret"));
 });
+await test("config offers Google sign-in only when AUTH_GOOGLE is exactly true", async () => {
+  const saved = process.env.AUTH_GOOGLE;
+  for (const [v, want] of [[undefined, false], ["", false], ["false", false], ["yes", false], ["TRUE", true], ["true", true]]) {
+    if (v === undefined) delete process.env.AUTH_GOOGLE; else process.env.AUTH_GOOGLE = v;
+    const j = await (await config(new Request("https://d/api/config"))).json(); assert.strictEqual(j.googleSignIn, want, `AUTH_GOOGLE=${v}`);
+  }
+  if (saved === undefined) delete process.env.AUTH_GOOGLE; else process.env.AUTH_GOOGLE = saved;
+});
 await test("config reports the site environment, and only known names", async () => {
   const saved = process.env.DOCTINE_ENV;
   for (const [v, want] of [["staging", "staging"], ["PRODUCTION", "production"], ["", "unset"], ["prod; drop", "unset"]]) {

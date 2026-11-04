@@ -1,0 +1,166 @@
+# Doctine · continuous integration. Runs on every pull request and branch push, and is reused by the Staging
+# workflow (pushes to main run CI there, before any deploy). No job here has access to real API keys or real
+# Supabase projects: the AI and Supabase are simulated, and the database tests use a throw-away PostgreSQL cluster.
+# Every job writes a JSON report; the "report" job turns them into the release report (gates 1–5). A job that
+# doesn't run leaves no report, and a missing report blocks the gate.
+name: CI
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  REPORT_DIR: reports
+  NODE_VERSION: "20"
+  # Never let a CI run talk to production services by accident.
+  DOCTINE_ENV: test
+
+jobs:
+  quality:
+    name: Code quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}" }
+      - name: Install dependencies from the committed lockfile
+        run: node tools/run-step.mjs quality "Install dependencies (npm ci, lockfile)" -- bash tools/npm-ci.sh
+      - name: Syntax (all functions, tools, tests and the page's inline scripts)
+        run: node tools/run-step.mjs quality "Syntax check" -- node tools/check-syntax.mjs
+      - name: Configuration (netlify.toml, routes, migrations, lockfile, manifest, docs, workflows)
+        run: node tools/run-step.mjs quality "Configuration check" -- node tools/check-config.mjs
+      - name: Build (bundle every function the way Netlify does)
+        run: node tools/run-step.mjs quality "Function bundles build" -- npm run build:check
+      - name: Safety rules in the page match the server
+        run: node tools/run-step.mjs quality "Safety rules in sync" -- bash -c 'node tools/sync-safety-rules.mjs && git diff --exit-code -- public/index.html'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: report-quality, path: reports/, if-no-files-found: warn, retention-days: 30 }
+
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}" }
+      - name: Function tests (Anthropic, Supabase and the limiter simulated)
+        run: node tests/functions.test.mjs
+      - name: Medical evaluation grader tests (offline)
+        if: always()
+        run: node tests/eval-grader.test.mjs
+      - name: Release gate tests (offline)
+        if: always()
+        run: node tests/release-gates.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: report-backend, path: reports/, if-no-files-found: warn, retention-days: 30 }
+
+  browser:
+    name: Browser tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}" }
+      - name: Install dependencies from the committed lockfile
+        run: bash tools/npm-ci.sh
+      - name: Install Chromium for the locked Playwright version
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Browser suites (real functions; AI and Supabase simulated)
+        run: node tools/run-browser-tests.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: report-browser, path: reports/, if-no-files-found: warn, retention-days: 30 }
+
+  database:
+    name: Database security tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: PostgreSQL server binaries
+        run: |
+          if ! ls /usr/lib/postgresql/*/bin/initdb >/dev/null 2>&1; then sudo apt-get update -q && sudo apt-get install -y -q postgresql; fi
+          ls -d /usr/lib/postgresql/*/bin
+      - name: Migrations, RLS, two-account isolation, consent and deletion (throw-away cluster)
+        run: bash tests/run-db-tests.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: report-database, path: reports/, if-no-files-found: warn, retention-days: 30 }
+
+  security:
+    name: Security checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}" }
+      - name: Doctine secret scan (values are never printed)
+        run: node tools/run-step.mjs security "Doctine secret scan (working tree)" -- node tools/scan-secrets.mjs
+      - name: Gitleaks (full git history; release checksum verified)
+        if: always()
+        env:
+          GITLEAKS_VERSION: "8.21.2"
+          # sha256 of gitleaks_8.21.2_linux_x64.tar.gz, checked against the release's checksums file on 2026-11-04.
+          # Pinned here so a replaced release asset (and its checksums file) is still refused.
+          GITLEAKS_SHA256: "5bc41815076e6ed6ef8fbecc9d9b75bcae31f39029ceb55da08086315316e3ba"
+        run: |
+          set -euo pipefail
+          cd /tmp
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLO "$base/$tarball" && curl -sSfLO "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          grep " ${tarball}\$" "gitleaks_${GITLEAKS_VERSION}_checksums.txt" | sha256sum -c -
+          echo "${GITLEAKS_SHA256}  ${tarball}" | sha256sum -c -
+          tar -xzf "$tarball" gitleaks
+          cd "$GITHUB_WORKSPACE"
+          node tools/run-step.mjs security "Gitleaks (git history, redacted)" -- /tmp/gitleaks git --redact --no-banner --exit-code 1 .
+      - name: Dependency audit against the committed lockfile (high and critical)
+        if: always()
+        run: node tools/run-step.mjs security "npm audit (high+, lockfile)" -- bash -c 'test -f package-lock.json || { echo "::error::package-lock.json is missing; the audit runs only against the committed lockfile"; exit 1; }; npm audit --package-lock-only --audit-level=high'
+      - name: Server-only secrets are never exposed to the browser
+        if: always()
+        run: node tools/run-step.mjs security "No server secrets in public/" -- bash -c '! grep -rIlE "SERVICE_ROLE|sk-ant-|ANTHROPIC_API_KEY|EVAL_ACCESS_TOKEN|RATE_LIMIT_SECRET" public/'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: report-security, path: reports/, if-no-files-found: warn, retention-days: 30 }
+
+  report:
+    name: Release report (gates 1–5)
+    needs: [quality, backend, browser, database, security]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ env.NODE_VERSION }}" }
+      - uses: actions/download-artifact@v4
+        with: { pattern: report-*, path: reports, merge-multiple: true }
+      - name: Evaluate gates 1–5 (a missing report blocks its gate)
+        env: { RELEASE_SHA: "${{ github.sha }}" }
+        run: node tools/release-report.mjs --require=1-5 --enforce
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-report-ci
+          retention-days: 90
+          path: |
+            reports/report.json
+            reports/REPORT.md

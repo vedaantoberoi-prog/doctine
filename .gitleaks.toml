@@ -1,0 +1,16 @@
+# Gitleaks: the default rules, plus an allow-list of the obviously fake values used in Doctine's tests.
+# Only exact fake strings are allowed; any other secret anywhere in the history still fails the scan.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake test values in Doctine tests"
+regexes = [
+  '''test-key-not-real''',
+  '''eval-secret-0123456789-abcdefghijklmnop''',
+  '''sk-ant-SECRET-1''',
+  '''SERVICE-SECRET-2''',
+  '''RL-SECRET-3''',
+  '''KB-SECRET-4''',
+  '''service-secret''',
+]

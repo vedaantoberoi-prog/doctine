@@ -1,0 +1,65 @@
+# Doctine · roll production (or staging) back to an earlier Netlify deploy, with that environment's approval.
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Which site"
+        type: choice
+        options: [production, staging]
+        required: true
+      deploy_id:
+        description: "Netlify deploy id to restore (printed by the release workflow, or in Netlify → Deploys)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.target }}
+    timeout-minutes: 10
+    steps:
+      - name: Rollbacks run only from main
+        run: '[ "$GITHUB_REF" = "refs/heads/main" ] || { echo "::error::Run this workflow on main (this run is on $GITHUB_REF)."; exit 1; }'
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Restore the deploy and confirm with Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          TARGET: ${{ inputs.target }}
+          PROD_SITE: ${{ vars.NETLIFY_PRODUCTION_SITE_ID }}
+          STAGING_SITE: ${{ vars.NETLIFY_STAGING_SITE_ID }}
+          DEPLOY: ${{ inputs.deploy_id }}
+        run: |
+          set -euo pipefail
+          # Pick the site explicitly; an unset id stops here instead of falling back to the other site.
+          if [ "$TARGET" = production ]; then SITE="$PROD_SITE"; else SITE="$STAGING_SITE"; fi
+          [ -n "$SITE" ] || { echo "::error::the site id variable for $TARGET is not set"; exit 1; }
+          [ -n "$NETLIFY_AUTH_TOKEN" ] || { echo "::error::NETLIFY_AUTH_TOKEN is not set on the $TARGET environment"; exit 1; }
+          [[ "$DEPLOY" =~ ^[0-9a-f]{24}$ ]] || { echo "::error::deploy_id must be a 24-character Netlify deploy id"; exit 1; }
+          npx --yes netlify-cli@17.38.1 api getDeploy --data "{\"deploy_id\":\"$DEPLOY\"}" > deploy.json
+          node -e 'const d=require("./deploy.json"); if(d.site_id!==process.env.SITE){console.error("::error::deploy "+process.env.DEPLOY+" does not belong to the "+process.env.TARGET+" site");process.exit(1)}'
+          npx --yes netlify-cli@17.38.1 api restoreSiteDeploy --data "{\"site_id\":\"$SITE\",\"deploy_id\":\"$DEPLOY\"}" > restored.json
+          node -e 'const d=require("./restored.json"); if(d.id!==process.env.DEPLOY){console.error("::error::Netlify did not confirm the restore");process.exit(1)} console.log("Netlify restored deploy "+d.id+" on "+process.env.TARGET+" ("+d.state+")")' | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Smoke check after rollback
+        env:
+          TARGET: ${{ inputs.target }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          STAGING_URL: ${{ vars.STAGING_URL }}
+          # Staging's smoke check confirms evaluation access; the token is never passed for production.
+          STAGING_EVAL_TOKEN: ${{ secrets.EVAL_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ "$TARGET" = production ]; then export SITE_URL="$PRODUCTION_URL" EXPECT_ENV=production; unset EVAL_ACCESS_TOKEN || true
+          else export SITE_URL="$STAGING_URL" EXPECT_ENV=staging EVAL_ACCESS_TOKEN="$STAGING_EVAL_TOKEN"; fi
+          unset STAGING_EVAL_TOKEN
+          [ -n "$SITE_URL" ] || { echo "::error::the URL variable for $TARGET is not set"; exit 1; }
+          node tools/smoke-check.mjs

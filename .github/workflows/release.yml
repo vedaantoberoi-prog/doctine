@@ -1,0 +1,118 @@
+# Doctine · production release. Started by hand, on main, with the id of a successful Staging run.
+# It proves that the code being released is exactly the code that Staging verified (only clinician sign-off records may
+# have been added since), re-checks gates 1–7 from that run's own reports, and then waits for the "production"
+# environment's required reviewers before deploying. Production is never deployed automatically.
+name: Release to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_run_id:
+        description: "Run id of the successful Staging workflow that was clinically reviewed"
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+env:
+  REPORT_DIR: reports
+  NETLIFY_CLI: netlify-cli@17.38.1
+
+jobs:
+  gates:
+    name: Release gates 1–7
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      staged_sha: ${{ steps.staged.outputs.sha }}
+    steps:
+      - name: Releases run only from main
+        run: '[ "$GITHUB_REF" = "refs/heads/main" ] || { echo "::error::Run this workflow on main (this run is on $GITHUB_REF)."; exit 1; }'
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: The staging run succeeded on main, for this code
+        id: staged
+        env: { GH_TOKEN: "${{ github.token }}", RUN: "${{ inputs.staging_run_id }}" }
+        run: |
+          set -euo pipefail
+          [[ "$RUN" =~ ^[0-9]+$ ]] || { echo "::error::staging_run_id must be a number"; exit 1; }
+          IFS=$'\t' read -r name path sha branch concl < <(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN}" --jq '[.name, .path, .head_sha, .head_branch, .conclusion] | @tsv')
+          echo "staging run $RUN: $name ($path), commit $sha on $branch, $concl"
+          [ "$path" = ".github/workflows/staging.yml" ] || { echo "::error::run $RUN is not a run of .github/workflows/staging.yml"; exit 1; }
+          [ "$branch" = "main" ] || { echo "::error::run $RUN was not on main"; exit 1; }
+          [ "$concl" = "success" ] || { echo "::error::run $RUN did not succeed ($concl)"; exit 1; }
+          git merge-base --is-ancestor "$sha" "$GITHUB_SHA" || { echo "::error::$sha is not an ancestor of $GITHUB_SHA"; exit 1; }
+          # Only clinician sign-off records may be added on top of the commit that staging verified.
+          changed="$(git diff --name-only "$sha" "$GITHUB_SHA" | grep -v '^docs/medical-review/' || true)"
+          [ -z "$changed" ] || { echo "::error::code changed since staging verified $sha:"; echo "$changed"; exit 1; }
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with: { pattern: "report-*", path: reports, merge-multiple: true, run-id: "${{ inputs.staging_run_id }}", github-token: "${{ github.token }}" }
+      - uses: actions/download-artifact@v4
+        with: { name: staging-verification, path: reports, run-id: "${{ inputs.staging_run_id }}", github-token: "${{ github.token }}" }
+      - name: Evaluate gates 1–7 (the clinician sign-off for that run and that exact commit must be committed)
+        env: { RELEASE_SHA: "${{ steps.staged.outputs.sha }}" }
+        run: node tools/release-report.mjs --require=1-7 --enforce
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-report-production
+          retention-days: 365
+          path: |
+            reports/report.json
+            reports/REPORT.md
+
+  deploy:
+    name: Deploy to production
+    needs: gates
+    runs-on: ubuntu-24.04
+    environment: production   # required reviewers and "main only" are configured on this environment
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Settings
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          SITE: ${{ vars.NETLIFY_PRODUCTION_SITE_ID }}
+          STAGING_SITE: ${{ vars.NETLIFY_STAGING_SITE_ID }}
+          URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          [ -n "$NETLIFY_AUTH_TOKEN" ] && [ -n "$SITE" ] && [ -n "$URL" ] || { echo "::error::NETLIFY_AUTH_TOKEN (production environment), NETLIFY_PRODUCTION_SITE_ID and PRODUCTION_URL must be set"; exit 1; }
+          [ "$SITE" != "$STAGING_SITE" ] || { echo "::error::the production site id equals the staging site id"; exit 1; }
+      - name: Record the deploy that is live now (for rollback)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          SITE: ${{ vars.NETLIFY_PRODUCTION_SITE_ID }}
+        run: |
+          set -euo pipefail
+          npx --yes "$NETLIFY_CLI" api getSite --data "{\"site_id\":\"$SITE\"}" > site.json
+          node -e 'const s=require("./site.json"); console.log("Previous production deploy (use it to roll back): " + (s.published_deploy && s.published_deploy.id || "unknown"))' | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Stamp the commit this deploy serves
+        run: printf '{"commit":"%s"}\n' "$GITHUB_SHA" > public/version.json
+      - name: Deploy and confirm with Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_PRODUCTION_SITE_ID }}
+          STAGED: ${{ needs.gates.outputs.staged_sha }}
+        run: |
+          set -euo pipefail
+          npx --yes "$NETLIFY_CLI" deploy --build --prod --json --message "release ${GITHUB_SHA::12} (staging verified ${STAGED::12}, run ${{ inputs.staging_run_id }})" > deploy.json
+          node -e 'const d=require("./deploy.json"); if(!d.deploy_id||d.site_id!==process.env.NETLIFY_SITE_ID){console.error("::error::Netlify did not confirm a deploy to the production site");process.exit(1)} console.log(`Netlify confirmed production deploy ${d.deploy_id} of ${process.env.GITHUB_SHA}`)' | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Production smoke check (production environment, this commit, evaluation access refused)
+        env:
+          SITE_URL: ${{ vars.PRODUCTION_URL }}
+          EXPECT_ENV: production
+          EXPECT_COMMIT: ${{ github.sha }}
+        run: node tools/smoke-check.mjs
+      - name: If the smoke check failed
+        if: failure()
+        run: echo "::error::The production release is NOT confirmed. Roll back with the Rollback workflow, using the previous deploy id printed above." | tee -a "$GITHUB_STEP_SUMMARY"

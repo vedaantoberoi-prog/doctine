@@ -1,0 +1,126 @@
+# Doctine · staging. On every push to main: checks the staging settings, runs CI, deploys the SEPARATE staging
+# Netlify site (its own Supabase project, its own keys, synthetic data only), then verifies it — smoke check and the
+# live medical evaluation (real AI) — and evaluates gates 1–6. Nothing in this workflow can deploy to production.
+name: Staging
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/medical-review/**"]   # committing a clinician sign-off doesn't change the code under review
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging
+  cancel-in-progress: false
+
+env:
+  REPORT_DIR: reports
+  NETLIFY_CLI: netlify-cli@17.38.1
+
+jobs:
+  preflight:
+    name: Staging settings
+    runs-on: ubuntu-24.04
+    environment: staging
+    timeout-minutes: 5
+    steps:
+      - name: Only main is deployed to staging
+        run: '[ "$GITHUB_REF" = "refs/heads/main" ] || { echo "::error::Staging deploys only from main (this run is on $GITHUB_REF)."; exit 1; }'
+      - name: Required secrets and variables are set, and staging is not production
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          EVAL_ACCESS_TOKEN: ${{ secrets.EVAL_ACCESS_TOKEN }}
+          STAGING_SITE_ID: ${{ vars.NETLIFY_STAGING_SITE_ID }}
+          PRODUCTION_SITE_ID: ${{ vars.NETLIFY_PRODUCTION_SITE_ID }}
+          STAGING_URL: ${{ vars.STAGING_URL }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          fail=0; err() { echo "::error::$1"; fail=1; }
+          [ -n "$NETLIFY_AUTH_TOKEN" ] || err "Secret NETLIFY_AUTH_TOKEN is not set on the 'staging' environment."
+          [ -n "$EVAL_ACCESS_TOKEN" ] || err "Secret EVAL_ACCESS_TOKEN is not set on the 'staging' environment. The live medical evaluation needs it (without it 75 cases would take ~40 minutes under the public limit, so the run would be refused)."
+          [ -z "$EVAL_ACCESS_TOKEN" ] || [ "${#EVAL_ACCESS_TOKEN}" -ge 32 ] || err "EVAL_ACCESS_TOKEN must be at least 32 characters (use: openssl rand -hex 32)."
+          [ -n "$STAGING_SITE_ID" ] || err "Variable NETLIFY_STAGING_SITE_ID is not set."
+          [ -n "$PRODUCTION_SITE_ID" ] || err "Variable NETLIFY_PRODUCTION_SITE_ID is not set (needed to prove staging is a different site)."
+          [ -n "$STAGING_SITE_ID" ] && [ "$STAGING_SITE_ID" = "$PRODUCTION_SITE_ID" ] && err "NETLIFY_STAGING_SITE_ID equals NETLIFY_PRODUCTION_SITE_ID. Refusing to deploy."
+          case "$STAGING_URL" in https://*) ;; *) err "Variable STAGING_URL must be the staging site's https:// address." ;; esac
+          case "$PRODUCTION_URL" in https://*) ;; *) err "Variable PRODUCTION_URL must be set to the production https:// address." ;; esac
+          h() { echo "$1" | sed -E 's#^https://([^/]+).*#\1#' | tr 'A-Z' 'a-z'; }
+          [ -n "$STAGING_URL" ] && [ "$(h "$STAGING_URL")" = "$(h "$PRODUCTION_URL")" ] && err "STAGING_URL and PRODUCTION_URL are the same site."
+          exit $fail
+
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy to staging
+    needs: [preflight, ci]
+    runs-on: ubuntu-24.04
+    environment: staging
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Stamp the commit this deploy serves
+        run: printf '{"commit":"%s"}\n' "$GITHUB_SHA" > public/version.json
+      - name: Deploy (functions included) and confirm with Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_STAGING_SITE_ID }}
+        run: |
+          set -euo pipefail
+          npx --yes "$NETLIFY_CLI" deploy --build --prod --json --message "staging ${GITHUB_SHA::12} run ${GITHUB_RUN_ID}" > deploy.json
+          node -e 'const d=require("./deploy.json"); if(!d.deploy_id||d.site_id!==process.env.NETLIFY_SITE_ID){console.error("::error::Netlify did not confirm a deploy to the staging site");process.exit(1)} console.log(`Netlify confirmed staging deploy ${d.deploy_id} of ${process.env.GITHUB_SHA}`)' | tee -a "$GITHUB_STEP_SUMMARY"
+
+  verify:
+    name: Verify staging (gate 6)
+    needs: deploy
+    runs-on: ubuntu-24.04
+    environment: staging
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - uses: actions/download-artifact@v4
+        with: { pattern: report-*, path: reports, merge-multiple: true }
+      - name: Smoke check (right environment, right commit, evaluation token accepted)
+        env:
+          SITE_URL: ${{ vars.STAGING_URL }}
+          EXPECT_ENV: staging
+          EXPECT_COMMIT: ${{ github.sha }}
+          EVAL_ACCESS_TOKEN: ${{ secrets.EVAL_ACCESS_TOKEN }}
+        run: node tools/smoke-check.mjs
+      - name: End-to-end on staging (two synthetic accounts, created and deleted in this run)
+        env:
+          SITE_URL: ${{ vars.STAGING_URL }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          EXPECT_COMMIT: ${{ github.sha }}
+        run: node tools/staging-e2e.mjs
+      - name: Live medical evaluation (real AI; synthetic messages; all 75 cases)
+        env:
+          DOCTINE_URL: ${{ vars.STAGING_URL }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          EXPECT_COMMIT: ${{ github.sha }}
+          EVAL_ACCESS_TOKEN: ${{ secrets.EVAL_ACCESS_TOKEN }}
+        run: node tests/live-eval.mjs
+      - name: Release report (gates 1–6)
+        if: always()
+        env: { RELEASE_SHA: "${{ github.sha }}" }
+        run: node tools/release-report.mjs --require=1-6 --enforce
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staging-verification
+          retention-days: 90
+          if-no-files-found: warn
+          path: |
+            reports/smoke-staging.json
+            reports/staging-e2e.json
+            reports/medical-eval.json
+            reports/medical-eval.md
+            reports/report.json
+            reports/REPORT.md

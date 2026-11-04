@@ -30,6 +30,12 @@ await pg.goto(BASE + "/"); await pg.waitForTimeout(200);
 check("the homepage links to the app preview", (await pg.$$eval("a[href='/app-preview/']", (a) => a.length)) >= 2);
 check("the homepage keeps the safety notice (112 and Tele-MANAS 14416)", /112/.test(await pg.textContent("body")) && /14416/.test(await pg.textContent("body")));
 
+for (const [path, title] of [["/privacy/", "Privacy policy"], ["/terms/", "Terms of service"]]) {
+  await pg.goto(BASE + path); await pg.waitForTimeout(100); const t = await pg.textContent("body");
+  check(`${title} page names the operator and a contact, and keeps the 112 notice`, (await pg.textContent("h1")) === title && t.includes("Doctine Private Limited") && t.includes("support@doctine.com") && /112/.test(t));
+  check(`${title} page doesn't scroll sideways at phone width`, !(await pg.evaluate("document.documentElement.scrollWidth>innerWidth")));
+}
+await pg.goto(BASE + "/"); check("the homepage links to the privacy policy and terms", (await pg.$("a[href='/privacy/']")) !== null && (await pg.$("a[href='/terms/']")) !== null);
 await pg.goto(BASE + "/app-preview/"); await pg.waitForTimeout(500);
 check("the preview opens straight into the sample data", await pg.evaluate("S.sample===true&&!S.email&&document.querySelector('#auth').classList.contains('hidden')"));
 const nav = await pg.$$eval("#nav [data-nav]", (e) => e.map((x) => x.dataset.nav));

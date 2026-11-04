@@ -44,6 +44,8 @@ jobs:
         run: node tools/run-step.mjs quality "Function bundles build" -- npm run build:check
       - name: Safety rules in the page match the server
         run: node tools/run-step.mjs quality "Safety rules in sync" -- bash -c 'node tools/sync-safety-rules.mjs && git diff --exit-code -- public/index.html'
+      - name: The website's app preview is built from the current app
+        run: node tools/run-step.mjs quality "Website preview up to date" -- node tools/build-preview.mjs --check
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: report-quality, path: reports/, if-no-files-found: warn, retention-days: 30 }

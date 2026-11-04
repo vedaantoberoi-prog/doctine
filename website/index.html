@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doctine: your family's health records, made readable</title>
+<meta name="description" content="Doctine keeps your family's prescriptions, lab reports and medicines in one place. Scan a handwritten prescription, get dose reminders, and ask health questions in plain language.">
+<meta name="theme-color" content="#13294b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #13294b;
+    --navy-deep: #0d1d36;
+    --teal: #3c8783;
+    --teal-soft: #d6e6e3;
+    --paper: #f6f3ee;
+    --ink: #1b2433;
+    --ink-soft: #4a5568;
+    --line: #d9d3c9;
+    --card: #ffffff;
+    --serif: "Source Serif 4", Georgia, serif;
+    --sans: "Atkinson Hyperlegible", system-ui, sans-serif;
+    --hand: "Caveat", "Segoe Print", cursive;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0f1b2e; --ink: #e9edf3; --ink-soft: #b3bdcc; --line: #2a3a55;
+      --card: #16253d; --teal-soft: #1d3a40; --navy: #c9d8ef; --teal: #6fb6b0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0f1b2e; --ink: #e9edf3; --ink-soft: #b3bdcc; --line: #2a3a55;
+    --card: #16253d; --teal-soft: #1d3a40; --navy: #c9d8ef; --teal: #6fb6b0;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 400 1.0625rem/1.6 var(--sans);
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; border-radius: 4px; }
+  .wrap { max-width: 68rem; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* Header */
+  header.top { padding: 1.25rem 0; }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .brand { font: 600 1.5rem/1 var(--serif); color: var(--navy); text-decoration: none; letter-spacing: -0.01em; }
+  .brand span { color: var(--teal); }
+  .top a.app-link { font-weight: 700; text-decoration: none; color: var(--navy); border-bottom: 2px solid var(--teal); padding-bottom: 2px; }
+
+  /* Hero */
+  .hero { padding: 2.5rem 0 4.5rem; }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 3.5rem; align-items: center; }
+  h1 {
+    font: 600 clamp(2.3rem, 5.2vw, 3.6rem)/1.06 var(--serif);
+    color: var(--navy); margin: 0 0 1.25rem; letter-spacing: -0.02em; max-width: 14ch;
+  }
+  .lede { font-size: 1.2rem; color: var(--ink-soft); max-width: 34rem; margin: 0 0 2rem; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+  .btn {
+    display: inline-block; background: var(--navy-deep); color: #fff; text-decoration: none;
+    font-weight: 700; padding: .9rem 1.5rem; border-radius: 999px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn { background: var(--teal); color: #0b1626; } }
+  :root[data-theme="dark"] .btn { background: var(--teal); color: #0b1626; }
+  .btn:hover { filter: brightness(1.15); }
+  .note { color: var(--ink-soft); font-size: .95rem; }
+
+  /* The transformation */
+  .turn { position: relative; min-height: 25rem; }
+  .slip {
+    position: absolute; top: 0; left: 0; width: 72%;
+    background: #fbf8f1; color: #24324d; border: 1px solid #e4dccd;
+    padding: 1.3rem 1.4rem 1.6rem; border-radius: 6px;
+    transform: rotate(-4deg); box-shadow: 0 18px 40px -22px rgba(13,29,54,.45);
+  }
+  .slip .clinic { font: 700 .72rem/1.3 var(--sans); color: #7b8496; border-bottom: 1px solid #e4dccd; padding-bottom: .55rem; margin-bottom: .7rem; }
+  .slip .rx { font: 500 1.75rem/1 var(--serif); color: #24324d; }
+  .slip p { font: 500 1.55rem/1.25 var(--hand); margin: .35rem 0; color: #22305a; }
+  .slip p.sm { font-size: 1.3rem; color: #4b5778; }
+  .record {
+    position: absolute; right: 0; bottom: 0; width: 74%;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 1.3rem 1.4rem; box-shadow: 0 24px 50px -28px rgba(13,29,54,.55);
+  }
+  .record h2 { font: 600 1.15rem/1.3 var(--serif); margin: 0 0 .15rem; color: var(--navy); }
+  .record .meta { font-size: .85rem; color: var(--ink-soft); margin: 0 0 1rem; }
+  .med { display: grid; grid-template-columns: auto 1fr; gap: .1rem .8rem; padding: .7rem 0; border-top: 1px solid var(--line); }
+  .med .dot { grid-row: span 2; width: .7rem; height: .7rem; border-radius: 50%; background: var(--teal); margin-top: .45rem; }
+  .med b { font-weight: 700; }
+  .med span { color: var(--ink-soft); font-size: .95rem; }
+  .reminder { margin-top: .6rem; background: var(--teal-soft); border-radius: 10px; padding: .65rem .85rem; font-size: .93rem; }
+  .reminder b { color: var(--navy); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .record { animation: settle 900ms cubic-bezier(.2,.7,.2,1) 350ms both; }
+    @keyframes settle { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  }
+
+  /* What it does */
+  section.does { padding: 4.5rem 0; border-top: 1px solid var(--line); }
+  h2.section { font: 600 clamp(1.7rem, 3.2vw, 2.3rem)/1.15 var(--serif); color: var(--navy); margin: 0 0 2.5rem; max-width: 22ch; letter-spacing: -0.01em; }
+  .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2.5rem 3.5rem; }
+  .feature h3 { font: 600 1.25rem/1.3 var(--serif); margin: 0 0 .4rem; color: var(--ink); }
+  .feature p { margin: 0; color: var(--ink-soft); max-width: 30rem; }
+  .feature { padding-left: 1.1rem; border-left: 3px solid var(--teal); }
+
+  /* Preview */
+  section.try { padding: 0 0 4.5rem; }
+  .try-box { display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center; background: var(--teal-soft); border-radius: 18px; padding: 2rem 2.2rem; }
+  .try-box h2 { font: 600 clamp(1.5rem, 2.8vw, 2rem)/1.2 var(--serif); color: var(--navy); margin: 0 0 .6rem; }
+  .try-box p { margin: 0 0 .6rem; max-width: 40rem; }
+  .try-box .note { margin: 0; }
+  @media (max-width: 700px) { .try-box { grid-template-columns: 1fr; padding: 1.6rem; } }
+
+  /* Privacy band */
+  section.yours { background: var(--navy-deep); color: #e8eef6; padding: 4rem 0; }
+  section.yours .wrap { display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; align-items: start; }
+  section.yours h2 { font: 600 clamp(1.7rem, 3.2vw, 2.3rem)/1.15 var(--serif); margin: 0; color: #fff; }
+  section.yours p { margin: 0 0 1rem; color: #c6d1e0; max-width: 36rem; }
+
+  /* Safety */
+  section.safety { padding: 3.5rem 0; }
+  .safety-box { border: 1px solid var(--line); border-radius: 14px; padding: 1.5rem 1.6rem; background: var(--card); max-width: 46rem; }
+  .safety-box h2 { font: 600 1.3rem/1.3 var(--serif); margin: 0 0 .6rem; color: var(--navy); }
+  .safety-box p { margin: 0 0 .6rem; color: var(--ink-soft); }
+  .safety-box p:last-child { margin: 0; }
+  .safety-box strong { color: var(--ink); }
+
+  footer { border-top: 1px solid var(--line); padding: 2rem 0 2.5rem; color: var(--ink-soft); font-size: .93rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
+
+  @media (max-width: 860px) {
+    .hero .wrap, section.yours .wrap { grid-template-columns: 1fr; gap: 2.5rem; }
+    .features { grid-template-columns: 1fr; gap: 2rem; }
+    .turn { min-height: 27rem; max-width: 30rem; }
+  }
+  @media (max-width: 420px) {
+    .slip { width: 86%; } .record { width: 90%; }
+    .turn { min-height: 29rem; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">Doc<span>tine</span></a>
+    <a class="app-link" href="/app-preview/">Try the preview</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Your family's health records, finally readable.</h1>
+        <p class="lede">Photograph a prescription or lab report, even a handwritten one, and Doctine turns it into a clear record you can find again. Your medicines come with reminders, for you and the people you look after.</p>
+        <div class="actions">
+          <a class="btn" href="/app-preview/">Try the app preview</a>
+          <span class="note">Explore it with made-up sample records. The full app opens soon at app.doctine.com.</span>
+        </div>
+      </div>
+
+      <div class="turn" role="img" aria-label="A handwritten prescription beside the same prescription shown as a clear record in Doctine, with a dose reminder.">
+        <div class="slip" aria-hidden="true">
+          <div class="clinic">Dr. A. Sharma, MBBS · General Physician</div>
+          <div class="rx">℞</div>
+          <p>Tab. Amoxycillin 500 — 1-1-1 × 5d</p>
+          <p>Tab. Paracetamol 650 — SOS</p>
+          <p class="sm">Review after 1 week</p>
+        </div>
+        <div class="record" aria-hidden="true">
+          <h2>Prescription, Dr. A. Sharma</h2>
+          <p class="meta">Saved to Ma's records</p>
+          <div class="med"><i class="dot"></i><b>Amoxycillin 500 mg</b><span>1 tablet, 3 times a day, for 5 days</span></div>
+          <div class="med"><i class="dot"></i><b>Paracetamol 650 mg</b><span>Only when needed</span></div>
+          <div class="reminder"><b>Next dose at 2:00 PM.</b> Amoxycillin, after lunch.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="does" aria-labelledby="does-title">
+    <div class="wrap">
+      <h2 class="section" id="does-title">Everything your family's doctors have written, in one place.</h2>
+      <div class="features">
+        <div class="feature">
+          <h3>Scan any document</h3>
+          <p>Prescriptions, lab reports and discharge summaries. Take a photo or upload a file, and it's named and filed for you, ready to find when a doctor asks.</p>
+        </div>
+        <div class="feature">
+          <h3>Never miss a dose</h3>
+          <p>Keep a list of everyone's medicines and get a reminder when each dose is due, so nobody has to remember it alone.</p>
+        </div>
+        <div class="feature">
+          <h3>Look after your family</h3>
+          <p>Keep separate records for parents, children and yourself, all from one account.</p>
+        </div>
+        <div class="feature">
+          <h3>Ask in plain language</h3>
+          <p>Wondering what a report means or what a medicine is for? Ask, and get a clear explanation of what's on the page, plus the questions worth taking to your doctor.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="try" aria-labelledby="try-title">
+    <div class="wrap">
+      <div class="try-box">
+        <div>
+          <h2 id="try-title">See it with sample records</h2>
+          <p>The preview is the real Doctine app, filled with a made-up patient's reports, medicines and health profile. Open the medical timeline, read a report, check today's medicines and browse the health profile. Nothing you change is saved, and nothing leaves your browser.</p>
+          <p class="note">The AI assistant and the scanner are switched off in the preview. They open with the app.</p>
+        </div>
+        <a class="btn" href="/app-preview/">Open the preview</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="yours" aria-labelledby="yours-title">
+    <div class="wrap">
+      <h2 id="yours-title">Your records stay yours.</h2>
+      <div>
+        <p>Health records are personal. In Doctine, your documents are stored privately in your account and aren't visible to other users.</p>
+        <p>When you scan a document or ask a question, it's sent securely to the AI service that reads it for you. You decide what to keep.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="safety" aria-labelledby="safety-title">
+    <div class="wrap">
+      <div class="safety-box">
+        <h2 id="safety-title">Doctine supports your care. It doesn't replace your doctor.</h2>
+        <p>Doctine gives general health information. It isn't a medical device and doesn't diagnose. Always follow your doctor's advice about your treatment.</p>
+        <p><strong>In a medical emergency, call 112.</strong> For mental-health support, call Tele-MANAS on <strong>14416</strong>, free and available 24 hours a day.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Doctine</span>
+    <a href="https://app.doctine.com">app.doctine.com</a>
+  </div>
+</footer>
+</body>
+</html>

@@ -71,6 +71,11 @@ await pg.click("#samp"); await pg.waitForTimeout(200);
 await pg.evaluate("(()=>{const d=new Date();S.meds[0].start=today();S.meds[0].end='';S.meds[0].times=[String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')];S.alerted={};render()})()");
 const dueInSample = await pg.evaluate("dueNow().length"); await pg.waitForTimeout(5600);
 check("a sample medicine falling due doesn't ring an alarm or send a reminder", dueInSample > 0 && !(await pg.evaluate("DoctineAlarms.ringing()")) && !(await pg.evaluate("Object.keys(S.alerted).length")), "due=" + dueInSample);
+// stopping when nothing rings must not call the vibration API (it was called every 5 seconds, filling the console)
+await pg.evaluate("(()=>{window.__vib=0;const v=navigator.vibrate;navigator.vibrate=function(){window.__vib++;return true};DoctineAlarms.stop();DoctineAlarms.stop()})()");
+check("stopping an alarm that isn't ringing doesn't touch vibration", (await pg.evaluate("window.__vib")) === 0);
+await pg.evaluate("(()=>{DoctineAlarms.start(3000);DoctineAlarms.stop()})()");
+check("stopping a ringing alarm still stops the vibration", (await pg.evaluate("window.__vib")) >= 2 && !(await pg.evaluate("DoctineAlarms.ringing()")));
 const wide = [];
 for (const v of ["home", "chat", "health", "reports", "medicines", "reminders", "family", "about", "settings"]) { await pg.evaluate(`go('${v}')`); await pg.waitForTimeout(60);
   if (await pg.evaluate("(()=>{const v=document.querySelector('#view');return document.documentElement.scrollWidth>innerWidth||v.scrollWidth>v.clientWidth+1})()")) wide.push(v); }

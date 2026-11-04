@@ -72,7 +72,12 @@ jobs:
           NETLIFY_SITE_ID: ${{ vars.NETLIFY_STAGING_SITE_ID }}
         run: |
           set -euo pipefail
-          npx --yes "$NETLIFY_CLI" deploy --build --prod --json --message "staging ${GITHUB_SHA::12} run ${GITHUB_RUN_ID}" > deploy.json
+          if ! npx --yes "$NETLIFY_CLI" deploy --build --prod --json --message "staging ${GITHUB_SHA::12} run ${GITHUB_RUN_ID}" > deploy.json 2> deploy.err; then
+            echo "::error::Netlify deploy to staging failed. Netlify said:"
+            # Show what Netlify reported (tokens masked), so the cause is visible in the log.
+            cat deploy.err deploy.json 2>/dev/null | sed -E 's/nfp_[A-Za-z0-9_-]+/[masked]/g; s/(token|authorization)([^:]*):[^,}]*/\1\2: [masked]/Ig' | tail -40
+            exit 1
+          fi
           node -e 'const d=require("./deploy.json"); if(!d.deploy_id||d.site_id!==process.env.NETLIFY_SITE_ID){console.error("::error::Netlify did not confirm a deploy to the staging site");process.exit(1)} console.log(`Netlify confirmed staging deploy ${d.deploy_id} of ${process.env.GITHUB_SHA}`)' | tee -a "$GITHUB_STEP_SUMMARY"
 
   verify:

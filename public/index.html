@@ -484,7 +484,7 @@ async function initCloud(){
  if(!window.supabase){toast('Doctine couldn’t load its sign-in service. Check your connection and refresh.');return false}
  CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;
- {const h=new URLSearchParams(location.hash.slice(1));if(h.get('error')){S.oauthErr=/access_denied/.test(h.get('error'))?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}history.replaceState(null,'',location.pathname+location.search)}}
+ {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1)),e=q.get('error')||h.get('error');if(e){S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}for(const k of['error','error_code','error_description'])q.delete(k);const rest=q.toString();history.replaceState(null,'',location.pathname+(rest?'?'+rest:''))}}
  CLOUD.sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){S.auth='newpw';S.email=null;render()}if(ev==='SIGNED_OUT'&&S.cloud){leaveCloud()}if(ev==='SIGNED_IN'&&session&&S.cloud&&CLOUD.uid&&session.user.id!==CLOUD.uid){leaveCloud();cloudEnter(session.user)}});
  const{data}=await CLOUD.sb.auth.getSession();
  if(data&&data.session&&!S.email)await cloudEnter(data.session.user);else if(!S.email)render();

@@ -63,6 +63,8 @@ check("signing in again opens the same account, not a new one", await pg.evaluat
 await pg.evaluate("document.querySelector('#out').click()"); await pg.waitForTimeout(500);
 await pg.evaluate("window.__oauthFail=true"); await pg.check("#gack"); await pg.click("#google"); await pg.waitForTimeout(300);
 check("if Google sign-in isn't available, the person is told and can use email", (await pg.textContent("#gerr")).includes("isn’t available right now") && !(await pg.isDisabled("#google")));
+await pg.goto(BASE + "/index.html?error=server_error&error_code=unexpected_failure&error_description=Unable+to+exchange+external+code"); await pg.waitForTimeout(900);
+check("a Google error sent back in the query string is explained and removed from the address", (await pg.textContent("#gerr")).includes("didn’t work") && (await pg.evaluate("location.search")) === "", await pg.evaluate("location.search"));
 await pg.goto(BASE + "/index.html?from=google#error=access_denied&error_description=The+user+denied"); // a full page load, as when Google sends the person back await pg.waitForTimeout(900);
 check("cancelling at Google shows a message and cleans the address", (await pg.textContent("#gerr")).includes("cancelled") && !(await pg.evaluate("location.hash")) && (await pg.$("#gack")) !== null);
 

@@ -76,6 +76,7 @@ Netlify → **Site configuration → Environment variables**. Set the scope to i
 | `RATE_LIMIT_REQUIRE_SHARED` (optional) | spending protection | `true` refuses AI requests while the shared limiter can't be reached, instead of falling back to per-instance limits. Emergency messages still get fixed 112 guidance. |
 | `RATE_LIMIT_<ROUTE>_<WHO>_<WINDOW>` (optional) | tuning | Override a limit, e.g. `RATE_LIMIT_CHAT_USER_10M=60`, `RATE_LIMIT_CHAT_IP_1D=100`, `RATE_LIMIT_SCAN_USER_1H=30`. Defaults are in `netlify/lib/ratelimit.mjs`. |
 | `KNOWLEDGE_PROVIDER` (optional) | reference sources in answers | Leave unset: answers come from the AI's general knowledge and say so. Set to `http` only once you have a retrieval service (see `netlify/lib/knowledge.mjs`). |
+| `AUTH_GOOGLE` (optional) | "Continue with Google" | `true` shows the Google button. Set it only after step 6 of section 3 is done for **this** site's Supabase project, or the button leads to an error page. Anything other than `true` hides it. |
 | `DOCTINE_ENV` | which site this is | `production` on the live site, `staging` on the staging site, `development` locally. Reported by `/api/config` so checks can confirm the target. Evaluation access works only on `staging` or `eval`. |
 | `EVAL_ACCESS_TOKEN` (staging only) | the live medical evaluation | A random string of at least 32 characters (`openssl rand -hex 32`). Lets evaluation runs use their own limit (300 an hour, still inside the daily AI budget). **Never set it on production**; it is ignored there anyway. |
 | `ANTHROPIC_BASE_URL` (tests only) | browser tests | Points the functions at the local AI stand-in. Ignored when `DOCTINE_ENV=production`. Never set it on a deployed site. |
@@ -110,6 +111,14 @@ Without the three Supabase variables, the app keeps its browser-only demo accoun
 3. **Authentication → URL configuration**: set **Site URL** to your Netlify address and add it under **Redirect URLs** (used by confirmation and password-reset emails).
 4. **Authentication → Providers → Email**: keep **Confirm email** on for production.
 5. **Authentication → Emails → SMTP**: set up your own email sender before launch. Supabase's built-in sender is rate-limited and meant only for testing.
+6. **Sign in with Google (optional).** Do this once per Supabase project (staging and production each need it).
+   1. In the Google Cloud Console, create (or choose) a project for Doctine. Under **Google Auth Platform → Branding**, set the app name *Doctine*, a support email and the app's home page (`https://doctine.com`), privacy policy and terms links. Under **Audience**, choose **External**. While the app is in *Testing*, only the test users you list can sign in; publish it before launch.
+   2. **Data access**: keep the default scopes only (`openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile`). Doctine needs nothing else from Google.
+   3. **Clients → Create client → Web application**. Under **Authorised JavaScript origins** add the site (`https://app.doctine.com` for production, `https://doctine-staging.netlify.app` for staging). Under **Authorised redirect URIs** add the Supabase callback shown in step 4 (`https://<project-ref>.supabase.co/auth/v1/callback`). Create, then copy the **Client ID** and **Client secret**. The secret goes only into Supabase, never into Netlify, GitHub, the page or a chat.
+   4. Supabase → **Authentication → Sign In / Providers → Google**: switch it on, paste the Client ID and secret, and save. The callback URL to give Google is shown on the same panel.
+   5. Netlify → that site's environment variables → set `AUTH_GOOGLE=true`, then redeploy (the Staging or Release workflow).
+
+   People who use "Continue with Google" tick the same agreement as an email sign-up; it is recorded in `consents` when their account first opens, and a choice they change later is never overwritten. A Google account and an email account with the same address are the same Doctine account only if Supabase links them (Supabase links verified identities by email automatically).
 
 ## 4. Check it after deploying
 

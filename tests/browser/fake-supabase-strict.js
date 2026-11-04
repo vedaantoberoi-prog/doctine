@@ -9,7 +9,7 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
   const uuid = () => crypto.randomUUID(), T = (n) => (DBS.tables[n] = DBS.tables[n] || []);
   const conflictKeys = (n, oc) => (oc ? oc.split(",") : n === "health_profiles" ? ["user_id"] : n === "consents" ? ["user_id", "kind"] : ["id"]);
   function q(n) {
-    const st = { filters: [], op: "select", rows: null, oc: null, single: false, maybe: false };
+    const st = { filters: [], op: "select", rows: null, oc: null, ign: false, single: false, maybe: false };
     const exec = (u) => {
       if (!u) return { data: null, error: { message: "JWT missing" } };
       const mine = T(n).filter((r) => r.user_id === u && st.filters.every(([k, v]) => String(r[k]) === String(v)));
@@ -31,7 +31,7 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
       if (n === "messages") for (const r of rows) if (!T("conversations").some((c) => c.id === r.conversation_id && c.user_id === u)) return { data: null, error: { message: "insert or update on table \"messages\" violates foreign key constraint" } };
       const out = [];
       for (const row of rows) {
-        if (st.op === "upsert") { const keys = conflictKeys(n, st.oc); const ex = T(n).find((r) => r.user_id === u && keys.every((k) => String(r[k]) === String(row[k]))); if (ex) { Object.assign(ex, row); out.push(ex); continue; } }
+        if (st.op === "upsert") { const keys = conflictKeys(n, st.oc); const ex = T(n).find((r) => r.user_id === u && keys.every((k) => String(r[k]) === String(row[k]))); if (ex) { if (!st.ign) Object.assign(ex, row); out.push(ex); continue; } }
         const r = { id: uuid(), created_at: new Date(Date.now() + (window.__tick = (window.__tick || 0) + 1)).toISOString(), updated_at: new Date().toISOString(), user_id: u, ...row };
         T(n).push(r); out.push(r);
       }
@@ -40,7 +40,7 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
     const api = {
       select() { return api; }, order() { return api; }, limit() { return api; }, eq(k, v) { st.filters.push([k, v]); return api; },
       maybeSingle() { st.maybe = true; return api; }, single() { st.single = true; return api; },
-      upsert(rows, o) { st.op = "upsert"; st.rows = rows; st.oc = o && o.onConflict; return api; },
+      upsert(rows, o) { st.op = "upsert"; st.rows = rows; st.oc = o && o.onConflict; st.ign = !!(o && o.ignoreDuplicates); return api; },
       insert(rows) { st.op = "insert"; st.rows = rows; return api; }, delete() { st.op = "delete"; return api; },
       then(res, rej) {
         const u = session && session.user.id; // the session at the moment the request is sent
@@ -57,6 +57,16 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
       onAuthStateChange(fn) { listeners.push(fn); },
       async signUp({ email, password, options }) { if (DBS.users[email]) return { data: {}, error: { message: "User already registered" } }; const user = { id: uuid(), email, user_metadata: options.data }; DBS.users[email] = { user, password }; session = { user, access_token: "tok-" + user.id }; localStorage.setItem("__sbsession", JSON.stringify(session)); save(); return { data: { user, session }, error: null }; },
       async signInWithPassword({ email, password }) { const u = DBS.users[email]; if (!u || u.password !== password) return { data: {}, error: { message: "Invalid login credentials" } }; session = { user: u.user, access_token: "tok-" + u.user.id }; localStorage.setItem("__sbsession", JSON.stringify(session)); return { data: { user: u.user, session }, error: null }; },
+      // Google: records the call, then behaves like the round trip through Google: the page is reloaded at redirectTo
+      // with a session for the Google account (created on first use). window.__googleEmail picks the account.
+      async signInWithOAuth({ provider, options }) {
+        const calls = JSON.parse(localStorage.getItem("__oauthCalls") || "[]"); calls.push({ provider, redirectTo: options && options.redirectTo }); localStorage.setItem("__oauthCalls", JSON.stringify(calls));
+        if (window.__oauthFail) return { data: {}, error: { message: "Unsupported provider: provider is not enabled" } };
+        const email = window.__googleEmail || "priya.google@example.com";
+        if (!DBS.users[email]) DBS.users[email] = { user: { id: uuid(), email, app_metadata: { provider: "google" }, user_metadata: { full_name: "Priya (Google)" } }, password: null };
+        save(); localStorage.setItem("__sbsession", JSON.stringify({ user: DBS.users[email].user, access_token: "tok-" + DBS.users[email].user.id }));
+        setTimeout(() => location.assign(options.redirectTo), 50); return { data: { provider, url: "https://accounts.google.com/o/oauth2/v2/auth" }, error: null };
+      },
       async signOut() { session = null; localStorage.removeItem("__sbsession"); listeners.forEach((f) => f("SIGNED_OUT", null)); return {}; },
       async resetPasswordForEmail() { return { error: null }; }, async updateUser() { return { data: { user: session.user }, error: null }; },
     },

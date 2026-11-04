@@ -24,6 +24,7 @@ const SUITES = [
   ["isolation", "tests/browser/isolation.test.mjs", "Supabase simulated with ownership rules"],
   ["persistence", "tests/browser/persistence.test.mjs", "Supabase simulated with ownership rules"],
   ["app", "tests/browser/app.test.mjs", "API responses simulated in the browser"],
+  ["preview", "tests/browser/preview.test.mjs", "the website's app preview, served as static files"],
 ];
 const results = [];
 for (const [name, file, kind] of SUITES) {

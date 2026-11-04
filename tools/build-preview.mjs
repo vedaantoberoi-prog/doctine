@@ -44,6 +44,9 @@ const edits = [
   ["sign out resets the sample data instead of opening the sign-in screen",
     "$('#out').onclick=async()=>{",
     "$('#out').onclick=async()=>{return enter(null,sampleData(),true);"],
+  ["Settings has no alarm, notification or AI-connection sections",
+    /<section class="card p-5 space-y-3"><h2 class="text-xl">Alarms<\/h2>[\s\S]*?(?=<section class="card p-5 space-y-3"><h2 class="text-xl">Your data<\/h2>)/,
+    ""],
   ["the sign-out button is labelled for the preview",
     "<button class=\"nav\" id=\"out\">↩ Sign out</button>",
     "<button class=\"nav\" id=\"out\">↺ Reset sample data</button>"],
@@ -70,7 +73,7 @@ for (const [why, find, repl] of edits) {
   if (hits !== 1) { console.error(`build-preview: "${why}" matched ${hits} times (expected 1). Update tools/build-preview.mjs for the changed app.`); process.exit(1); }
   html = typeof find === "string" ? html.replace(find, () => repl) : html.replace(find, () => repl);
 }
-for (const k of ["['reminders','Reminders'", "['family','Family'"]) if (html.includes(k)) { console.error("build-preview: " + k + " is still in the menu"); process.exit(1); }
+for (const k of ["['reminders','Reminders'", "['family','Family'", '<h2 class="text-xl">Alarms</h2>', '<h2 class="text-xl">Reminder notifications</h2>']) if (html.includes(k)) { console.error("build-preview: " + k + " is still in the preview"); process.exit(1); }
 
 if (process.argv.includes("--check")) {
   let cur = ""; try { cur = readFileSync(outPath, "utf8"); } catch {}

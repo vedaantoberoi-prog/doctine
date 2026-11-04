@@ -66,7 +66,12 @@ check("export includes profile, reports, medicines and dose history", exp.report
 pg.once("dialog", (d) => d.accept()); await pg.click("#wipe"); await pg.waitForTimeout(300);
 check("delete removes the account from this browser", await pg.evaluate("!JSON.parse(localStorage.getItem('doctine:v2')).users['ravi@example.com']&&S.email===null"));
 // mobile layouts: no sideways scrolling on any screen
-await pg.click("#samp"); await pg.waitForTimeout(200); const wide = [];
+await pg.click("#samp"); await pg.waitForTimeout(200);
+// sample data is fictional: a dose falling due must not ring, notify or show a "time for" toast (matches the phone app)
+await pg.evaluate("(()=>{const d=new Date();S.meds[0].start=today();S.meds[0].end='';S.meds[0].times=[String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')];S.alerted={};render()})()");
+const dueInSample = await pg.evaluate("dueNow().length"); await pg.waitForTimeout(5600);
+check("a sample medicine falling due doesn't ring an alarm or send a reminder", dueInSample > 0 && !(await pg.evaluate("DoctineAlarms.ringing()")) && !(await pg.evaluate("Object.keys(S.alerted).length")), "due=" + dueInSample);
+const wide = [];
 for (const v of ["home", "chat", "health", "reports", "medicines", "reminders", "family", "about", "settings"]) { await pg.evaluate(`go('${v}')`); await pg.waitForTimeout(60);
   if (await pg.evaluate("(()=>{const v=document.querySelector('#view');return document.documentElement.scrollWidth>innerWidth||v.scrollWidth>v.clientWidth+1})()")) wide.push(v); }
 check("no screen scrolls sideways at phone width (390px)", wide.length === 0, wide.join(","));

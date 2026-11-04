@@ -2,7 +2,7 @@
 
 The public website at https://doctine.com: a static page about Doctine, plus `app-preview/`, a clickable preview of the app with fictional sample data. It is separate from the app.
 
-`app-preview/index.html` is generated from `public/index.html` by `node tools/build-preview.mjs` (do not edit it by hand). The preview opens straight into sample data, leaves out Reminders and Family, answers every `/api/*` request inside the browser (so chat and the scanner are switched off and nothing is sent or saved) and registers no service worker. CI fails if the preview is out of date with the app.
+`app-preview/index.html` is generated from `public/index.html` by `node tools/build-preview.mjs` (do not edit it by hand). The preview opens straight into sample data, leaves out Reminders and Family, answers every `/api/*` request inside the browser (so chat and the scanner are switched off and nothing is sent or saved) and registers no service worker. CI fails if the preview is out of date with the app, and `tests/browser/preview.test.mjs` checks the preview in a browser. `_headers` gives the website the same security headers as the app.
 
 | What | Where |
 |---|---|
@@ -14,6 +14,6 @@ DNS for doctine.com is managed at Hostinger: `A @ 75.2.60.5` and `CNAME www` poi
 
 ## Updating the website
 
-The website is not built or deployed by the workflows. After changing the app, run `node tools/build-preview.mjs`. To publish, zip the contents of this folder (`index.html` and `app-preview/`), open the website's Netlify site → Deploys, and drop the zip onto the upload area.
+The website is not built or deployed by the workflows. After changing the app, run `node tools/build-preview.mjs`. To publish, zip the contents of this folder (`index.html`, `_headers` and `app-preview/`), open the website's Netlify site → Deploys, and drop the zip onto the upload area.
 
 Keep the page honest: no clinical claims, no invented reviews, and keep the safety notice (112, Tele-MANAS 14416).

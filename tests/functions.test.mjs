@@ -3,6 +3,7 @@
  * The Anthropic API is replaced by a stand-in so every success and failure path can be checked without a key or credit.
  * (A real call is checked separately with GET /api/chat?test=1 after deploying.)
  */
+import "./hermetic-env.mjs"; // first: the tests must not see this machine's (or the Netlify site's) real settings
 import assert from "node:assert/strict";
 import chat from "../netlify/functions/chat.mjs";
 import scan from "../netlify/functions/scan.mjs";

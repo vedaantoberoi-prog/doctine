@@ -58,6 +58,9 @@ jobs:
         with: { node-version: "${{ env.NODE_VERSION }}" }
       - name: Function tests (Anthropic, Supabase and the limiter simulated)
         run: node tests/functions.test.mjs
+      - name: Server tests with a deployed site's settings present (as inside a Netlify build)
+        if: always()
+        run: node tests/hermetic.test.mjs
       - name: Medical evaluation grader tests (offline)
         if: always()
         run: node tests/eval-grader.test.mjs

@@ -44,6 +44,7 @@ check("the sample-data notice says nothing is saved", (await pg.textContent("bod
 await pg.evaluate("go('settings')"); await pg.waitForTimeout(100);
 const set = await pg.textContent("#view");
 check("Settings has no alarm or notification sections", !/Alarms|Reminder notifications|Test alarm/.test(set));
+check("Settings links the privacy policy and terms", (await pg.$("#view a[href='https://doctine.com/privacy/']")) !== null && (await pg.$("#view a[href='https://doctine.com/terms/']")) !== null);
 
 // a sample dose falling due must not ring
 await pg.evaluate("(()=>{const d=new Date();S.meds[0].start=today();S.meds[0].end='';S.meds[0].times=[String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')];S.alerted={};render()})()");

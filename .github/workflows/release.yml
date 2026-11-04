@@ -98,6 +98,11 @@ jobs:
           node -e 'const s=require("./site.json"); console.log("Previous production deploy (use it to roll back): " + (s.published_deploy && s.published_deploy.id || "unknown"))' | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Stamp the commit this deploy serves
         run: printf '{"commit":"%s"}\n' "$GITHUB_SHA" > public/version.json
+      - name: Cancel older production deploys still in progress (they could publish over this one later)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_PRODUCTION_SITE_ID }}
+        run: node tools/netlify-guard.mjs cancel-stale
       - name: Deploy and confirm with Netlify
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
@@ -105,13 +110,20 @@ jobs:
           STAGED: ${{ needs.gates.outputs.staged_sha }}
         run: |
           set -euo pipefail
-          if ! npx --yes "$NETLIFY_CLI" deploy --build --prod --json --message "release ${GITHUB_SHA::12} (staging verified ${STAGED::12}, run ${{ inputs.staging_run_id }})" > deploy.json 2> deploy.err; then
+          if ! timeout 11m npx --yes "$NETLIFY_CLI" deploy --build --prod --json --message "release ${GITHUB_SHA::12} (staging verified ${STAGED::12}, run ${{ inputs.staging_run_id }})" > deploy.json 2> deploy.err; then
             echo "::error::Netlify deploy to production failed. Netlify said:"
             # Show what Netlify reported (tokens masked), so the cause is visible in the log.
             cat deploy.err deploy.json 2>/dev/null | sed -E 's/nfp_[A-Za-z0-9_-]+/[masked]/g; s/(token|authorization)([^:]*):[^,}]*/\1\2: [masked]/Ig' | tail -40
             exit 1
           fi
           node -e 'const d=require("./deploy.json"); if(!d.deploy_id||d.site_id!==process.env.NETLIFY_SITE_ID){console.error("::error::Netlify did not confirm a deploy to the production site");process.exit(1)} console.log(`Netlify confirmed production deploy ${d.deploy_id} of ${process.env.GITHUB_SHA}`)' | tee -a "$GITHUB_STEP_SUMMARY"
+          node tools/netlify-guard.mjs confirm-live "$(node -p 'require("./deploy.json").deploy_id')" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: If this deploy failed or was stopped, cancel its unfinished Netlify deploy
+        if: failure() || cancelled()
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_PRODUCTION_SITE_ID }}
+        run: node tools/netlify-guard.mjs cancel-run "$GITHUB_RUN_ID"
       - name: Production smoke check (production environment, this commit, evaluation access refused)
         env:
           SITE_URL: ${{ vars.PRODUCTION_URL }}

@@ -66,19 +66,31 @@ jobs:
         with: { node-version: "20" }
       - name: Stamp the commit this deploy serves
         run: printf '{"commit":"%s"}\n' "$GITHUB_SHA" > public/version.json
+      - name: Cancel older staging deploys still in progress (they could publish over this one later)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_STAGING_SITE_ID }}
+        run: node tools/netlify-guard.mjs cancel-stale
       - name: Deploy (functions included) and confirm with Netlify
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ vars.NETLIFY_STAGING_SITE_ID }}
         run: |
           set -euo pipefail
-          if ! npx --yes "$NETLIFY_CLI" deploy --build --prod --json --message "staging ${GITHUB_SHA::12} run ${GITHUB_RUN_ID}" > deploy.json 2> deploy.err; then
+          if ! timeout 11m npx --yes "$NETLIFY_CLI" deploy --build --prod --json --message "staging ${GITHUB_SHA::12} run ${GITHUB_RUN_ID}" > deploy.json 2> deploy.err; then
             echo "::error::Netlify deploy to staging failed. Netlify said:"
             # Show what Netlify reported (tokens masked), so the cause is visible in the log.
             cat deploy.err deploy.json 2>/dev/null | sed -E 's/nfp_[A-Za-z0-9_-]+/[masked]/g; s/(token|authorization)([^:]*):[^,}]*/\1\2: [masked]/Ig' | tail -40
             exit 1
           fi
           node -e 'const d=require("./deploy.json"); if(!d.deploy_id||d.site_id!==process.env.NETLIFY_SITE_ID){console.error("::error::Netlify did not confirm a deploy to the staging site");process.exit(1)} console.log(`Netlify confirmed staging deploy ${d.deploy_id} of ${process.env.GITHUB_SHA}`)' | tee -a "$GITHUB_STEP_SUMMARY"
+          node tools/netlify-guard.mjs confirm-live "$(node -p 'require("./deploy.json").deploy_id')" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: If this deploy failed or was stopped, cancel its unfinished Netlify deploy
+        if: failure() || cancelled()
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_STAGING_SITE_ID }}
+        run: node tools/netlify-guard.mjs cancel-run "$GITHUB_RUN_ID"
 
   verify:
     name: Verify staging (gate 6)
@@ -112,6 +124,14 @@ jobs:
           EXPECT_COMMIT: ${{ github.sha }}
           EVAL_ACCESS_TOKEN: ${{ secrets.EVAL_ACCESS_TOKEN }}
         run: node tests/live-eval.mjs
+      - name: Staging still serves the commit that was just verified
+        env:
+          SITE_URL: ${{ vars.STAGING_URL }}
+        run: |
+          set -euo pipefail
+          live=$(curl -fsS -H 'cache-control: no-cache' "$SITE_URL/version.json?run=$GITHUB_RUN_ID" | node -p 'JSON.parse(require("fs").readFileSync(0,"utf8")).commit')
+          [ "$live" = "$GITHUB_SHA" ] || { echo "::error::staging now serves $live, not the verified $GITHUB_SHA; another deploy replaced it during verification"; exit 1; }
+          echo "Staging still serves $GITHUB_SHA after verification" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Release report (gates 1–6)
         if: always()
         env: { RELEASE_SHA: "${{ github.sha }}" }

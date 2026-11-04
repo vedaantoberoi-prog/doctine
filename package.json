@@ -12,7 +12,7 @@
     "test:server": "node tests/functions.test.mjs",
     "test:db": "bash tests/run-db-tests.sh",
     "test:browser": "node tools/run-browser-tests.mjs",
-    "test": "npm run check && npm run test:server && npm run eval:grader && npm run test:gates",
+    "test": "npm run check && npm run test:server && npm run eval:grader && npm run test:gates && npm run test:tools",
     "eval:live": "node tests/live-eval.mjs",
     "eval:grader": "node tests/eval-grader.test.mjs",
     "sync:safety": "node tools/sync-safety-rules.mjs",
@@ -20,7 +20,8 @@
     "build:check": "esbuild netlify/functions/*.mjs --bundle --platform=node --format=esm --target=node20 --outdir=.build-check --log-level=warning",
     "smoke": "node tools/smoke-check.mjs",
     "build:preview": "node tools/build-preview.mjs",
-    "test:gates": "node tests/release-gates.test.mjs"
+    "test:gates": "node tests/release-gates.test.mjs",
+    "test:tools": "node tests/netlify-guard.test.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",

@@ -91,6 +91,15 @@ for (const w of [320, 360, 768, 1280]) { await pg.setViewportSize({ width: w, he
   for (const v of ["home", "chat", "health", "reports", "medicines", "reminders", "about", "settings"]) { await pg.evaluate(`go('${v}')`); await pg.waitForTimeout(40);
     if (await pg.evaluate("(()=>{const v=document.querySelector('#view');return document.documentElement.scrollWidth>innerWidth||v.scrollWidth>v.clientWidth+1})()")) wideAt.push(v + "@" + w); } }
 check("no screen scrolls sideways at 320px, 360px, tablet or desktop width", wideAt.length === 0, wideAt.join(","));
+// phones: iPhone Safari zooms the page when a field under 16px is focused, and fingers need targets of about 44px
+await pg.setViewportSize({ width: 375, height: 800 });
+const smallFields = [];
+for (const v of ["home", "chat", "health", "reports", "medicines", "settings"]) { await pg.evaluate(`go('${v}')`); await pg.waitForTimeout(40);
+  smallFields.push(...(await pg.evaluate(`[...document.querySelectorAll('input:not([type=checkbox]):not([type=radio]),select,textarea')].filter(e=>e.offsetParent&&parseFloat(getComputedStyle(e).fontSize)<16).map(e=>'${v}:'+(e.name||e.id||e.tagName))`))); }
+check("on phones every text field is at least 16px, so iPhones don't zoom in when it's tapped", smallFields.length === 0, smallFields.join(","));
+await pg.evaluate("go('home')"); await pg.waitForTimeout(40);
+const smallTaps = await pg.evaluate(`[...document.querySelectorAll('#view .chip,#view button.underline')].filter(e=>e.offsetParent&&e.getBoundingClientRect().height<44).length`);
+check("on phones the shortcut chips and text buttons are at least 44px tall", smallTaps === 0, String(smallTaps));
 check("no JavaScript errors on the page", errs.length === 0, errs.join(" | "));
 console.log(results.join("\n"));
 console.log(results.filter((r) => r.startsWith("PASS")).length + "/" + results.length + " passed");

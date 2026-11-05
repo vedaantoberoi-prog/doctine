@@ -29,9 +29,9 @@ return Promise.resolve(new Response(JSON.stringify(body),{status:/api\\/config/.
 </script>`;
 
 const edits = [
-  ["no alarms or family in the menu",
-    "['medicines','Medicines','💊'],['reminders','Reminders','⏰'],['family','Family','👪'],",
-    "['medicines','Medicines','💊'],"],
+  ["no alarms in the menu (Family isn't in the app's menu either)",
+    "['medicines','Medicines','meds'],['reminders','Reminders','clock'],",
+    "['medicines','Medicines','meds'],"],
   ["the home card links to medicines, not reminders",
     "data-nav=\"${S.meds.length?'reminders':'medicines'}\">${S.meds.length?'Open reminders':'Add a medicine'}",
     "data-nav=\"medicines\">${S.meds.length?'Open medicines':'Add a medicine'}"],

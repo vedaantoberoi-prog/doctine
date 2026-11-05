@@ -1,0 +1,70 @@
+/**
+ * Doctine · the doctine.com website (website/), served as a static site the way Cloudflare Pages serves it.
+ * Checks that every page shares one header and footer, every internal link and asset exists, features that aren't
+ * available are labelled as such, claims we can't support stay out, and no page scrolls sideways from 320px up.
+ */
+import { chromium } from "playwright";
+import { createServer } from "node:http";
+import { readFileSync, existsSync, statSync } from "node:fs";
+import { join, normalize, extname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = fileURLToPath(new URL("../../website/", import.meta.url));
+const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".svg": "image/svg+xml" };
+const resolve = (p) => { let f = decodeURIComponent(p.split(/[?#]/)[0]); if (f.endsWith("/")) f += "index.html"; f = normalize(join(root, f)); return f.startsWith(root) && existsSync(f) && statSync(f).isFile() ? f : null; };
+const srv = createServer((q, r) => { const f = resolve(q.url); if (!f) { r.writeHead(404); return r.end("not found"); } r.writeHead(200, { "content-type": types[extname(f)] || "application/octet-stream" }); r.end(readFileSync(f)); }).listen(0);
+const BASE = `http://127.0.0.1:${srv.address().port}`;
+const PAGES = ["/", "/about/", "/medical-safety/", "/privacy/", "/terms/"];
+
+const results = []; const check = (name, ok, detail = "") => results.push((ok ? "PASS " : "FAIL ") + name + (detail ? "  — " + detail : ""));
+const html = Object.fromEntries(PAGES.map((p) => [p, readFileSync(resolve(p), "utf8")]));
+const between = (s, a, b) => s.slice(s.indexOf(a), s.indexOf(b, s.indexOf(a)));
+const strip = (s) => s.replace(/ aria-current="page"/g, "");
+
+// structure shared by every page
+const head0 = strip(between(html["/"], '<header class="site-head">', "</header>")), foot0 = between(html["/"], '<footer class="site-foot">', "</footer>");
+check("every page has the same header and footer", PAGES.every((p) => strip(between(html[p], '<header class="site-head">', "</header>")) === head0 && between(html[p], '<footer class="site-foot">', "</footer>") === foot0));
+check("every page uses the shared stylesheet and has one h1", PAGES.every((p) => html[p].includes('href="/assets/site.css"') && (html[p].match(/<h1[\s>]/g) || []).length === 1));
+const internal = [...new Set(PAGES.flatMap((p) => [...html[p].matchAll(/(?:href|src)="(\/[^"]*)"/g)].map((m) => m[1])))];
+const broken = internal.filter((u) => !resolve(u));
+check("every internal link and asset exists", broken.length === 0, broken.join(" "));
+const anchors = PAGES.flatMap((p) => [...html[p].matchAll(/href="\/#([\w-]+)"/g)].map((m) => m[1])).filter((id) => !html["/"].includes(`id="${id}"`));
+check("links to homepage sections point at real sections", anchors.length === 0, anchors.join(" "));
+check("sign-up buttons go to the real app", (html["/"].match(/href="https:\/\/app\.doctine\.com\/"/g) || []).length >= 3);
+
+// honesty: what isn't available is labelled, and unsupported claims stay out
+const home = html["/"];
+check("the assistant is labelled as not yet available", /status dev">In development · not yet available/.test(home));
+check("family profiles are labelled as in development", /status dev">Family profiles in development/.test(home));
+check("the vision separates available, in development and planned", /status now">Available now/.test(home) && /status later">Planned/.test(home));
+const all = PAGES.map((p) => html[p]).join("\n");
+const banned = [/revolution/i, /AI doctor/i, /guarantee/i, /predict(s|ing)? (every|disease)/i, /replac(e|es|ing) (your )?doctors?/i, /not a medical device/i, /is a medical device/i, /clinically (validated|proven)(?! )/i, /Look after your family/i, /HIPAA|ISO 27001|SOC 2|end-to-end encrypt/i];
+// denials ("doesn't replace your doctor", "hasn't been clinically validated") are the safe wording, so they're allowed
+const denied = all.replace(/hasn't been clinically validated|has not been clinically validated/gi, "").replace(/(doesn't|does not|never|not)( [a-z]+){0,3} replace (your )?doctors?/gi, "");
+const found = banned.filter((r) => r.test(denied));
+check("no unsupported claims (medical-device status, guarantees, certifications, family features)", found.length === 0, found.join(" "));
+check("emergency numbers are on every page", PAGES.every((p) => /call 112/.test(html[p]) && /14416/.test(html[p])));
+
+// in a browser: no sideways scrolling, the menu works on phones, no script errors
+const b = await chromium.launch(); const errs = [];
+const wide = [];
+for (const w of [320, 360, 390, 430, 768, 1280]) {
+  const pg = await b.newPage({ viewport: { width: w, height: 800 } }); pg.on("pageerror", (e) => errs.push(e.message));
+  await pg.route("**/*", (r) => (r.request().url().startsWith(BASE) ? r.continue() : r.abort()));
+  for (const p of PAGES) { await pg.goto(BASE + p); if (await pg.evaluate("document.documentElement.scrollWidth>innerWidth")) wide.push(`${p}@${w}`); }
+  if (w === 360) {
+    await pg.goto(BASE + "/");
+    check("on a phone the main links move into a menu", !(await pg.isVisible(".nav")) && (await pg.isVisible(".menu summary")));
+    await pg.click(".menu summary");
+    check("…which opens and links to every main page", (await pg.isVisible('.menu .panel a[href="/medical-safety/"]')) && (await pg.isVisible('.menu .panel a[href="/about/"]')));
+    const small = await pg.evaluate(`[...document.querySelectorAll('.btn,.menu summary,.signin')].filter(e=>e.offsetParent&&e.getBoundingClientRect().height<40).length`);
+    check("buttons are at least 40px tall on phones", small === 0, String(small));
+  }
+  await pg.close();
+}
+check("no page scrolls sideways from 320px to desktop", wide.length === 0, wide.join(" "));
+check("no JavaScript errors", errs.length === 0, errs.join(" | "));
+await b.close(); srv.close();
+console.log(results.join("\n"));
+console.log(results.filter((r) => r.startsWith("PASS")).length + "/" + results.length + " passed");
+process.exit(results.some((r) => r.startsWith("FAIL")) ? 1 : 0);

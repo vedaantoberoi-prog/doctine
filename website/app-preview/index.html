@@ -2,8 +2,8 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Doctine app preview</title><meta name="robots" content="noindex">
-<meta name="theme-color" content="#12263f"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Doctine"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>(function(){try{var t=localStorage.getItem('doctine:theme')||localStorage.getItem('sanora:theme')||'auto';var d=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){}})()</script><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=%220 0 32 32%22 width=%2232%22 height=%2232%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%229%22 fill=%22%2312263f%22/%3E%3Cpath d=%22M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222.3%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3Ccircle cx=%2224%22 cy=%227.6%22 r=%222.3%22 fill=%22%233fb3b0%22/%3E%3C/svg%3E">
+<meta name="theme-color" content="#101C2B"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Doctine"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>(function(){try{var t=localStorage.getItem('doctine:theme')||localStorage.getItem('sanora:theme')||'auto';var d=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){}})()</script><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=%220 0 32 32%22 width=%2232%22 height=%2232%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%229%22 fill=%22%23101C2B%22/%3E%3Cpath d=%22M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z%22 fill=%22none%22 stroke=%22%23F3F1EB%22 stroke-width=%222.3%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3Ccircle cx=%2224%22 cy=%227.6%22 r=%222.3%22 fill=%22%238DB5AE%22/%3E%3C/svg%3E">
 <script>/* Doctine website preview: the preview has no server. Answer /api/* here so nothing leaves the browser. */
 (function(){var f=window.fetch.bind(window);window.fetch=function(u,o){var s=String(u&&u.url||u);if(/(^|\/)api\//.test(s)){
 var body=/api\/config/.test(s)?{environment:"preview",supabase:null}:{ok:false,error:"not_configured",missing:[]};
@@ -11,17 +11,17 @@ return Promise.resolve(new Response(JSON.stringify(body),{status:/api\/config/.t
 </script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--navy:#12263f;--text:#12263f;--card:#fff;--hover:#f1f5f4;--tealtx:#13605f;--teal:#1f8a8a;--tealbg:#e6f3f2;--bg:#f7f8f6;--line:#e3e8e7;--mute:#5f7084;--warnbg:#fff6e5;--warnbd:#f1ddb0;--warntx:#6d4a05;--errbg:#fdeeee;--errbd:#f0c4c4;--errtx:#8a2020;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--navy:#101C2B;--text:#202A35;--card:#fff;--hover:#EEF1EC;--tealtx:#3F6660;--teal:#527D76;--tealbg:#E3EBE8;--bg:#F3F1EB;--line:#D8DEE6;--mute:#5B6673;--warnbg:#fff6e5;--warnbd:#f1ddb0;--warntx:#6d4a05;--errbg:#fdeeee;--errbd:#f0c4c4;--errtx:#8a2020;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html,body{height:100%;margin:0}body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',system-ui,sans-serif}
 h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px}
 .btn{border-radius:12px;padding:.55rem .9rem;font-weight:500;font-size:.875rem;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
-.btn:hover{background:var(--hover)}.btn.pri{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.pri:hover{background:#1b3858}.btn.tl{background:var(--tealbg);color:var(--tealtx);border-color:var(--line)}.btn.dg{color:#c0392b}:root[data-theme=dark] .btn.dg{color:#f08a8a}
+.btn:hover{background:var(--hover)}.btn.pri{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.pri:hover{background:#1F3147}.btn.tl{background:var(--tealbg);color:var(--tealtx);border-color:var(--line)}.btn.dg{color:#c0392b}:root[data-theme=dark] .btn.dg{color:#f08a8a}
 .inp{width:100%;border:1px solid var(--line);border-radius:12px;padding:.55rem .75rem;background:var(--card);color:var(--text);font-size:.9rem}
 .inp::placeholder{color:var(--mute);opacity:.8}
 .inp:focus,.btn:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 .nav{display:flex;align-items:center;gap:.7rem;width:100%;padding:.6rem .8rem;border-radius:12px;color:var(--mute);font-size:.92rem;text-align:left;border:0;background:none;cursor:pointer}
-.nav:hover{background:var(--hover)}.nav.on{background:var(--tealbg);color:var(--tealtx);font-weight:600}
+.nav:hover{background:var(--hover)}:root[data-theme=dark] svg rect[fill="#101C2B"]{stroke:#3A4C63;stroke-width:1.5}.navi{flex:none;display:grid;place-items:center;width:20px}.meter{height:6px;border-radius:999px;background:var(--tealbg);overflow:hidden}.meter>div{height:100%;background:var(--teal);border-radius:999px}.nav.on{background:var(--tealbg);color:var(--tealtx);font-weight:600}
 .chip{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:.4rem .8rem;font-size:.82rem;cursor:pointer}.chip:hover{border-color:var(--teal);background:var(--tealbg)}
 .tag{font-size:.72rem;border-radius:999px;padding:.12rem .55rem;background:var(--tealbg);color:var(--tealtx)}
 .warn{background:var(--warnbg);border:1px solid var(--warnbd);color:var(--warntx);border-radius:12px;padding:.55rem .75rem;font-size:.82rem}
@@ -32,7 +32,7 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 .scanbar{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.75rem 0}
 .scanmid{flex:1;min-height:0;display:grid;place-items:center;overflow:hidden}
 .scanimg{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
-.scanthumbs{display:flex;gap:.5rem;overflow-x:auto;padding:.6rem 0}.scanthumbs button{flex:none;border:2px solid transparent;border-radius:8px;padding:0;background:none}.scanthumbs button.on{border-color:#3fb3b0}.scanthumbs img{height:56px;width:auto;border-radius:6px;display:block}
+.scanthumbs{display:flex;gap:.5rem;overflow-x:auto;padding:.6rem 0}.scanthumbs button{flex:none;border:2px solid transparent;border-radius:8px;padding:0;background:none}.scanthumbs button.on{border-color:#7FA9A1}.scanthumbs img{height:56px;width:auto;border-radius:6px;display:block}
 .scantools{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;padding:.6rem 0 1rem}
 .scanov .btn{background:#16253a;color:#e8eef5;border-color:#27384f}.scanov .btn.pri{background:#1f8a8a;border-color:#1f8a8a;color:#fff}.scanov .btn.tl{background:#17383a;color:#7fd6d2}
 .docchip{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--line);background:var(--tealbg);color:var(--tealtx);border-radius:999px;padding:.3rem .45rem .3rem .75rem;font-size:.8rem;max-width:100%}
@@ -40,11 +40,11 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 .attmenu{position:absolute;bottom:calc(100% + .4rem);left:0;z-index:20;min-width:14rem;padding:.35rem}
 .attmenu button{display:block;width:100%;text-align:left;padding:.6rem .75rem;border-radius:10px;font-size:.9rem;color:var(--text)}.attmenu button:hover{background:var(--hover)}
 .scanthumb{width:4.5rem;height:4.5rem;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--hover)}
-:root[data-theme=dark]{--navy:#2b4d78;--text:#e8eef5;--card:#16253a;--hover:#1d3049;--tealtx:#7fd6d2;--teal:#3fb3b0;--tealbg:#17383a;--bg:#0e1826;--line:#27384f;--mute:#9db0c4;--warnbg:#3a2e12;--warnbd:#5b4a1d;--warntx:#f0d9a0;--errbg:#3a1a1a;--errbd:#6a2c2c;--errtx:#f3b4b4;color-scheme:dark}
+:root[data-theme=dark]{--navy:#2E4A66;--text:#DCE2E9;--card:#142131;--hover:#1A2A3D;--tealtx:#8DB5AE;--teal:#7FA9A1;--tealbg:#16302F;--bg:#0C1520;--line:#26364A;--mute:#A9B4C2;--warnbg:#3a2e12;--warnbd:#5b4a1d;--warntx:#f0d9a0;--errbg:#3a1a1a;--errbd:#6a2c2c;--errtx:#f3b4b4;color-scheme:dark}
 
 /* About page. Editorial layout on the Doctine tokens: Fraunces display, Instrument Sans text, navy and teal. */
-:root{--ab-band:#0f2038;--ab-band-tx:#e8eef5;--ab-band-mute:#a9bccf;--ab-band-line:rgba(127,214,210,.28);--ab-glow:#3fb3b0;--ab-dotc:#8aa0b6}
-:root[data-theme=dark]{--ab-band:#08111d;--ab-band-tx:#e8eef5;--ab-band-mute:#9db0c4;--ab-band-line:rgba(127,214,210,.22);--ab-glow:#3fb3b0;--ab-dotc:#5f7590}
+:root{--ab-band:#0f2038;--ab-band-tx:#e8eef5;--ab-band-mute:#a9bccf;--ab-band-line:rgba(127,214,210,.28);--ab-glow:#7FA9A1;--ab-dotc:#8aa0b6}
+:root[data-theme=dark]{--ab-band:#08111d;--ab-band-tx:#e8eef5;--ab-band-mute:#9db0c4;--ab-band-line:rgba(127,214,210,.22);--ab-glow:#7FA9A1;--ab-dotc:#5f7590}
 .ab{color:var(--text)}
 .ab-wrap{max-width:68rem;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
 .ab-narrow{max-width:46rem}
@@ -93,12 +93,12 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 .ab-vision-art{width:100%;height:auto;display:block;max-width:34rem;margin:0 auto}
 .ab-vision figcaption{font-size:.8rem;line-height:1.55;color:var(--ab-band-mute);text-align:center;max-width:26rem;margin:1rem auto 0}
 .ab-vring{fill:none;stroke:var(--ab-band-line);stroke-width:1}
-.ab-vlink{stroke:#3fb3b0;stroke-width:.8;opacity:.42}
+.ab-vlink{stroke:#7FA9A1;stroke-width:.8;opacity:.42}
 .ab-vnode{fill:#7fd6d2}
 .ab-vfar{opacity:.55}
 .ab-vlabel{font:500 13px 'Instrument Sans',system-ui,sans-serif;letter-spacing:.06em;fill:var(--ab-band-mute)}
 .ab-vlabel.ab-now{fill:#7fd6d2}
-.ab-vision .ab-core{fill:#3fb3b0}.ab-vision .ab-core-halo{stroke:#3fb3b0}
+.ab-vision .ab-core{fill:#7FA9A1}.ab-vision .ab-core-halo{stroke:#7FA9A1}
 .ab-pulse{transform-origin:center;transform-box:fill-box;animation:abpulse 3.6s ease-out infinite}
 @keyframes abpulse{0%{transform:scale(.8);opacity:.6}100%{transform:scale(1.9);opacity:0}}
 .ab-draw .ab-vlink{stroke-dasharray:400;animation:abdraw 1.8s ease-out both}
@@ -131,7 +131,7 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 <div id="app" class="flex h-full hidden">
  <div id="scrim" class="fixed inset-0 bg-black/30 z-30 hidden md:hidden"></div>
  <aside id="side" class="fixed md:static z-40 inset-y-0 left-0 w-72 -translate-x-full md:translate-x-0 transition-transform bg-[var(--card)] border-r border-[var(--line)] flex flex-col p-4">
-  <div class="flex items-center gap-2 px-2 py-3"><svg viewBox="0 0 32 32" width="34" height="34" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#12263f"/><path d="M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="7.6" r="2.3" fill="#3fb3b0"/></svg><span class="serif text-xl">Doctine</span></div>
+  <div class="flex items-center gap-2 px-2 py-3"><svg viewBox="0 0 32 32" width="34" height="34" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#101C2B"/><path d="M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z" fill="none" stroke="#F3F1EB" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="7.6" r="2.3" fill="#8DB5AE"/></svg><span class="serif text-xl">Doctine</span></div>
   <nav id="nav" class="mt-3 space-y-1 flex-1"></nav>
   <div id="who" class="text-sm text-[var(--mute)] px-2 truncate"></div>
   <button class="nav" id="out">↺ Reset sample data</button>
@@ -246,8 +246,9 @@ const API=(window.DOCTINE_API||'').replace(/\/$/,''); // empty on the website; t
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const isOn=(m,d)=>(m.status||'active')==='active'&&d>=m.start&&(!m.end||d<=m.end)&&((m.freq||'daily')==='daily'||(m.days||[]).includes(new Date(d+'T00:00:00').getDay()));
-const LOGO='<svg viewBox="0 0 32 32" width="36" height="36" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#12263f"/><path d="M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="7.6" r="2.3" fill="#3fb3b0"/></svg>';
-const NAV=[['home','Home','🏠'],['chat','Chat','💬'],['health','My Health','🫀'],['reports','Reports','📄'],['medicines','Medicines','💊'],['about','About','ℹ️'],['settings','Settings','⚙️']];
+const LOGO='<svg viewBox="0 0 32 32" width="36" height="36" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#101C2B"/><path d="M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z" fill="none" stroke="#F3F1EB" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="7.6" r="2.3" fill="#8DB5AE"/></svg>';
+const NAV=[['home','Home','home'],['chat','Chat','chat'],['health','My Health','health'],['reports','Reports','reports'],['medicines','Medicines','meds'],['about','About','about'],['settings','Settings','settings']];
+const NAVI=(()=>{const P={home:'<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/>',chat:'<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V15h0a2.5 2.5 0 0 1-2-2.5z"/>',health:'<path d="M3.5 12h4l2-4.5 3.5 9 2-4.5h5.5"/>',reports:'<path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/>',meds:'<rect x="3.5" y="9" width="17" height="6" rx="3"/><path d="M12 9v6"/>',clock:'<circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 1.5M9.5 3.5h5"/>',about:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M6 18l1.4-1.4M16.6 7.4 18 6"/>'};const o={};for(const k in P)o[k]=`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]}</svg>`;return o})();
 /* ---- demo storage: this browser only ---- */
 const KEY='doctine:v2';
 (()=>{try{ // one-time carry-over from the previous app name; old entries are left untouched
@@ -271,7 +272,7 @@ const closeNav=()=>{$('#side').classList.add('-translate-x-full');$('#scrim').cl
 $('#burger').onclick=()=>{$('#side').classList.remove('-translate-x-full');$('#scrim').classList.remove('hidden')};$('#scrim').onclick=closeNav;
 $('#out').onclick=async()=>{return enter(null,sampleData(),true);if(S.cloud){const n=unsavedCount();if(n&&!confirm('Some of your changes or chat messages haven’t been saved to your account yet. If you sign out now, they will be lost. Sign out anyway?'))return;closeNav();leaveCloud();await CLOUD.sb.auth.signOut().catch(()=>{});return}DB.session=null;store.set(DB);S={...S,...blank(''),email:null,sample:false,guest:false,auth:'login',cstate:null,cerr:'',useRecords:false};closeNav();render()};
 const themePref=()=>{try{return localStorage.getItem('doctine:theme')||'auto'}catch{return'auto'}};
-function applyTheme(){const t=themePref(),d=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';const m=document.querySelector('meta[name=theme-color]');if(m)m.content=d?'#0e1826':'#12263f'}
+function applyTheme(){const t=themePref(),d=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';const m=document.querySelector('meta[name=theme-color]');if(m)m.content=d?'#0C1520':'#101C2B'}
 try{matchMedia('(prefers-color-scheme:dark)').addEventListener('change',applyTheme)}catch{}
 const hashPw=async(pw,salt)=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+pw)))].map(x=>x.toString(16).padStart(2,'0')).join('');
 
@@ -416,7 +417,7 @@ function scanner(first,{action='Save'}={}){return new Promise(resolve=>{
   cv.onpointerdown=e=>{const a=pt(e);let bi=-1,bd=1e9;ed.q.forEach((c,i)=>{const d=SC.dist(c,a);if(d<bd){bd=d;bi=i}});if(bd<p.px.width/cv.getBoundingClientRect().width*60){drag=bi;cv.setPointerCapture(e.pointerId);e.preventDefault()}};
   cv.onpointermove=e=>{if(drag<0)return;ed.q[drag]=pt(e);paint()};cv.onpointerup=cv.onpointercancel=()=>{drag=-1}}
  function paint(){const{cv,sc,src,q}=ed,x=cv.getContext('2d');x.drawImage(src,0,0,cv.width,cv.height);x.beginPath();x.rect(0,0,cv.width,cv.height);x.moveTo(q[0].x*sc,q[0].y*sc);for(let i=1;i<4;i++)x.lineTo(q[i].x*sc,q[i].y*sc);x.closePath();x.fillStyle='rgba(14,24,38,.55)';x.fill('evenodd');
-  x.beginPath();q.forEach((c,i)=>i?x.lineTo(c.x*sc,c.y*sc):x.moveTo(c.x*sc,c.y*sc));x.closePath();x.lineWidth=Math.max(2,cv.width/250);x.strokeStyle='#3fb3b0';x.stroke();
+  x.beginPath();q.forEach((c,i)=>i?x.lineTo(c.x*sc,c.y*sc):x.moveTo(c.x*sc,c.y*sc));x.closePath();x.lineWidth=Math.max(2,cv.width/250);x.strokeStyle='#7FA9A1';x.stroke();
   const r=Math.max(10,cv.width/40);q.forEach(c=>{x.beginPath();x.arc(c.x*sc,c.y*sc,r,0,7);x.fillStyle='#fff';x.fill();x.lineWidth=r/3;x.strokeStyle='#1f8a8a';x.stroke()})}
  ov.addEventListener('click',async e=>{const b=e.target.closest('[data-x]');if(!b)return;const a=b.dataset.x,p=pages[cur];
   if(a==='close')return close(null);
@@ -820,12 +821,15 @@ const DAYN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const freqText=m=>(m.freq||'daily')==='daily'?'Every day':'Weekly on '+(m.days||[]).map(i=>DAYN[i]).join(', ');
 const histOf=()=>Object.entries(S.doses).filter(([,s])=>!s.startsWith('Snoozed')).map(([k,s])=>{const[id,t,d]=k.split('@');const m=S.meds.find(x=>String(x.id)===id);return m?{k,name:m.name,t,d,s}:null}).filter(Boolean).sort((a,b)=>(b.d+b.t).localeCompare(a.d+a.t));
 function histSection(){const h=histOf().slice(0,12);return `<section class="card p-5"><h2 class="text-xl">Dose history</h2>${h.length?`<ul class="mt-3 divide-y divide-[var(--line)] text-sm">${h.map(x=>`<li class="py-2 flex justify-between gap-3"><span>${esc(x.d)} ${esc(x.t)} · ${esc(x.name)}</span><span class="flex items-center gap-2"><span class="tag">${esc(x.s)}</span><button class="btn" data-d="${x.k}|Undo">Undo</button></span></li>`).join('')}</ul>`:'<p class="mt-3 text-[var(--mute)]">Taken and skipped doses are listed here. You can undo a mistake.</p>'}</section>`}
+/* How much of the health profile is filled in, with a link to finish it. Hidden once complete and for sample data. */
+function profileCard(){if(S.sample)return'';const F=[['name','name'],['dob','date of birth'],['height','height'],['weight','weight'],['blood','blood group'],['allergies','allergies']],miss=F.filter(([k])=>!String(S.profile[k]||'').trim());if(!miss.length)return'';const done=F.length-miss.length;
+ return`<section class="card p-5 flex flex-wrap items-center gap-4" id="profcard"><div class="flex-1" style="min-width:12rem"><h2 class="text-xl">Your health profile</h2><p class="text-sm text-[var(--mute)] mt-1">${done} of ${F.length} details added. Still to add: ${miss.map(x=>x[1]).join(', ')}.</p><div class="mt-3 meter" role="progressbar" aria-label="Health profile completeness" aria-valuemin="0" aria-valuemax="${F.length}" aria-valuenow="${done}"><div style="width:${Math.round(done/F.length*100)}%"></div></div></div><button class="btn" data-nav="health">Complete profile</button></section>`}
 function homeView(){
  const nm=esc((S.profile.name||'').split(' ')[0]),d=today(),rec=[...S.reports].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,3);
  const due=S.meds.filter(m=>isOn(m,d)).flatMap(m=>m.times.map(t=>({m,t,k:m.id+'@'+t+'@'+d}))).filter(x=>!S.doses[x.k]||S.doses[x.k].startsWith('Snoozed')).sort((a,b)=>a.t.localeCompare(b.t)).slice(0,4);
  const hist=histOf().slice(0,4),first=!S.reports.length&&!S.meds.length&&!S.sample;
- return wrap(`<div class="flex flex-wrap items-end justify-between gap-3"><h1 class="text-4xl">Hello${nm?', '+nm:''}.</h1><button class="btn pri" data-add="1">Add health record</button></div><div class="flex flex-wrap gap-2"><button class="chip" data-nav="medicines">Add a medicine</button><button class="chip" data-nav="chat">Ask the assistant</button><button class="chip" data-nav="health">Health timeline</button></div><form id="hs" class="flex gap-2"><input class="inp" name="hq" placeholder="Search your saved records" aria-label="Search your saved records" maxlength="80"><button class="btn">Search</button></form>`+
- (first?`<div class="card p-6"><h2 class="text-xl">Start your health memory</h2><ol class="mt-3 space-y-2 text-sm text-[var(--mute)] list-decimal pl-5"><li>Upload a text-based PDF report. Doctine reads it in your browser.</li><li>Check the values it found, fix anything wrong, then confirm.</li><li>Ask questions that point back to the saved report.</li></ol><p class="text-xs text-[var(--mute)] mt-3">Your account starts empty. Nothing here is sample data.</p></div>`:'')+
+ return wrap(`<div class="flex flex-wrap items-end justify-between gap-3"><h1 class="text-4xl">Hello${nm?', '+nm:''}.</h1><button class="btn pri" data-add="1">Add health record</button></div><div class="flex flex-wrap gap-2"><button class="chip" data-nav="medicines">Add a medicine</button>${aiOff()?'':'<button class="chip" data-nav="chat">Ask the assistant</button>'}<button class="chip" data-nav="health">Health timeline</button></div><form id="hs" class="flex gap-2"><input class="inp" name="hq" placeholder="Search your saved records" aria-label="Search your saved records" maxlength="80"><button class="btn">Search</button></form>`+
+ (profileCard())+(first?`<div class="card p-6"><h2 class="text-xl">Start your health memory</h2><ol class="mt-3 space-y-2 text-sm text-[var(--mute)] list-decimal pl-5"><li>Upload a text-based PDF report. Doctine reads it in your browser.</li><li>Check the values it found, fix anything wrong, then confirm.</li>${aiOff()?'<li>Add your medicines and complete your health profile.</li>':'<li>Ask questions that point back to the saved report.</li>'}</ol><p class="text-xs text-[var(--mute)] mt-3">Your account starts empty. Nothing here is sample data.</p></div>`:'')+
  `<div class="grid md:grid-cols-2 gap-4"><section class="card p-5"><h2 class="text-xl">Recent records</h2>${rec.length?`<ul class="mt-3 divide-y divide-[var(--line)]">${rec.map(r=>`<li class="py-3"><div class="font-medium">${esc(r.title)}</div><div class="text-sm text-[var(--mute)]">${esc(r.date||'Date missing')} · ${esc(r.lab||'Provider not recorded')}</div></li>`).join('')}</ul><button class="underline text-sm mt-3" data-nav="reports">All reports</button>`:'<p class="mt-3 text-[var(--mute)]">No records yet.</p>'}</section>
  <section class="card p-5"><h2 class="text-xl">Today’s medicines</h2>${due.length?`<ul class="mt-3 divide-y divide-[var(--line)]">${due.map(({m,t})=>`<li class="py-3 flex justify-between"><div><div class="font-medium">${esc(m.name)}</div><div class="text-sm text-[var(--mute)]">${esc(m.dose)}</div></div><span class="serif text-lg">${esc(t)}</span></li>`).join('')}</ul>`:`<p class="mt-3 text-[var(--mute)]">${S.meds.length?'Nothing left to log today.':'No medicines added yet.'}</p>`}<button class="underline text-sm mt-3" data-nav="medicines">${S.meds.length?'Open medicines':'Add a medicine'}</button></section></div>
  <section class="card p-5"><h2 class="text-xl">Recent activity</h2>${hist.length||rec.length?`<ul class="mt-3 text-sm space-y-2">${hist.map(x=>`<li>${esc(x.s)}: ${esc(x.name)} at ${esc(x.t)} on ${esc(x.d)}</li>`).join('')}${rec.map(r=>`<li>Saved record: ${esc(r.title)}</li>`).join('')}</ul>`:'<p class="mt-3 text-[var(--mute)]">Your saved records and dose log will show here.</p>'}</section>`)}
@@ -1019,8 +1023,8 @@ async function notify(title,body){try{if(!('Notification' in window)||Notificati
 function render(){
  const authed=S.email||S.sample||S.guest;$('#auth').classList.toggle('hidden',!!authed);$('#app').classList.toggle('hidden',!authed);
  if(!authed){$('#auth').innerHTML=authView();abObserve();return}
- $('#nav').innerHTML=NAV.map(([k,l,i])=>`<button class="nav ${S.view===k?'on':''}" data-nav="${k}" ${S.view===k?'aria-current="page"':''}><span>${i}</span>${l}${k==='family'?'<span class="tag ml-auto">Soon</span>':''}</button>`).join('');
- $('#ttl').textContent=(NAV.find(n=>n[0]===S.view)||[])[1];$('#who').innerHTML=S.sample?'Sample data':S.guest?'Not signed in':`${esc(S.email)}<span class="tag" style="display:inline-block;margin-top:.25rem;${S.cloud?'':'background:var(--warnbg);color:var(--warntx)'}">${S.cloud?'Doctine account':'Demo · this browser only'}</span>`;
+ $('#nav').innerHTML=NAV.map(([k,l,i])=>`<button class="nav ${S.view===k?'on':''}" data-nav="${k}" ${S.view===k?'aria-current="page"':''}><span class="navi">${NAVI[i]||''}</span>${l}</button>`).join('');
+ $('#ttl').textContent=(NAV.find(n=>n[0]===S.view)||[,S.view==='family'?'Family':''])[1];$('#who').innerHTML=S.sample?'Sample data':S.guest?'Not signed in':`${esc(S.email)}<span class="tag" style="display:inline-block;margin-top:.25rem;${S.cloud?'':'background:var(--warnbg);color:var(--warntx)'}">${S.cloud?'Doctine account':'Demo · this browser only'}</span>`;
  $('#banner').innerHTML=bannerHTML();
  const V={home:homeView,chat:chatView,health:healthView,reports:reportsView,medicines:medsView,reminders:remView,family:soon,about:aboutView,settings:setView}[S.view];
  const v=$('#view'),ae=document.activeElement,fk=ae&&v.contains(ae)&&(ae.id?'#'+CSS.escape(ae.id):['p','uf','mt'].map(k=>ae.dataset&&ae.dataset[k]!==undefined?`[data-${k}="${CSS.escape(ae.dataset[k])}"]`:'').find(Boolean)),fsel=fk&&typeof ae.selectionStart==='number'?[ae.selectionStart,ae.selectionEnd]:null;

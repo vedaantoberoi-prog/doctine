@@ -16,6 +16,10 @@ await pg.goto(BASE + "/index.html"); await pg.waitForTimeout(400);
 // account
 await pg.click("[data-auth=register]"); await pg.fill("input[name=name]", "Ravi"); await pg.fill("input[name=email]", "ravi@example.com"); await pg.fill("input[name=pw]", "password123"); await pg.check("input[name=ack]"); await pg.click("#rf button.pri"); await pg.waitForTimeout(300);
 check("browser-demo account created when Supabase isn't configured", await pg.evaluate("S.email==='ravi@example.com'&&!S.cloud"));
+const navKeys = await pg.$$eval("#nav [data-nav]", (e) => e.map((x) => x.dataset.nav));
+check("the menu lists only working sections: no Family, which isn't built yet", !navKeys.includes("family") && navKeys.includes("medicines") && navKeys.includes("reminders"), navKeys.join(","));
+check("menu icons are drawn as line icons, not emoji", await pg.$$eval("#nav [data-nav]", (e) => e.every((x) => x.querySelector("svg") && !/\p{Extended_Pictographic}/u.test(x.textContent))));
+check("home shows how much of the health profile is filled in, with a link to finish it", (await pg.textContent("#profcard")).includes("1 of 6 details added") && (await pg.$("#profcard [data-nav=health]")) !== null);
 // A/B: chat without any reports, then a follow-up
 await pg.evaluate("go('chat')"); await pg.fill("#ci", "I have a headache"); await pg.click("#cf button.pri"); await pg.waitForTimeout(400);
 check("general chat works with no reports or profile", chatBodies[0] && chatBodies[0].context === null && chatBodies[0].messages.length === 1, JSON.stringify(chatBodies[0]).slice(0, 80));
@@ -80,6 +84,11 @@ const wide = [];
 for (const v of ["home", "chat", "health", "reports", "medicines", "reminders", "family", "about", "settings"]) { await pg.evaluate(`go('${v}')`); await pg.waitForTimeout(60);
   if (await pg.evaluate("(()=>{const v=document.querySelector('#view');return document.documentElement.scrollWidth>innerWidth||v.scrollWidth>v.clientWidth+1})()")) wide.push(v); }
 check("no screen scrolls sideways at phone width (390px)", wide.length === 0, wide.join(","));
+const wideAt = [];
+for (const w of [320, 360, 768, 1280]) { await pg.setViewportSize({ width: w, height: 800 });
+  for (const v of ["home", "chat", "health", "reports", "medicines", "reminders", "about", "settings"]) { await pg.evaluate(`go('${v}')`); await pg.waitForTimeout(40);
+    if (await pg.evaluate("(()=>{const v=document.querySelector('#view');return document.documentElement.scrollWidth>innerWidth||v.scrollWidth>v.clientWidth+1})()")) wideAt.push(v + "@" + w); } }
+check("no screen scrolls sideways at 320px, 360px, tablet or desktop width", wideAt.length === 0, wideAt.join(","));
 check("no JavaScript errors on the page", errs.length === 0, errs.join(" | "));
 console.log(results.join("\n"));
 console.log(results.filter((r) => r.startsWith("PASS")).length + "/" + results.length + " passed");

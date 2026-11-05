@@ -36,6 +36,7 @@ await pg.click("[data-auth=register]"); await pg.waitForTimeout(100);
 check("…and on the create-account screen", (await pg.$("#google")) !== null);
 
 await pg.click("#google"); await pg.waitForTimeout(200);
+check("both sign-up agreements ask the person to confirm they are 18 or older, as the terms require", (await pg.textContent("label:has(#gack)")).includes("18 or older") && (await pg.textContent("label:has(input[name=ack])")).includes("18 or older"));
 check("Google needs the same agreement as an email sign-up", (await pg.textContent("#gerr")).includes("Please tick the box") && (await oauthCalls(pg)).length === 0);
 
 await pg.check("#gack"); await Promise.all([pg.waitForNavigation({ timeout: 10000 }), pg.click("#google")]); await pg.waitForTimeout(900);

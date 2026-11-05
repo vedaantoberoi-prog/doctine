@@ -177,6 +177,17 @@ p { margin: 0 0 var(--s4); }
 .med span { color: var(--ink-soft); text-align: right; font-variant-numeric: tabular-nums; }
 .caption { margin-top: var(--s3); font-size: var(--t-xs); color: var(--ink-soft); text-align: center; }
 
+/* ---- Record provenance (mirrors the app's labels) ---- */
+.prov { list-style: none; margin: 0; padding: var(--s2) var(--s5) var(--s4); }
+.prov li { padding: var(--s4) 0; border-bottom: 1px solid var(--line); }
+.prov li:last-child { border-bottom: 0; }
+.prov p { margin: var(--s2) 0 0; font-size: var(--t-sm); color: var(--ink-soft); }
+.pchip { display: inline-block; font: 600 .78rem/1.2 var(--sans); padding: .35rem .65rem; border-radius: var(--r-pill); background: color-mix(in srgb, var(--mist) 55%, var(--surface)); color: var(--ink-strong); }
+.pchip.warn { background: var(--amber-wash); color: var(--amber-ink); }
+.pchip.ok { background: var(--wash); color: var(--link); }
+.ticks .status { margin-left: .35rem; vertical-align: middle; }
+.eyebrow .status { letter-spacing: .02em; text-transform: none; }
+
 /* ---- Vision layers --------------------------------------------------------------------------------------------- */
 .layers { display: grid; gap: var(--s3); }
 .layer { display: grid; grid-template-columns: 1fr; gap: var(--s2); padding: var(--s5); border-radius: var(--r-md); border: 1px solid rgba(216,222,230,.16); background: rgba(255,255,255,.03); }

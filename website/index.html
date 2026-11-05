@@ -98,50 +98,53 @@
     </div>
   </section>
 
-  <!-- 3 · In one place: what works today -->
-  <section class="section" id="platform" aria-labelledby="platform-title">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Available today</p>
-        <h2 id="platform-title">Your records, organised in one private account.</h2>
-        <p>Everything in this section works in Doctine now, on your phone or computer.</p>
+  <!-- 3 · Personal health records -->
+  <section class="section" id="platform" aria-labelledby="records-title">
+    <div class="wrap split">
+      <div>
+        <p class="eyebrow">Your health record <span class="status now" style="margin-left:.5rem;vertical-align:middle">Available now</span></p>
+        <h2 id="records-title">One private record of your health, in date order.</h2>
       </div>
-      <div class="grid three">
-        <article class="feature">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></div>
-          <h3>Add reports and prescriptions</h3>
-          <p>Upload a PDF or photo, or photograph a page with your phone. For text-based PDF lab reports, Doctine finds the values in your browser and you check them before they're saved.</p>
-        </article>
-        <article class="feature">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="16" r="3"/><path d="m20.2 18.2 1.8 1.8"/></svg></div>
-          <h3>Find them again</h3>
-          <p>Records are dated and searchable by title, type, lab or test name, so a report from last year is a few seconds away.</p>
-        </article>
-        <article class="feature">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.5 3.6-5.5 7-5.5s6.2 2 7 5.5"/></svg></div>
-          <h3>Keep a health profile</h3>
-          <p>Date of birth, height, weight, blood group and allergies, entered by you and kept with your records.</p>
-        </article>
-        <article class="feature">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="18" height="6" rx="3"/><path d="M12 9v6"/></svg></div>
-          <h3>List your medicines</h3>
-          <p>Add what your doctor prescribed, with the dose exactly as written, the times you take it, and start and end dates.</p>
-        </article>
-        <article class="feature">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 1.5M9 3h6"/></svg></div>
-          <h3>Dose reminders and history</h3>
-          <p>See today's doses, mark each one taken or skipped, and keep a log. Reminders appear while Doctine is open in your browser; phone notifications aren't available yet.</p>
-        </article>
-        <article class="feature">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></div>
-          <h3>Export or delete, any time</h3>
-          <p>Download a copy of everything in your account, or delete the account and its records from Settings.</p>
-        </article>
+      <div>
+        <p class="lede" style="margin-bottom:var(--s5)">Your profile, reports, prescriptions and medicines live together in one account, so the history a doctor asks about is in one place.</p>
+        <ul class="ticks">
+          <li><strong>A health profile</strong> with date of birth, height, weight, blood group and allergies, entered by you.</li>
+          <li><strong>A timeline</strong> that places each report by the date of the test, not the day you uploaded it.</li>
+          <li><strong>Search</strong> by title, type, lab or test name, on your phone or computer.</li>
+          <li><strong>Export or delete</strong> everything in your account, at any time, from Settings.</li>
+        </ul>
+        <p class="muted small" style="margin-top:var(--s5)">Doctine organises what you add. It doesn't interpret trends, predict conditions or give medical advice.</p>
       </div>
     </div>
   </section>
 
-  <!-- 4 · Understanding (honest status) -->
+  <!-- 4 · Medical documents and prescriptions -->
+  <section class="section" aria-labelledby="docs-title">
+    <div class="wrap split">
+      <div>
+        <p class="eyebrow">Documents and prescriptions</p>
+        <h2 id="docs-title">Every record shows where its details came from.</h2>
+        <p style="margin-top:var(--s5)" class="muted">A lab value you typed and a value software read from a photo shouldn't look the same. In Doctine, they don't.</p>
+      </div>
+      <div>
+        <div class="record" role="img" aria-label="Three ways a record can be labelled: original only; read automatically, not yet checked; checked by you.">
+          <div class="record-top"><b>How records are labelled</b><small>In the app</small></div>
+          <ul class="prov" aria-hidden="true">
+            <li><span class="pchip">Original only</span><p>The photo or PDF is kept exactly as you added it. Add details by hand whenever you like.</p></li>
+            <li><span class="pchip warn">Read automatically · not yet checked</span><p>Once automatic reading is switched on, details read by software stay marked until you compare them with the original and confirm. An uncertain medicine name can't be saved until you've checked it.</p></li>
+            <li><span class="pchip ok">Checked by you</span><p>Values you've confirmed, from a PDF report or after checking a scan. The original stays attached.</p></li>
+          </ul>
+        </div>
+        <ul class="ticks" style="margin-top:var(--s5)">
+          <li>Upload a PDF or photo, or photograph a page with your phone camera. <span class="status now">Available now</span></li>
+          <li>For text-based PDF lab reports, Doctine finds the values in your browser and you confirm them before saving. <span class="status now">Available now</span></li>
+          <li>Reading handwritten and printed photos automatically. <span class="status dev">In development</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · Understanding (honest status) -->
   <section class="section" aria-labelledby="understand-title">
     <div class="wrap split center">
       <div>
@@ -157,26 +160,27 @@
     </div>
   </section>
 
-  <!-- 5 · Over time -->
-  <section class="section" aria-labelledby="time-title">
-    <div class="wrap split center">
+  <!-- 6 · Medicine management -->
+  <section class="section" aria-labelledby="meds-title">
+    <div class="wrap split">
       <div>
-        <p class="eyebrow">Over time</p>
-        <h2 id="time-title">A clearer history, built one record at a time.</h2>
+        <p class="eyebrow">Medicines <span class="status now" style="margin-left:.5rem;vertical-align:middle">Available now</span></p>
+        <h2 id="meds-title">Your medicines, exactly as prescribed.</h2>
       </div>
       <div>
-        <p class="lede" style="margin-bottom:var(--s5)">Each report you add takes its place on your timeline, by the date of the test rather than the day you uploaded it.</p>
+        <p class="lede" style="margin-bottom:var(--s5)">Keep a list of what you take and when, with today's doses in front of you.</p>
         <ul class="ticks">
-          <li>See your reports in order, from the most recent back.</li>
-          <li>Keep confirmed values with the date they were measured.</li>
-          <li>Answer "when did you last test this?" without searching through papers.</li>
+          <li>The dose is stored exactly as you type it. Doctine never calculates, changes or suggests doses.</li>
+          <li>Set the times, every day or on chosen days, with start and end dates.</li>
+          <li>Mark each dose taken or skipped, undo a mistake, and keep a history.</li>
+          <li>Pause a medicine without losing its record.</li>
         </ul>
-        <p class="muted small" style="margin-top:var(--s5)">Doctine organises what you add. It doesn't interpret trends, predict conditions or give medical advice.</p>
+        <p class="muted small" style="margin-top:var(--s5)">Reminders appear while Doctine is open in your browser; phone notifications aren't available yet. A reminder is a schedule you set, not medical advice.</p>
       </div>
     </div>
   </section>
 
-  <!-- 6 · Families (honest) -->
+  <!-- 7 · Families (honest) -->
   <section class="section" aria-labelledby="family-title">
     <div class="wrap split">
       <div>
@@ -197,7 +201,7 @@
     </div>
   </section>
 
-  <!-- 7 · Privacy -->
+  <!-- 8 · Privacy -->
   <section class="band section" aria-labelledby="privacy-title">
     <div class="wrap split">
       <div>
@@ -215,7 +219,7 @@
     </div>
   </section>
 
-  <!-- 8 · Vision -->
+  <!-- 9 · Vision -->
   <section class="section" aria-labelledby="vision-title">
     <div class="wrap">
       <div class="section-head">
@@ -233,7 +237,7 @@
     </div>
   </section>
 
-  <!-- 9 · Final call to action -->
+  <!-- 10 · Final call to action -->
   <section class="section" aria-labelledby="start-title">
     <div class="wrap">
       <div class="callout split center">

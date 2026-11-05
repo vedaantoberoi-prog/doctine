@@ -44,7 +44,7 @@ await pg.fill("input[name=pw]", "kavya-pass-123"); await pg.click("#lf button.pr
 check("login works after sign-out", await pg.evaluate("S.email==='kavya.test@example.com'"));
 
 // ---------- navigation ----------
-const views = { home: "Hello", chat: "What would you like help understanding", health: "My Health", reports: "Reports", medicines: "Medicines", reminders: "Reminders", about: "Health is more than a collection of reports.", settings: "Settings" };
+const views = { home: "Hello", chat: "What would you like help understanding", health: "My Health", reports: "Medical records", medicines: "Medicines", reminders: "Reminders", about: "Health is more than a collection of reports.", settings: "Settings" };
 let navOk = true, bad = [];
 for (const [v, expect] of Object.entries(views)) { await pg.click(`#nav [data-nav=${v}]`); await W(80); if (!(await text()).includes(expect)) { navOk = false; bad.push(v); } }
 check("every menu item opens its screen", navOk, bad.join(","));

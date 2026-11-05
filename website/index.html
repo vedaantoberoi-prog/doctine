@@ -68,6 +68,8 @@
   :root[data-theme="dark"] .btn { background: var(--teal); color: #0b1626; }
   .btn:hover { filter: brightness(1.15); }
   .note { color: var(--ink-soft); font-size: .95rem; }
+  .ghost { font-weight: 700; color: var(--navy); text-decoration: none; border-bottom: 2px solid var(--teal); padding-bottom: 2px; }
+  .note.beta { margin: 1.1rem 0 0; max-width: 34rem; }
 
   /* The transformation */
   .turn { position: relative; min-height: 25rem; }
@@ -149,7 +151,7 @@
 <header class="top">
   <div class="wrap">
     <a class="brand" href="/">Doc<span>tine</span></a>
-    <a class="app-link" href="/app-preview/">Try the preview</a>
+    <a class="app-link" href="https://app.doctine.com/">Sign in</a>
   </div>
 </header>
 
@@ -160,9 +162,10 @@
         <h1>Your family's health records, finally readable.</h1>
         <p class="lede">Photograph a prescription or lab report, even a handwritten one, and Doctine turns it into a clear record you can find again. Your medicines come with reminders, for you and the people you look after.</p>
         <div class="actions">
-          <a class="btn" href="/app-preview/">Try the app preview</a>
-          <span class="note">Explore it with made-up sample records. The full app opens soon at app.doctine.com.</span>
+          <a class="btn" href="https://app.doctine.com/">Create your free account</a>
+          <a class="ghost" href="/app-preview/">Or try it with sample records</a>
         </div>
+        <p class="note beta">Sign up with your email or Google. Your records, medicines and health profile are saved to your own private account. The AI assistant and scanner are being checked by doctors and will switch on soon.</p>
       </div>
 
       <div class="turn" role="img" aria-label="A handwritten prescription beside the same prescription shown as a clear record in Doctine, with a dose reminder.">
@@ -214,7 +217,7 @@
         <div>
           <h2 id="try-title">See it with sample records</h2>
           <p>The preview is the real Doctine app, filled with a made-up patient's reports, medicines and health profile. Open the medical timeline, read a report, check today's medicines and browse the health profile. Nothing you change is saved, and nothing leaves your browser.</p>
-          <p class="note">The AI assistant and the scanner are switched off in the preview. They open with the app.</p>
+          <p class="note">Ready for your own records? <a href="https://app.doctine.com/">Create a free account</a>.</p>
         </div>
         <a class="btn" href="/app-preview/">Open the preview</a>
       </div>

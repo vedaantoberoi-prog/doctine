@@ -21,7 +21,7 @@
     "smoke": "node tools/smoke-check.mjs",
     "build:preview": "node tools/build-preview.mjs",
     "test:gates": "node tests/release-gates.test.mjs",
-    "test:tools": "node tests/netlify-guard.test.mjs"
+    "test:tools": "node tests/netlify-guard.test.mjs && node tests/cloudflare-adapter.test.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",

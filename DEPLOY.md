@@ -323,3 +323,24 @@ Site ids and addresses are not secrets. They are repository variables so that ev
 | Gate 7: "sign-off is for commit …" / "commit is missing" | the sign-off must name the full evaluated commit from the top of `medical-eval.md`. |
 | Gate 7: "review date … is before the evaluation ran" / "in the future" / "not a valid date" | use the actual review date as YYYY-MM-DD. |
 | Release: "code changed since staging verified" | something besides `docs/medical-review/` was merged after that Staging run. Use the newer Staging run, which needs its own review. |
+
+## 15. Running the app on Cloudflare Pages
+
+The same app and server functions also run on Cloudflare Pages (free plan, commercial use allowed), so the app doesn't depend on Netlify's deploy credits.
+
+- `functions/api/[[path]].js` routes `/api/config`, `/api/account`, `/api/chat` and `/api/scan` to the handlers in `netlify/functions/`. It copies Cloudflare's settings into `process.env` and takes the visitor's IP from `cf-connecting-ip`. Tests: `tests/cloudflare-adapter.test.mjs`.
+- `wrangler.toml` sets the output folder (`public`) and the `nodejs_compat` flag (needed for `process` and `node:crypto`).
+- Build command: `node tools/cloudflare-build.mjs`. It runs the server tests, stamps `public/version.json` with the commit, and writes `public/_headers` (the same security headers as `netlify.toml`).
+- **Production branch: `app-release`, not `main`.** Moving `app-release` to a commit is the release step, so pushes to `main` never reach real users by themselves. Switch off preview deployments for other branches.
+- **Settings** (Cloudflare → the Pages project → Settings → Variables and secrets, Production). Use the production values from section 2:
+  - `DOCTINE_ENV=production`
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY` (secret)
+  - `RATE_LIMIT_SECRET` (secret)
+  - `RATE_LIMIT_REQUIRE_SHARED=true`
+  - `AI_DAILY_REQUEST_CAP`
+  - `AUTH_GOOGLE=true`
+  - `ANTHROPIC_API_KEY` (secret), only once the medical evaluation and clinician sign-off are done. Without it, chat and scanning say the assistant isn't available yet, and emergencies still get the fixed 112 guidance.
+  - Never set `EVAL_ACCESS_TOKEN` here.
+

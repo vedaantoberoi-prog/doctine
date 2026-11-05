@@ -8,3 +8,4 @@ playwright-report/
 .build-check/
 !.env.example
 public/version.json
+public/_headers

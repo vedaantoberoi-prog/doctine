@@ -61,6 +61,7 @@ for (const doc of ["DEPLOY.md", "tests/browser/README.md"]) {
     const p = m[1];
     if (p.includes("*") || p.includes("<")) continue;
     if (p === "public/version.json") continue; // written at deploy time by the staging and release workflows
+    if (p === "public/_headers") continue; // written at build time by tools/cloudflare-build.mjs
     need(existsSync(join(root, p)), `${doc} mentions ${p}, which exists`);
   }
 }

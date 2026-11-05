@@ -72,6 +72,9 @@ jobs:
       - name: Deploy guard tests (simulated Netlify, offline)
         if: always()
         run: node tests/netlify-guard.test.mjs
+      - name: Cloudflare Pages adapter tests (offline)
+        if: always()
+        run: node tests/cloudflare-adapter.test.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: report-backend, path: reports/, if-no-files-found: warn, retention-days: 30 }

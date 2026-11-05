@@ -1,0 +1,6 @@
+# Doctine on Cloudflare Pages (the app at app.doctine.com while Netlify isn't used for it).
+# Build command: node tools/cloudflare-build.mjs   ·   Output: public   ·   Functions: functions/ (routes /api/*)
+name = "doctine-app"
+pages_build_output_dir = "public"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]

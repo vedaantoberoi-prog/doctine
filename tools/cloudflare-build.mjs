@@ -10,12 +10,16 @@ execFileSync(process.execPath, ["tests/functions.test.mjs"], { stdio: "inherit" 
 const sha = process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || "";
 if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error("no commit id to stamp (CF_PAGES_COMMIT_SHA)");
 writeFileSync("public/version.json", JSON.stringify({ commit: sha }) + "\n");
+// Scripts only from this site and the two libraries' CDNs. This also keeps out anything a host injects into pages, such
+// as an analytics beacon: the privacy policy says Doctine collects no analytics.
+const CSP = "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
 writeFileSync("public/_headers", `/*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=()
   X-Frame-Options: DENY
   Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: ${CSP}
 /api/*
   Cache-Control: no-store
 /version.json

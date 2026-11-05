@@ -9,3 +9,4 @@ playwright-report/
 !.env.example
 public/version.json
 public/_headers
+.qa/

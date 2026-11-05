@@ -26,6 +26,7 @@ const SUITES = [
   ["app", "tests/browser/app.test.mjs", "API responses simulated in the browser"],
   ["google", "tests/browser/google.test.mjs", "Google sign-in; Supabase simulated with ownership rules"],
   ["preview", "tests/browser/preview.test.mjs", "the website's app preview, served as static files"],
+  ["website", "tests/browser/website.test.mjs", "the doctine.com website: shared layout, links, honest labels, 320px to desktop"],
 ];
 const results = [];
 for (const [name, file, kind] of SUITES) {

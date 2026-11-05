@@ -49,8 +49,9 @@ jobs:
           [ "$branch" = "main" ] || { echo "::error::run $RUN was not on main"; exit 1; }
           [ "$concl" = "success" ] || { echo "::error::run $RUN did not succeed ($concl)"; exit 1; }
           git merge-base --is-ancestor "$sha" "$GITHUB_SHA" || { echo "::error::$sha is not an ancestor of $GITHUB_SHA"; exit 1; }
-          # Only clinician sign-off records may be added on top of the commit that staging verified.
-          changed="$(git diff --name-only "$sha" "$GITHUB_SHA" | grep -v '^docs/medical-review/' || true)"
+          # Only files that can't change the deployed app may be added on top of the commit that staging verified:
+          # clinician sign-off records, the separately hosted website, README.md and DEPLOY.md (same list as Staging's paths-ignore).
+          changed="$(git diff --name-only "$sha" "$GITHUB_SHA" | grep -vE '^(docs/medical-review/|website/|README\.md$|DEPLOY\.md$)' || true)"
           [ -z "$changed" ] || { echo "::error::code changed since staging verified $sha:"; echo "$changed"; exit 1; }
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4

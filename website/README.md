@@ -6,14 +6,14 @@ The public website at https://doctine.com: a static page about Doctine, plus `ap
 
 | What | Where |
 |---|---|
-| Website (this folder) | Netlify site `dancing-licorice-19e837`, domains `doctine.com` and `www.doctine.com` |
+| Website (this folder) | Cloudflare Pages project `doctine-website` (https://doctine-website.pages.dev), domains `doctine.com` and `www.doctine.com` |
 | App, production | Netlify site `stately-macaron-a8b141`, domain `app.doctine.com` (a "coming soon" placeholder until the first release) |
 | App, staging | Netlify site `doctine-staging`, https://doctine-staging.netlify.app |
 
-DNS for doctine.com is managed at Hostinger: `A @ 75.2.60.5` and `CNAME www` point to the website, and `CNAME app` points to the production app site. The MX and Google verification records are for email and must stay.
+DNS for doctine.com is managed at **Cloudflare** (nameservers `etta.ns.cloudflare.com` and `west.ns.cloudflare.com`, set at Hostinger, where the domain stays registered). `doctine.com` and `www` point to the Cloudflare Pages project (proxied); `app` is a DNS-only CNAME to the production Netlify site (keep it DNS-only so Netlify can renew its certificate); the MX, Google verification and `subdomain-owner-verification` records must stay.
 
 ## Updating the website
 
-The website is not built or deployed by the workflows. After changing the app, run `node tools/build-preview.mjs`. To publish, zip the contents of this folder (`index.html`, `_headers` and `app-preview/`), open the website's Netlify site → Deploys, and drop the zip onto the upload area.
+The website is not built or deployed by the workflows. After changing the app, run `node tools/build-preview.mjs`. To publish, zip the contents of this folder (`index.html`, `_headers`, `privacy/`, `terms/` and `app-preview/`), open Cloudflare → Workers & Pages → `doctine-website` → **Create deployment**, and upload the zip. Cloudflare Pages' free plan allows 500 deploys a month, so publishing the website doesn't use Netlify credits.
 
 Keep the page honest: no clinical claims, no invented reviews, and keep the safety notice (112, Tele-MANAS 14416).

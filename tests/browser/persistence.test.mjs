@@ -35,6 +35,15 @@ await pg.waitForTimeout(1500);
 const t1 = await pg.evaluate(() => window.__sbdb.tables);
 check("profile saved to the account", t1.health_profiles?.[0]?.blood_group === "A+" && t1.health_profiles[0].allergies === "Sulfa" && t1.health_profiles[0].height_cm == 158);
 check("report and its AI reading saved", t1.documents?.[0]?.extraction?.lab_results?.[0]?.test === "HbA1c");
+// where the details came from: read automatically until the person checks them; the AI reading itself is never altered
+await pg.evaluate("go('reports')"); await pg.waitForTimeout(150);
+check("a scanned record says its details were read automatically and aren't checked yet", (await pg.textContent("#view")).includes("Read automatically · not yet checked") && (await pg.textContent("#view")).includes("Original photo kept") && t1.documents[0].source === "scan");
+const ex0 = JSON.stringify(t1.documents[0].extraction);
+await pg.click("[data-redit]"); await pg.waitForTimeout(150);
+check("checking opens the details with a note to compare them with the original", (await pg.textContent("#view")).includes("Compare each one with the original"));
+await pg.click("#ucf"); await pg.waitForTimeout(1500);
+const d1 = (await pg.evaluate(() => window.__sbdb.tables.documents))[0];
+check("once checked, the record says so and the account stores it, with the AI reading unchanged", (await pg.textContent("#view")).includes("Details checked by you") && d1.source === "manual" && JSON.stringify(d1.extraction) === ex0, d1.source);
 check("medicines, weekly schedule and paused status saved", t1.medicines?.length === 2 && t1.medication_schedules.some((s) => s.frequency === "weekly" && s.days_of_week.join() === "0") && t1.medicines.some((m) => m.status === "paused"));
 check("dose history saved", t1.dose_events?.length === 2);
 // chats: not saved while the switch is off
@@ -76,6 +85,7 @@ await pg.fill("input[name=email]", "meera@example.com"); await pg.fill("input[na
 const s2 = await pg.evaluate("({p:S.profile,r:S.reports.map(r=>({t:r.title,f:r.fields,x:!!(r.scan&&r.scan.lab_results)})),m:S.meds.map(m=>({n:m.name,f:m.freq,d:m.days,t:m.times,s:m.status||'active'})),d:Object.values(S.doses).sort(),h:S.consent.history})");
 check("profile arrives on the new device", s2.p.name === "Meera" && s2.p.blood === "A+" && s2.p.allergies === "Sulfa" && s2.p.dob === "1979-03-02");
 check("report with its extracted results arrives", s2.r.length === 1 && s2.r[0].x && Object.keys(s2.r[0].f).includes("HbA1c"));
+check("the 'checked by you' status arrives on the new device", await pg.evaluate("S.reports[0].checked===true&&provOf(S.reports[0]).k==='ok'"));
 check("medicines with schedules and status arrive", s2.m.length === 3 && s2.m.some((m) => m.f === "weekly" && m.d.join() === "0" && m.t.join() === "09:00") && s2.m.some((m) => m.n === "Telma 40" && m.s === "paused"));
 check("dose history arrives", s2.d.join() === "Skipped,Taken");
 check("the chat-saving choice arrives", s2.h === true);

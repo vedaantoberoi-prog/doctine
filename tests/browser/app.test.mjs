@@ -57,6 +57,8 @@ check("original photo and cleaned page are both kept", keys.some((k) => k.starts
 await pg.evaluate("go('reports')"); await pg.waitForTimeout(300);
 check("scanned record shows what was read, with confidence and unreadable parts", (await pg.textContent("#view")).includes("What Doctine read") && (await pg.textContent("#view")).includes("Couldn’t read: line 3"));
 check("lab result from the scan is saved as a field", await pg.evaluate("S.reports[0].fields.Hb==='11.4 g/dL (ref 12-15.5)'"));
+check("the scanned record is marked as read automatically, with a button to check it", (await pg.textContent("#view")).includes("Read automatically · not yet checked") && (await pg.textContent("[data-redit]")).trim() === "Check details");
+check("the menu names say what each area is", JSON.stringify(await pg.$$eval("#nav [data-nav]", (e) => e.map((x) => x.textContent.trim()))) === JSON.stringify(["Overview", "My Health", "Medical records", "Medicines", "Reminders", "AI Assistant", "About", "Settings"]));
 await pg.click("[data-vs]"); await pg.waitForTimeout(300); await pg.click(".scanov [data-k=orig]"); await pg.waitForTimeout(400);
 check("viewer can switch to the original photo", await pg.evaluate("(()=>{const i=document.querySelector('.scanov img');return !!(i&&i.src.startsWith('blob:'))})()"));
 await pg.click(".scanov [data-k=x]");

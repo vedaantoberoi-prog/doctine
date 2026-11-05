@@ -44,6 +44,14 @@ check("checking opens the details with a note to compare them with the original"
 await pg.click("#ucf"); await pg.waitForTimeout(1500);
 const d1 = (await pg.evaluate(() => window.__sbdb.tables.documents))[0];
 check("once checked, the record says so and the account stores it, with the AI reading unchanged", (await pg.textContent("#view")).includes("Details checked by you") && d1.source === "manual" && JSON.stringify(d1.extraction) === ex0, d1.source);
+// a text-PDF report: the values the person confirms are saved, and the original PDF is kept beside them
+await pg.evaluate(() => { const f = new File(["%PDF-1.4\n% Doctine test report\n"], "cbc.pdf", { type: "application/pdf" });
+  S.upload = { name: f.name, status: "review", rows: [{ k: "Hemoglobin", v: "13.1 g/dL (ref 12–15.5)" }], title: "Complete blood count", date: "2026-10-30", lab: "City Lab", cat: "Lab report", text: "", warns: [], img: null, file: f }; go("reports"); });
+await pg.waitForTimeout(100); await pg.click("#ucf"); await pg.waitForTimeout(1600);
+const pdfRec = await pg.evaluate("S.reports.find(r=>r.title==='Complete blood count')");
+const pdfFile = (await pg.evaluate(() => window.__sbdb.tables.document_files || [])).find((f) => f.content_type === "application/pdf");
+check("a confirmed PDF report keeps its original PDF, stored in the person's private folder", pdfRec && pdfRec.orig === "pdf" && pdfFile && pdfFile.kind === "original" && pdfFile.storage_path.startsWith(pdfFile.user_id + "/"), JSON.stringify(pdfFile));
+check("the record says the original PDF is kept and offers to open it", (await pg.textContent("#view")).includes("Original PDF kept") && (await pg.$(`[data-opdf="${pdfRec && pdfRec.id}"]`)) !== null);
 check("medicines, weekly schedule and paused status saved", t1.medicines?.length === 2 && t1.medication_schedules.some((s) => s.frequency === "weekly" && s.days_of_week.join() === "0") && t1.medicines.some((m) => m.status === "paused"));
 check("dose history saved", t1.dose_events?.length === 2);
 // chats: not saved while the switch is off
@@ -69,9 +77,15 @@ await pg.evaluate(() => { window.__failTable = "messages"; }); await pg.evaluate
 check("a chat that couldn't be saved says so", (await pg.textContent("#view")).includes("couldn’t be saved to your account"));
 await pg.evaluate(() => { window.__failTable = null; }); await pg.fill("#ci", "Thanks"); await pg.click("#cf button.pri"); await pg.waitForTimeout(800);
 check("the unsaved exchange is saved with the next message", (await pg.evaluate("window.__sbdb.tables.messages.length")) === 6);
+// account settings: who is signed in, changing the password, and what deleting removes
+await pg.evaluate("go('settings')"); await pg.waitForTimeout(150);
+check("Settings shows which account is signed in", (await pg.textContent("#acct")).includes("Signed in as meera@example.com"));
+await pg.click("#pwmail"); await pg.waitForTimeout(200);
+check("a password-change link can be emailed from Settings", (await pg.textContent("#acct")).includes("We sent a link to meera@example.com"));
+check("before deleting, Settings says exactly what is removed and that it can't be undone", /permanently removes your profile, reports, original documents and photos, medicines, dose history, saved chats/.test(await pg.textContent("#view")) && (await pg.textContent("#view")).includes("export first"));
 // refresh keeps you signed in and everything loads
 await pg.reload(); await pg.waitForTimeout(900);
-check("after a refresh, still signed in with all records", await pg.evaluate("S.cloud&&S.reports.length===1&&S.meds.length===3"));
+check("after a refresh, still signed in with all records", await pg.evaluate("S.cloud&&S.reports.length===2&&S.meds.length===3"));
 // sign out
 await pg.evaluate("document.getElementById('out').click()"); await pg.waitForTimeout(300);
 check("signed out leaves no records on screen", await pg.evaluate("S.email===null&&S.reports.length===0&&S.meds.length===0"));
@@ -84,8 +98,9 @@ check("new device starts signed out with no local records", await pg.evaluate("S
 await pg.fill("input[name=email]", "meera@example.com"); await pg.fill("input[name=pw]", "secret123"); await pg.click("#lf button.pri"); await pg.waitForTimeout(900);
 const s2 = await pg.evaluate("({p:S.profile,r:S.reports.map(r=>({t:r.title,f:r.fields,x:!!(r.scan&&r.scan.lab_results)})),m:S.meds.map(m=>({n:m.name,f:m.freq,d:m.days,t:m.times,s:m.status||'active'})),d:Object.values(S.doses).sort(),h:S.consent.history})");
 check("profile arrives on the new device", s2.p.name === "Meera" && s2.p.blood === "A+" && s2.p.allergies === "Sulfa" && s2.p.dob === "1979-03-02");
-check("report with its extracted results arrives", s2.r.length === 1 && s2.r[0].x && Object.keys(s2.r[0].f).includes("HbA1c"));
-check("the 'checked by you' status arrives on the new device", await pg.evaluate("S.reports[0].checked===true&&provOf(S.reports[0]).k==='ok'"));
+check("report with its extracted results arrives", s2.r.length === 2 && s2.r.some((r) => r.x) && s2.r.some((r) => Object.keys(r.f).includes("HbA1c")));
+check("the 'checked by you' status arrives on the new device", await pg.evaluate("S.reports.some(r=>r.scan&&r.checked===true&&provOf(r).k==='ok')"));
+check("the original PDF arrives on the new device and can be fetched from private storage", await pg.evaluate("(async()=>{const r=S.reports.find(x=>x.orig==='pdf');if(!r)return false;const b=await cloudImage(`orig:${r.id}:0`);return !!(b&&b.size>0)})()"));
 check("medicines with schedules and status arrive", s2.m.length === 3 && s2.m.some((m) => m.f === "weekly" && m.d.join() === "0" && m.t.join() === "09:00") && s2.m.some((m) => m.n === "Telma 40" && m.s === "paused"));
 check("dose history arrives", s2.d.join() === "Skipped,Taken");
 check("the chat-saving choice arrives", s2.h === true);

@@ -20,6 +20,7 @@ writeFileSync("public/_headers", `/*
   X-Frame-Options: DENY
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Content-Security-Policy: ${CSP}
+  X-Robots-Tag: noindex, nofollow
 /api/*
   Cache-Control: no-store
 /version.json

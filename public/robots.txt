@@ -1,0 +1,3 @@
+# The app is private: every page also sends X-Robots-Tag: noindex. Its public home is https://doctine.com
+User-agent: *
+Disallow: /api/

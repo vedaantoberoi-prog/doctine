@@ -6,7 +6,10 @@ name: Staging
 on:
   push:
     branches: [main]
-    paths-ignore: ["docs/medical-review/**"]   # committing a clinician sign-off doesn't change the code under review
+    # Only changes that can affect the deployed app redeploy staging. Each Netlify deploy costs credits (15 of the free
+    # plan's 300 a month), so the website (hosted separately), the docs and clinician sign-offs don't trigger one.
+    # Keep this list identical to the one the Release workflow accepts on top of the staging-verified commit.
+    paths-ignore: ["docs/medical-review/**", "website/**", "README.md", "DEPLOY.md"]
   workflow_dispatch:
 
 permissions:

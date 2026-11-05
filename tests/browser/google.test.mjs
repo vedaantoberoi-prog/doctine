@@ -12,12 +12,12 @@ const results = [], errs = [];
 const check = (name, ok, detail = "") => { const line = (ok ? "PASS " : "FAIL ") + name + (detail ? "  — " + detail : ""); results.push(line); console.log(line); };
 const b = await chromium.launch();
 
-async function device(google) {
+async function device(google, aiAvailable) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
   await ctx.addInitScript({ content: fakeSrc });
   const pg = await ctx.newPage(); pg.on("pageerror", (e) => errs.push(e.message));
   await pg.route("**/*", async (r) => { const u = r.request().url();
-    if (u.endsWith("/api/config")) return r.fulfill({ contentType: "application/json", body: JSON.stringify({ supabaseUrl: "https://x.supabase.co", supabaseAnonKey: "anon", accounts: "supabase", environment: "test", googleSignIn: google }) });
+    if (u.endsWith("/api/config")) return r.fulfill({ contentType: "application/json", body: JSON.stringify({ supabaseUrl: "https://x.supabase.co", supabaseAnonKey: "anon", accounts: "supabase", environment: "test", googleSignIn: google, ...(aiAvailable === undefined ? {} : { aiAvailable }) }) });
     if (u.startsWith(BASE)) return r.continue(); return r.abort(); });
   await pg.goto(BASE + "/index.html"); await pg.waitForTimeout(700);
   return { ctx, pg };
@@ -65,8 +65,27 @@ await pg.evaluate("window.__oauthFail=true"); await pg.check("#gack"); await pg.
 check("if Google sign-in isn't available, the person is told and can use email", (await pg.textContent("#gerr")).includes("isn’t available right now") && !(await pg.isDisabled("#google")));
 await pg.goto(BASE + "/index.html?error=server_error&error_code=unexpected_failure&error_description=Unable+to+exchange+external+code"); await pg.waitForTimeout(900);
 check("a Google error sent back in the query string is explained and removed from the address", (await pg.textContent("#gerr")).includes("didn’t work") && (await pg.evaluate("location.search")) === "", await pg.evaluate("location.search"));
-await pg.goto(BASE + "/index.html?from=google#error=access_denied&error_description=The+user+denied"); // a full page load, as when Google sends the person back await pg.waitForTimeout(900);
+// a full page load, as when Google sends the person back
+await pg.goto(BASE + "/index.html?from=google#error=access_denied&error_description=The+user+denied"); await pg.waitForTimeout(900);
 check("cancelling at Google shows a message and cleans the address", (await pg.textContent("#gerr")).includes("cancelled") && !(await pg.evaluate("location.hash")) && (await pg.$("#gack")) !== null);
+
+await ctx.close();
+
+// before the AI model is switched on, a signed-in person is told up front instead of finding out after asking
+const signIn = async (pg) => { await pg.check("#gack"); await Promise.all([pg.waitForNavigation({ timeout: 10000 }), pg.click("#google")]); await pg.waitForTimeout(900); };
+({ ctx, pg } = await device(true, false)); await signIn(pg);
+await pg.evaluate("go('chat')"); await pg.waitForTimeout(150);
+check("with the AI not switched on yet, chat says so before anyone asks, and still mentions 112", (await pg.$("#aioff")) !== null && /switching on soon/.test(await pg.textContent("#aioff")) && /112/.test(await pg.textContent("#aioff")) && (await pg.$("[data-q]")) === null);
+await pg.evaluate("go('reports')"); await pg.waitForTimeout(100);
+check("…and scanning says pages are saved as photos for now", (await pg.textContent("#view")).includes("Saved as a photo. Automatic reading switches on soon."));
+await pg.evaluate("go('health')"); await pg.waitForTimeout(100);
+check("the health profile says it saves to the account, not this browser", (await pg.textContent("#view")).includes("Saved to your account when you leave a field") && !(await pg.textContent("#view")).includes("Saved in this browser"));
+await pg.evaluate("go('settings')"); await pg.waitForTimeout(100);
+check("no 'demo' wording left in a real account's settings or reminders", !/this demo/i.test(await pg.textContent("#view")) && await pg.evaluate("go('reminders'),!/this demo|Simulate/i.test(document.querySelector('#view').textContent)"));
+await ctx.close();
+({ ctx, pg } = await device(true, true)); await signIn(pg); await pg.evaluate("go('chat')"); await pg.waitForTimeout(150);
+check("with the AI switched on, there's no notice and the example questions are back", (await pg.$("#aioff")) === null && (await pg.$("[data-q]")) !== null);
+await ctx.close();
 
 check("no JavaScript errors", errs.length === 0, errs.join(" | "));
 await b.close();

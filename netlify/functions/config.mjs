@@ -18,7 +18,9 @@ export default async () => {
   // AUTH_GOOGLE=true only after Google is switched on in this Supabase project (Authentication → Sign In / Providers);
   // otherwise the button would send people to an error page.
   const googleSignIn = String(process.env.AUTH_GOOGLE || "").toLowerCase() === "true";
-  return json({ supabaseUrl: url.replace(/\/$/, ""), supabaseAnonKey: anon, accounts: "supabase", environment: env, googleSignIn });
+  // Only whether an AI model is switched on, so the app can say so up front. Never the key itself.
+  const aiAvailable = Boolean(process.env.ANTHROPIC_API_KEY);
+  return json({ supabaseUrl: url.replace(/\/$/, ""), supabaseAnonKey: anon, accounts: "supabase", environment: env, googleSignIn, aiAvailable });
 };
 
 export const config = { path: "/api/config" };

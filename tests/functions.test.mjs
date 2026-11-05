@@ -263,6 +263,13 @@ await test("config offers Google sign-in only when AUTH_GOOGLE is exactly true",
   }
   if (saved === undefined) delete process.env.AUTH_GOOGLE; else process.env.AUTH_GOOGLE = saved;
 });
+await test("config says whether an AI model is switched on, as a yes or no only", async () => {
+  const saved = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY; let j = await (await config(new Request("https://d/api/config"))).json(); assert.strictEqual(j.aiAvailable, false);
+  process.env.ANTHROPIC_API_KEY = "sk-ant-test-not-real"; const raw = await (await config(new Request("https://d/api/config"))).text(); j = JSON.parse(raw);
+  assert.strictEqual(j.aiAvailable, true); assert.ok(!raw.includes("sk-ant"), "the key itself is never sent");
+  if (saved === undefined) delete process.env.ANTHROPIC_API_KEY; else process.env.ANTHROPIC_API_KEY = saved;
+});
 await test("config reports the site environment, and only known names", async () => {
   const saved = process.env.DOCTINE_ENV;
   for (const [v, want] of [["staging", "staging"], ["PRODUCTION", "production"], ["", "unset"], ["prod; drop", "unset"]]) {

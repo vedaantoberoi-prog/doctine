@@ -14,7 +14,7 @@ const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".svg":
 const resolve = (p) => { let f = decodeURIComponent(p.split(/[?#]/)[0]); if (f.endsWith("/")) f += "index.html"; f = normalize(join(root, f)); return f.startsWith(root) && existsSync(f) && statSync(f).isFile() ? f : null; };
 const srv = createServer((q, r) => { const f = resolve(q.url); if (!f) { r.writeHead(404); return r.end("not found"); } r.writeHead(200, { "content-type": types[extname(f)] || "application/octet-stream" }); r.end(readFileSync(f)); }).listen(0);
 const BASE = `http://127.0.0.1:${srv.address().port}`;
-const PAGES = ["/", "/about/", "/medical-safety/", "/privacy/", "/terms/"];
+const PAGES = ["/", "/about/", "/medical-safety/", "/contact/", "/privacy/", "/terms/"];
 
 const results = []; const check = (name, ok, detail = "") => results.push((ok ? "PASS " : "FAIL ") + name + (detail ? "  — " + detail : ""));
 const html = Object.fromEntries(PAGES.map((p) => [p, readFileSync(resolve(p), "utf8")]));
@@ -43,6 +43,11 @@ const banned = [/revolution/i, /AI doctor/i, /guarantee/i, /predict(s|ing)? (eve
 const denied = all.replace(/hasn't been clinically validated|has not been clinically validated/gi, "").replace(/(doesn't|does not|never|not)( [a-z]+){0,3} replace (your )?doctors?/gi, "");
 const found = banned.filter((r) => r.test(denied));
 check("no unsupported claims (medical-device status, guarantees, certifications, family features)", found.length === 0, found.join(" "));
+// search engines and link previews
+check("every page names its canonical address and has a full link preview with an image", PAGES.every((p) => html[p].includes(`<link rel="canonical" href="https://doctine.com${p}">`) && html[p].includes('og:image" content="https://doctine.com/assets/brand/og-image.png"') && html[p].includes('twitter:card')));
+const robots = readFileSync(resolve("/robots.txt"), "utf8"), sitemap = readFileSync(resolve("/sitemap.xml"), "utf8"), notFound = readFileSync(resolve("/404.html"), "utf8");
+check("robots.txt points to the sitemap, and the sitemap lists every public page", /Sitemap: https:\/\/doctine\.com\/sitemap\.xml/.test(robots) && PAGES.every((p) => sitemap.includes(`<loc>https://doctine.com${p}</loc>`)));
+check("a 'page not found' page exists (so unknown addresses aren't served as the homepage), isn't indexed and links home", notFound.includes('name="robots" content="noindex"') && notFound.includes('href="/"') && strip(between(notFound, '<header class="site-head">', "</header>")) === head0);
 check("emergency numbers are on every page", PAGES.every((p) => /call 112/.test(html[p]) && /14416/.test(html[p])));
 
 // in a browser: no sideways scrolling, the menu works on phones, no script errors

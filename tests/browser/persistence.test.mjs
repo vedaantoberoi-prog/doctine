@@ -100,6 +100,11 @@ const s2 = await pg.evaluate("({p:S.profile,r:S.reports.map(r=>({t:r.title,f:r.f
 check("profile arrives on the new device", s2.p.name === "Meera" && s2.p.blood === "A+" && s2.p.allergies === "Sulfa" && s2.p.dob === "1979-03-02");
 check("report with its extracted results arrives", s2.r.length === 2 && s2.r.some((r) => r.x) && s2.r.some((r) => Object.keys(r.f).includes("HbA1c")));
 check("the 'checked by you' status arrives on the new device", await pg.evaluate("S.reports.some(r=>r.scan&&r.checked===true&&provOf(r).k==='ok')"));
+// on a device that has never seen the files, the .zip export fetches the original PDF and the page image from private storage
+await pg.evaluate("go('settings')"); await pg.waitForTimeout(200);
+{ const [dl] = await Promise.all([pg.waitForEvent("download"), pg.click("#expzip")]); const { execFileSync } = await import("node:child_process");
+  const z = JSON.parse(execFileSync("python3", ["-I", "-c", "import zipfile,json,sys;z=zipfile.ZipFile(sys.argv[1]);p=[n for n in z.namelist() if n.endswith('/original.pdf')];print(json.dumps({'bad':z.testzip(),'names':z.namelist(),'pdf':z.read(p[0]).decode('latin-1') if p else '','readme':z.read('README.txt').decode()}))", await dl.path()]).toString());
+  check("on a new device the .zip export includes the original PDF and the page image, fetched from private storage", z.bad === null && z.pdf.startsWith("%PDF-1.4") && z.names.some((n) => /page-1-cleaned\.jpg$/.test(n)) && !z.readme.includes("couldn't be fetched"), z.names.join(" ")); }
 check("the original PDF arrives on the new device and can be fetched from private storage", await pg.evaluate("(async()=>{const r=S.reports.find(x=>x.orig==='pdf');if(!r)return false;const b=await cloudImage(`orig:${r.id}:0`);return !!(b&&b.size>0)})()"));
 check("medicines with schedules and status arrive", s2.m.length === 3 && s2.m.some((m) => m.f === "weekly" && m.d.join() === "0" && m.t.join() === "09:00") && s2.m.some((m) => m.n === "Telma 40" && m.s === "paused"));
 check("dose history arrives", s2.d.join() === "Skipped,Taken");

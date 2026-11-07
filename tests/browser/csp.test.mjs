@@ -32,6 +32,20 @@ check("the app starts under the policy (inline scripts run, sign-in screen shown
 await pg.click("#samp"); await pg.waitForTimeout(300); await pg.evaluate("go('medicines')"); await pg.waitForTimeout(150);
 check("screens still render and respond under the policy", (await pg.textContent("#view")).includes("Medicines"));
 check("a script injected by the host (an analytics beacon) is refused and never runs", beaconHits.length === 0 && blocked.some((u) => /cloudflareinsights/.test(u)) && !(await pg.evaluate("!!window.__beaconRan")), JSON.stringify({ beaconHits, blocked }));
+// PDF reading uses the copy of PDF.js this site serves itself (no CDN), including its worker, under the policy
+const pdfOut = await pg.evaluate(async () => {
+  const objs = ["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    null, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];
+  const stream = "BT /F1 12 Tf 20 150 Td (HbA1c 6.1 %) Tj ET"; objs[3] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+  let pdf = "%PDF-1.4\n"; const offs = [];
+  objs.forEach((o, i) => { offs.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const x = pdf.length; pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map((o) => String(o).padStart(10, "0") + " 00000 n \n").join("") + `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${x}\n%%EOF`;
+  const r = await readPdf(new File([pdf], "t.pdf", { type: "application/pdf" }));
+  const src = document.querySelector('script[src*="pdf.js"]').src;
+  return { text: JSON.stringify(r).slice(0, 400), src, worker: pdfjsLib.GlobalWorkerOptions.workerSrc, version: pdfjsLib.version };
+});
+check("PDF.js is served by this site (no CDN) and reads a PDF with its worker under the policy", pdfOut.src.startsWith(BASE + "/vendor/") && pdfOut.version === "3.11.174" && /HbA1c/.test(pdfOut.text), JSON.stringify(pdfOut));
 check("no JavaScript errors", errs.length === 0, errs.join(" | "));
 await b.close();
 console.log(results.join("\n"));

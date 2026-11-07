@@ -25,5 +25,7 @@ writeFileSync("public/_headers", `/*
   Cache-Control: no-store
 /version.json
   Cache-Control: no-store
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
 `);
 console.log("cloudflare-build: stamped " + sha.slice(0, 12) + " and wrote _headers");

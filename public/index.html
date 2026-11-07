@@ -4,7 +4,7 @@
 <title>Doctine – Your health records</title><meta name="description" content="Sign in to Doctine, your private record of health reports, prescriptions and medicines.">
 <meta name="theme-color" content="#101C2B"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Doctine"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>(function(){try{var t=localStorage.getItem('doctine:theme')||localStorage.getItem('sanora:theme')||'auto';var d=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){}})()</script><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=%220 0 32 32%22 width=%2232%22 height=%2232%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%229%22 fill=%22%23101C2B%22/%3E%3Cpath d=%22M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z%22 fill=%22none%22 stroke=%22%23F3F1EB%22 stroke-width=%222.3%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3Ccircle cx=%2224%22 cy=%227.6%22 r=%222.3%22 fill=%22%238DB5AE%22/%3E%3C/svg%3E">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="vendor/pdfjs-3.11.174/pdf.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--navy:#101C2B;--text:#202A35;--card:#fff;--hover:#EEF1EC;--tealtx:#3F6660;--teal:#527D76;--tealbg:#E3EBE8;--bg:#F3F1EB;--line:#D8DEE6;--mute:#5B6673;--warnbg:#fff6e5;--warnbd:#f1ddb0;--warntx:#6d4a05;--errbg:#fdeeee;--errbd:#f0c4c4;--errtx:#8a2020;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -274,7 +274,7 @@ const hashPw=async(pw,salt)=>[...new Uint8Array(await crypto.subtle.digest('SHA-
 
 /* ---- reading and parsing a PDF, entirely in this browser ---- */
 async function readPdf(file){
- pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+ pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs-3.11.174/pdf.worker.js';
  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
  if(pdf.numPages>30)throw new Error('This PDF has more than 30 pages. The limit here is 30.');
  const pages=[];
@@ -303,7 +303,7 @@ function parseText(pages){
  return{rows,date,lab,cat,title:cat==='Other'?'Medical document':cat+(date?' – '+date:''),warns}}
 let _tess;function loadTess(){return _tess||(_tess=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';s.onload=()=>res(window.Tesseract);s.onerror=()=>{_tess=null;rej(new Error('The text-recognition tool could not load. Check your connection and try again.'))};document.head.appendChild(s)}))}
 async function ocrSource(src,label){const T=await loadTess();S.upload.progress=label+'…';render();const r=await T.recognize(src,'eng',{logger:m=>{if(m.status==='recognizing text'&&S.upload&&S.upload.status==='reading'){const el=$('#ocrp');if(el)el.textContent=label+' '+Math.round(m.progress*100)+'%'}}});return r.data.text||''}
-async function ocrPdf(f){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;const n=Math.min(pdf.numPages,5),pages=[];
+async function ocrPdf(f){pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs-3.11.174/pdf.worker.js';const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;const n=Math.min(pdf.numPages,5),pages=[];
  for(let i=1;i<=n;i++){const pg=await pdf.getPage(i),vp=pg.getViewport({scale:2}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;pages.push(await ocrSource(c,'Reading page '+i+' of '+n))}
  return{pages,cut:pdf.numPages>n}}
 const OCRWARN='Text was read from an image by automatic text recognition, which makes mistakes (for example 1/l, 5/S, decimal points). Check every value against the original before confirming.';
@@ -387,7 +387,7 @@ async function hydrateImgs(){for(const el of document.querySelectorAll('img[data
 /* picks photos: the phone camera (capture) or the photo library */
 function pickFiles(camera,accept){return new Promise(res=>{const i=document.createElement('input');i.type='file';i.accept=accept||'image/jpeg,image/png,image/webp';if(camera)i.setAttribute('capture','environment');else i.multiple=true;
  i.onchange=()=>res([...(i.files||[])]);i.addEventListener('cancel',()=>res([]));i.style.display='none';document.body.appendChild(i);i.click();setTimeout(()=>i.remove(),60000)})}
-async function pdfImages(f,max=3){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise,out=[];
+async function pdfImages(f,max=3){pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs-3.11.174/pdf.worker.js';const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise,out=[];
  for(let i=1;i<=Math.min(pdf.numPages,max);i++){const pg=await pdf.getPage(i),vp0=pg.getViewport({scale:1}),vp=pg.getViewport({scale:Math.min(2.5,1600/Math.max(vp0.width,vp0.height))}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;out.push(await new Promise(r=>c.toBlob(r,'image/jpeg',.85)))}return out}
 
 /* The scanner screen. Resolves with JPEG blobs of the cleaned pages, or null if closed. */

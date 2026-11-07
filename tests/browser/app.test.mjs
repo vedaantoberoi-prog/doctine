@@ -69,6 +69,15 @@ check("records, medicines and doses survive a reload", await pg.evaluate("S.emai
 await pg.evaluate("go('settings')"); await pg.click("#exp2"); await pg.waitForTimeout(200);
 const exp = JSON.parse(await pg.evaluate("S.exp"));
 check("export includes profile, reports, medicines and dose history", exp.reports.length === 1 && exp.medicines.length === 1 && "dose_history" in exp);
+// the .zip download carries the data plus the record's original photo and cleaned page; a separate zip reader (Python's) must accept it
+const [dl] = await Promise.all([pg.waitForEvent("download"), pg.click("#expzip")]);
+const zipPath = await dl.path(); const { execFileSync } = await import("node:child_process");
+const zinfo = JSON.parse(execFileSync("python3", ["-I", "-c", "import zipfile,json,sys;z=zipfile.ZipFile(sys.argv[1]);print(json.dumps({'bad':z.testzip(),'names':z.namelist(),'data':json.loads(z.read('doctine-data.json'))}))", zipPath]).toString());
+check("the .zip download is a valid zip named by date, with the data, a README, and the record's original and cleaned images",
+  /^doctine-export-\d{4}-\d{2}-\d{2}\.zip$/.test(dl.suggestedFilename()) && zinfo.bad === null && zinfo.names.includes("README.txt") && zinfo.data.reports.length === 1 &&
+  zinfo.names.some((n) => /^files\/.+\/page-1-original-photo\.(jpg|png|webp)$/.test(n)) && zinfo.names.some((n) => /^files\/.+\/page-1-cleaned\.jpg$/.test(n)), zinfo.names.join(" "));
+await pg.waitForTimeout(100);
+check("…and Settings confirms what was downloaded", /Downloaded doctine-export-.+ with your data and 2 files/.test(await pg.textContent("#view")));
 pg.once("dialog", (d) => d.accept()); await pg.click("#wipe"); await pg.waitForTimeout(300);
 check("delete removes the account from this browser", await pg.evaluate("!JSON.parse(localStorage.getItem('doctine:v2')).users['ravi@example.com']&&S.email===null"));
 // mobile layouts: no sideways scrolling on any screen

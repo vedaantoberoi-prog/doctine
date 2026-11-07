@@ -10,3 +10,4 @@ playwright-report/
 public/version.json
 public/_headers
 .qa/
+dist/

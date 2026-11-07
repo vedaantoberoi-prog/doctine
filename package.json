@@ -20,6 +20,7 @@
     "build:check": "esbuild netlify/functions/*.mjs --bundle --platform=node --format=esm --target=node20 --outdir=.build-check --log-level=warning",
     "smoke": "node tools/smoke-check.mjs",
     "build:preview": "node tools/build-preview.mjs",
+    "build:direct": "node tools/build-direct.mjs",
     "test:gates": "node tests/release-gates.test.mjs",
     "test:tools": "node tests/netlify-guard.test.mjs && node tests/cloudflare-adapter.test.mjs"
   },

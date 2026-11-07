@@ -301,8 +301,25 @@ function parseText(pages){
  if(rows.length>=2||/reference (range|interval)/i.test(txt))cat='Lab report';else if(/(x-?ray|ultrasound|\bmri\b|ct scan|impression)/i.test(txt))cat='Imaging';else if(/(\brx\b|prescri)/i.test(txt))cat='Prescription';
  if(!rows.length)warns.push('No test results were recognised. Add them yourself if needed.');
  return{rows,date,lab,cat,title:cat==='Other'?'Medical document':cat+(date?' – '+date:''),warns}}
-let _tess;function loadTess(){return _tess||(_tess=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';s.onload=()=>res(window.Tesseract);s.onerror=()=>{_tess=null;rej(new Error('The text-recognition tool could not load. Check your connection and try again.'))};document.head.appendChild(s)}))}
-async function ocrSource(src,label){const T=await loadTess();S.upload.progress=label+'…';render();const r=await T.recognize(src,'eng',{logger:m=>{if(m.status==='recognizing text'&&S.upload&&S.upload.status==='reading'){const el=$('#ocrp');if(el)el.textContent=label+' '+Math.round(m.progress*100)+'%'}}});return r.data.text||''}
+/* Libraries from public CDNs are pinned by fingerprint (SHA-384, checked against several independent copies), so a
+   changed file is refused instead of run. The text-recognition worker and engine are downloaded, checked, then started. */
+const PIN={tess:['https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js','sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F'],
+ tessWorker:['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js','sha384-zxn+VqofFzXpH99dUb3fa4ywoSBQJPy6/6oEaJHPlblZXr53a0g1Jl6720vgSzB7'],
+ tessCoreSimd:['https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-simd-lstm.wasm.js','sha384-YM1G+zaWYy9VSRP2C101LCgzh7n3Hqb6OEm9qDoZYgCADsni3nnECskC3WialQB7'],
+ tessCore:['https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-lstm.wasm.js','sha384-EKWY5JDwphQoyxhvYU7eaCcyQ0EdV6fZK3L2vzfZcv2ichRdNd6pSnyWPNv6fMuR'],
+ supabase:['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js','sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o']};
+const TAMPER='A downloaded component didn’t match its expected fingerprint, so it wasn’t used. Please try again later.';
+async function verifiedURL([url,sri]){const r=await fetch(url,{credentials:'omit'});if(!r.ok)throw new Error('The text-recognition tool could not load. Check your connection and try again.');const b=await r.arrayBuffer();
+ const d='sha384-'+btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-384',b))));if(d!==sri)throw new Error(TAMPER);return URL.createObjectURL(new Blob([b],{type:'text/javascript'}))}
+function pinnedScript([url,sri],onerr){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=url;s.integrity=sri;s.crossOrigin='anonymous';s.onload=res;s.onerror=()=>rej(new Error(onerr));document.head.appendChild(s)})}
+const simdOK=()=>{try{return WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11]))}catch{return false}};
+let _tess;function loadTess(){return _tess||(_tess=(async()=>{
+ if(!window.Tesseract)await pinnedScript(PIN.tess,'The text-recognition tool could not load. Check your connection and try again.');
+ const[workerPath,core]=await Promise.all([verifiedURL(PIN.tessWorker),verifiedURL(simdOK()?PIN.tessCoreSimd:PIN.tessCore)]);
+ return{T:window.Tesseract,workerPath,corePath:core+'#.js'}})().catch(e=>{_tess=null;throw e}))}
+async function ocrSource(src,label){const{T,workerPath,corePath}=await loadTess();S.upload.progress=label+'…';render();
+ const w=await T.createWorker('eng',1,{workerPath,corePath,workerBlobURL:false,logger:m=>{if(m.status==='recognizing text'&&S.upload&&S.upload.status==='reading'){const el=$('#ocrp');if(el)el.textContent=label+' '+Math.round(m.progress*100)+'%'}}});
+ try{const r=await w.recognize(src);return r.data.text||''}finally{w.terminate().catch(()=>{})}}
 async function ocrPdf(f){pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs-3.11.174/pdf.worker.js';const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;const n=Math.min(pdf.numPages,5),pages=[];
  for(let i=1;i<=n;i++){const pg=await pdf.getPage(i),vp=pg.getViewport({scale:2}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;pages.push(await ocrSource(c,'Reading page '+i+' of '+n))}
  return{pages,cut:pdf.numPages>n}}
@@ -483,7 +500,7 @@ async function initCloud(){
  if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.hostname))return false;
  let cfg=null;try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),4000);const r=await fetch(API+'/api/config',{signal:ac.signal}).finally(()=>clearTimeout(t));if(r.ok)cfg=await r.json()}catch{}
  if(!cfg||!cfg.supabaseUrl||!cfg.supabaseAnonKey)return false;
- if(!window.supabase)await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.appendChild(s)}).catch(()=>null);
+ if(!window.supabase)await pinnedScript(PIN.supabase,'load').catch(()=>null);
  if(!window.supabase){toast('Doctine couldn’t load its sign-in service. Check your connection and refresh.');return false}
  CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;CLOUD.ai=cfg.aiAvailable!==false;

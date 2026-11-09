@@ -1,53 +1,57 @@
 name: Website 3D hero (build)
 
-# Builds bolt-3d/ (the 3D scene designed in Bolt) into website/assets/hero3d/hero3d.js and keeps the result as an
-# artifact. It never deploys: the built file is reviewed and committed like any other change.
+# Builds bolt-3d/ (the 3D scene designed in Bolt) into website/assets/hero3d/hero3d.js and commits the result, with
+# any non-breaking security fixes to bolt-3d/package-lock.json, back to the same branch for review. Never on main,
+# and it never deploys. A second run that produces the same files commits nothing, so it doesn't loop.
 on:
   push:
+    branches-ignore: [main]
     paths: ["bolt-3d/**", ".github/workflows/hero3d.yml"]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency: { group: hero3d-${{ github.ref }}, cancel-in-progress: true }
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: bolt-3d
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - name: Install from the committed lockfile
+      - name: Apply non-breaking security fixes to the lockfile
+        working-directory: bolt-3d
+        run: npm audit fix --package-lock-only --no-fund || true
+      - name: Install from the lockfile
+        working-directory: bolt-3d
         run: npm ci --no-audit --no-fund
-      - name: Type check
-        run: npm run typecheck
-      - name: Lint
-        run: npm run lint
-      - name: Updated lockfile with non-breaking security fixes (kept as an artifact to commit)
-        run: |
-          cp package-lock.json /tmp/lock-before.json
-          npm audit fix --package-lock-only --no-fund || true
-          mkdir -p /tmp/lockfix && cp package-lock.json /tmp/lockfix/package-lock.json
-          cp /tmp/lock-before.json package-lock.json
-      - uses: actions/upload-artifact@v4
-        with: { name: lockfix, path: /tmp/lockfix/, retention-days: 30 }
+      - name: Type check and lint
+        working-directory: bolt-3d
+        run: npm run typecheck && npm run lint
       - name: Dependency audit of the whole Bolt project (report only; the website ships just the 3D bundle)
+        working-directory: bolt-3d
         continue-on-error: true
         run: npm audit --audit-level=high --omit=dev
       - name: Build the embed bundle
+        working-directory: bolt-3d
         run: npm run build:embed
       - name: The bundle contains only the 3D scene (no router, no database client, no websockets)
+        working-directory: bolt-3d
         run: |
           for s in react-router supabase realtime-js "new WebSocket" GoTrue; do
             if grep -q "$s" dist-embed/hero3d.js; then echo "::error::hero3d.js contains $s"; exit 1; fi
           done
-      - name: List every web address inside the bundle (reviewed by hand; the scene itself fetches nothing)
-        run: |
           grep -oE "https?://[a-zA-Z0-9./_-]+" dist-embed/hero3d.js | sort | uniq -c | sort -rn || true
           ls -la dist-embed
-      - uses: actions/upload-artifact@v4
-        with: { name: hero3d, path: bolt-3d/dist-embed/, retention-days: 30 }
+      - name: Commit the bundle and lockfile to this branch
+        run: |
+          mkdir -p website/assets/hero3d
+          cp bolt-3d/dist-embed/hero3d.js website/assets/hero3d/hero3d.js
+          git add website/assets/hero3d/hero3d.js bolt-3d/package-lock.json
+          if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "Build website/assets/hero3d/hero3d.js from bolt-3d (${GITHUB_SHA::7})"
+          git push

@@ -171,7 +171,7 @@ p { margin: 0 0 var(--s4); }
 .tl span { display: block; color: var(--ink-soft); font-size: var(--t-xs); }
 .tl time { color: var(--ink-soft); font-size: var(--t-xs); white-space: nowrap; font-variant-numeric: tabular-nums; padding-top: .15rem; }
 .record-meds { border-top: 1px solid var(--line); padding: var(--s4) var(--s5) var(--s5); background: color-mix(in srgb, var(--wash) 45%, var(--surface)); }
-.record-meds h4 { margin: 0 0 var(--s3); font: 600 var(--t-xs)/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+.record-meds .mh { margin: 0 0 var(--s3); font: 600 var(--t-xs)/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
 .med { display: flex; justify-content: space-between; gap: var(--s3); padding: var(--s2) 0; font-size: var(--t-sm); }
 .med b { color: var(--ink-strong); font-weight: 600; }
 .med span { color: var(--ink-soft); text-align: right; font-variant-numeric: tabular-nums; }

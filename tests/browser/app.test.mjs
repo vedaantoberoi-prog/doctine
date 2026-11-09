@@ -74,6 +74,14 @@ await pg.click(".scanov [data-k=x]");
   await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]"); await pg.click("[data-ai='0']"); await pg.waitForTimeout(600);
   check("choosing 'Don't send' saves the photo as a record and sends nothing to the AI", scanCalls === before && /Add its details with Edit/.test(await pg.textContent("#toast")), String(scanCalls - before));
   await pg.evaluate("S.reports=S.reports.filter(r=>!/^Scan/.test(r.title)||r.scan);render()"); }
+// reading lab lines from a text PDF: Indian number formats, printed high/low marks, and lines it can't read
+{ const r = await pg.evaluate(() => parseText(["Total Leucocyte Count 7,800 cells/cumm 4000 - 11000\nPlatelets 1,50,000 /cumm 1,50,000 - 4,10,000\nGlucose 210 H mg/dL 70 - 100\nTSH 0.12 mIU/L L 0.27 - 4.20\nUrine Volume 1.5 L 0.8 - 2.0\nHemoglobin 13,1 g/dL 12,0 - 15,5\nPotassium 6.1 L 3.5 - 5.1"]));
+  const v = Object.fromEntries(r.rows.map((x) => [x.k, x.v]));
+  check("thousands separators are read as whole numbers, never cut short", v["Total Leucocyte Count"] === "7800 cells/cumm (ref 4000–11000)", JSON.stringify(v));
+  check("a printed H or L is kept as 'marked high/low', not mistaken for the unit", v.Glucose === "210 mg/dL (ref 70–100) · marked high on the report" && /^0\.12 mIU\/L .*marked low/.test(v.TSH), JSON.stringify(v));
+  check("a single-letter unit (L for litres) on an in-range value stays the unit", v["Urine Volume"] === "1.5 L (ref 0.8–2.0)");
+  check("a comma decimal isn't guessed at: the line is left out and a warning says to add it", !v.Hemoglobin && r.warns.some((w) => /couldn’t be read/.test(w)));
+  check("a high/low mark that contradicts the value is flagged for checking", r.warns.some((w) => /^Potassium: .*doesn’t match/.test(w))); }
 // data persists after reload
 await pg.reload(); await pg.waitForTimeout(500);
 check("records, medicines and doses survive a reload", await pg.evaluate("S.email==='ravi@example.com'&&S.reports.length===1&&S.meds.length===1"));

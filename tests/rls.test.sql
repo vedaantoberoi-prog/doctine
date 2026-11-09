@@ -39,6 +39,10 @@ insert into dose_events (medicine_id, scheduled_date, scheduled_time, status) se
 insert into consents (kind, granted) values ('ai_chat', true);
 update consents set granted = false where kind = 'ai_chat';
 select pg_temp.expect((select count(*) from consent_log) = 2, 'consent changes are logged');
+-- the app only accepts an AI permission given after the current agreement, so re-granting must refresh the time
+create temp table _before as select updated_at from consents where kind = 'ai_chat'; select pg_sleep(0.02);
+insert into consents (kind, granted) values ('ai_chat', true) on conflict (user_id, kind) do update set granted = excluded.granted;
+select pg_temp.expect((select updated_at from consents where kind = 'ai_chat') > (select updated_at from _before), 're-granting a permission records when it was given');
 insert into storage.objects (bucket_id, name) values ('health-documents', 'aaaaaaaa-0000-0000-0000-000000000001/1/original-0.jpg');
 
 -- A cannot write outside their own space

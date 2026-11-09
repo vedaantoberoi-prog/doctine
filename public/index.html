@@ -284,15 +284,25 @@ async function readPdf(file){
   pages.push([...rows.entries()].sort((a,b)=>b[0]-a[0]).map(([,r])=>r.sort((a,b)=>a.transform[4]-b.transform[4]).map(t=>t.str).join(' ').replace(/\s+/g,' ').trim()).filter(Boolean).join('\n'))}
  return pages}
 const NUM='\\d+(?:\\.\\d+)?',UNIT='(?:[A-Za-zµ%/][^\\s]*|(?:x|×)?10\\^?\\d\\S*)';
-const PRE=new RegExp(`^\\s*([A-Za-z][A-Za-z0-9 ().%/,'-]{1,48}?)\\s+(${NUM})\\s*(${UNIT})?\\s+(.+?)\\s*$`);
+const VAL='\\d{1,3}(?:,\\d{2,3})*,\\d{3}(?:\\.\\d+)?|'+NUM,FLAG='(?:H|L|HH|LL|High|Low|\\*)';
+const PRE=new RegExp(`^\\s*([A-Za-z][A-Za-z0-9 ().%/,'-]{1,48}?)\\s+(${VAL})\\s*(?:\\b(${FLAG})\\s+)?(${UNIT})?\\s+(?:(${FLAG})\\s+)?(.+?)\\s*$`);
+const LOOKS=new RegExp(`^[A-Za-z][^\\d]{1,48}\\s[<>]?[\\d.,]+\\b.*\\d+(?:[.,]\\d+)?\\s*(?:-|–|to)\\s*\\d`);
 const RNG=new RegExp(`^(?:(${NUM})\\s*(?:-|–|to)\\s*(${NUM})|(<=?|>=?)\\s*(${NUM}))(?:\\s+\\S+)?$`);
 const SKIP=/^(page|date|age|sex|phone|mobile|id|sample|patient|ref|reg|bill|invoice|report)\b/i;
 function iso(y,m,d){const t=new Date(Date.UTC(y,m-1,d));if(t.getUTCFullYear()!==y||t.getUTCMonth()!==m-1||t.getUTCDate()!==d||y<1990||t>Date.now()+864e5)return null;return`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
 function findDate(l){let m=l.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);if(m)return iso(+m[1],+m[2],+m[3]);m=l.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})\b/);return m?iso(+m[3],+m[2],+m[1]):null}
 function parseText(pages){
  const lines=pages.flatMap(t=>t.split('\n').map(x=>x.trim())).filter(Boolean),rows=[],warns=[];
- for(const l of lines){const m=l.match(PRE);if(!m||SKIP.test(m[1]))continue;const r=m[4].match(RNG);if(!r)continue;
-  const ref=r[1]?`${r[1]}–${r[2]}`:`${r[3]} ${r[4]}`;rows.push({k:m[1].trim(),v:`${m[2]}${m[3]?' '+m[3]:''} (ref ${ref})`})}
+ let missed=0;
+ for(const l of lines){const m=l.match(PRE),r=m&&!SKIP.test(m[1])&&m[6].match(RNG);
+  if(!r){if(LOOKS.test(l)&&!SKIP.test(l))missed++;continue}
+  // a value flag the lab printed (H, L, High, Low, *) can't be read as a unit
+  let unit=m[4]||'',flag=m[3]||m[5]||'';if(!flag&&/^(H|L|HH|LL|High|Low)$/.test(unit)){flag=unit;unit=''}
+  // a lone H or L with no other unit, on a value inside its range, is the unit (e.g. litres), not a flag
+  const val=+m[2].replace(/,/g,'');if(!unit&&/^[HL]$/.test(flag)&&r[1]&&val>=+r[1]&&val<=+r[2]){unit=flag;flag=''}
+  if(r[1]&&((/^h/i.test(flag)&&val<+r[1])||(/^l/i.test(flag)&&val>+r[2])))warns.push(`${m[1].trim()}: the report’s high/low mark doesn’t match the value and range. Check the original.`);
+  const ref=r[1]?`${r[1]}–${r[2]}`:`${r[3]} ${r[4]}`;rows.push({k:m[1].trim(),v:`${m[2].replace(/,/g,'')}${unit?' '+unit:''} (ref ${ref})${flag?` · marked ${/^h/i.test(flag)?'high':/^l/i.test(flag)?'low':'abnormal'} on the report`:''}`})}
+ if(missed)warns.push(`${missed} line${missed>1?'s':''} looked like ${missed>1?'results':'a result'} but couldn’t be read (for example a comma used as a decimal point). Check the original and add ${missed>1?'them':'it'} yourself.`);
  let date='';for(const l of lines.slice(0,60))if(/(report|collect|sample|date)/i.test(l)){date=findDate(l)||'';if(date)break}
  if(!date)warns.push('No report date was found. Please enter it.');
  const lab=(lines.slice(0,15).find(l=>/(laborator|labs\b|diagnostic|hospital|clinic|pathology)/i.test(l))||'').slice(0,120);
@@ -1168,7 +1178,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='ucx'){S.upload=null;return render()}
  if(t.id==='ucf'){const u=S.upload;const err=m=>$('#uerr').innerHTML=`<div class="err">${esc(m)}</div>`;
   if(!u.title.trim())return err('Please enter a title.');if(u.date&&u.date>today())return err('The report date can’t be in the future.');
-  const fields={};u.rows.filter(r=>r.k.trim()).forEach(r=>fields[r.k.trim()]=r.v.trim());
+  const fields={};u.rows.filter(r=>r.k.trim()).forEach(r=>{let k=r.k.trim().slice(0,60),i=2;while(k in fields)k=r.k.trim().slice(0,56)+' ('+i+++')';fields[k]=r.v.trim()});
   const rec={title:u.title.trim(),cat:u.cat,date:u.date,lab:u.lab.trim(),fields,hash:u.hash};const ed=S.reports.find(x=>x.id===u.editId);if(ed){Object.assign(ed,rec);if(ed.scan&&!ed.checked)ed.checked=true;toast(ed.scan?'Details checked and saved':'Report updated')}else{const id=Date.now(),pdf=u.file&&(u.file.type==='application/pdf'||/\.pdf$/i.test(u.file.name))?u.file:null;if(pdf){try{await IMG.put(`orig:${id}:0`,new Blob([pdf],{type:'application/pdf'}));rec.orig='pdf'}catch{toast('The original PDF couldn’t be kept in this browser; the values you confirmed are saved.')}}S.reports.unshift({id,...rec});toast('Report saved')}S.upload=null;S.q='';render()}
 });
 document.addEventListener('submit',async e=>{e.preventDefault();const id=e.target.id,F=new FormData(e.target);

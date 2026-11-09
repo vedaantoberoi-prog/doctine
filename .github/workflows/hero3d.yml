@@ -1,0 +1,39 @@
+name: Website 3D hero (build)
+
+# Builds bolt-3d/ (the 3D scene designed in Bolt) into website/assets/hero3d/hero3d.js and keeps the result as an
+# artifact. It never deploys: the built file is reviewed and committed like any other change.
+on:
+  push:
+    paths: ["bolt-3d/**", ".github/workflows/hero3d.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: bolt-3d
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Install from the committed lockfile
+        run: npm ci --no-audit --no-fund
+      - name: Type check
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Dependency audit (high and critical)
+        run: npm audit --audit-level=high --omit=dev
+      - name: Build the embed bundle
+        run: npm run build:embed
+      - name: List every web address inside the bundle (reviewed by hand; the scene itself fetches nothing)
+        run: |
+          grep -oE "https?://[a-zA-Z0-9./_-]+" dist-embed/hero3d.js | sort | uniq -c | sort -rn || true
+          ls -la dist-embed
+      - uses: actions/upload-artifact@v4
+        with: { name: hero3d, path: bolt-3d/dist-embed/, retention-days: 30 }

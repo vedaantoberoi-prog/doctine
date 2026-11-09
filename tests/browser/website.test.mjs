@@ -30,6 +30,9 @@ const broken = internal.filter((u) => !resolve(u));
 check("every internal link and asset exists", broken.length === 0, broken.join(" "));
 const anchors = PAGES.flatMap((p) => [...html[p].matchAll(/href="\/#([\w-]+)"/g)].map((m) => m[1])).filter((id) => !html["/"].includes(`id="${id}"`));
 check("links to homepage sections point at real sections", anchors.length === 0, anchors.join(" "));
+{ const fs = await import("node:fs"); const b = fs.readFileSync(new URL("../../website/assets/hero3d/hero3d.js", import.meta.url), "utf8");
+  check("3D hero: loads only where WebGL works and not when saving data; the text needs no script", /data-hero3d aria-hidden="true"/.test(html["/"]) && /saveData/.test(html["/"]) && /getContext\('webgl/.test(html["/"]) && /<h1 id="hero-title">/.test(html["/"]));
+  check("3D hero bundle: no router, database client or websockets inside", !/react-router|supabase|realtime-js|new WebSocket/.test(b), String(b.length)); }
 check("sign-up buttons go to the real app", (html["/"].match(/href="https:\/\/app\.doctine\.com\/"/g) || []).length >= 3);
 
 // honesty: what isn't available is labelled, and unsupported claims stay out

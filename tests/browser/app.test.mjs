@@ -85,6 +85,12 @@ await pg.click("#samp"); await pg.waitForTimeout(200);
 // sample data is fictional: a dose falling due must not ring, notify or show a "time for" toast (matches the phone app)
 await pg.evaluate("(()=>{const d=new Date();S.meds[0].start=today();S.meds[0].end='';S.meds[0].times=[String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')];S.alerted={};render()})()");
 const dueInSample = await pg.evaluate("dueNow().length"); await pg.waitForTimeout(5600);
+// on a phone, due-dose cards above the page never take more than about a third of the screen (they used to squeeze it)
+await pg.evaluate("(()=>{const d=new Date(),t=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');S.meds.push({...S.meds[0],id:Date.now(),name:'Second due medicine',times:[t]});S.meds.push({...S.meds[0],id:Date.now()+1,name:'Third due medicine',times:[t]});go('medicines')})()");
+await pg.waitForTimeout(300);
+const strip = await pg.evaluate("(()=>{const b=document.querySelector('#banner'),v=document.querySelector('#view');return {banner:b.getBoundingClientRect().height,view:v.getBoundingClientRect().height,screen:innerHeight,cards:b.querySelectorAll('[data-d]').length/3,noteShown:[...b.querySelectorAll('.dnote')].some(n=>n.offsetParent)}})()");
+check("on a phone, due-dose cards take at most about a third of the screen and the page keeps the rest", strip.cards >= 2 && strip.banner <= strip.screen * 0.36 && strip.view >= strip.screen * 0.5 && !strip.noteShown, JSON.stringify(strip));
+await pg.evaluate("S.meds=S.meds.filter(m=>!/(Second|Third) due medicine/.test(m.name));render()");
 check("a sample medicine falling due doesn't ring an alarm or send a reminder", dueInSample > 0 && !(await pg.evaluate("DoctineAlarms.ringing()")) && !(await pg.evaluate("Object.keys(S.alerted).length")), "due=" + dueInSample);
 // stopping when nothing rings must not call the vibration API (it was called every 5 seconds, filling the console)
 await pg.evaluate("(()=>{window.__vib=0;const v=navigator.vibrate;navigator.vibrate=function(){window.__vib++;return true};DoctineAlarms.stop();DoctineAlarms.stop()})()");

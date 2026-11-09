@@ -358,6 +358,11 @@ exists, without the domain, as a fallback.
    (16 files, including `_worker.js` and `_routes.json`) → Production → Save and deploy.
 3. Check `https://app.doctine.com/version.json` shows the new commit.
 
+**Supabase keys (since 9 November 2026):** production uses Supabase's new keys — `SUPABASE_ANON_KEY` holds the
+**publishable** key (`sb_publishable_…`, public) and `SUPABASE_SERVICE_ROLE_KEY` holds the **secret** key (`sb_secret_…`).
+The code also accepts the legacy JWT keys. `/api/config` refuses to publish anything but a public key. The legacy
+keys are still enabled in Supabase (the old `doctine-app` project uses them); turn them off only once nothing needs them.
+
 **Project settings (already set):** compatibility flag `nodejs_compat`; variables `DOCTINE_ENV`, `SUPABASE_URL`,
 `SUPABASE_ANON_KEY`, `AUTH_GOOGLE`, `RATE_LIMIT_REQUIRE_SHARED`, `AI_DAILY_REQUEST_CAP` (text) and
 `SUPABASE_SERVICE_ROLE_KEY`, `RATE_LIMIT_SECRET` (secrets). Changes to variables apply only to the next upload; a

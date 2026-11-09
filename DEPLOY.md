@@ -344,3 +344,27 @@ The same app and server functions also run on Cloudflare Pages (free plan, comme
   - `ANTHROPIC_API_KEY` (secret), only once the medical evaluation and clinician sign-off are done. Without it, chat and scanning say the assistant isn't available yet, and emergencies still get the fixed 112 guidance.
   - Never set `EVAL_ACCESS_TOKEN` here.
 
+
+## 16. Deploying the app by drag and drop (current production setup, since 9 November 2026)
+
+GitHub became unavailable on 7 November 2026, so production no longer builds from Git. app.doctine.com is served by
+the Cloudflare Pages project **`doctine-app-direct`** (Direct Upload). The Git-connected project `doctine-app` still
+exists, without the domain, as a fallback.
+
+**Release:**
+1. `npm run build:direct` — runs the server tests, stamps the commit, bundles the server into `_worker.js`, runs
+   `tests/worker.test.mjs` against it, and writes `dist/doctine-app.zip`.
+2. Cloudflare → Workers & Pages → `doctine-app-direct` → Create deployment → drag in **`doctine-app.zip`**
+   (16 files, including `_worker.js` and `_routes.json`) → Production → Save and deploy.
+3. Check `https://app.doctine.com/version.json` shows the new commit.
+
+**Project settings (already set):** compatibility flag `nodejs_compat`; variables `DOCTINE_ENV`, `SUPABASE_URL`,
+`SUPABASE_ANON_KEY`, `AUTH_GOOGLE`, `RATE_LIMIT_REQUIRE_SHARED`, `AI_DAILY_REQUEST_CAP` (text) and
+`SUPABASE_SERVICE_ROLE_KEY`, `RATE_LIMIT_SECRET` (secrets). Changes to variables apply only to the next upload; a
+Direct Upload deployment can't be "retried", so upload the zip again.
+
+**Rollback:** Deployments → an earlier deployment → Rollback. Or move `app.doctine.com` back to `doctine-app`
+(Custom domains) and point the `app` CNAME at `doctine-app.pages.dev`.
+
+**Don't** upload the complete project package by mistake: only `doctine-app.zip` belongs here. A wrong upload makes
+its files public at that deployment's address; delete that deployment.

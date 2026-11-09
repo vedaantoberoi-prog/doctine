@@ -518,7 +518,7 @@ const aiOff=()=>!!(S.cloud&&CLOUD.on&&CLOUD.ai===false);
    separate permission, off until the person switches it on; grants recorded before it was separated (when it was part
    of the sign-up agreement) don't count. Sharing saved records is a tick box in each chat; sending a photo or scanned
    page to the AI is asked each time. */
-const AI_CONSENT_FROM=Date.parse('2026-11-10T00:00:00+05:30'),AGREEMENT_V='2026-11-10';
+const AI_CONSENT_FROM=Date.parse('2026-11-09T21:55:00+05:30'),AGREEMENT_V='2026-11-09';
 async function initCloud(){
  if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.hostname))return false;
  let cfg=null;try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),4000);const r=await fetch(API+'/api/config',{signal:ac.signal}).finally(()=>clearTimeout(t));if(r.ok)cfg=await r.json()}catch{}

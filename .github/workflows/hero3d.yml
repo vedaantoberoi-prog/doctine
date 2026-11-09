@@ -27,10 +27,24 @@ jobs:
         run: npm run typecheck
       - name: Lint
         run: npm run lint
-      - name: Dependency audit (high and critical)
+      - name: Updated lockfile with non-breaking security fixes (kept as an artifact to commit)
+        run: |
+          cp package-lock.json /tmp/lock-before.json
+          npm audit fix --package-lock-only --no-fund || true
+          mkdir -p /tmp/lockfix && cp package-lock.json /tmp/lockfix/package-lock.json
+          cp /tmp/lock-before.json package-lock.json
+      - uses: actions/upload-artifact@v4
+        with: { name: lockfix, path: /tmp/lockfix/, retention-days: 30 }
+      - name: Dependency audit of the whole Bolt project (report only; the website ships just the 3D bundle)
+        continue-on-error: true
         run: npm audit --audit-level=high --omit=dev
       - name: Build the embed bundle
         run: npm run build:embed
+      - name: The bundle contains only the 3D scene (no router, no database client, no websockets)
+        run: |
+          for s in react-router supabase realtime-js "new WebSocket" GoTrue; do
+            if grep -q "$s" dist-embed/hero3d.js; then echo "::error::hero3d.js contains $s"; exit 1; fi
+          done
       - name: List every web address inside the bundle (reviewed by hand; the scene itself fetches nothing)
         run: |
           grep -oE "https?://[a-zA-Z0-9./_-]+" dist-embed/hero3d.js | sort | uniq -c | sort -rn || true

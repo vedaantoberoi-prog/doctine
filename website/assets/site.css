@@ -240,3 +240,26 @@ th { font-weight: 600; color: var(--ink-strong); background: color-mix(in srgb, 
 .site-foot ul a:hover { color: var(--ink-strong); text-decoration: underline; }
 .foot-safety { margin-top: var(--s6); padding-top: var(--s5); border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s3); }
 .foot-safety strong { color: var(--ink-strong); }
+
+/* ---- Immersive hero: a sky-blue band; the 3D scene (assets/hero3d/) fades in behind the text where it can run ---- */
+.hero.immersive { position: relative; isolation: isolate; overflow: hidden; color: #F3F1EB; display: flex; align-items: center;
+  min-height: min(88vh, 54rem); padding: var(--s9) 0 var(--s8);
+  background: radial-gradient(ellipse at 72% 38%, #4A8BEA 0%, #246BDB 42%, #123B78 100%); }
+.hero.immersive + .section { border-top: 0; }
+.hero.immersive > .wrap { width: 100%; }
+.hero.immersive::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(to top, rgba(16,28,43,.88), rgba(16,28,43,.45) 55%, rgba(16,28,43,.15)); }
+@media (min-width: 900px) { .hero.immersive::before { background: linear-gradient(to right, rgba(16,28,43,.84), rgba(16,28,43,.42) 50%, rgba(16,28,43,0) 78%); } }
+.hero3d { position: absolute; inset: 0; z-index: -2; opacity: 0; transition: opacity 1.2s ease-out; }
+.hero3d.is-ready { opacity: 1; }
+.hero3d canvas { display: block; }
+.hero-copy { max-width: 40rem; }
+.hero.immersive .eyebrow { color: #C9D8EA; }
+.hero.immersive h1 { color: #FFFFFF; }
+.hero.immersive .lede { color: rgba(255,255,255,.9); }
+.hero.immersive .fine { color: #C9D8EA; }
+.hero.immersive .btn.on-dark-ghost { background: transparent; color: #FFFFFF; border-color: rgba(255,255,255,.6); }
+.hero.immersive .btn.on-dark-ghost:hover { border-color: #FFFFFF; background: rgba(255,255,255,.08); }
+.hero.immersive a:focus-visible { outline-color: #FFFFFF; }
+@media (prefers-reduced-motion: reduce) { .hero3d { transition: none; } }
+.records-figure { margin: var(--s6) 0 0; }

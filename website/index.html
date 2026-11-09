@@ -52,36 +52,27 @@
 
 <main id="main">
 
-  <!-- 1 · Hero -->
-  <section class="hero" aria-labelledby="hero-title">
-    <div class="wrap split">
-      <div>
+  <!-- 1 · Hero: a 3D scene (designed in Bolt, bolt-3d/) is drawn behind the text when the browser supports it -->
+  <section class="hero immersive" aria-labelledby="hero-title">
+    <div class="hero3d" data-hero3d aria-hidden="true"></div>
+    <div class="wrap">
+      <div class="hero-copy">
         <p class="eyebrow">Personal health, connected</p>
         <h1 id="hero-title">Your health information, brought together.</h1>
         <p class="lede">Doctine keeps your prescriptions, lab reports, medicines and health profile in one private account, so your history is in front of you when you, or your doctor, need it.</p>
         <div class="actions">
-          <a class="btn" href="https://app.doctine.com/">Create your free account</a>
-          <a class="btn ghost" href="/app-preview/">Explore with sample records</a>
+          <a class="btn on-dark" href="https://app.doctine.com/">Create your free account</a>
+          <a class="btn ghost on-dark-ghost" href="/app-preview/">Explore with sample records</a>
         </div>
         <p class="fine">Sign up with your email address or Google. The sample preview uses made-up records and saves nothing.</p>
       </div>
-      <figure style="margin:0">
-        <div class="record" role="img" aria-label="Illustration of a Doctine record with made-up examples: a timeline of a blood count, a prescription and a diabetes panel, with two medicines below.">
-          <div class="record-top"><b>Health timeline</b><small>Example</small></div>
-          <ol class="tl" aria-hidden="true">
-            <li><i></i><div><b>Complete blood count</b><span>Lab report · City Diagnostics</span></div><time>2 Sep 2026</time></li>
-            <li><i></i><div><b>Prescription, Dr. A. Sharma</b><span>2 medicines, added by hand</span></div><time>28 Aug 2026</time></li>
-            <li><i></i><div><b>HbA1c and lipid panel</b><span>Lab report · values confirmed</span></div><time>18 Jul 2026</time></li>
-          </ol>
-          <div class="record-meds" aria-hidden="true">
-            <p class="mh">Medicines</p>
-            <div class="med"><b>Metformin 500 mg</b><span>1 tablet · 08:00, 20:00</span></div>
-            <div class="med"><b>Vitamin D3</b><span>Weekly · Sunday</span></div>
-          </div>
-        </div>
-        <figcaption class="caption">Made-up example. Your account starts empty.</figcaption>
-      </figure>
     </div>
+    <script type="module">
+      // Load the 3D scene only where it can run, and not for visitors saving data. Without it, the hero is a still sky.
+      const c = document.createElement('canvas');
+      const saveData = navigator.connection && navigator.connection.saveData;
+      if (!saveData && (c.getContext('webgl2') || c.getContext('webgl'))) import('/assets/hero3d/hero3d.js').catch(() => {});
+    </script>
   </section>
 
   <!-- 2 · The problem -->
@@ -109,6 +100,22 @@
       <div>
         <p class="eyebrow">Your health record <span class="status now" style="margin-left:.5rem;vertical-align:middle">Available now</span></p>
         <h2 id="records-title">One private record of your health, in date order.</h2>
+      <figure class="records-figure">
+          <div class="record" role="img" aria-label="Illustration of a Doctine record with made-up examples: a timeline of a blood count, a prescription and a diabetes panel, with two medicines below.">
+            <div class="record-top"><b>Health timeline</b><small>Example</small></div>
+            <ol class="tl" aria-hidden="true">
+              <li><i></i><div><b>Complete blood count</b><span>Lab report · City Diagnostics</span></div><time>2 Sep 2026</time></li>
+              <li><i></i><div><b>Prescription, Dr. A. Sharma</b><span>2 medicines, added by hand</span></div><time>28 Aug 2026</time></li>
+              <li><i></i><div><b>HbA1c and lipid panel</b><span>Lab report · values confirmed</span></div><time>18 Jul 2026</time></li>
+            </ol>
+            <div class="record-meds" aria-hidden="true">
+              <p class="mh">Medicines</p>
+              <div class="med"><b>Metformin 500 mg</b><span>1 tablet · 08:00, 20:00</span></div>
+              <div class="med"><b>Vitamin D3</b><span>Weekly · Sunday</span></div>
+            </div>
+          </div>
+          <figcaption class="caption">Made-up example. Your account starts empty.</figcaption>
+          </figure>
       </div>
       <div>
         <p class="lede" style="margin-bottom:var(--s5)">Your profile, reports, prescriptions and medicines live together in one account, so the history a doctor asks about is in one place.</p>

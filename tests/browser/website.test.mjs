@@ -36,6 +36,7 @@ check("sign-up buttons go to the real app", (html["/"].match(/href="https:\/\/ap
 const home = html["/"];
 check("the assistant is labelled as not yet available", /status dev">In development · not yet available/.test(home));
 check("family profiles are labelled as in development", /status dev">Family profiles in development/.test(home));
+check("privacy policy: sign-up covers storage only; AI is off until switched on; photos are asked each time", /sign-up covers/.test(html["/privacy/"]) && /Use the AI assistant:<\/strong> off unless you switch it on/.test(html["/privacy/"]) && /asks each time before a photo/.test(html["/privacy/"]) && !/consent you give when you create your account\. That includes .* AI provider/.test(html["/privacy/"]));
 check("the vision separates available, in development and planned", /status now">Available now/.test(home) && /status later">Planned/.test(home));
 const all = PAGES.map((p) => html[p]).join("\n");
 const banned = [/revolution/i, /AI doctor/i, /guarantee/i, /predict(s|ing)? (every|disease)/i, /replac(e|es|ing) (your )?doctors?/i, /not a medical device/i, /is a medical device/i, /clinically (validated|proven)(?! )/i, /Look after your family/i, /HIPAA|ISO 27001|SOC 2|end-to-end encrypt/i];
@@ -48,6 +49,20 @@ check("every page names its canonical address and has a full link preview with a
 const robots = readFileSync(resolve("/robots.txt"), "utf8"), sitemap = readFileSync(resolve("/sitemap.xml"), "utf8"), notFound = readFileSync(resolve("/404.html"), "utf8");
 check("robots.txt points to the sitemap, and the sitemap lists every public page", /Sitemap: https:\/\/doctine\.com\/sitemap\.xml/.test(robots) && PAGES.every((p) => sitemap.includes(`<loc>https://doctine.com${p}</loc>`)));
 check("a 'page not found' page exists (so unknown addresses aren't served as the homepage), isn't indexed and links home", notFound.includes('name="robots" content="noindex"') && notFound.includes('href="/"') && strip(between(notFound, '<header class="site-head">', "</header>")) === head0);
+// security contact (RFC 9116) on both sites, and the app's own "not found" page (unknown app addresses aren't the app)
+const sec = (f) => readFileSync(fileURLToPath(new URL(f, import.meta.url)), "utf8");
+const secOk = (t, host) => /^Contact: mailto:support@doctine\.com$/m.test(t) && new Date((t.match(/^Expires: (.+)$/m) || [])[1]) > new Date() && t.includes(`Canonical: https://${host}/.well-known/security.txt`);
+check("both sites publish a security contact (security.txt) that hasn't expired", secOk(sec("../../website/.well-known/security.txt"), "doctine.com") && secOk(sec("../../public/.well-known/security.txt"), "app.doctine.com"));
+const app404 = sec("../../public/404.html");
+check("the app has its own 'page not found' page that isn't indexed and links back", app404.includes('content="noindex"') && app404.includes('href="/"') && !/<script/i.test(app404));
+// fonts are served by the sites themselves: no page or the app contacts Google Fonts, and every font file listed exists
+const appHtml = sec("../../public/index.html");
+check("no page (website or app) loads anything from Google Fonts", ![...PAGES.map((p) => html[p]), notFound, appHtml].some((h) => /fonts\.(googleapis|gstatic)\.com/.test(h)));
+const fontsOk = ["../../website/assets/fonts/", "../../public/fonts/"].every((dir) => {
+  const css = sec(dir + "fonts.css"); const files = [...css.matchAll(/url\(([^)]+)\)/g)].map((m) => m[1]);
+  return files.length === 4 && files.every((f) => readFileSync(fileURLToPath(new URL(dir + f, import.meta.url))).subarray(0, 4).toString() === "wOF2");
+});
+check("each site's fonts.css lists 4 font files that exist and are real WOFF2 fonts", fontsOk);
 check("emergency numbers are on every page", PAGES.every((p) => /call 112/.test(html[p]) && /14416/.test(html[p])));
 
 // in a browser: no sideways scrolling, the menu works on phones, no script errors
@@ -64,6 +79,8 @@ for (const w of [320, 360, 390, 430, 768, 1280]) {
     check("…which opens and links to every main page", (await pg.isVisible('.menu .panel a[href="/medical-safety/"]')) && (await pg.isVisible('.menu .panel a[href="/about/"]')));
     const small = await pg.evaluate(`[...document.querySelectorAll('.btn,.menu summary,.signin')].filter(e=>e.offsetParent&&e.getBoundingClientRect().height<40).length`);
     check("buttons are at least 40px tall on phones", small === 0, String(small));
+    const fontState = await pg.evaluate(async () => { await document.fonts.ready; return { serif: document.fonts.check("600 32px Fraunces"), sans: document.fonts.check("400 16px 'Instrument Sans'"), loaded: [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family) }; });
+    check("the homepage renders with its own Fraunces and Instrument Sans (Google is blocked in this test)", fontState.serif && fontState.sans && fontState.loaded.some((f) => /Fraunces/.test(f)) && fontState.loaded.some((f) => /Instrument Sans/.test(f)), JSON.stringify(fontState));
   }
   await pg.close();
 }

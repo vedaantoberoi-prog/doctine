@@ -8,8 +8,8 @@
 (function(){var f=window.fetch.bind(window);window.fetch=function(u,o){var s=String(u&&u.url||u);if(/(^|\/)api\//.test(s)){
 var body=/api\/config/.test(s)?{environment:"preview",supabase:null}:{ok:false,error:"not_configured",missing:[]};
 return Promise.resolve(new Response(JSON.stringify(body),{status:/api\/config/.test(s)?200:503,headers:{"content-type":"application/json"}}))}return f(u,o)}})();
-</script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</script><script src="vendor/pdfjs-3.11.174/pdf.js"></script>
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 :root{--navy:#101C2B;--text:#202A35;--card:#fff;--hover:#EEF1EC;--tealtx:#3F6660;--teal:#527D76;--tealbg:#E3EBE8;--bg:#F3F1EB;--line:#D8DEE6;--mute:#5B6673;--warnbg:#fff6e5;--warnbd:#f1ddb0;--warntx:#6d4a05;--errbg:#fdeeee;--errbd:#f0c4c4;--errtx:#8a2020;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html,body{height:100%;margin:0}body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',system-ui,sans-serif}
@@ -21,7 +21,7 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 .inp::placeholder{color:var(--mute);opacity:.8}
 .inp:focus,.btn:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 .nav{display:flex;align-items:center;gap:.7rem;width:100%;padding:.6rem .8rem;border-radius:12px;color:var(--mute);font-size:.92rem;text-align:left;border:0;background:none;cursor:pointer}
-.nav:hover{background:var(--hover)}:root[data-theme=dark] svg rect[fill="#101C2B"]{stroke:#3A4C63;stroke-width:1.5}@media (max-width:767px),(pointer:coarse){.inp,input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px}.chip{min-height:44px;display:inline-flex;align-items:center}button.underline{min-height:44px;padding:.25rem 0}}.navi{flex:none;display:grid;place-items:center;width:20px}.meter{height:6px;border-radius:999px;background:var(--tealbg);overflow:hidden}.meter>div{height:100%;background:var(--teal);border-radius:999px}.nav.on{background:var(--tealbg);color:var(--tealtx);font-weight:600}
+.nav:hover{background:var(--hover)}#banner{max-height:45vh;overflow-y:auto}@media (max-width:767px){#banner{max-height:34vh}#banner .dnote{display:none}}:root[data-theme=dark] svg rect[fill="#101C2B"]{stroke:#3A4C63;stroke-width:1.5}@media (max-width:767px),(pointer:coarse){.inp,input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px}.chip{min-height:44px;display:inline-flex;align-items:center}button.underline{min-height:44px;padding:.25rem 0}}.navi{flex:none;display:grid;place-items:center;width:20px}.meter{height:6px;border-radius:999px;background:var(--tealbg);overflow:hidden}.meter>div{height:100%;background:var(--teal);border-radius:999px}.nav.on{background:var(--tealbg);color:var(--tealtx);font-weight:600}
 .chip{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:.4rem .8rem;font-size:.82rem;cursor:pointer}.chip:hover{border-color:var(--teal);background:var(--tealbg)}
 .tag{font-size:.72rem;border-radius:999px;padding:.12rem .55rem;background:var(--tealbg);color:var(--tealtx)}.tag.prov-auto{background:var(--warnbg);color:var(--warntx)}.tag.prov-photo{background:var(--hover);color:var(--mute)}
 .warn{background:var(--warnbg);border:1px solid var(--warnbd);color:var(--warntx);border-radius:12px;padding:.55rem .75rem;font-size:.82rem}
@@ -256,7 +256,7 @@ if(!localStorage.getItem(KEY)&&localStorage.getItem('sanora:v2'))localStorage.se
 if(!localStorage.getItem('doctine:theme')&&localStorage.getItem('sanora:theme'))localStorage.setItem('doctine:theme',localStorage.getItem('sanora:theme'))}catch{}})();
 const store={get(){try{const v=JSON.parse(localStorage.getItem(KEY)||'{}');v.users=v.users||{};return v}catch{return{users:{}}}},set(v){try{localStorage.setItem(KEY,JSON.stringify(v));return true}catch{return false}}};
 let DB=store.get();
-const blank=n=>({profile:{name:n,dob:'',height:'',weight:'',blood:'',allergies:''},reports:[],meds:[],doses:{},msgs:[],consent:{ai:true,analytics:false}});
+const blank=n=>({profile:{name:n,dob:'',height:'',weight:'',blood:'',allergies:''},reports:[],meds:[],doses:{},msgs:[],consent:{ai:false,analytics:false}});
 const sampleData=()=>({...blank('Asha Verma (sample)'),
  profile:{name:'Asha Verma (sample)',dob:'1988-04-12',height:'165',weight:'62',blood:'B+',allergies:'Penicillin'},
  reports:[{id:1,title:'Complete blood count',cat:'Lab report',date:'2026-09-02',lab:'Sample Labs',fields:{Hemoglobin:'11.4 g/dL (ref 12.0–15.5)',WBC:'6.8 10^3/uL (ref 4.0–11.0)',Platelets:'248 10^3/uL (ref 150–410)'}},
@@ -278,7 +278,7 @@ const hashPw=async(pw,salt)=>[...new Uint8Array(await crypto.subtle.digest('SHA-
 
 /* ---- reading and parsing a PDF, entirely in this browser ---- */
 async function readPdf(file){
- pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+ pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs-3.11.174/pdf.worker.js';
  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
  if(pdf.numPages>30)throw new Error('This PDF has more than 30 pages. The limit here is 30.');
  const pages=[];
@@ -288,15 +288,25 @@ async function readPdf(file){
   pages.push([...rows.entries()].sort((a,b)=>b[0]-a[0]).map(([,r])=>r.sort((a,b)=>a.transform[4]-b.transform[4]).map(t=>t.str).join(' ').replace(/\s+/g,' ').trim()).filter(Boolean).join('\n'))}
  return pages}
 const NUM='\\d+(?:\\.\\d+)?',UNIT='(?:[A-Za-zµ%/][^\\s]*|(?:x|×)?10\\^?\\d\\S*)';
-const PRE=new RegExp(`^\\s*([A-Za-z][A-Za-z0-9 ().%/,'-]{1,48}?)\\s+(${NUM})\\s*(${UNIT})?\\s+(.+?)\\s*$`);
+const VAL='\\d{1,3}(?:,\\d{2,3})*,\\d{3}(?:\\.\\d+)?|'+NUM,FLAG='(?:H|L|HH|LL|High|Low|\\*)';
+const PRE=new RegExp(`^\\s*([A-Za-z][A-Za-z0-9 ().%/,'-]{1,48}?)\\s+(${VAL})\\s*(?:\\b(${FLAG})\\s+)?(${UNIT})?\\s+(?:(${FLAG})\\s+)?(.+?)\\s*$`);
+const LOOKS=new RegExp(`^[A-Za-z][^\\d]{1,48}\\s[<>]?[\\d.,]+\\b.*\\d+(?:[.,]\\d+)?\\s*(?:-|–|to)\\s*\\d`);
 const RNG=new RegExp(`^(?:(${NUM})\\s*(?:-|–|to)\\s*(${NUM})|(<=?|>=?)\\s*(${NUM}))(?:\\s+\\S+)?$`);
 const SKIP=/^(page|date|age|sex|phone|mobile|id|sample|patient|ref|reg|bill|invoice|report)\b/i;
 function iso(y,m,d){const t=new Date(Date.UTC(y,m-1,d));if(t.getUTCFullYear()!==y||t.getUTCMonth()!==m-1||t.getUTCDate()!==d||y<1990||t>Date.now()+864e5)return null;return`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
 function findDate(l){let m=l.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);if(m)return iso(+m[1],+m[2],+m[3]);m=l.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})\b/);return m?iso(+m[3],+m[2],+m[1]):null}
 function parseText(pages){
  const lines=pages.flatMap(t=>t.split('\n').map(x=>x.trim())).filter(Boolean),rows=[],warns=[];
- for(const l of lines){const m=l.match(PRE);if(!m||SKIP.test(m[1]))continue;const r=m[4].match(RNG);if(!r)continue;
-  const ref=r[1]?`${r[1]}–${r[2]}`:`${r[3]} ${r[4]}`;rows.push({k:m[1].trim(),v:`${m[2]}${m[3]?' '+m[3]:''} (ref ${ref})`})}
+ let missed=0;
+ for(const l of lines){const m=l.match(PRE),r=m&&!SKIP.test(m[1])&&m[6].match(RNG);
+  if(!r){if(LOOKS.test(l)&&!SKIP.test(l))missed++;continue}
+  // a value flag the lab printed (H, L, High, Low, *) can't be read as a unit
+  let unit=m[4]||'',flag=m[3]||m[5]||'';if(!flag&&/^(H|L|HH|LL|High|Low)$/.test(unit)){flag=unit;unit=''}
+  // a lone H or L with no other unit, on a value inside its range, is the unit (e.g. litres), not a flag
+  const val=+m[2].replace(/,/g,'');if(!unit&&/^[HL]$/.test(flag)&&r[1]&&val>=+r[1]&&val<=+r[2]){unit=flag;flag=''}
+  if(r[1]&&((/^h/i.test(flag)&&val<+r[1])||(/^l/i.test(flag)&&val>+r[2])))warns.push(`${m[1].trim()}: the report’s high/low mark doesn’t match the value and range. Check the original.`);
+  const ref=r[1]?`${r[1]}–${r[2]}`:`${r[3]} ${r[4]}`;rows.push({k:m[1].trim(),v:`${m[2].replace(/,/g,'')}${unit?' '+unit:''} (ref ${ref})${flag?` · marked ${/^h/i.test(flag)?'high':/^l/i.test(flag)?'low':'abnormal'} on the report`:''}`})}
+ if(missed)warns.push(`${missed} line${missed>1?'s':''} looked like ${missed>1?'results':'a result'} but couldn’t be read (for example a comma used as a decimal point). Check the original and add ${missed>1?'them':'it'} yourself.`);
  let date='';for(const l of lines.slice(0,60))if(/(report|collect|sample|date)/i.test(l)){date=findDate(l)||'';if(date)break}
  if(!date)warns.push('No report date was found. Please enter it.');
  const lab=(lines.slice(0,15).find(l=>/(laborator|labs\b|diagnostic|hospital|clinic|pathology)/i.test(l))||'').slice(0,120);
@@ -305,9 +315,26 @@ function parseText(pages){
  if(rows.length>=2||/reference (range|interval)/i.test(txt))cat='Lab report';else if(/(x-?ray|ultrasound|\bmri\b|ct scan|impression)/i.test(txt))cat='Imaging';else if(/(\brx\b|prescri)/i.test(txt))cat='Prescription';
  if(!rows.length)warns.push('No test results were recognised. Add them yourself if needed.');
  return{rows,date,lab,cat,title:cat==='Other'?'Medical document':cat+(date?' – '+date:''),warns}}
-let _tess;function loadTess(){return _tess||(_tess=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';s.onload=()=>res(window.Tesseract);s.onerror=()=>{_tess=null;rej(new Error('The text-recognition tool could not load. Check your connection and try again.'))};document.head.appendChild(s)}))}
-async function ocrSource(src,label){const T=await loadTess();S.upload.progress=label+'…';render();const r=await T.recognize(src,'eng',{logger:m=>{if(m.status==='recognizing text'&&S.upload&&S.upload.status==='reading'){const el=$('#ocrp');if(el)el.textContent=label+' '+Math.round(m.progress*100)+'%'}}});return r.data.text||''}
-async function ocrPdf(f){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;const n=Math.min(pdf.numPages,5),pages=[];
+/* Libraries from public CDNs are pinned by fingerprint (SHA-384, checked against several independent copies), so a
+   changed file is refused instead of run. The text-recognition worker and engine are downloaded, checked, then started. */
+const PIN={tess:['https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js','sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F'],
+ tessWorker:['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js','sha384-zxn+VqofFzXpH99dUb3fa4ywoSBQJPy6/6oEaJHPlblZXr53a0g1Jl6720vgSzB7'],
+ tessCoreSimd:['https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-simd-lstm.wasm.js','sha384-YM1G+zaWYy9VSRP2C101LCgzh7n3Hqb6OEm9qDoZYgCADsni3nnECskC3WialQB7'],
+ tessCore:['https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-lstm.wasm.js','sha384-EKWY5JDwphQoyxhvYU7eaCcyQ0EdV6fZK3L2vzfZcv2ichRdNd6pSnyWPNv6fMuR'],
+ supabase:['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js','sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o']};
+const TAMPER='A downloaded component didn’t match its expected fingerprint, so it wasn’t used. Please try again later.';
+async function verifiedURL([url,sri]){const r=await fetch(url,{credentials:'omit'});if(!r.ok)throw new Error('The text-recognition tool could not load. Check your connection and try again.');const b=await r.arrayBuffer();
+ const d='sha384-'+btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-384',b))));if(d!==sri)throw new Error(TAMPER);return URL.createObjectURL(new Blob([b],{type:'text/javascript'}))}
+function pinnedScript([url,sri],onerr){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=url;s.integrity=sri;s.crossOrigin='anonymous';s.onload=res;s.onerror=()=>rej(new Error(onerr));document.head.appendChild(s)})}
+const simdOK=()=>{try{return WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11]))}catch{return false}};
+let _tess;function loadTess(){return _tess||(_tess=(async()=>{
+ if(!window.Tesseract)await pinnedScript(PIN.tess,'The text-recognition tool could not load. Check your connection and try again.');
+ const[workerPath,core]=await Promise.all([verifiedURL(PIN.tessWorker),verifiedURL(simdOK()?PIN.tessCoreSimd:PIN.tessCore)]);
+ return{T:window.Tesseract,workerPath,corePath:core+'#.js'}})().catch(e=>{_tess=null;throw e}))}
+async function ocrSource(src,label){const{T,workerPath,corePath}=await loadTess();S.upload.progress=label+'…';render();
+ const w=await T.createWorker('eng',1,{workerPath,corePath,workerBlobURL:false,logger:m=>{if(m.status==='recognizing text'&&S.upload&&S.upload.status==='reading'){const el=$('#ocrp');if(el)el.textContent=label+' '+Math.round(m.progress*100)+'%'}}});
+ try{const r=await w.recognize(src);return r.data.text||''}finally{w.terminate().catch(()=>{})}}
+async function ocrPdf(f){pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs-3.11.174/pdf.worker.js';const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;const n=Math.min(pdf.numPages,5),pages=[];
  for(let i=1;i<=n;i++){const pg=await pdf.getPage(i),vp=pg.getViewport({scale:2}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;pages.push(await ocrSource(c,'Reading page '+i+' of '+n))}
  return{pages,cut:pdf.numPages>n}}
 const OCRWARN='Text was read from an image by automatic text recognition, which makes mistakes (for example 1/l, 5/S, decimal points). Check every value against the original before confirming.';
@@ -328,7 +355,7 @@ async function startUpload(f){
   const pages=await readPdf(f),text=pages.join('\n');
   if(text.replace(/\s/g,'').length<30){
    S.upload.progress='Reading the scanned PDF…';render();
-   try{const imgs=await pdfImages(f,4);const rd=await readScan(imgs);if(rd.doc){const rec=await saveScan(imgs,rd.doc);S.upload=null;toast('Saved as “'+rec.title+'”');return render()}}catch{}
+   try{const imgs=await pdfImages(f,4);if(await aiReadOk(imgs.length)){const rd=await readScan(imgs);if(rd.doc){const rec=await saveScan(imgs,rd.doc);S.upload=null;toast('Saved as “'+rec.title+'”');return render()}}}catch{}
    const o=await ocrPdf(f);if(o.pages.join('').replace(/\s/g,'').length<20)throw new Error('No readable text was found, even with text recognition. Try a clearer scan.');
    Object.assign(S.upload,{status:'review',text:o.pages.join('\n').slice(0,20000)},parseText(o.pages));S.upload.warns.unshift(OCRWARN+(o.cut?' Only the first 5 pages were read.':''));return render()}
   Object.assign(S.upload,{status:'review',text:text.slice(0,20000)},parseText(pages));
@@ -391,7 +418,7 @@ async function hydrateImgs(){for(const el of document.querySelectorAll('img[data
 /* picks photos: the phone camera (capture) or the photo library */
 function pickFiles(camera,accept){return new Promise(res=>{const i=document.createElement('input');i.type='file';i.accept=accept||'image/jpeg,image/png,image/webp';if(camera)i.setAttribute('capture','environment');else i.multiple=true;
  i.onchange=()=>res([...(i.files||[])]);i.addEventListener('cancel',()=>res([]));i.style.display='none';document.body.appendChild(i);i.click();setTimeout(()=>i.remove(),60000)})}
-async function pdfImages(f,max=3){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise,out=[];
+async function pdfImages(f,max=3){pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs-3.11.174/pdf.worker.js';const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise,out=[];
  for(let i=1;i<=Math.min(pdf.numPages,max);i++){const pg=await pdf.getPage(i),vp0=pg.getViewport({scale:1}),vp=pg.getViewport({scale:Math.min(2.5,1600/Math.max(vp0.width,vp0.height))}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;out.push(await new Promise(r=>c.toBlob(r,'image/jpeg',.85)))}return out}
 
 /* The scanner screen. Resolves with JPEG blobs of the cleaned pages, or null if closed. */
@@ -432,6 +459,14 @@ function scanner(first,{action='Save'}={}){return new Promise(resolve=>{
   if(a==='apply'){busy('Straightening…');await tick();try{p.quad=ed.q;await proc(p)}catch{toast('Those corners don’t make a page. Try again.')}return draw()}});
  add(first)})}
 
+/* Before any photo or scanned page is sent to the AI provider, ask, every time. Resolves true only if the person
+   chooses "Send to AI". Never asks (and never sends) in the sample preview or while the AI isn't available. */
+function aiReadOk(n){
+ if(S.sample||aiOff())return Promise.resolve(false);
+ return new Promise(res=>{const ov=document.createElement('div');ov.className='fixed inset-0 z-50 flex items-center justify-center p-4';ov.style.background='rgba(16,28,43,.55)';
+  ov.innerHTML=`<div class="card p-5 max-w-md space-y-3" role="dialog" aria-modal="true" aria-labelledby="aird"><h2 class="text-lg" id="aird">Send ${n===1?'this page':n+' pages'} to the AI to read?</h2><p class="text-sm">Doctine can send the ${n===1?'image':'images'} through its server to its AI provider (Anthropic, United States), which reads the text and suggests details. You check everything before it’s saved. Nothing is sent unless you choose “Send to AI”.</p><p class="text-sm text-[var(--mute)]">If you choose “Don’t send”, the ${n===1?'photo is':'photos are'} kept in your record and you add the details yourself.</p><div class="flex gap-2 flex-wrap"><button class="btn pri" data-ai="1">Send to AI</button><button class="btn" data-ai="0">Don’t send</button></div></div>`;
+  const done=v=>{ov.remove();res(v)};ov.addEventListener('click',e=>{const b=e.target.closest('[data-ai]');if(b)done(b.dataset.ai==='1')});ov.addEventListener('keydown',e=>{if(e.key==='Escape')done(false)});
+  document.body.appendChild(ov);const f=ov.querySelector('[data-ai="0"]');if(f)f.focus()})}
 /* Asks the server's AI to read the pages. Resolves with the reading, or with {error} — never throws. */
 async function readScan(blobs){
  if(CL)return clRead(blobs);
@@ -466,10 +501,10 @@ function durEnd(dur){const m=String(dur||'').match(/(\d+)\s*(d|day|w|week|m|mont
 async function quickScan(camera,after,given){
  const files=given||await pickFiles(camera);if(!files.length)return;
  const blobs=await scanner(files);if(!blobs)return;
- S.scanning='Saving…';render();
- const r=await readScan(blobs);
+ const okAI=await aiReadOk(blobs.length);S.scanning='Saving…';render();
+ const r=okAI?await readScan(blobs):{error:'not_sent'};
  const rec=await saveScan(blobs,r.doc||null);S.scanning='';
- if(!r.doc)toast('Saved as “'+rec.title+'”. It couldn’t be read automatically, so you can rename it with Edit.');else toast('Saved as “'+rec.title+'”');
+ if(!r.doc)toast(r.error==='not_sent'?'Saved as “'+rec.title+'”. Add its details with Edit.':'Saved as “'+rec.title+'”. It couldn’t be read automatically, so you can rename it with Edit.');else toast('Saved as “'+rec.title+'”');
  if(after)after(rec,r.doc);render()}
 
 
@@ -483,11 +518,16 @@ async function authHeaders(){if(!S.cloud||!CLOUD.sb)return{};try{const{data}=awa
 const CLOUD={on:false,epoch:0,sb:null,uid:null,email:null,snap:null,timer:null,busy:false,again:false,err:'',lastOk:null,ids:{docs:{},meds:{}},files:{}};
 /* True when this site's server has no AI model switched on yet, so reading scans and chat answers aren't available. */
 const aiOff=()=>!!(S.cloud&&CLOUD.on&&CLOUD.ai===false);
+/* Permissions (see the privacy policy): the sign-up agreement covers storing records only. Using the AI assistant is a
+   separate permission, off until the person switches it on; grants recorded before it was separated (when it was part
+   of the sign-up agreement) don't count. Sharing saved records is a tick box in each chat; sending a photo or scanned
+   page to the AI is asked each time. */
+const AI_CONSENT_FROM=Date.parse('2026-11-09T22:20:00+05:30'),AGREEMENT_V='2026-11-09';
 async function initCloud(){
  if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.hostname))return false;
  let cfg=null;try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),4000);const r=await fetch(API+'/api/config',{signal:ac.signal}).finally(()=>clearTimeout(t));if(r.ok)cfg=await r.json()}catch{}
  if(!cfg||!cfg.supabaseUrl||!cfg.supabaseAnonKey)return false;
- if(!window.supabase)await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.appendChild(s)}).catch(()=>null);
+ if(!window.supabase)await pinnedScript(PIN.supabase,'load').catch(()=>null);
  if(!window.supabase){toast('Doctine couldn’t load its sign-in service. Check your connection and refresh.');return false}
  CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;CLOUD.ai=cfg.aiAvailable!==false;
@@ -510,14 +550,14 @@ async function cloudEnter(user){
  const sb=CLOUD.sb;CLOUD.epoch++;CLOUD.uid=user.id;CLOUD.email=user.email;resetCloudState();resetHistory();S.loadingCloud=true;const ep=CLOUD.epoch;
  try{
   let gc=false;try{gc=sessionStorage.getItem('doctine:google-consent')==='1';sessionStorage.removeItem('doctine:google-consent')}catch{}
-  if(gc)await sb.from('consents').upsert([{user_id:user.id,kind:'cloud_storage',granted:true},{user_id:user.id,kind:'ai_chat',granted:true}],{onConflict:'user_id,kind',ignoreDuplicates:true});
+  if(gc||(user.user_metadata||{}).agreed_at)await sb.from('consents').upsert([{user_id:user.id,kind:'cloud_storage',granted:true}],{onConflict:'user_id,kind',ignoreDuplicates:true});
   const[pr,cs,ds,fs,ms,sc,de]=await Promise.all([
    sb.from('health_profiles').select('*').maybeSingle(),sb.from('consents').select('*'),sb.from('documents').select('*').order('created_at',{ascending:false}),
    sb.from('document_files').select('document_id,kind,page,storage_path,content_type'),sb.from('medicines').select('*').order('created_at'),sb.from('medication_schedules').select('*'),sb.from('dose_events').select('*')]);
   if(CLOUD.epoch!==ep)return;   // signed out or switched while loading: show nothing of this account
   const bad=[pr,cs,ds,fs,ms,sc,de].find(r=>r.error);if(bad)throw bad.error;
   const p=pr.data||{},meta=user.user_metadata||{};
-  const consent={ai:true,analytics:false,history:false};(cs.data||[]).forEach(c=>{if(c.kind==='ai_chat')consent.ai=c.granted;if(c.kind==='analytics')consent.analytics=c.granted;if(c.kind==='chat_history')consent.history=c.granted});
+  const consent={ai:false,analytics:false,history:false};(cs.data||[]).forEach(c=>{if(c.kind==='ai_chat')consent.ai=!!c.granted&&Date.parse(c.updated_at)>=AI_CONSENT_FROM;if(c.kind==='analytics')consent.analytics=c.granted;if(c.kind==='chat_history')consent.history=c.granted});
   const docByUuid={};CLOUD.ids={docs:{},meds:{}};CLOUD.files={};
   const reports=(ds.data||[]).map(d=>{docByUuid[d.id]=d.client_id;CLOUD.ids.docs[d.client_id]=d.id;return{id:Number(d.client_id),title:d.title,cat:d.category,date:d.document_date||'',lab:d.provider||'',fields:d.fields||{},hash:d.file_hash||undefined,imgs:d.page_count||0,scan:d.extraction||null,src:d.source,checked:d.source==='manual'&&(d.page_count||0)>0}});
   (fs.data||[]).forEach(f=>{const cid=docByUuid[f.document_id];if(cid==null)return;CLOUD.files[`${f.kind==='original'?'orig':'scan'}:${cid}:${f.page}`]=f.storage_path;if(f.content_type==='application/pdf'){const r=reports.find(x=>x.id===Number(cid));if(r)r.orig='pdf'}});
@@ -612,7 +652,7 @@ async function cloudDeleteAccount(){const{data}=await CLOUD.sb.auth.getSession()
 
 /* ---- health assistant: every reply comes from the server's AI model. This page never writes medical answers itself. ---- */
 const nz=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
-const CHAT_ERR={capacity:'Doctine has reached its limit of AI requests for today. Please try again later. If this is urgent, call 112 or contact a doctor.',limiter_unavailable:'Doctine can’t check its usage limits right now, so the assistant is paused. Please try again in a minute. If this is urgent, call 112.',ai_not_allowed:'Claude wasn’t allowed for this page, so the assistant can’t answer. Reload the page and choose Allow when asked.',ai_image:'This view can’t send photos to Claude. Open the page on claude.ai or in the Claude app.',not_configured:'The AI assistant and the scanner are switched off in this preview. They will work in the Doctine app when it opens at app.doctine.com.',no_server:'The assistant server isn’t deployed here, so this page can’t reach an AI model. It must be deployed with its Netlify function (see DEPLOY.md).',invalid_key:'The AI provider rejected the API key. Check the key saved in Netlify is correct and still active, then redeploy.',key_forbidden:'The API key isn’t allowed to use this service or model. Check its permissions in your AI provider account.',insufficient_credits:'The AI account has no credit left. Add credits in the provider’s billing page (Anthropic Console → Billing), then try again.',model_not_found:'The model “{model}” isn’t available to this API key. Set AI_MODEL in Netlify to a model your account can use, then redeploy.',ai_rate_limited:'The AI provider is rate-limiting requests. Wait a moment, then retry.',ai_busy:'The AI service is busy right now. Try again shortly.',ai_network:'The server couldn’t reach the AI provider. Try again in a moment.',rate_limited:'You’re sending messages quickly. Please wait a minute and try again.',ai_timeout:'The AI took too long to answer. Please try again.',ai_error:'The AI service returned an error. Please try again.',bad_output:'The AI gave a reply Doctine couldn’t safely show. Please rephrase and try again.',invalid:'That message couldn’t be sent. Try a shorter message.',too_large:'That message was too large.',network:'Network problem. Check your connection and try again.',cancelled:'Cancelled.'};
+const CHAT_ERR={not_sent:'Not sent. The document stays on this device; nothing went to the AI.',capacity:'Doctine has reached its limit of AI requests for today. Please try again later. If this is urgent, call 112 or contact a doctor.',limiter_unavailable:'Doctine can’t check its usage limits right now, so the assistant is paused. Please try again in a minute. If this is urgent, call 112.',ai_not_allowed:'Claude wasn’t allowed for this page, so the assistant can’t answer. Reload the page and choose Allow when asked.',ai_image:'This view can’t send photos to Claude. Open the page on claude.ai or in the Claude app.',not_configured:'The AI assistant and the scanner are switched off in this preview. They will work in the Doctine app when it opens at app.doctine.com.',no_server:'The assistant server isn’t deployed here, so this page can’t reach an AI model. It must be deployed with its Netlify function (see DEPLOY.md).',invalid_key:'The AI provider rejected the API key. Check the key saved in Netlify is correct and still active, then redeploy.',key_forbidden:'The API key isn’t allowed to use this service or model. Check its permissions in your AI provider account.',insufficient_credits:'The AI account has no credit left. Add credits in the provider’s billing page (Anthropic Console → Billing), then try again.',model_not_found:'The model “{model}” isn’t available to this API key. Set AI_MODEL in Netlify to a model your account can use, then redeploy.',ai_rate_limited:'The AI provider is rate-limiting requests. Wait a moment, then retry.',ai_busy:'The AI service is busy right now. Try again shortly.',ai_network:'The server couldn’t reach the AI provider. Try again in a moment.',rate_limited:'You’re sending messages quickly. Please wait a minute and try again.',ai_timeout:'The AI took too long to answer. Please try again.',ai_error:'The AI service returned an error. Please try again.',bad_output:'The AI gave a reply Doctine couldn’t safely show. Please rephrase and try again.',invalid:'That message couldn’t be sent. Try a shorter message.',too_large:'That message was too large.',network:'Network problem. Check your connection and try again.',cancelled:'Cancelled.'};
 const errText=(c,i)=>{i=i||{};return(CHAT_ERR[c]||CHAT_ERR.network).replace('{missing}',(i.missing||[]).join(', ')||'the AI key').replace('{model}',i.model||'configured')};
 function buildCtx(){
  if(!S.useRecords)return null;
@@ -627,7 +667,10 @@ function buildCtx(){
  return ctx}
 const DOCQ='Explain this document: what it says, the diagnosis, what each medicine or test is for, and anything I should ask my doctor.';
 async function send(q){q=String(q).trim();if(!q&&S.chatDoc&&!S.chatReading)q=DOCQ;if(!q||S.typing||S.chatReading)return;
- if(!S.consent.ai){toast('AI explanations are switched off. Turn them on in Settings.');return go('settings')}
+ if(!S.consent.ai&&!S.sample){const ek=emergencyText(q);S.cerr='';
+  if(ek){S.msgs.push({r:'u',t:q,doc:''},{r:'a',p:{...emergencyReply(ek),ai_unavailable:'not_allowed'},map:{}});S.aiAsk=null;return render()}
+  S.aiAsk=q;return render()}
+ S.aiAsk=null;
  S.cerr='';S.lastQ=q;S.ctxMap=null;S.msgs.push({r:'u',t:q,doc:S.chatDoc?S.chatDoc.title:''});S.typing=true;render();
  const ac=new AbortController();S.abort=ac;
  const messages=S.msgs.slice(-20).map(m=>({role:m.r==='u'?'user':'assistant',content:String(m.r==='u'?m.t:(m.p&&m.p.reply)||'').slice(0,2000)})).filter(m=>m.content);
@@ -772,7 +815,7 @@ async function attachDoc(camera){
    if(text.replace(/\s/g,'').length>200)doc={title:f.name.replace(/\.pdf$/i,''),type:'other',transcription:text.slice(0,12000)};
    else blobs=await pdfImages(f)}
   else{blobs=await scanner(files,{action:'Attach'});if(!blobs)return render()}
-  if(blobs){S.chatReading='document';render();const r=await readScan(blobs);
+  if(blobs){if(!await aiReadOk(blobs.length)){S.cerr='not_sent';return render()}S.chatReading='document';render();const r=await readScan(blobs);
    if(!r.doc){S.chatReading='';S.cinfo=r.info||{};S.cerr=r.error;return render()}
    doc=r.doc;
    if(S.email&&!S.sample&&!S.guest){const rec=await saveScan(blobs,doc);toast('Also saved to Reports as “'+rec.title+'”')}}
@@ -794,10 +837,10 @@ function cloudAuthView(){
  else body=`<form id="${m==='register'?'rf':'lf'}" class="mt-4 space-y-4" novalidate>
   ${m==='register'?f('name','Your name','text','autocomplete="name"'):''}${f('email','Email','email','autocomplete="email"')}${f('pw','Password'+(m==='register'?' (8+ characters)':''),'password',`autocomplete="${m==='register'?'new-password':'current-password'}"`)}
   <label class="flex items-center gap-2 text-sm text-[var(--mute)]"><input type="checkbox" id="showpw"> Show password</label>
-  ${m==='register'?`<label class="flex gap-2 text-sm"><input type="checkbox" name="ack" class="mt-1"><span>I’m 18 or older, and I agree that Doctine stores my health records in my account, sends what I ask about to an AI provider to answer me, and is not medical advice.</span></label><p class="text-xs text-[var(--mute)] mt-1 pl-6">Read the <a class="underline" href="https://doctine.com/privacy/" target="_blank" rel="noopener">privacy policy</a> and <a class="underline" href="https://doctine.com/terms/" target="_blank" rel="noopener">terms</a>.</p>`:''}
+  ${m==='register'?`<label class="flex gap-2 text-sm"><input type="checkbox" name="ack" class="mt-1"><span>I’m 18 or older, and I agree that Doctine stores my health records in my account and is not medical advice.</span></label><p class="text-xs text-[var(--mute)] mt-1 pl-6">Read the <a class="underline" href="https://doctine.com/privacy/" target="_blank" rel="noopener">privacy policy</a> and <a class="underline" href="https://doctine.com/terms/" target="_blank" rel="noopener">terms</a>.</p>`:''}
   <div id="aerr"></div><button class="btn pri w-full">${m==='register'?'Create account':'Sign in'}</button></form>
   <div class="mt-4 flex justify-between text-sm text-[var(--mute)]">${m==='register'?`<button data-auth="login" class="underline">Back to sign in</button>`:`<button data-auth="forgot" class="underline">Forgot password?</button><button data-auth="register" class="underline">Create account</button>`}</div>
-  ${CLOUD.google?`<div class="mt-5 pt-5" style="border-top:1px solid var(--line)"><label class="flex gap-2 text-sm"><input type="checkbox" id="gack" class="mt-1"><span>To continue with Google, I confirm I’m 18 or older and agree that Doctine stores my health records in my account, sends what I ask about to an AI provider to answer me, and is not medical advice.</span></label><p class="text-xs text-[var(--mute)] mt-1 pl-6">Read the <a class="underline" href="https://doctine.com/privacy/" target="_blank" rel="noopener">privacy policy</a> and <a class="underline" href="https://doctine.com/terms/" target="_blank" rel="noopener">terms</a>.</p><div id="gerr">${S.oauthErr?`<div class="err mt-3" role="alert">${esc(S.oauthErr)}</div>`:''}</div><button type="button" id="google" class="btn w-full mt-3">Continue with Google</button></div>`:''}`;
+  ${CLOUD.google?`<div class="mt-5 pt-5" style="border-top:1px solid var(--line)"><label class="flex gap-2 text-sm"><input type="checkbox" id="gack" class="mt-1"><span>To continue with Google, I confirm I’m 18 or older and agree that Doctine stores my health records in my account and is not medical advice.</span></label><p class="text-xs text-[var(--mute)] mt-1 pl-6">Read the <a class="underline" href="https://doctine.com/privacy/" target="_blank" rel="noopener">privacy policy</a> and <a class="underline" href="https://doctine.com/terms/" target="_blank" rel="noopener">terms</a>.</p><div id="gerr">${S.oauthErr?`<div class="err mt-3" role="alert">${esc(S.oauthErr)}</div>`:''}</div><button type="button" id="google" class="btn w-full mt-3">Continue with Google</button></div>`:''}`;
  return `<div class="max-w-md mx-auto px-5 py-10"><div class="flex items-center gap-2 mb-6">${LOGO}<span class="serif text-2xl">Doctine</span></div><div class="card p-6"><h1 class="text-2xl">${T}</h1>
  <p class="text-sm text-[var(--mute)] mt-2">Your records are saved to your Doctine account and protected so only you can open them.</p>${body}</div>
  <button id="guest" class="btn pri w-full mt-4">Ask a health question without an account</button><button id="samp" class="btn tl w-full mt-2">Explore with sample data (nothing is saved)</button><div class="text-center mt-4"><button class="underline text-sm text-[var(--mute)]" data-auth="about">About Doctine</button></div></div>`}
@@ -807,7 +850,7 @@ function authView(){
  const m=S.auth,T={login:'Welcome back',register:'Create your account',forgot:'Reset your password'}[m];
  const f=(n,l,t='text',x='')=>`<label class="block text-sm"><span class="text-[var(--mute)]">${l}</span><input class="inp mt-1" name="${n}" type="${t}" ${x} required></label>`;
  return `<div class="max-w-md mx-auto px-5 py-10"><div class="flex items-center gap-2 mb-6">${LOGO}<span class="serif text-2xl">Doctine</span></div><div class="card p-6"><h1 class="text-2xl">${T}</h1>
- <div class="warn mt-4"><b>This is a demo.</b> Accounts and saved reports stay in this browser and aren’t secure. Messages you send to the health assistant are processed by an AI provider through this site’s server. Don’t enter real health information, and don’t reuse a real password.</div>
+ <div class="warn mt-4"><b>This is a demo.</b> Accounts and saved reports stay in this browser and aren’t secure. If you allow the AI assistant, messages you send it are processed by an AI provider through this site’s server. Don’t enter real health information, and don’t reuse a real password.</div>
  ${m==='forgot'?`<p class="mt-4 text-sm text-[var(--mute)]">This demo can’t email reset links. If you’ve forgotten your password, you can erase this browser’s demo accounts and create a new one.</p><div class="mt-4 flex gap-2"><button class="btn dg" id="erase">Erase demo accounts here</button><button class="btn" data-auth="login">Back</button></div>`:
  `<form id="${m==='login'?'lf':'rf'}" class="mt-4 space-y-4" novalidate>
   ${m==='register'?f('name','Your name','text','autocomplete="name"'):''}${f('email','Email','email','autocomplete="email"')}${f('pw','Password'+(m==='register'?' (8+ characters)':''),'password',`autocomplete="${m==='login'?'current-password':'new-password'}"`)}
@@ -835,7 +878,7 @@ function homeView(){
  <section class="card p-5"><h2 class="text-xl">Today’s medicines</h2>${due.length?`<ul class="mt-3 divide-y divide-[var(--line)]">${due.map(({m,t})=>`<li class="py-3 flex justify-between"><div><div class="font-medium">${esc(m.name)}</div><div class="text-sm text-[var(--mute)]">${esc(m.dose)}</div></div><span class="serif text-lg">${esc(t)}</span></li>`).join('')}</ul>`:`<p class="mt-3 text-[var(--mute)]">${S.meds.length?'Nothing left to log today.':'No medicines added yet.'}</p>`}<button class="underline text-sm mt-3" data-nav="medicines">${S.meds.length?'Open medicines':'Add a medicine'}</button></section></div>
  <section class="card p-5"><h2 class="text-xl">Recent activity</h2>${hist.length||rec.length?`<ul class="mt-3 text-sm space-y-2">${hist.map(x=>`<li>${esc(x.s)}: ${esc(x.name)} at ${esc(x.t)} on ${esc(x.d)}</li>`).join('')}${rec.map(r=>`<li>Saved record: ${esc(r.title)}</li>`).join('')}</ul>`:'<p class="mt-3 text-[var(--mute)]">Your saved records and dose log will show here.</p>'}</section>`)}
 
-function ansView(x,last){const p=x.p,em=p.urgency==='emergency';if(p.ai_unavailable&&!p._n){p._n=1;p.safety_note=(p.safety_note?p.safety_note+' ':'')+'The AI assistant couldn’t be reached, so this is Doctine’s built-in safety guidance.'}
+function ansView(x,last){const p=x.p,em=p.urgency==='emergency';if(p.ai_unavailable&&!p._n){p._n=1;p.safety_note=(p.safety_note?p.safety_note+' ':'')+(p.ai_unavailable==='not_allowed'?'The AI assistant is switched off for you, so this is Doctine’s built-in safety guidance. Nothing was sent anywhere.':'The AI assistant couldn’t be reached, so this is Doctine’s built-in safety guidance.')}
  const paras=s=>esc(s).split(/\n{2,}/).map(t=>`<p class="leading-relaxed">${t.replace(/\n/g,'<br>')}</p>`).join('');
  const claims=(p.record_claims||[]).map(c=>{const m=x.map[c.source];return`<li>${esc(c.text)}${m?` <button class="tag underline" data-rep="${m.rid}">${esc(m.title)}${m.date?', '+esc(m.date):''}</button>`:''}</li>`}).join('');
  return`<div class="max-w-[94%] space-y-3">${em?'<div class="err"><b>This may need urgent help.</b> Call 112 (India) or your local emergency number, or go to the nearest emergency department now.</div>':''}
@@ -855,10 +898,11 @@ function chatView(){
  const err=S.cerr?`<div class="${S.cerr==='cancelled'?'warn':'err'}" role="alert">${esc(errText(S.cerr,S.cinfo))}${S.lastQ&&['rate_limited','ai_rate_limited','ai_busy','ai_timeout','ai_error','ai_network','bad_output','network'].includes(S.cerr)?' <button class="underline" data-retry="1">Retry</button>':''}</div>`:'';
  const rec=S.reports.length&&!S.guest?`<label class="flex items-start gap-2 text-xs text-[var(--mute)] max-w-3xl mx-auto mb-2"><input type="checkbox" id="usrec" class="mt-0.5" ${S.useRecords?'checked':''}><span>Use my saved reports and profile in this chat. Sends only matching report values plus your age and allergies, together with your message, to the AI provider. Off by default.</span></label>`:'';
  const hist=S.cloud?`<button class="btn" id="histopen">Saved chats</button>`:'';
+ const ask=S.aiAsk&&!S.consent.ai?`<div class="card p-4 space-y-3" id="aiask" role="dialog" aria-labelledby="aiaskh"><h2 class="text-lg" id="aiaskh">Use the AI assistant?</h2><p class="text-sm">To answer, Doctine sends what you type in chat, through its server, to its AI provider (Anthropic, in the United States). Your saved reports and profile are not sent unless you tick the box under the chat for that conversation. Chats aren’t kept unless you switch on “Save my chats”.</p><p class="text-sm text-[var(--mute)]">You can switch this off at any time in Settings. Emergencies always get Doctine’s built-in guidance, whatever you choose.</p><div class="flex gap-2 flex-wrap"><button class="btn pri" id="aiallow">Allow and send</button><button class="btn" id="ainot">Not now</button></div></div>`:'';
  if(S.histOpen)return`<div class="h-full overflow-y-auto"><div class="max-w-3xl mx-auto px-5 py-6 space-y-4"><div class="flex justify-between items-center gap-3"><h1 class="text-2xl">Saved chats</h1><button class="btn" id="histclose">Back to chat</button></div>
   ${!S.consent.history?'<div class="warn">Saving is off, so new chats aren’t kept. Switch on “Save my chats” in Settings to keep them.</div>':''}
   ${S.histList==null?'<p class="text-sm text-[var(--mute)]"><span class="dot">●</span> Loading…</p>':S.histList.error?`<div class="err">Saved chats couldn’t be loaded: ${esc(S.histList.error)}</div>`:S.histList.length?`<ul class="card divide-y divide-[var(--line)]">${S.histList.map(c=>`<li class="p-4 flex justify-between items-center gap-3"><button class="text-left min-w-0" data-conv="${esc(c.id)}"><div class="font-medium truncate">${esc(c.title||'Chat')}</div><div class="text-xs text-[var(--mute)]">${esc(new Date(c.updated_at).toLocaleString([],{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))}</div></button><button class="btn dg" data-convdel="${esc(c.id)}">Delete</button></li>`).join('')}</ul>`:'<p class="text-sm text-[var(--mute)]">No saved chats yet.</p>'}</div></div>`;
- return`<div class="h-full flex flex-col"><div class="flex justify-end gap-2 px-5 pt-3 min-h-[3rem]">${hist}${S.msgs.length?'<button class="btn" id="newchat">New chat</button>':''}</div><div class="flex-1 overflow-y-auto" id="msgs"><div class="max-w-3xl mx-auto px-5 py-2 space-y-5">${empty}${msgs}${S.typing?'<div class="card inline-flex items-center gap-2 px-4 py-3 text-sm text-[var(--mute)]" aria-live="polite"><span class="dot">●</span><span class="dot" style="animation-delay:.2s">●</span><span class="dot" style="animation-delay:.4s">●</span> Thinking <button class="underline ml-2" id="stop">Stop</button></div>':''}${err}</div></div>
+ return`<div class="h-full flex flex-col"><div class="flex justify-end gap-2 px-5 pt-3 min-h-[3rem]">${hist}${S.msgs.length?'<button class="btn" id="newchat">New chat</button>':''}</div><div class="flex-1 overflow-y-auto" id="msgs"><div class="max-w-3xl mx-auto px-5 py-2 space-y-5">${empty}${msgs}${ask}${S.typing?'<div class="card inline-flex items-center gap-2 px-4 py-3 text-sm text-[var(--mute)]" aria-live="polite"><span class="dot">●</span><span class="dot" style="animation-delay:.2s">●</span><span class="dot" style="animation-delay:.4s">●</span> Thinking <button class="underline ml-2" id="stop">Stop</button></div>':''}${err}</div></div>
  <div class="px-5 pb-4 pt-2">${rec}${S.chatReading||S.chatDoc?`<div class="max-w-3xl mx-auto mb-2">${S.chatReading?`<span class="docchip" aria-live="polite"><span><span class="dot">●</span> Reading ${esc(S.chatReading)}…</span></span>`:`<span class="docchip"><span>📄 ${esc(S.chatDoc.title)}</span><button type="button" class="btn" style="padding:.1rem .45rem;border-radius:999px" id="docx" aria-label="Remove document">✕</button></span>`}</div>`:''}<form id="cf" class="max-w-3xl mx-auto card flex gap-2 p-2 shadow-sm"><div style="position:relative"><button type="button" class="btn" id="catt" aria-label="Scan or upload a document" aria-expanded="${!!S.attMenu}" ${S.chatReading?'disabled':''}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="m20 11.5-7.8 7.8a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg></button>${S.attMenu?`<div class="attmenu card shadow-lg"><button type="button" id="attcam"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg> Scan with camera</button><button type="button" id="attfile">🖼️ Photo or PDF</button></div>`:''}</div><input id="ci" class="flex-1 px-3 outline-none bg-transparent" style="min-width:0" placeholder="${S.chatDoc?'Ask about this document, or just tap Send':'Describe how you feel or ask a question'}" aria-label="Message" maxlength="2000" autocomplete="off"><button class="btn pri" ${S.typing||S.chatReading?'disabled':''}>Send</button></form>
  <p class="max-w-3xl mx-auto text-center text-xs text-[var(--mute)] mt-2">Doctine’s assistant is an AI. It can be wrong, and it is not a doctor, a diagnosis or a prescription. For emergencies call 112. ${historyOn()?(S.histStatus==='saving'?'Saving this chat to your Doctine account…':S.histStatus==='saved'?'This chat is saved in your Doctine account.':S.histStatus==='error'?'Some messages in this chat are not saved yet.':'New messages in this chat will be saved to your Doctine account.'):S.cloud?'This chat isn’t saved (switch on “Save my chats” in Settings).':'Chats are not saved after a refresh.'}</p>${S.histErr?`<p class="max-w-3xl mx-auto err mt-2" role="alert">${esc(S.histErr)}</p>`:''}</div></div>`}
 function healthView(){
@@ -998,7 +1042,7 @@ function abObserve(){const v=document.getElementById('ab-vision');if(!v||v.datas
  const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){v.dataset.seen='1';v.classList.add('ab-draw');io.disconnect()}},{threshold:.25});io.observe(v)}
 const soon=()=>wrap(head('Family','Coming soon')+`<div class="card p-8 text-center"><div class="text-3xl">👪</div><p class="mt-3 max-w-sm mx-auto text-[var(--mute)]">Later you’ll be able to keep separate profiles for family members, with sharing you control. Nothing is shared today.</p></div>`);
 const setView=()=>wrap(head('Settings','Permissions and your data.')+(S.cloud?'':`<div class="warn">${S.sample?'Sample data. Nothing you change is saved.':'Demo account: everything is saved only in this browser, on this device. Nothing is uploaded to a Doctine account.'}</div>`)+
- `<section class="card p-5 space-y-4">${[['ai','Allow AI explanations in chat','When on, the messages you type in chat are sent through this site’s server to an AI provider. Saved reports and profile details are sent only if you tick the box inside a chat, and then only matching values, your age and allergies. Off blocks the assistant.'],['analytics','Optional analytics','Doctine doesn’t collect analytics.'],...(S.cloud?[['history','Save my chats to my account','Off unless you switch it on. When on, your messages and Doctine’s replies are stored in your account so you can reopen them under Chat → Saved chats. Switching it off stops saving; chats already saved stay until you delete them.']]:[])].map(([k,l,d])=>`<label class="flex items-center justify-between gap-4"><span>${l}<span class="block text-sm text-[var(--mute)]">${d}</span></span><input type="checkbox" data-c="${k}" class="w-5 h-5 accent-teal-700" ${S.consent[k]?'checked':''}></label>`).join('')}</section>
+ `<section class="card p-5 space-y-4">${[['ai','Use the AI assistant','Off unless you switch it on. When on, what you type in chat is sent through this site’s server to Doctine’s AI provider (Anthropic, United States). Saved reports and profile details go only if you tick the box in that chat, and then only matching values, your age and allergies. Photos and scanned pages are sent only when you choose “Send to AI” each time. Emergency guidance works either way.'],['analytics','Optional analytics','Doctine doesn’t collect analytics.'],...(S.cloud?[['history','Save my chats to my account','Off unless you switch it on. When on, your messages and Doctine’s replies are stored in your account so you can reopen them under Chat → Saved chats. Switching it off stops saving; chats already saved stay until you delete them.']]:[])].map(([k,l,d])=>`<label class="flex items-center justify-between gap-4"><span>${l}<span class="block text-sm text-[var(--mute)]">${d}</span></span><input type="checkbox" data-c="${k}" class="w-5 h-5 accent-teal-700" ${S.consent[k]?'checked':''}></label>`).join('')}</section>
  <section class="card p-5 space-y-3"><h2 class="text-xl">Appearance</h2><div class="flex gap-2 flex-wrap">${[['auto','Match my device'],['light','Light'],['dark','Dark']].map(([v,l])=>`<button class="btn ${themePref()===v?'tl':''}" data-theme="${v}" aria-pressed="${themePref()===v}">${l}</button>`).join('')}</div></section>
  <section class="card p-5 space-y-3"><h2 class="text-xl">Your data</h2><p class="text-sm text-[var(--mute)]">${S.sample?'You are viewing sample data. Nothing is saved.':S.cloud?'Saved to your Doctine account, which only you can open.':'Saved only in this browser on this device.'} Export shows everything as text you can copy. The .zip download also includes your original PDFs and photos.</p>${S.zipNote?`<p class="text-sm" role="status">${esc(S.zipNote)}</p>`:''}<p class="text-sm"><a class="underline" href="https://doctine.com/privacy/" target="_blank" rel="noopener">Privacy policy</a> · <a class="underline" href="https://doctine.com/terms/" target="_blank" rel="noopener">Terms</a> · Questions or a complaint: <a class="underline" href="mailto:support@doctine.com">support@doctine.com</a></p>${S.cloud?`<p class="text-sm" id="syncst" role="status">${esc(syncText())}</p>`:''}
  ${S.cloud?`<p class="text-sm text-[var(--mute)]">Deleting your account permanently removes your profile, reports, original documents and photos, medicines, dose history, saved chats and your record of choices. It can't be undone, so export first if you want a copy. Copies in our providers' backups are removed on their normal schedules.</p>`:''}<div class="flex gap-2 flex-wrap"><button class="btn" id="exp2">Export my data</button><button class="btn" id="expzip" ${S.zipping?'disabled':''}>${S.zipping?'Preparing download…':'Download with original files (.zip)'}</button>${S.cloud?'<button class="btn" id="histall">Delete all saved chats</button>':''}<button class="btn dg" id="wipe">${S.sample?'Reset sample data':'Delete my account and data'}</button></div>
@@ -1012,8 +1056,8 @@ function dueNow(){const d=today(),n=nowHM();
 function bannerHTML(){
  let h=S.cloud&&CLOUD.err?`<div class="err m-3 flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>Some changes aren’t saved to your account yet.</b> ${esc(CLOUD.err)}. Doctine keeps retrying; don’t close this page.</span><button class="btn" data-syncnow="1">Try again now</button></div>`:'';
  h+=S.email&&!S.cloud&&!S.sample&&!S.guest&&(S.view==='home'||S.view==='reports')?'<div class="warn m-3">Demo account: saved only in this browser on this device, not in a Doctine account.</div>':'';
- h+=S.guest?'<div class="warn m-3">You’re not signed in. Nothing here is saved. Your messages go to an AI provider through this site’s server.</div>':S.sample?'<div class="warn m-3">Preview with made-up sample data. Nothing you change is saved.</div>':'';
- dueNow().slice(0,2).forEach(({m,t,k})=>{h+=`<div class="m-3 card p-3 flex flex-wrap items-center justify-between gap-2" role="alert"><div><b>Time for ${esc(m.name)}</b> <span class="text-sm text-[var(--mute)]">${esc(m.dose)} · scheduled ${esc(t)}.${alarmNote()}</span></div><div class="flex gap-2"><button class="btn tl" data-d="${k}|Taken">Taken</button><button class="btn" data-d="${k}|Skipped">Skip</button><button class="btn" data-d="${k}|Snoozed">Snooze 10 min</button></div></div>`});
+ h+=S.guest?'<div class="warn m-3">You’re not signed in. Nothing here is saved. If you allow the AI assistant, your messages go to an AI provider through this site’s server.</div>':S.sample?'<div class="warn m-3">Preview with made-up sample data. Nothing you change is saved.</div>':'';
+ dueNow().slice(0,2).forEach(({m,t,k})=>{h+=`<div class="m-3 card p-3 flex flex-wrap items-center justify-between gap-2" role="alert"><div><b>Time for ${esc(m.name)}</b> <span class="text-sm text-[var(--mute)]">${esc(m.dose)} · scheduled ${esc(t)}.<span class="dnote">${alarmNote()}</span></span></div><div class="flex gap-2"><button class="btn tl" data-d="${k}|Taken">Taken</button><button class="btn" data-d="${k}|Skipped">Skip</button><button class="btn" data-d="${k}|Snoozed">Snooze 10 min</button></div></div>`});
  if(DoctineAlarms.ringing())h+='<div class="m-3 err flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>🔔 Alarm ringing.</b> It stops when you respond, or after 2 minutes.</span><button class="btn dg" data-stopalarm="1">Stop alarm</button></div>';
  return h}
 const alarmCard=()=>{const a=S.alarmStatus||{},nat=DoctineAlarms.isNative();let st='';
@@ -1069,6 +1113,8 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='samp')return enter(null,sampleData(),true);
  if(t.id==='erase'){if(confirm('Erase all demo accounts stored in this browser?')){DB={users:{}};store.set(DB);toast('Demo accounts erased.');S.auth='register';render()}return}
  if(t.dataset.nav)return go(t.dataset.nav);
+ if(t.id==='aiallow'){S.consent.ai=true;persist();const q=S.aiAsk;S.aiAsk=null;toast('AI assistant switched on. You can switch it off in Settings.');return send(q)}
+ if(t.id==='ainot'){S.aiAsk=null;return render()}
  if(t.dataset.q)return send(t.dataset.q);
  if(t.dataset.rep){S.q='';return go('reports')}
  if(t.dataset.ask){const r=S.reports.find(x=>x.title===t.dataset.ask);if(r&&r.scan){S.view='chat';S.chatDoc={title:r.title,doc:r.scan};S.msgs=[];S.cerr='';render();return send(DOCQ)}S.view='chat';S.useRecords=true;S.focusRid=r?r.id:null;render();return send('Please explain the results in my report titled “'+t.dataset.ask+'”.')}
@@ -1131,7 +1177,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='ucx'){S.upload=null;return render()}
  if(t.id==='ucf'){const u=S.upload;const err=m=>$('#uerr').innerHTML=`<div class="err">${esc(m)}</div>`;
   if(!u.title.trim())return err('Please enter a title.');if(u.date&&u.date>today())return err('The report date can’t be in the future.');
-  const fields={};u.rows.filter(r=>r.k.trim()).forEach(r=>fields[r.k.trim()]=r.v.trim());
+  const fields={};u.rows.filter(r=>r.k.trim()).forEach(r=>{let k=r.k.trim().slice(0,60),i=2;while(k in fields)k=r.k.trim().slice(0,56)+' ('+i+++')';fields[k]=r.v.trim()});
   const rec={title:u.title.trim(),cat:u.cat,date:u.date,lab:u.lab.trim(),fields,hash:u.hash};const ed=S.reports.find(x=>x.id===u.editId);if(ed){Object.assign(ed,rec);if(ed.scan&&!ed.checked)ed.checked=true;toast(ed.scan?'Details checked and saved':'Report updated')}else{const id=Date.now(),pdf=u.file&&(u.file.type==='application/pdf'||/\.pdf$/i.test(u.file.name))?u.file:null;if(pdf){try{await IMG.put(`orig:${id}:0`,new Blob([pdf],{type:'application/pdf'}));rec.orig='pdf'}catch{toast('The original PDF couldn’t be kept in this browser; the values you confirmed are saved.')}}S.reports.unshift({id,...rec});toast('Report saved')}S.upload=null;S.q='';render()}
 });
 document.addEventListener('submit',async e=>{e.preventDefault();const id=e.target.id,F=new FormData(e.target);
@@ -1154,9 +1200,9 @@ document.addEventListener('submit',async e=>{e.preventDefault();const id=e.targe
   try{
    if(id==='lf'){const{data,error}=await CLOUD.sb.auth.signInWithPassword({email,password:pw});if(error)return err(nice(error.message));S.loadingCloud=true;render();return cloudEnter(data.user)}
    if(id==='rf'){const name=String(F.get('name')||'').trim();if(!name)return err('Please enter your name.');if(!F.get('ack'))return err('Please tick the box to continue.');
-    const{data,error}=await CLOUD.sb.auth.signUp({email,password:pw,options:{data:{full_name:name},emailRedirectTo:location.origin+location.pathname}});if(error)return err(nice(error.message));
+    const{data,error}=await CLOUD.sb.auth.signUp({email,password:pw,options:{data:{full_name:name,agreed_at:new Date().toISOString(),agreement:AGREEMENT_V},emailRedirectTo:location.origin+location.pathname}});if(error)return err(nice(error.message));
     if(!data.session){S.auth='check';S.authMsg='We sent a confirmation link to '+email+'. Open it, then sign in here.';return render()}
-    await CLOUD.sb.from('consents').upsert([{user_id:data.user.id,kind:'cloud_storage',granted:true},{user_id:data.user.id,kind:'ai_chat',granted:true}]);
+    await CLOUD.sb.from('consents').upsert([{user_id:data.user.id,kind:'cloud_storage',granted:true}],{onConflict:'user_id,kind',ignoreDuplicates:true});
     S.loadingCloud=true;render();return cloudEnter(data.user)}
    if(id==='ff'){const{error}=await CLOUD.sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)return err(nice(error.message));S.auth='check';S.authMsg='If an account exists for '+email+', we sent a link to set a new password.';return render()}
    if(id==='npf'){const{data,error}=await CLOUD.sb.auth.updateUser({password:pw});if(error)return err(nice(error.message));toast('Password updated');S.loadingCloud=true;render();return cloudEnter(data.user)}

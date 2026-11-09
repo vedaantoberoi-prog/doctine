@@ -43,7 +43,8 @@ await pg.check("#gack"); await Promise.all([pg.waitForNavigation({ timeout: 1000
 const calls = await oauthCalls(pg);
 check("it asks Supabase for Google, returning to this page", calls.length === 1 && calls[0].provider === "google" && calls[0].redirectTo === BASE + "/index.html", JSON.stringify(calls));
 check("back from Google, the person is in their Doctine account", await pg.evaluate("S.cloud===true&&CLOUD.email==='priya.google@example.com'") && (await pg.textContent("#who")).includes("Doctine account"));
-check("the agreement is recorded once, as for an email sign-up", JSON.stringify(await consents(pg)) === JSON.stringify(["ai_chat=true", "cloud_storage=true"]), JSON.stringify(await consents(pg)));
+check("the agreement is recorded once, as for an email sign-up", JSON.stringify(await consents(pg)) === JSON.stringify(["cloud_storage=true"]), JSON.stringify(await consents(pg)));
+check("signing up doesn't switch on the AI assistant: that's a separate choice, off by default", await pg.evaluate("S.consent.ai===false") && !/AI provider/.test(await pg.evaluate("document.body.innerText")));
 
 // records go into the account and survive a reload
 await pg.evaluate("go('health')"); for (const [k, v] of [["blood", "O+"], ["allergies", "Penicillin"]]) { await pg.fill(`[data-p=${k}]`, v); await pg.dispatchEvent(`[data-p=${k}]`, "change"); }
@@ -54,10 +55,15 @@ await pg.reload(); await pg.waitForTimeout(1200);
 check("still signed in after a reload, with the details still there", await pg.evaluate("S.cloud&&S.profile.blood==='O+'&&S.profile.allergies==='Penicillin'"));
 
 // a later choice is never overwritten by signing in again
-await pg.evaluate("(()=>{const c=window.__sbdb.tables.consents.find(c=>c.user_id===CLOUD.uid&&c.kind==='ai_chat');c.granted=false;localStorage.setItem('__sbdb',JSON.stringify(window.__sbdb))})()");
+await pg.evaluate("(()=>{const c=window.__sbdb.tables.consents.find(c=>c.user_id===CLOUD.uid&&c.kind==='cloud_storage');c.granted=false;localStorage.setItem('__sbdb',JSON.stringify(window.__sbdb))})()");
 await pg.evaluate("document.querySelector('#out').click()"); await pg.waitForTimeout(500);
 await pg.check("#gack"); await Promise.all([pg.waitForNavigation({ timeout: 10000 }), pg.click("#google")]); await pg.waitForTimeout(900);
-check("signing in with Google again keeps a choice the person changed later", JSON.stringify(await consents(pg)) === JSON.stringify(["ai_chat=false", "cloud_storage=true"]), JSON.stringify(await consents(pg)));
+check("signing in with Google again keeps a choice the person changed later", JSON.stringify(await consents(pg)) === JSON.stringify(["cloud_storage=false"]), JSON.stringify(await consents(pg)));
+// an AI permission recorded under the old, bundled sign-up agreement (before it became its own choice) doesn't count
+await pg.evaluate("(()=>{window.__sbdb.tables.consents.push({user_id:CLOUD.uid,kind:'ai_chat',granted:true,updated_at:'2026-11-05T10:00:00Z'});localStorage.setItem('__sbdb',JSON.stringify(window.__sbdb))})()");
+await pg.evaluate("document.querySelector('#out').click()"); await pg.waitForTimeout(500);
+await pg.check("#gack"); await Promise.all([pg.waitForNavigation({ timeout: 10000 }), pg.click("#google")]); await pg.waitForTimeout(900);
+check("an AI permission from the old bundled sign-up agreement isn't treated as permission", await pg.evaluate("S.consent.ai===false"));
 check("signing in again opens the same account, not a new one", await pg.evaluate("Object.keys(window.__sbdb.users).length===1&&S.profile.blood==='O+'"));
 
 // failures are explained

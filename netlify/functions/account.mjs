@@ -5,6 +5,7 @@
  * 3. Deletes the auth user; the database removes all their rows through ON DELETE CASCADE.
  * Needs SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY (server only, never sent to browsers).
  */
+import { serviceHeaders } from "../lib/supabase-keys.mjs";
 import { json } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 
@@ -37,7 +38,7 @@ export default async (req, context) => {
     const user = await who.json();
     const uid = user && user.id;
     if (!uid || !/^[0-9a-f-]{36}$/i.test(uid)) return json({ error: "unauthorized", message: "Please sign in again." }, 401);
-    const admin = { apikey: service, authorization: `Bearer ${service}`, "content-type": "application/json" };
+    const admin = serviceHeaders(service, { "content-type": "application/json" });
 
     // 2. Every file under their folder, page by page ({uid}/{record}/{file}; deeper folders are followed too).
     const PAGE = 1000;

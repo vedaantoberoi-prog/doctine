@@ -26,7 +26,7 @@ await pg.click("[data-auth=register]"); await pg.fill("input[name=name]", "Meera
 check("signed in with a Doctine account, labelled as such", await pg.evaluate("S.cloud") && (await pg.textContent("#who")).includes("Doctine account"));
 await pg.evaluate("go('health')"); for (const [k, v] of [["dob", "1979-03-02"], ["height", "158"], ["weight", "64"], ["blood", "A+"], ["allergies", "Sulfa"]]) { await pg.fill(`[data-p=${k}]`, v); await pg.dispatchEvent(`[data-p=${k}]`, "change"); }
 await pg.evaluate("go('reports')"); await pg.evaluate(`(async()=>{const f=await ${photo};quickScan(false,null,[f])})()`);
-await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForTimeout(1500);
+await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]"); await pg.click("[data-ai='1']"); await pg.waitForTimeout(1500);
 await pg.evaluate("go('medicines')"); await pg.fill("#mf [name=name]", "Vitamin D3"); await pg.fill("#mf [name=dose]", "1 sachet"); await pg.selectOption("#freq", "weekly"); await pg.check("input[name=day][value='0']"); await pg.click("[data-mtp='09:00']").catch(()=>{});
 await pg.evaluate(() => { S.medDraft.times = ["09:00"]; }); await pg.click("#mf button.pri"); await pg.waitForTimeout(150);
 await pg.fill("#mf [name=name]", "Telma 40"); await pg.fill("#mf [name=dose]", "1 tablet at night"); await pg.click("#mf button.pri"); await pg.waitForTimeout(150);
@@ -55,7 +55,9 @@ check("the record says the original PDF is kept and offers to open it", (await p
 check("medicines, weekly schedule and paused status saved", t1.medicines?.length === 2 && t1.medication_schedules.some((s) => s.frequency === "weekly" && s.days_of_week.join() === "0") && t1.medicines.some((m) => m.status === "paused"));
 check("dose history saved", t1.dose_events?.length === 2);
 // chats: not saved while the switch is off
-await pg.evaluate("go('chat')"); await pg.fill("#ci", "What does HbA1c 6.1 mean?"); await pg.click("#cf button.pri"); await pg.waitForTimeout(600);
+await pg.evaluate("go('chat')"); await pg.fill("#ci", "What does HbA1c 6.1 mean?"); await pg.click("#cf button.pri"); await pg.waitForTimeout(200); await pg.click("#aiallow"); await pg.waitForTimeout(600);
+await pg.waitForFunction("(window.__sbdb.tables.consents||[]).some(c=>c.kind==='ai_chat'&&c.granted===true)", null, { timeout: 5000 }).catch(() => {});
+check("the AI permission is recorded as its own choice in the account", (await pg.evaluate("window.__sbdb.tables.consents")).some((c) => c.kind === "ai_chat" && c.granted === true));
 check("with saving off, no chat is stored", !(await pg.evaluate("window.__sbdb.tables.conversations||[]")).length && (await pg.textContent("#view")).includes("This chat isn’t saved"));
 await pg.evaluate("go('settings')"); await pg.check("[data-c=history]"); await pg.waitForTimeout(1200);
 check("the 'Save my chats' consent is stored", (await pg.evaluate("window.__sbdb.tables.consents")).some((c) => c.kind === "chat_history" && c.granted));

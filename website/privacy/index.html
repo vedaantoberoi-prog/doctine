@@ -7,9 +7,7 @@
 <meta name="description" content="How Doctine collects, uses, stores and protects your personal and health information, and how to use your rights.">
 <meta name="theme-color" content="#101C2B">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
 <link rel="stylesheet" href="/assets/site.css">
 <link rel="canonical" href="https://doctine.com/privacy/">
 <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
@@ -56,7 +54,7 @@
 
   <section class="page-head"><div class="wrap">
     <h1>Privacy policy</h1>
-    <p>Last updated 5 November 2026</p>
+    <p>Last updated 9 November 2026</p>
   </div></section>
   <div class="wrap"><div class="prose">
 
@@ -95,12 +93,14 @@
   <p>Health information is sensitive. You decide what to add, and you don't have to add anything you aren't comfortable with. If you add records about someone else, make sure you have their permission, or that you're their parent or legal guardian.</p>
 
   <h2>Your consent</h2>
-  <p>We process your data based on the consent you give when you create your account. That includes storing your records in your account and sending what you ask about to our AI provider. You can change your choices any time in <strong>Settings</strong>:</p>
+  <p>When you create your account, you agree that we store your health records in your account. That's the only thing sign-up covers. Sending anything to our AI provider needs separate permission, which you give in the app. You can change your choices any time in <strong>Settings</strong>:</p>
   <ul>
-    <li><strong>Allow AI explanations in chat:</strong> turning it off stops anything being sent to the AI provider. The assistant then can't answer.</li>
+    <li><strong>Use the AI assistant:</strong> off unless you switch it on. The first time you ask the assistant something, Doctine asks before sending it. While it's off, nothing you type goes to the AI provider; if you describe an emergency, Doctine shows its own fixed safety guidance instead.</li>
     <li><strong>Use my saved reports and profile</strong> (a box in each chat, off by default): when ticked, only the matching report values, your age and your allergies go with that message.</li>
+    <li><strong>Photos and scanned documents:</strong> Doctine asks each time before a photo or scanned page is sent to the AI provider to be read. If you say no, it's saved as a photo and you add its details yourself.</li>
     <li><strong>Save my chats:</strong> off unless you turn it on.</li>
   </ul>
+  <p>We record each choice, and when you made it, in your account.</p>
   <p>Withdrawing consent doesn't affect processing that happened before. To withdraw it completely, delete your account (see "Your rights").</p>
 
   <h2>The AI assistant</h2>
@@ -114,9 +114,11 @@
     <thead><tr><th>Provider</th><th>What they do</th><th>Where</th></tr></thead>
     <tbody>
       <tr><td>Supabase</td><td>Database, file storage and sign-in. Your account, records and documents live here.</td><td>Mumbai, India</td></tr>
+      <tr><td>Supabase (email)</td><td>Sends sign-in emails: confirming your address and resetting your password. These contain your email address, never your health data.</td><td>Outside India (Supabase's email service)</td></tr>
       <tr><td>Cloudflare</td><td>Hosts the website and app, and runs our server code. Your requests pass through it. Also forwards emails you send to support@doctine.com to our inbox.</td><td>Global network, including the United States</td></tr>
       <tr><td>Anthropic</td><td>The AI that answers questions and reads scanned documents, once these features are switched on.</td><td>United States</td></tr>
       <tr><td>Google</td><td>"Continue with Google" sign-in, if you choose it, and email for messages you send us.</td><td>Global</td></tr>
+      <tr><td>jsDelivr and cdnjs (public code libraries)</td><td>Deliver the code for sign-in and for reading text in photos to your browser. They see your IP address when they send it, but none of your health data. The code files are checked against fixed fingerprints before they run.</td><td>Global</td></tr>
     </tbody>
   </table></div>
   <p>This means some of your data is processed outside India. We do this only as allowed under Indian law. We never sell your personal data or share it for advertising.</p>
@@ -148,7 +150,7 @@
   <p>You must be 18 or older to create a Doctine account. Each account holds one person's records; separate family profiles aren't available yet. A parent or legal guardian may keep a child's health records in their own account. Before family profiles launch, we'll update this policy to explain ownership, consent and guardian access.</p>
 
   <h2>Cookies and browser storage</h2>
-  <p>We don't use advertising or tracking cookies, and we don't collect analytics. The app stores a small amount in your browser so that you stay signed in and your settings, such as dark mode, are remembered. The website loads its fonts from Google Fonts, which sees your IP address when it sends them.</p>
+  <p>We don't use advertising or tracking cookies, and we don't collect analytics. The app stores a small amount in your browser so that you stay signed in and your settings, such as dark mode, are remembered. The website and app serve their own fonts, so no font provider sees your visit.</p>
 
   <h2>Changes to this policy</h2>
   <p>If we change this policy, we'll update the date at the top. If a change affects how we use your data in an important way, we'll tell you in the app before it applies.</p>

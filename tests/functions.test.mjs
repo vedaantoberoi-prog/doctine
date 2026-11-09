@@ -251,9 +251,9 @@ await test("scan rejects non-image uploads and maps provider errors", async () =
 console.log("/api/config and /api/account");
 await test("config hands out only the public Supabase settings", async () => {
   delete process.env.SUPABASE_URL; let r = await config(new Request("https://d/api/config")); let j = await r.json(); assert.equal(j.accounts, "browser_demo");
-  process.env.SUPABASE_URL = "https://abc.supabase.co/"; process.env.SUPABASE_ANON_KEY = "anon-key"; process.env.SUPABASE_SERVICE_ROLE_KEY = "service-secret";
+  process.env.SUPABASE_URL = "https://abc.supabase.co/"; process.env.SUPABASE_ANON_KEY = "sb_publishable_anon-key"; process.env.SUPABASE_SERVICE_ROLE_KEY = "service-secret";
   r = await config(new Request("https://d/api/config")); j = await r.json();
-  assert.equal(j.supabaseUrl, "https://abc.supabase.co"); assert.equal(j.supabaseAnonKey, "anon-key"); assert.ok(!JSON.stringify(j).includes("service-secret"));
+  assert.equal(j.supabaseUrl, "https://abc.supabase.co"); assert.equal(j.supabaseAnonKey, "sb_publishable_anon-key"); assert.ok(!JSON.stringify(j).includes("service-secret"));
 });
 await test("config offers Google sign-in only when AUTH_GOOGLE is exactly true", async () => {
   const saved = process.env.AUTH_GOOGLE;
@@ -270,6 +270,17 @@ await test("config says whether an AI model is switched on, as a yes or no only"
   assert.strictEqual(j.aiAvailable, true); assert.ok(!raw.includes("sk-ant"), "the key itself is never sent");
   if (saved === undefined) delete process.env.ANTHROPIC_API_KEY; else process.env.ANTHROPIC_API_KEY = saved;
 });
+await test("config publishes only a public Supabase key: publishable or legacy anon, never a secret or service-role key", async () => {
+  const saved = { u: process.env.SUPABASE_URL, a: process.env.SUPABASE_ANON_KEY };
+  const jwt = (role) => "x." + Buffer.from(JSON.stringify({ role })).toString("base64url") + ".y";
+  try {
+    process.env.SUPABASE_URL = "https://abc.supabase.co";
+    for (const [key, ok] of [["sb_publishable_abc123", true], [jwt("anon"), true], ["sb_secret_abc123", false], [jwt("service_role"), false], ["not-a-key", false]]) {
+      process.env.SUPABASE_ANON_KEY = key; const r = await config(new Request("https://d/api/config")); const raw = await r.text();
+      assert.equal(r.status === 200, ok, key); if (!ok) assert.ok(!raw.includes(key), "the refused key is never in the reply");
+    }
+  } finally { process.env.SUPABASE_URL = saved.u; process.env.SUPABASE_ANON_KEY = saved.a; if (saved.u === undefined) delete process.env.SUPABASE_URL; if (saved.a === undefined) delete process.env.SUPABASE_ANON_KEY; }
+});
 await test("config reports the site environment, and only known names", async () => {
   const saved = process.env.DOCTINE_ENV;
   for (const [v, want] of [["staging", "staging"], ["PRODUCTION", "production"], ["", "unset"], ["prod; drop", "unset"]]) {
@@ -283,6 +294,7 @@ function storageSim({ files, failDeleteBatch = -1, stuck = [], failListAt = -1 }
   const uid = "aaaaaaaa-0000-0000-0000-000000000001";
   globalThis.fetch = async (url, init = {}) => {
     const u = url.replace("https://abc.supabase.co", ""); log.push((init.method || "GET") + " " + u);
+    if (u !== "/auth/v1/user") (log.heads ||= []).push({ apikey: init.headers.apikey, authorization: init.headers.authorization });
     if (u === "/auth/v1/user") return new Response(JSON.stringify({ id: uid }));
     if (u.startsWith("/storage/v1/object/list/")) {
       if (++listCalls === failListAt) return new Response("{}", { status: 500 });
@@ -337,6 +349,21 @@ await test("an account with no files is deleted cleanly", async () => {
   const sim = storageSim({ files: [] }); const r = await del("8.8.8.5"); const j = await r.json();
   assert.equal(r.status, 200); assert.equal(j.files_removed, 0); assert.ok(sim.log.userDeleted);
 });
+await test("account deletion sends a new secret key (sb_secret_…) on the apikey header only, and a legacy key as before", async () => {
+  const saved = process.env.SUPABASE_SERVICE_ROLE_KEY, savedLimit = process.env.RATE_LIMIT_ACCOUNT_USER_1H; const uid = "aaaaaaaa-0000-0000-0000-000000000001";
+  process.env.RATE_LIMIT_ACCOUNT_USER_1H = "100"; // this test's two deletions mustn't use up the per-account allowance the next tests rely on
+  try {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "sb_secret_fake";
+    let sim = storageSim({ files: [`${uid}/1/cleaned-0.jpg`] }); let r = await del("8.8.8.11");
+    assert.equal(r.status, 200); assert.ok(sim.log.heads.length >= 3 && sim.log.heads.every((h) => h.apikey === "sb_secret_fake" && h.authorization === undefined), JSON.stringify(sim.log.heads));
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "service-secret";
+    sim = storageSim({ files: [`${uid}/1/cleaned-0.jpg`] }); r = await del("8.8.8.12");
+    assert.equal(r.status, 200); assert.ok(sim.log.heads.every((h) => h.apikey === "service-secret" && h.authorization === "Bearer service-secret"));
+  } finally {
+    if (saved === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = saved;
+    if (savedLimit === undefined) delete process.env.RATE_LIMIT_ACCOUNT_USER_1H; else process.env.RATE_LIMIT_ACCOUNT_USER_1H = savedLimit;
+  }
+});
 await test("a bad token removes nothing", async () => {
   const calls = []; globalThis.fetch = async (url, init = {}) => { calls.push((init.method || "GET") + " " + url); return url.endsWith("/auth/v1/user") ? new Response("{}", { status: 401 }) : new Response("[]"); };
   const r = await account(new Request("https://d/api/account", { method: "DELETE", headers: { authorization: "Bearer bad" } }), { ip: "8.8.8.6" });
@@ -382,6 +409,11 @@ await test("no raw user ids or IP addresses reach the limiter; the service key i
   _resetTokenCache(); const sim = limiterSim(); await checkRate(rq("tok-a", "203.0.113.7"), { ip: "203.0.113.7" }, "chat", { ai: true, env: sharedEnv });
   const sent = JSON.stringify(sim.bodies.map(({ auth, ...b }) => b));
   assert.ok(!sent.includes("aaaaaaaa") && !sent.includes("203.0.113.7"), sent); assert.ok(sim.bodies.every((b) => b.auth === "Bearer service-secret"));
+});
+await test("the limiter sends a new secret key (sb_secret_…) on the apikey header only", async () => {
+  _resetTokenCache(); const sim = limiterSim(); const env = { ...sharedEnv, SUPABASE_SERVICE_ROLE_KEY: "sb_secret_fake" };
+  const r = await checkRate(rq(null, "7.7.7.7"), { ip: "7.7.7.7" }, "chat", { env });
+  assert.equal(r.mode, "shared"); assert.ok(sim.bodies.length > 0 && sim.bodies.every((b) => b.auth === undefined), JSON.stringify(sim.bodies));
 });
 await test("if the shared limiter is down, the local limiter is used and the mode says so", async () => {
   _resetTokenCache(); limiterSim({ down: true }); const r = await checkRate(rq(null, "4.4.4.4"), { ip: "4.4.4.4" }, "chat", { env: sharedEnv });

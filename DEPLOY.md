@@ -344,3 +344,58 @@ The same app and server functions also run on Cloudflare Pages (free plan, comme
   - `ANTHROPIC_API_KEY` (secret), only once the medical evaluation and clinician sign-off are done. Without it, chat and scanning say the assistant isn't available yet, and emergencies still get the fixed 112 guidance.
   - Never set `EVAL_ACCESS_TOKEN` here.
 
+
+## 16. Deploying the app by drag and drop (current production setup, since 9 November 2026)
+
+GitHub became unavailable on 7 November 2026, so production no longer builds from Git. app.doctine.com is served by
+the Cloudflare Pages project **`doctine-app-direct`** (Direct Upload). The Git-connected project `doctine-app` still
+exists, without the domain, as a fallback.
+
+**Release:**
+1. `npm run build:direct` — runs the server tests, stamps the commit, bundles the server into `_worker.js`, runs
+   `tests/worker.test.mjs` against it, and writes `dist/doctine-app.zip`.
+2. Cloudflare → Workers & Pages → `doctine-app-direct` → Create deployment → drag in **`doctine-app.zip`**
+   (16 files, including `_worker.js` and `_routes.json`) → Production → Save and deploy.
+3. Check `https://app.doctine.com/version.json` shows the new commit.
+
+**Supabase keys (since 9 November 2026):** production uses Supabase's new keys — `SUPABASE_ANON_KEY` holds the
+**publishable** key (`sb_publishable_…`, public) and `SUPABASE_SERVICE_ROLE_KEY` holds the **secret** key (`sb_secret_…`).
+The code also accepts the legacy JWT keys. `/api/config` refuses to publish anything but a public key. The legacy
+keys are still enabled in Supabase (the old `doctine-app` project uses them); turn them off only once nothing needs them.
+
+**Project settings (already set):** compatibility flag `nodejs_compat`; variables `DOCTINE_ENV`, `SUPABASE_URL`,
+`SUPABASE_ANON_KEY`, `AUTH_GOOGLE`, `RATE_LIMIT_REQUIRE_SHARED`, `AI_DAILY_REQUEST_CAP` (text) and
+`SUPABASE_SERVICE_ROLE_KEY`, `RATE_LIMIT_SECRET` (secrets). Changes to variables apply only to the next upload; a
+Direct Upload deployment can't be "retried", so upload the zip again.
+
+**Rollback:** Deployments → an earlier deployment → Rollback. Or move `app.doctine.com` back to `doctine-app`
+(Custom domains) and point the `app` CNAME at `doctine-app.pages.dev`.
+
+**Don't** upload the complete project package by mistake: only `doctine-app.zip` belongs here. A wrong upload makes
+its files public at that deployment's address; delete that deployment.
+
+**Website:** Cloudflare Pages project `doctine-website` (Direct Upload). Zip the `website/` folder's contents (run
+`npm run build:preview` first so the app preview matches the app) and upload it the same way.
+
+**What no longer runs while GitHub is unavailable:** the workflows in `.github/workflows/` (CI, release report, staging
+smoke checks, deploy guards). Run the same checks locally before each upload (section 17).
+
+## 17. Checks to run before an upload (while CI is unavailable)
+
+```
+npm test                                  # syntax, config, secret scan, server, grader, gates, tools
+node tests/hermetic.test.mjs              # server tests with a deployed site's settings present
+node tools/run-browser-tests.mjs          # all browser suites (AI and Supabase simulated)
+bash tests/run-db-tests.sh                # migrations + RLS on a throw-away PostgreSQL 15+
+node tools/build-preview.mjs --check      # website preview matches the app
+gitleaks git --redact --no-banner --exit-code 1 .   # history scan (v8.21.2, sha256 pinned in ci.yml)
+```
+
+To get the release table, set `REPORT_DIR=<folder>` while running these (and `tools/run-step.mjs` for the quality and
+security steps, as in `ci.yml`), then `REPORT_DIR=<folder> node tools/release-report.mjs`.
+
+**The consent release (branch `audit-2026-11-09`):** `AI_CONSENT_FROM` in `public/index.html` sets the earliest time an
+AI permission counts. Grants recorded before it (the old sign-up bundled AI permission) are ignored, so everyone is
+asked again. It must be **on or before the moment this version goes live**, or a person who allows the AI in the new
+version could be asked again. Set it to the actual release time when uploading, rebuild the preview, and update the
+privacy policy's "Last updated" date to match.

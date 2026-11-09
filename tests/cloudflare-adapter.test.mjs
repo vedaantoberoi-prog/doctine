@@ -4,12 +4,12 @@ import assert from "node:assert/strict";
 const { onRequest } = await import("../functions/api/[[path]].js");
 
 let passed = 0; const t = async (name, fn) => { try { await fn(); passed++; console.log("  ✓ " + name); } catch (e) { console.log("  ✗ " + name + ": " + e.message); process.exitCode = 1; } };
-const env = { DOCTINE_ENV: "production", SUPABASE_URL: "https://x.supabase.co/", SUPABASE_ANON_KEY: "anon-public", SUPABASE_SERVICE_ROLE_KEY: "service-secret", AUTH_GOOGLE: "true", RATE_LIMIT_SECRET: "r".repeat(64) };
+const env = { DOCTINE_ENV: "production", SUPABASE_URL: "https://x.supabase.co/", SUPABASE_ANON_KEY: "sb_publishable_anon-public", SUPABASE_SERVICE_ROLE_KEY: "service-secret", AUTH_GOOGLE: "true", RATE_LIMIT_SECRET: "r".repeat(64) };
 const call = (path, init = {}, e = env) => onRequest({ request: new Request("https://app.doctine.com/api/" + path, { headers: { "cf-connecting-ip": "203.0.113.9", ...(init.headers || {}) }, ...init }), env: e, params: { path: path.split("/") } });
 
 await t("/api/config returns the public settings from Cloudflare's environment, and never the service key", async () => {
   const r = await call("config"); const j = await r.json(); const raw = JSON.stringify(j);
-  assert.equal(j.supabaseUrl, "https://x.supabase.co"); assert.equal(j.supabaseAnonKey, "anon-public"); assert.equal(j.environment, "production"); assert.equal(j.googleSignIn, true);
+  assert.equal(j.supabaseUrl, "https://x.supabase.co"); assert.equal(j.supabaseAnonKey, "sb_publishable_anon-public"); assert.equal(j.environment, "production"); assert.equal(j.googleSignIn, true);
   assert.ok(!raw.includes("service-secret")); assert.equal(r.headers.get("cache-control"), "no-store");
 });
 await t("unknown and nested routes are 404, not passed to a handler", async () => {

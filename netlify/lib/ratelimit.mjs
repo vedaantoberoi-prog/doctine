@@ -12,6 +12,7 @@
  * That is best-effort only (each function instance counts separately) and is reported as mode "local".
  * Set RATE_LIMIT_REQUIRE_SHARED=true to refuse AI requests instead when the shared limiter is unavailable.
  */
+import { serviceHeaders } from "./supabase-keys.mjs";
 import { createHmac, createHash, timingSafeEqual } from "node:crypto";
 import { limited as localLimited, clientIp } from "./ai.mjs";
 
@@ -61,7 +62,7 @@ async function sharedHit(bucket, subject, limit, windowSec, env, fetchImpl) {
   try {
     const r = await fetchImpl(`${base}/rest/v1/rpc/rate_limit_hit`, {
       method: "POST", signal: ac.signal,
-      headers: { apikey: key, authorization: `Bearer ${key}`, "content-type": "application/json" },
+      headers: serviceHeaders(key, { "content-type": "application/json" }),
       body: JSON.stringify({ p_bucket: bucket, p_subject: subject, p_limit: limit, p_window_seconds: windowSec }),
     });
     if (!r.ok) throw new Error("limiter " + r.status);

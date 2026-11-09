@@ -249,7 +249,7 @@ th { font-weight: 600; color: var(--ink-strong); background: color-mix(in srgb, 
 .hero.immersive > .wrap { width: 100%; }
 .hero.immersive::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: linear-gradient(to top, rgba(16,28,43,.88), rgba(16,28,43,.45) 55%, rgba(16,28,43,.15)); }
-@media (min-width: 900px) { .hero.immersive::before { background: linear-gradient(to right, rgba(16,28,43,.84), rgba(16,28,43,.42) 50%, rgba(16,28,43,0) 78%); } }
+@media (min-width: 900px) { .hero.immersive::before { background: linear-gradient(to right, rgba(16,28,43,.88), rgba(16,28,43,.55) 42%, rgba(16,28,43,0) 70%); } }
 .hero3d { position: absolute; inset: 0; z-index: -2; opacity: 0; transition: opacity 1.2s ease-out; }
 .hero3d.is-ready { opacity: 1; }
 .hero3d canvas { display: block; }

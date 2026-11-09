@@ -46,6 +46,7 @@ function EmbeddedScene({ host, section }: { host: HTMLElement; section: HTMLElem
       progress={progress}
       reduced={reduced}
       frameloop={!visible ? 'never' : reduced ? 'demand' : 'always'}
+      shift={0.24}
       onReady={() => host.classList.add('is-ready')}
     />
   );

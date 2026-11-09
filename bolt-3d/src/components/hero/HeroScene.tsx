@@ -1,4 +1,4 @@
-import { useRef, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
@@ -12,6 +12,7 @@ type HeroSceneProps = {
   reduced: boolean;
   onReady: () => void;
   frameloop?: 'always' | 'demand' | 'never';
+  shift?: number;
 };
 
 function Lights() {
@@ -58,7 +59,21 @@ function CameraRig({ progress, reduced }: { progress: RefObject<number>; reduced
   return null;
 }
 
-export default function HeroScene({ progress, reduced, onReady, frameloop = 'always' }: HeroSceneProps) {
+// On wide screens the text sits on the left, so shift the picture right (by moving the camera's view window)
+// to keep the archive beside the headline rather than behind it.
+function ViewShift({ amount }: { amount: number }) {
+  const camera = useThree((state) => state.camera) as THREE.PerspectiveCamera;
+  const size = useThree((state) => state.size);
+  useEffect(() => {
+    const wide = size.width / size.height > 1.15;
+    if (wide && amount) camera.setViewOffset(size.width, size.height, -size.width * amount, 0, size.width, size.height);
+    else camera.clearViewOffset();
+    camera.updateProjectionMatrix();
+  }, [camera, size, amount]);
+  return null;
+}
+
+export default function HeroScene({ progress, reduced, onReady, frameloop = 'always', shift = 0 }: HeroSceneProps) {
   const narrow = isNarrowViewport();
 
   return (
@@ -88,6 +103,7 @@ export default function HeroScene({ progress, reduced, onReady, frameloop = 'alw
         position={[0, 0.5, 0]}
       />
       <CameraRig progress={progress} reduced={reduced} />
+      <ViewShift amount={shift} />
     </Canvas>
   );
 }

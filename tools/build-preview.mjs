@@ -6,7 +6,7 @@
  *   - it never calls the server: /api/* requests are answered in the browser, so chat and the scanner say they are
  *     switched off in the preview, and no account, sign-in or saving exists;
  *   - no service worker, so the preview never caches itself over the website.
- * The libraries the app serves itself (public/vendor/) are copied next to the preview (website/app-preview/vendor/).
+ * The libraries and fonts the app serves itself (public/vendor/, public/fonts/) are copied next to the preview.
  * Every change is a literal replacement that must match exactly once; if the app changes and a replacement no longer
  * matches, the build stops instead of producing a half-patched preview.
  *
@@ -76,16 +76,18 @@ for (const [why, find, repl] of edits) {
 }
 for (const k of ["['reminders','Reminders'", "['family','Family'", '<h2 class="text-xl">Alarms</h2>', '<h2 class="text-xl">Reminder notifications</h2>']) if (html.includes(k)) { console.error("build-preview: " + k + " is still in the preview"); process.exit(1); }
 
-const vendorSrc = root + "public/vendor", vendorOut = root + "website/app-preview/vendor";
+const COPIED = ["vendor", "fonts"]; // folders of public/ the app loads by relative path, copied into website/app-preview/
 const listFiles = (dir) => { try { return readdirSync(dir, { recursive: true, withFileTypes: true }).filter((e) => e.isFile()).map((e) => (e.parentPath || e.path).slice(dir.length) + "/" + e.name).sort(); } catch { return []; } };
 if (process.argv.includes("--check")) {
   let cur = ""; try { cur = readFileSync(outPath, "utf8"); } catch {}
   if (cur !== html) { console.error("build-preview: website/app-preview/index.html is out of date. Run: node tools/build-preview.mjs"); process.exit(1); }
-  const a = listFiles(vendorSrc), b = listFiles(vendorOut);
-  if (a.join() !== b.join() || a.some((f) => !readFileSync(vendorSrc + f).equals(readFileSync(vendorOut + f)))) { console.error("build-preview: website/app-preview/vendor differs from public/vendor. Run: node tools/build-preview.mjs"); process.exit(1); }
+  for (const d of COPIED) {
+    const src = root + "public/" + d, out = root + "website/app-preview/" + d, a = listFiles(src), b = listFiles(out);
+    if (a.join() !== b.join() || a.some((f) => !readFileSync(src + f).equals(readFileSync(out + f)))) { console.error(`build-preview: website/app-preview/${d} differs from public/${d}. Run: node tools/build-preview.mjs`); process.exit(1); }
+  }
   console.log("build-preview: preview is up to date"); process.exit(0);
 }
 mkdirSync(root + "website/app-preview", { recursive: true });
 writeFileSync(outPath, html);
-rmSync(vendorOut, { recursive: true, force: true }); cpSync(vendorSrc, vendorOut, { recursive: true });
+for (const d of COPIED) { rmSync(root + "website/app-preview/" + d, { recursive: true, force: true }); cpSync(root + "public/" + d, root + "website/app-preview/" + d, { recursive: true }); }
 console.log(`build-preview: wrote website/app-preview/index.html (${edits.length} changes)`);

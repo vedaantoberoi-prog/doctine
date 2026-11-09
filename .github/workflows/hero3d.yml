@@ -12,7 +12,9 @@ on:
 permissions:
   contents: write
 
-concurrency: { group: hero3d-${{ github.ref }}, cancel-in-progress: true }
+concurrency:
+  group: hero3d-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:

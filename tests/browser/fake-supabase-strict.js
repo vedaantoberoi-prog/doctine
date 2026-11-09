@@ -31,7 +31,7 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
       if (n === "messages") for (const r of rows) if (!T("conversations").some((c) => c.id === r.conversation_id && c.user_id === u)) return { data: null, error: { message: "insert or update on table \"messages\" violates foreign key constraint" } };
       const out = [];
       for (const row of rows) {
-        if (st.op === "upsert") { const keys = conflictKeys(n, st.oc); const ex = T(n).find((r) => r.user_id === u && keys.every((k) => String(r[k]) === String(row[k]))); if (ex) { if (!st.ign) Object.assign(ex, row); out.push(ex); continue; } }
+        if (st.op === "upsert") { const keys = conflictKeys(n, st.oc); const ex = T(n).find((r) => r.user_id === u && keys.every((k) => String(r[k]) === String(row[k]))); if (ex) { if (!st.ign) Object.assign(ex, row, { updated_at: new Date().toISOString() }); out.push(ex); continue; } }
         const r = { id: uuid(), created_at: new Date(Date.now() + (window.__tick = (window.__tick || 0) + 1)).toISOString(), updated_at: new Date().toISOString(), user_id: u, ...row };
         T(n).push(r); out.push(r);
       }

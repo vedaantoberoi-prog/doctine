@@ -36,6 +36,7 @@ check("sign-up buttons go to the real app", (html["/"].match(/href="https:\/\/ap
 const home = html["/"];
 check("the assistant is labelled as not yet available", /status dev">In development · not yet available/.test(home));
 check("family profiles are labelled as in development", /status dev">Family profiles in development/.test(home));
+check("privacy policy: sign-up covers storage only; AI is off until switched on; photos are asked each time", /sign-up covers/.test(html["/privacy/"]) && /Use the AI assistant:<\/strong> off unless you switch it on/.test(html["/privacy/"]) && /asks each time before a photo/.test(html["/privacy/"]) && !/consent you give when you create your account\. That includes .* AI provider/.test(html["/privacy/"]));
 check("the vision separates available, in development and planned", /status now">Available now/.test(home) && /status later">Planned/.test(home));
 const all = PAGES.map((p) => html[p]).join("\n");
 const banned = [/revolution/i, /AI doctor/i, /guarantee/i, /predict(s|ing)? (every|disease)/i, /replac(e|es|ing) (your )?doctors?/i, /not a medical device/i, /is a medical device/i, /clinically (validated|proven)(?! )/i, /Look after your family/i, /HIPAA|ISO 27001|SOC 2|end-to-end encrypt/i];

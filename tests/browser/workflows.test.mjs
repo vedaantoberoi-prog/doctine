@@ -51,7 +51,9 @@ check("every menu item opens its screen", navOk, bad.join(","));
 check("Family isn't in the menu until it's built", (await pg.$("#nav [data-nav=family]")) === null);
 
 // ---------- chat without any documents (real /api/chat) ----------
-await pg.click("#nav [data-nav=chat]"); await pg.fill("#ci", "What does HbA1c mean?"); await pg.click("#cf button.pri"); await W(700);
+await pg.click("#nav [data-nav=chat]"); await pg.fill("#ci", "What does HbA1c mean?"); await pg.click("#cf button.pri"); await W(300);
+check("a new account starts with the AI assistant off and asks before the first message is sent", (await pg.$("#aiask")) !== null && apiCalls.filter((c) => c.endsWith("/api/chat")).length === 0);
+await pg.click("#aiallow"); await W(700);
 check("a general health question is answered with no reports or profile", (await text()).includes("average blood sugar over about three months"));
 check("the answer says it comes from general knowledge, not attached sources", (await text()).includes("Doctine has not attached medical sources"));
 // adaptive follow-up
@@ -83,7 +85,8 @@ check("Retry succeeds once the network is back", await pg.evaluate("S.cerr===''"
 await pg.click("#nav [data-nav=settings]"); await pg.uncheck("[data-c=ai]"); await W(100);
 const before = apiCalls.filter((c) => c.endsWith("/api/chat")).length;
 await pg.click("#nav [data-nav=chat]"); await pg.click("#newchat").catch(() => {}); await pg.fill("#ci", "Is it safe to exercise daily?"); await pg.click("#cf button.pri"); await W(400);
-check("with AI explanations switched off, nothing is sent to the assistant", apiCalls.filter((c) => c.endsWith("/api/chat")).length === before && await pg.evaluate("S.view==='settings'"));
+check("with the AI assistant switched off, nothing is sent and it asks instead", apiCalls.filter((c) => c.endsWith("/api/chat")).length === before && (await pg.$("#aiask")) !== null);
+await pg.click("#ainot"); await W(100); await pg.click("#nav [data-nav=settings]");
 await pg.check("[data-c=ai]"); await W(100);
 
 // ---------- document upload and report viewing (real /api/scan) ----------
@@ -92,7 +95,10 @@ const photo = await pg.evaluate(async () => { const c = document.createElement("
 await pg.setInputFiles("#file", { name: "prescription.jpg", mimeType: "image/jpeg", buffer: Buffer.from(photo, "base64") });
 await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 });
 check("an uploaded photo opens the scanner with the page found and straightened", await pg.evaluate("!!document.querySelector('.scanov img.scanimg')"));
-await pg.click(".scanov [data-x=done]"); await W(1500);
+const scansBefore = apiCalls.filter((c) => c.endsWith("/api/scan")).length;
+await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]", { timeout: 5000 });
+check("before a photo goes to the AI, Doctine asks, names the provider, and has sent nothing yet", apiCalls.filter((c) => c.endsWith("/api/scan")).length === scansBefore && /Anthropic, United States/.test(await pg.textContent("[role=dialog]")));
+await pg.click("[data-ai='1']"); await W(1500);
 check("the scan is read by the real /api/scan and saved with an automatic name", (await text()).includes("Prescription – Dr. Sample Physician – 1 Nov 2026"));
 check("the saved record shows what was read, with confidence and unreadable parts", (await text()).includes("What Doctine read") && (await text()).includes("Couldn’t read: line 2"));
 await pg.click("[data-vs]"); await W(400);

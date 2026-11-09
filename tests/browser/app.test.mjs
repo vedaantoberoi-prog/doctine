@@ -3,14 +3,14 @@ const BASE = process.env.DOCTINE_BASE || "http://localhost:8766";
 const b = await chromium.launch(); const errs = []; const results = [];
 const check = (name, ok, detail = "") => { results.push((ok ? "PASS " : "FAIL ") + name + (detail ? "  — " + detail : "")); };
 const pg = await b.newPage({ viewport: { width: 390, height: 844 } }); pg.on("pageerror", (e) => errs.push(e.message));
-let chatBodies = [], chatMode = "ok", scanConf = "medium";
+let chatBodies = [], chatMode = "ok", scanConf = "medium", scanCalls = 0;
 await pg.route("**/*", async (r) => { const u = r.request().url();
   if (u.endsWith("/api/config")) return r.fulfill({ contentType: "application/json", body: '{"supabaseUrl":null,"supabaseAnonKey":null,"accounts":"browser_demo"}' });
   if (u.includes("/api/chat")) { const body = JSON.parse(r.request().postData() || "{}"); chatBodies.push(body);
     if (chatMode === "down") return r.abort("failed");
     if (chatMode === "emergency") return r.fulfill({ contentType: "application/json", body: JSON.stringify({ reply: "Please call 112 now.", urgency: "emergency", safety: "rule", sections: [], ai_unavailable: "ai_timeout" }) });
     const n = chatBodies.length; return r.fulfill({ contentType: "application/json", body: JSON.stringify({ reply: n === 1 ? "How long have you had the headache?" : "With a blocked nose for 3 days, sinus congestion is common.", urgency: "routine", question: n === 1 ? "How long?" : "", options: n === 1 ? ["Today", "A few days"] : [], sections: [], state: { mode: "symptom", topic: "headache", known: n === 1 ? [] : ["3 days"] } }) }); }
-  if (u.endsWith("/api/scan")) return r.fulfill({ contentType: "application/json", body: JSON.stringify({ doc: { title: "Prescription – Dr. A. Kumar – 28 Oct 2026", type: "prescription", date: "2026-10-28", medicines: [{ raw: "Tab Mon[?]-LC 0-0-1", name: "Montair-LC", frequency: "0-0-1", confidence: scanConf, alternatives: ["Montek-LC"] }], lab_results: [{ test: "Hb", value: "11.4", unit: "g/dL", range: "12-15.5" }], unreadable: ["line 3"], overall_confidence: "medium", transcription: "Rx Tab Mon[?]-LC 0-0-1" } }) });
+  if (u.endsWith("/api/scan")) { scanCalls++; } if (u.endsWith("/api/scan")) return r.fulfill({ contentType: "application/json", body: JSON.stringify({ doc: { title: "Prescription – Dr. A. Kumar – 28 Oct 2026", type: "prescription", date: "2026-10-28", medicines: [{ raw: "Tab Mon[?]-LC 0-0-1", name: "Montair-LC", frequency: "0-0-1", confidence: scanConf, alternatives: ["Montek-LC"] }], lab_results: [{ test: "Hb", value: "11.4", unit: "g/dL", range: "12-15.5" }], unreadable: ["line 3"], overall_confidence: "medium", transcription: "Rx Tab Mon[?]-LC 0-0-1" } }) });
   if (u.startsWith(BASE)) return r.continue(); return r.abort(); });
 await pg.goto(BASE + "/index.html"); await pg.waitForTimeout(400);
 // account
@@ -21,7 +21,14 @@ check("the menu lists only working sections: no Family, which isn't built yet", 
 check("menu icons are drawn as line icons, not emoji", await pg.$$eval("#nav [data-nav]", (e) => e.every((x) => x.querySelector("svg") && !/\p{Extended_Pictographic}/u.test(x.textContent))));
 check("home shows how much of the health profile is filled in, with a link to finish it", (await pg.textContent("#profcard")).includes("1 of 6 details added") && (await pg.$("#profcard [data-nav=health]")) !== null);
 // A/B: chat without any reports, then a follow-up
-await pg.evaluate("go('chat')"); await pg.fill("#ci", "I have a headache"); await pg.click("#cf button.pri"); await pg.waitForTimeout(400);
+// the AI assistant is a separate permission, off by default: an emergency still gets built-in guidance with nothing sent,
+// and anything else asks first
+await pg.evaluate("go('chat')"); await pg.fill("#ci", "my father has crushing chest pain and cannot breathe"); await pg.click("#cf button.pri"); await pg.waitForTimeout(300);
+check("with the AI permission off, an emergency gets built-in 112 guidance and nothing is sent", chatBodies.length === 0 && /112/.test(await pg.textContent("#view")) && /Nothing was sent anywhere/.test(await pg.textContent("#view")));
+await pg.click("#newchat"); await pg.fill("#ci", "I have a headache"); await pg.click("#cf button.pri"); await pg.waitForTimeout(300);
+check("anything else asks permission first (provider and country named), and sends nothing until allowed", chatBodies.length === 0 && (await pg.$("#aiask")) !== null && /Anthropic, in the United States/.test(await pg.textContent("#aiask")));
+await pg.click("#aiallow"); await pg.waitForTimeout(400);
+check("allowing sends the waiting message and records the choice", chatBodies.length === 1 && await pg.evaluate("S.consent.ai===true"));
 check("general chat works with no reports or profile", chatBodies[0] && chatBodies[0].context === null && chatBodies[0].messages.length === 1, JSON.stringify(chatBodies[0]).slice(0, 80));
 check("follow-up question and answer options are shown", (await pg.textContent("#view")).includes("How long?") && (await pg.$("[data-q='A few days']")) !== null);
 await pg.click("[data-q='A few days']"); await pg.waitForTimeout(400);
@@ -40,7 +47,7 @@ chatMode = "ok";
 // scan a prescription in Medicines (medium confidence)
 const photo = `(async()=>{const c=document.createElement('canvas');c.width=1200;c.height=1600;const x=c.getContext('2d');x.fillStyle='#5a3d28';x.fillRect(0,0,1200,1600);x.fillStyle='#f3efe6';x.fillRect(200,200,800,1200);x.fillStyle='#223';x.font='48px serif';x.fillText('Rx Tab Montair-LC',300,500);const b=await new Promise(r=>c.toBlob(r,'image/jpeg',.9));return new File([b],'rx.jpg',{type:'image/jpeg'})})()`;
 await pg.evaluate("go('medicines')"); await pg.evaluate(`(async()=>{const f=await ${photo};quickScan(false,(rec,doc)=>{S.medScan={rid:rec.id,title:rec.title,meds:(doc&&doc.medicines||[]).filter(m=>m.name),added:{}}},[f])})()`);
-await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForTimeout(800);
+await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]"); await pg.click("[data-ai='1']"); await pg.waitForTimeout(800);
 const btn = await pg.textContent("[data-msadd='0']");
 check("uncertain medicine is labelled and offers 'Check and add'", btn.trim() === "Check and add" && (await pg.textContent("#view")).includes("Could also be: Montek-LC"));
 await pg.click("[data-msadd='0']"); await pg.waitForTimeout(200);
@@ -62,6 +69,11 @@ check("the menu names say what each area is", JSON.stringify(await pg.$$eval("#n
 await pg.click("[data-vs]"); await pg.waitForTimeout(300); await pg.click(".scanov [data-k=orig]"); await pg.waitForTimeout(400);
 check("viewer can switch to the original photo", await pg.evaluate("(()=>{const i=document.querySelector('.scanov img');return !!(i&&i.src.startsWith('blob:'))})()"));
 await pg.click(".scanov [data-k=x]");
+// choosing "Don't send" keeps the photo in a record and sends nothing to the AI
+{ const before = scanCalls; await pg.evaluate("go('reports')"); await pg.evaluate(`(async()=>{const f=await ${photo};quickScan(false,null,[f])})()`);
+  await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]"); await pg.click("[data-ai='0']"); await pg.waitForTimeout(600);
+  check("choosing 'Don't send' saves the photo as a record and sends nothing to the AI", scanCalls === before && /Add its details with Edit/.test(await pg.textContent("#toast")), String(scanCalls - before));
+  await pg.evaluate("S.reports=S.reports.filter(r=>!/^Scan/.test(r.title)||r.scan);render()"); }
 // data persists after reload
 await pg.reload(); await pg.waitForTimeout(500);
 check("records, medicines and doses survive a reload", await pg.evaluate("S.email==='ravi@example.com'&&S.reports.length===1&&S.meds.length===1"));

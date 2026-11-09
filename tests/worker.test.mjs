@@ -11,7 +11,7 @@ const worker = (await import(new URL("_worker.js", dir).href)).default;
 
 let passed = 0; const t = async (name, fn) => { try { await fn(); passed++; console.log("  ✓ " + name); } catch (e) { console.log("  ✗ " + name + ": " + e.message); process.exitCode = 1; } };
 const assets = []; const ASSETS = { fetch: async (req) => { assets.push(new URL(req.url).pathname); return new Response("static", { status: 200 }); } };
-const env = { DOCTINE_ENV: "production", SUPABASE_URL: "https://x.supabase.co/", SUPABASE_ANON_KEY: "anon-public", SUPABASE_SERVICE_ROLE_KEY: "service-secret", AUTH_GOOGLE: "true", RATE_LIMIT_SECRET: "r".repeat(40), ASSETS };
+const env = { DOCTINE_ENV: "production", SUPABASE_URL: "https://x.supabase.co/", SUPABASE_ANON_KEY: "sb_publishable_anon-public", SUPABASE_SERVICE_ROLE_KEY: "service-secret", AUTH_GOOGLE: "true", RATE_LIMIT_SECRET: "r".repeat(40), ASSETS };
 const call = (path, init = {}) => worker.fetch(new Request("https://app.doctine.com" + path, { headers: { "cf-connecting-ip": "203.0.113.9", ...(init.headers || {}) }, ...init }), env);
 
 await t("/api/config answers with the public settings and never the service key", async () => {

@@ -1,0 +1,32 @@
+# Doctine · uptime and security-header check, every 15 minutes.
+# A failed run makes GitHub email the account that last changed this schedule
+# (Settings → Notifications → Actions: "Send notifications for failed workflows only").
+# Note: GitHub pauses schedules in public repositories after 60 days with no commits; re-enable them under Actions.
+name: Uptime
+on:
+  schedule: [{ cron: "7,22,37,52 * * * *" }]
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check app.doctine.com and doctine.com
+        run: |
+          set -u; fail=0
+          get() { curl -sS -m 20 --retry 2 --retry-delay 5 -D "$RUNNER_TEMP/h" -o "$RUNNER_TEMP/b" -w '%{http_code}' "$1" || echo 000; }
+          need() { if grep -qi "$2" "$RUNNER_TEMP/$3"; then echo "ok   $1"; else echo "FAIL $1"; echo "::error::$1"; fail=1; fi; }
+          for site in https://app.doctine.com/ https://doctine.com/; do
+            code=$(get "$site"); [ "$code" = 200 ] && echo "ok   $site 200" || { echo "::error::$site returned $code"; fail=1; continue; }
+            need "$site security policy present" "content-security-policy: .*frame-ancestors 'none'" h
+            need "$site HSTS present" "strict-transport-security: max-age=" h
+            need "$site nosniff present" "x-content-type-options: nosniff" h
+          done
+          code=$(get https://app.doctine.com/api/config); [ "$code" = 200 ] || { echo "::error::/api/config returned $code"; fail=1; }
+          need "app uses real accounts" '"accounts":"supabase"' b
+          if grep -q 'sb_secret_\|service_role' "$RUNNER_TEMP/b"; then echo "::error::/api/config exposes a secret key"; fail=1; fi
+          code=$(get https://app.doctine.com/api/account); [ "$code" = 405 ] || [ "$code" = 401 ] || { echo "::error::/api/account without sign-in returned $code"; fail=1; }
+          code=$(curl -sS -m 20 -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{"messages":[{"role":"user","content":"hi"}]}' https://app.doctine.com/api/chat || echo 000)
+          case "$code" in 401|503) echo "ok   guest chat refused ($code)";; *) echo "::error::guest chat returned $code (expected 401 or 503)"; fail=1;; esac
+          exit $fail

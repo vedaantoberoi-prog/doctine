@@ -334,15 +334,17 @@ async function ocrPdf(f){pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs-3.
  for(let i=1;i<=n;i++){const pg=await pdf.getPage(i),vp=pg.getViewport({scale:2}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;pages.push(await ocrSource(c,'Reading page '+i+' of '+n))}
  return{pages,cut:pdf.numPages>n}}
 const OCRWARN='Text was read from an image by automatic text recognition, which makes mistakes (for example 1/l, 5/S, decimal points). Check every value against the original before confirming.';
+// Reads a file's first bytes to learn what it really is; the browser's own guess comes from the file name.
+async function sniffType(f){try{const h=new Uint8Array(await f.slice(0,12).arrayBuffer());const at=(o,str)=>[...str].every((c,i)=>h[o+i]===c.charCodeAt(0));
+ if(at(0,'%PDF-'))return'application/pdf';if(h[0]===0x89&&at(1,'PNG'))return'image/png';if(h[0]===0xff&&h[1]===0xd8&&h[2]===0xff)return'image/jpeg';if(at(0,'RIFF')&&at(8,'WEBP'))return'image/webp';}catch{}return null}
 async function startUpload(f){
  S.upload={name:f.name,status:'reading',rows:[],title:'',date:'',lab:'',cat:'Other',text:'',warns:[],img:null,file:f};render();
  try{
   if(!f.size)throw new Error('That file is empty.');
   if(f.size>15*1024*1024)throw new Error('That file is larger than 15 MB.');
   try{const hb=await crypto.subtle.digest('SHA-256',await f.arrayBuffer());const hash=[...new Uint8Array(hb)].map(x=>x.toString(16).padStart(2,'0')).join('');S.upload.hash=hash;const dup=S.reports.find(r=>r.hash===hash);S.upload.dup=dup?dup.title:''}catch{}
-  const h=new Uint8Array(await f.slice(0,8).arrayBuffer());
-  const pdf=String.fromCharCode(...h.slice(0,5))==='%PDF-',png=h[0]===0x89&&h[1]===0x50,jpg=h[0]===0xff&&h[1]===0xd8;
-  if(!pdf&&!png&&!jpg)throw new Error('Only PDF, JPG and PNG files are supported.');
+  const kind=await sniffType(f),pdf=kind==='application/pdf';
+  if(!kind||kind==='image/webp')throw new Error('Only PDF, JPG and PNG files are supported.');
   if(!pdf){const img=await new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)});
    S.upload.img=img;let txt='';try{txt=await ocrSource(img,'Reading photo')}catch(e){Object.assign(S.upload,{status:'review',title:'Medical document',warns:[(e.message||'Text recognition failed.')+' You can fill in the fields yourself.']});return render()}
    if(txt.replace(/\s/g,'').length<20){Object.assign(S.upload,{status:'review',title:'Medical document',warns:['No readable text was found in this photo. Try a sharper, well-lit photo, or fill in the fields yourself.']});return render()}
@@ -424,7 +426,7 @@ function scanner(first,{action='Save'}={}){return new Promise(resolve=>{
  const close=v=>{ov.remove();resolve(v)};
  const busy=t=>{ov.innerHTML=`<div class="scanbar"><button class="btn" data-x="close">Cancel</button></div><div class="scanmid"><div class="text-sm" style="color:#e8eef5"><span class="dot">●</span> ${esc(t)}</div></div>`};
  async function add(files){busy('Finding the page…');await tick();
-  try{for(const f of files.slice(0,6-pages.length)){const px=await SC.load(f);await tick();const q=SC.detect(px);const p={px,quad:q||SC.full(px.width,px.height,.03),orig:f};await proc(p);pages.push(p)}}
+  try{for(const f of files.slice(0,6-pages.length)){if(!/^image\/(jpeg|png|webp)$/.test(await sniffType(f)||''))throw new Error('Only JPG, PNG and WebP photos can be scanned.');const px=await SC.load(f);await tick();const q=SC.detect(px);const p={px,quad:q||SC.full(px.width,px.height,.03),orig:f};await proc(p);pages.push(p)}}
   catch(e){toast(e.message||'That photo could not be used.')}
   if(!pages.length)return close(null);cur=pages.length-1;draw()}
  async function proc(p){const flat=SC.warp(p.px,p.quad,1600);p.out=SC.clean(flat);p.url&&URL.revokeObjectURL(p.url);p.blob=await SC.blob(p.out);p.url=URL.createObjectURL(p.blob)}
@@ -484,7 +486,7 @@ async function saveScan(blobs,doc,{store:keep=true}={}){
  if((d.diagnoses||[]).length)fields.Diagnosis=d.diagnoses.join(', ');
  const title=(d.title||'').trim()||(cat==='Other'?'Scanned document':cat)+' – '+niceDate(date);
  const rec={id,title:title.slice(0,120),cat,date,lab:(d.doctor||d.facility||'').slice(0,120),fields,imgs:blobs.length,scan:d.title?d:null};
- if(keep){for(let i=0;i<blobs.length;i++){try{await IMG.put(`scan:${id}:${i}`,blobs[i]);const o=blobs.originals&&blobs.originals[i];if(o&&/^image\/(jpeg|png|webp)$/.test(o.type)&&o.size<15e6)await IMG.put(`orig:${id}:${i}`,o)}catch{}}
+ if(keep){for(let i=0;i<blobs.length;i++){try{await IMG.put(`scan:${id}:${i}`,blobs[i]);const o=blobs.originals&&blobs.originals[i];if(o&&o.size<15e6&&/^image\/(jpeg|png|webp)$/.test(await sniffType(o)||''))await IMG.put(`orig:${id}:${i}`,o)}catch{}}
   S.reports.unshift(rec)}
  else{rec.imgs=0}
  return rec}
@@ -648,7 +650,7 @@ async function cloudDeleteAccount(){const{data}=await CLOUD.sb.auth.getSession()
 
 /* ---- health assistant: every reply comes from the server's AI model. This page never writes medical answers itself. ---- */
 const nz=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
-const CHAT_ERR={not_sent:'Not sent. The document stays on this device; nothing went to the AI.',capacity:'Doctine has reached its limit of AI requests for today. Please try again later. If this is urgent, call 112 or contact a doctor.',limiter_unavailable:'Doctine can’t check its usage limits right now, so the assistant is paused. Please try again in a minute. If this is urgent, call 112.',ai_not_allowed:'Claude wasn’t allowed for this page, so the assistant can’t answer. Reload the page and choose Allow when asked.',ai_image:'This view can’t send photos to Claude. Open the page on claude.ai or in the Claude app.',not_configured:'The AI assistant isn’t available yet. Your records, medicines and health profile still work and are saved to your account. In an emergency, call 112.',no_server:'The assistant server isn’t deployed here, so this page can’t reach an AI model. It must be deployed with its Netlify function (see DEPLOY.md).',invalid_key:'The AI provider rejected the API key. Check the key saved in Netlify is correct and still active, then redeploy.',key_forbidden:'The API key isn’t allowed to use this service or model. Check its permissions in your AI provider account.',insufficient_credits:'The AI account has no credit left. Add credits in the provider’s billing page (Anthropic Console → Billing), then try again.',model_not_found:'The model “{model}” isn’t available to this API key. Set AI_MODEL in Netlify to a model your account can use, then redeploy.',ai_rate_limited:'The AI provider is rate-limiting requests. Wait a moment, then retry.',ai_busy:'The AI service is busy right now. Try again shortly.',ai_network:'The server couldn’t reach the AI provider. Try again in a moment.',rate_limited:'You’re sending messages quickly. Please wait a minute and try again.',ai_timeout:'The AI took too long to answer. Please try again.',ai_error:'The AI service returned an error. Please try again.',bad_output:'The AI gave a reply Doctine couldn’t safely show. Please rephrase and try again.',invalid:'That message couldn’t be sent. Try a shorter message.',too_large:'That message was too large.',network:'Network problem. Check your connection and try again.',cancelled:'Cancelled.'};
+const CHAT_ERR={sign_in_required:'Your sign-in has expired. Sign out and sign in again, then try once more.',not_sent:'Not sent. The document stays on this device; nothing went to the AI.',capacity:'Doctine has reached its limit of AI requests for today. Please try again later. If this is urgent, call 112 or contact a doctor.',limiter_unavailable:'Doctine can’t check its usage limits right now, so the assistant is paused. Please try again in a minute. If this is urgent, call 112.',ai_not_allowed:'Claude wasn’t allowed for this page, so the assistant can’t answer. Reload the page and choose Allow when asked.',ai_image:'This view can’t send photos to Claude. Open the page on claude.ai or in the Claude app.',not_configured:'The AI assistant isn’t available yet. Your records, medicines and health profile still work and are saved to your account. In an emergency, call 112.',no_server:'The assistant server isn’t deployed here, so this page can’t reach an AI model. It must be deployed with its Netlify function (see DEPLOY.md).',invalid_key:'The AI provider rejected the API key. Check the key saved in Netlify is correct and still active, then redeploy.',key_forbidden:'The API key isn’t allowed to use this service or model. Check its permissions in your AI provider account.',insufficient_credits:'The AI account has no credit left. Add credits in the provider’s billing page (Anthropic Console → Billing), then try again.',model_not_found:'The model “{model}” isn’t available to this API key. Set AI_MODEL in Netlify to a model your account can use, then redeploy.',ai_rate_limited:'The AI provider is rate-limiting requests. Wait a moment, then retry.',ai_busy:'The AI service is busy right now. Try again shortly.',ai_network:'The server couldn’t reach the AI provider. Try again in a moment.',rate_limited:'You’re sending messages quickly. Please wait a minute and try again.',ai_timeout:'The AI took too long to answer. Please try again.',ai_error:'The AI service returned an error. Please try again.',bad_output:'The AI gave a reply Doctine couldn’t safely show. Please rephrase and try again.',invalid:'That message couldn’t be sent. Try a shorter message.',too_large:'That message was too large.',network:'Network problem. Check your connection and try again.',cancelled:'Cancelled.'};
 const errText=(c,i)=>{i=i||{};return(CHAT_ERR[c]||CHAT_ERR.network).replace('{missing}',(i.missing||[]).join(', ')||'the AI key').replace('{model}',i.model||'configured')};
 function buildCtx(){
  if(!S.useRecords)return null;
@@ -805,7 +807,7 @@ async function attachDoc(camera){
  const files=await pickFiles(camera,camera?undefined:'image/jpeg,image/png,image/webp,application/pdf');if(!files.length)return render();
  const f=files[0];let blobs=null,doc=null;
  try{
-  if(!camera&&(f.type==='application/pdf'||/\.pdf$/i.test(f.name))){
+  if(!camera&&(f.type==='application/pdf'||/\.pdf$/i.test(f.name))){if(await sniffType(f)!=='application/pdf')throw new Error('That file isn’t a real PDF.');
    S.chatReading=f.name;render();
    let text='';try{text=(await readPdf(f)).join('\n')}catch(e){if(e.name==='PasswordException')throw new Error('This PDF is password-protected.')}
    if(text.replace(/\s/g,'').length>200)doc={title:f.name.replace(/\.pdf$/i,''),type:'other',transcription:text.slice(0,12000)};

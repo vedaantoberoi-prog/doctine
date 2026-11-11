@@ -33,10 +33,9 @@ jobs:
       - name: Type check and lint
         working-directory: bolt-3d
         run: npm run typecheck && npm run lint
-      - name: Dependency audit of the whole Bolt project (report only; the website ships just the 3D bundle)
+      - name: Dependency audit of the Bolt project's runtime packages (fails on moderate or worse)
         working-directory: bolt-3d
-        continue-on-error: true
-        run: npm audit --audit-level=high --omit=dev
+        run: npm audit --audit-level=moderate --omit=dev
       - name: Build the embed bundle
         working-directory: bolt-3d
         run: npm run build:embed

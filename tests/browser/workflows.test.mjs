@@ -92,6 +92,15 @@ await pg.check("[data-c=ai]"); await W(100);
 // ---------- document upload and report viewing (real /api/scan) ----------
 await pg.click("#nav [data-nav=reports]");
 const photo = await pg.evaluate(async () => { const c = document.createElement("canvas"); c.width = 1200; c.height = 1600; const x = c.getContext("2d"); x.fillStyle = "#5a3d28"; x.fillRect(0, 0, 1200, 1600); x.fillStyle = "#f3efe6"; x.beginPath(); x.moveTo(210, 180); x.lineTo(1010, 260); x.lineTo(1060, 1420); x.lineTo(150, 1350); x.closePath(); x.fill(); x.fillStyle = "#22336a"; x.font = "46px serif"; for (let i = 0; i < 8; i++) x.fillText("Tab Pan-D 40 1-0-0 AC x5d", 300, 420 + i * 100); return c.toDataURL("image/jpeg", 0.9).split(",")[1]; });
+// A file is judged by its first bytes, not by its name or the type the browser reports.
+await pg.setInputFiles("#file", { name: "holiday.jpg", mimeType: "image/jpeg", buffer: Buffer.from("<html><script>alert(1)</script></html>") }); await W(600);
+check("a web page renamed to .jpg is refused before the scanner uses it", /Only JPG, PNG and WebP/.test(await pg.textContent("#toast")) && !(await pg.$(".scanov img.scanimg")), (await pg.textContent("#toast")).slice(0, 80));
+if (await pg.$(".scanov [data-x=close]")) await pg.click(".scanov [data-x=close]"); await W(200);
+await pg.click("#nav [data-nav=reports]"); await W(200);
+await pg.setInputFiles("#file", { name: "report.pdf", mimeType: "application/pdf", buffer: Buffer.from("MZ this is not a pdf at all") }); await W(600);
+check("a file named .pdf that isn't a PDF is refused", /Only PDF, JPG and PNG/.test(await text()), ((await text()).match(/.{0,40}(Only|could not|isn).{0,60}/) || ["(no error shown)"])[0]);
+if (await pg.$("#ucx")) await pg.click("#ucx");
+await pg.click("#nav [data-nav=home]"); await W(100); await pg.click("#nav [data-nav=reports]"); await W(200);
 await pg.setInputFiles("#file", { name: "prescription.jpg", mimeType: "image/jpeg", buffer: Buffer.from(photo, "base64") });
 await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 });
 check("an uploaded photo opens the scanner with the page found and straightened", await pg.evaluate("!!document.querySelector('.scanov img.scanimg')"));

@@ -177,6 +177,10 @@ export default async (req, context) => {
   const logged = (resp, meta) => { evalLog(req, rl, { route: "chat", status: resp.status, rule_flags: flags, ms: Date.now() - t0, ...meta }); return resp; };
   if (!rl.allowed) return flags.length ? json({ ...emergencyGuidance(flags), state, ai_unavailable: rl.error })
     : new Response(JSON.stringify({ error: rl.error, retry_after: rl.retryAfter }), { status: rl.status, headers: { "content-type": "application/json", "cache-control": "no-store", "retry-after": String(rl.retryAfter || 60) } });
+  // With real accounts switched on, the assistant answers signed-in accounts only. Emergency wording still gets the
+  // fixed guidance, so nobody is left without it. (Evaluation runs on staging are exempt.)
+  const accountsOn = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) || /^prod/i.test(process.env.DOCTINE_ENV || "");
+  if (accountsOn && rl.who !== "user" && rl.who !== "eval") return flags.length ? json({ ...emergencyGuidance(flags), state, ai_unavailable: "sign_in_required" }) : json({ error: "sign_in_required", message: "Please sign in to use the assistant." }, 401);
 
   let system = SYSTEM;
   if (state) system += `\n\nYour notes from earlier in this conversation (written by you; the person may have corrected them since):\n${JSON.stringify(state)}`;

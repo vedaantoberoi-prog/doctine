@@ -11,7 +11,11 @@ const CSP = build.match(/const CSP = "([^"]+)"/)[1];
 const toml = readFileSync(new URL("../../netlify.toml", import.meta.url), "utf8"), site = readFileSync(new URL("../../website/_headers", import.meta.url), "utf8");
 const results = []; const check = (name, ok, detail = "") => results.push((ok ? "PASS " : "FAIL ") + name + (detail ? "  — " + detail : ""));
 check("the same policy is used for the app on Cloudflare, staging on Netlify and the website", toml.includes(`Content-Security-Policy = "${CSP}"`) && site.includes(`Content-Security-Policy: ${CSP}`));
-check("the policy allows scripts only from this site and the two library CDNs", /script-src 'self' [^;]*https:\/\/cdnjs\.cloudflare\.com https:\/\/cdn\.jsdelivr\.net;/.test(CSP) && !/cloudflareinsights|\*/.test(CSP));
+const dir = (n) => (CSP.split(";").map((d) => d.trim()).find((d) => d.startsWith(n + " ")) || "");
+check("the policy allows scripts only from this site and the two library CDNs", /^script-src 'self' [^;]*https:\/\/cdnjs\.cloudflare\.com https:\/\/cdn\.jsdelivr\.net$/.test(dir("script-src")) && !/cloudflareinsights|\*/.test(dir("script-src")));
+check("the app can connect only to itself, Supabase and the library CDNs; plugins, framing and outside forms are off",
+  dir("connect-src").split(/\s+/).slice(1).every((s) => ["'self'", "blob:", "data:", "https://*.supabase.co", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"].includes(s))
+  && ["object-src 'none'", "base-uri 'self'", "frame-ancestors 'none'", "frame-src 'none'", "form-action 'self'"].every((d) => CSP.includes(d)), dir("connect-src"));
 
 const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 390, height: 844 } });
 const errs = [], blocked = [], beaconHits = []; let tessServed = 0;

@@ -15,17 +15,9 @@ export function Instruments({ reduced, light }: { reduced: boolean; light: boole
   const rings = useRef<THREE.Group>(null);
   const cards = useRef<(THREE.Mesh | null)[]>([]);
   const gold = useMemo(() => new THREE.MeshStandardMaterial({ color: '#C89A57', metalness: 0.65, roughness: 0.28 }), []);
+  // Frosted, not see-through glass: transmission would cost a second pass over the whole scene for three small cards.
   const frosted = useMemo(
-    () =>
-      new THREE.MeshPhysicalMaterial({
-        color: '#EAF2FB',
-        roughness: 0.42,
-        transmission: light ? 0 : 0.85,
-        opacity: light ? 0.55 : 1,
-        transparent: light,
-        thickness: 0.2,
-        ior: 1.4,
-      }),
+    () => new THREE.MeshStandardMaterial({ color: '#EAF2FB', roughness: 0.35, metalness: 0.1, transparent: true, opacity: light ? 0.6 : 0.72 }),
     [light],
   );
 
@@ -68,7 +60,6 @@ export function Instruments({ reduced, light }: { reduced: boolean; light: boole
             cards.current[i] = m;
           }}
           material={frosted}
-          castShadow
         >
           <boxGeometry args={[0.62, 0.86, 0.03]} />
         </mesh>

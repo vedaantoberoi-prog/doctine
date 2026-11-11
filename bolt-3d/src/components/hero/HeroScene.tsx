@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Sparkles } from '@react-three/drei';
+import { PerformanceMonitor, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { isNarrowViewport } from '@/lib/device';
 import { world } from '@/lib/world';
@@ -108,6 +108,7 @@ function ProgressBridge({ progress }: { progress: RefObject<number> }) {
 
 export default function HeroScene({ progress, reduced, onReady, frameloop = 'always' }: HeroSceneProps) {
   const narrow = isNarrowViewport();
+  const [dpr, setDpr] = useState(() => Math.min(window.devicePixelRatio || 1, narrow ? 1.5 : 1.75));
   useEffect(() => {
     if (reduced) world.intro = 1;
   }, [reduced]);
@@ -116,7 +117,7 @@ export default function HeroScene({ progress, reduced, onReady, frameloop = 'alw
     <Canvas
       shadows
       frameloop={frameloop}
-      dpr={narrow ? [1, 1.5] : [1, 2]}
+      dpr={dpr}
       camera={{ position: [-1.3, 0.6, 9], fov: 34, near: 0.1, far: 120 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       onCreated={() => onReady()}
@@ -139,6 +140,8 @@ export default function HeroScene({ progress, reduced, onReady, frameloop = 'alw
         color="#FFFFFF"
         position={[0, 0.5, 0]}
       />
+      {/* On a device that can't keep up, drop to one pixel per point and lose the soft shadows' cost */}
+      <PerformanceMonitor onDecline={() => setDpr(1)} />
       <CameraRig reduced={reduced} />
       {progress ? <ProgressBridge progress={progress} /> : null}
     </Canvas>

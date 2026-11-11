@@ -90,7 +90,7 @@ function CameraRig({ reduced }: { reduced: boolean }) {
     const wide = size.width / size.height > 1.15;
     const want = wide ? world.shift : 0;
     shift.current += (want - shift.current) * k;
-    const lift = wide ? 0 : narrow ? 0.33 : 0.2;
+    const lift = wide ? 0 : narrow ? 0.27 : 0.2;
     if (Math.abs(shift.current) > 0.002 || lift) {
       camera.setViewOffset(size.width, size.height, -size.width * shift.current, size.height * lift, size.width, size.height);
     } else if (camera.view) {

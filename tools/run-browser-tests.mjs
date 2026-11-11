@@ -28,6 +28,7 @@ const SUITES = [
   ["auth", "tests/browser/auth.test.mjs", "sign-in, sign-up and recovery screens and states; Supabase simulated"],
   ["preview", "tests/browser/preview.test.mjs", "the website's app preview, served as static files"],
   ["csp", "tests/browser/csp.test.mjs", "the app under its Content-Security-Policy; an injected host script is refused"],
+  ["admin", "tests/browser/admin.test.mjs", "the internal admin console page; /api/admin simulated with the database's role table"],
   ["website", "tests/browser/website.test.mjs", "the doctine.com website: shared layout, links, honest labels, 320px to desktop"],
 ];
 const results = [];

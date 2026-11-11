@@ -239,6 +239,10 @@ create index if not exists medicines_created_idx on public.medicines (created_at
 create index if not exists messages_created_idx on public.messages (created_at);
 
 -- ───────────────────────── measures ─────────────────────────
+-- Whether a health profile has any detail beyond the name the app stores at sign-up. Returns only yes or no.
+create or replace function private.profile_has_details(h public.health_profiles) returns boolean language sql immutable as $$
+  select coalesce(h.date_of_birth::text, h.height_cm::text, h.weight_kg::text, nullif(h.blood_group, ''), nullif(h.allergies, '')) is not null $$;
+
 -- "Qualifying activity": something the person did with their records — added or changed a record, uploaded a file,
 -- recorded a dose, saved their profile, searched, exported or used the assistant. Signing in, opening pages and
 -- refreshing are NOT activity. Days are calendar days in India Standard Time (Asia/Kolkata).
@@ -248,7 +252,7 @@ create or replace view private.activity as
   union all select user_id, recorded_at, 'dose' from public.dose_events
   union all select user_id, created_at, 'medicine' from public.medicines
   union all select user_id, updated_at, 'medicine' from public.medicines where updated_at > created_at + interval '5 seconds'
-  union all select user_id, updated_at, 'profile' from public.health_profiles
+  union all select user_id, updated_at, 'profile' from public.health_profiles where updated_at > created_at + interval '5 seconds' -- the app creates the profile at sign-up, so only later edits count
   union all select user_id, created_at, 'assistant' from public.messages where role = 'user'
   union all select user_id, at, name from private.analytics_events where user_id is not null and name in ('search_performed','record_exported');
 
@@ -378,8 +382,9 @@ begin
   return jsonb_build_object(
     'accounts', (select count(*) from auth.users where coalesce(is_anonymous, false) = false and deleted_at is null),
     'features', jsonb_build_array(
-      jsonb_build_object('key', 'profile', 'label', 'Health profile saved',
-        'ever', (select count(distinct user_id) from public.health_profiles), 'period', (select count(distinct user_id) from public.health_profiles where updated_at >= p_from and updated_at < p_to)),
+      jsonb_build_object('key', 'profile', 'label', 'Health profile filled in',
+        'ever', (select count(*) from public.health_profiles where private.profile_has_details(health_profiles)),
+        'period', (select count(*) from public.health_profiles where private.profile_has_details(health_profiles) and updated_at >= p_from and updated_at < p_to)),
       jsonb_build_object('key', 'record', 'label', 'Record added',
         'ever', (select count(distinct user_id) from public.documents), 'period', (select count(distinct user_id) from public.documents where created_at >= p_from and created_at < p_to)),
       jsonb_build_object('key', 'file', 'label', 'Document file uploaded',
@@ -444,7 +449,7 @@ begin
         'file_bytes', (select coalesce(sum(size_bytes), 0) from public.document_files where user_id = u.id),
         'medicines', (select count(*) from public.medicines where user_id = u.id),
         'doses_recorded', (select count(*) from public.dose_events where user_id = u.id),
-        'profile_saved', exists (select 1 from public.health_profiles where user_id = u.id),
+        'profile_saved', exists (select 1 from public.health_profiles h where h.user_id = u.id and private.profile_has_details(h)),
         'last_activity', (select max(at) from private.activity where user_id = u.id),
         'active_days_30', (select count(distinct private.day(at)) from private.activity where user_id = u.id and at >= now() - interval '30 days')),
       'uploads', jsonb_build_object(

@@ -359,3 +359,12 @@ html.rv main > section:not(.hero) > .wrap.in { opacity: 1; transform: none; }
 .chat .src { display: inline-block; margin-top: var(--s2); font: 600 .72rem/1 var(--sans); padding: .34rem .55rem; border-radius: var(--r-pill); border: 1px solid var(--line); color: var(--ink-soft); }
 .demo.planned { border-style: dashed; }
 .demo.planned .demo-top { background: var(--amber-wash); color: var(--amber-ink); } .demo.planned .demo-top b { color: var(--amber-ink); }
+.split > *, .demo, .demo-body { min-width: 0; }
+.paper { overflow-x: auto; }
+@media (max-width: 520px) {
+  .demo-body, .demo-top, .demo-note { padding-left: var(--s4); padding-right: var(--s4); }
+  .doses li { grid-template-columns: 3.2rem 1fr; }
+  .doses .acts { grid-column: 1 / -1; }
+  .paper { white-space: pre; font-size: .7rem; padding: var(--s3); }
+  .seg button { font-size: .72rem; padding: .3rem .2rem; }
+}

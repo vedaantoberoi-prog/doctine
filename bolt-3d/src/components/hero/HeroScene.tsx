@@ -86,11 +86,13 @@ function CameraRig({ reduced }: { reduced: boolean }) {
     camera.position.z += (targetZ - camera.position.z) * k;
     camera.lookAt(lookAt);
 
+    // Wide screens: the picture sits beside the text. Tall screens: it sits above it.
     const wide = size.width / size.height > 1.15;
     const want = wide ? world.shift : 0;
     shift.current += (want - shift.current) * k;
-    if (Math.abs(shift.current) > 0.002) {
-      camera.setViewOffset(size.width, size.height, -size.width * shift.current, 0, size.width, size.height);
+    const lift = wide ? 0 : 0.2;
+    if (Math.abs(shift.current) > 0.002 || lift) {
+      camera.setViewOffset(size.width, size.height, -size.width * shift.current, size.height * lift, size.width, size.height);
     } else if (camera.view) {
       camera.clearViewOffset();
     }

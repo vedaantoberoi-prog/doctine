@@ -284,6 +284,18 @@ main > section.band { background: var(--band); }
 .window .scatter b { color: #FFFFFF; }
 .window .scatter span { color: #DCE6F2; }
 .window-next { margin: var(--s5) 0 0; font: 500 var(--t-lg)/1.4 var(--serif); color: #FFFFFF; }
+/* Phones and tablets: their own composition. The scene shows clear at the top of each window and the words sit
+   below it on a dark ground that fades in, so the picture is seen and the text is always on solid colour. */
+@media (max-width: 899px) {
+  .window, .window.hero { align-items: flex-end; padding: 34svh 0 0; overflow: clip; }
+  .window::before { background: linear-gradient(to top, rgba(12,22,36,.3), rgba(12,22,36,.08)); }
+  .window-copy, .window.right .window-copy { position: relative; max-width: none; padding: var(--s6) 0 var(--s8); }
+  .window-copy::before { content: ""; position: absolute; z-index: -1; top: -6rem; bottom: 0; left: -50vw; right: -50vw; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(12,22,36,0) 0, rgba(12,22,36,.9) 6rem, rgba(12,22,36,.95) 100%); }
+  .window.center .window-copy { text-align: left; }
+  .window.center .actions { justify-content: flex-start; }
+  .window.center .eyebrow, .window.center .lede { margin-inline: 0; }
+}
 /* Stages of the roadmap: a ruled list, one line each, with its honest status */
 .stages { list-style: none; margin: var(--s6) 0 0; padding: 0; border-top: 1px solid rgba(255,255,255,.28); }
 .stages li { display: grid; grid-template-columns: 4.6rem 1fr; gap: var(--s2) var(--s4); align-items: start; padding: var(--s4) 0; border-bottom: 1px solid rgba(255,255,255,.22); }

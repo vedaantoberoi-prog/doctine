@@ -221,4 +221,5 @@ select pg_temp.expect(exists (select 1 from jsonb_array_elements(public.monitor_
 select public.monitor_mark_notified(array(select (a->>'id')::uuid from jsonb_array_elements(public.monitor_run()->'to_notify') a), 'github');
 select pg_temp.expect(jsonb_array_length(public.monitor_run()->'to_notify') = 0, 'nobody is emailed twice about the same alert');
 reset role;
+select pg_temp.expect(not exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'private' and c.relkind = 'r' and not c.relrowsecurity), 'every private table has row-level security on');
 \echo ALL ADMIN TESTS PASSED

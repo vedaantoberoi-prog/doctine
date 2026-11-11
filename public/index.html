@@ -610,6 +610,9 @@ const aiOff=()=>!!(S.cloud&&CLOUD.on&&CLOUD.ai===false);
    of the sign-up agreement) don't count. Sharing saved records is a tick box in each chat; sending a photo or scanned
    page to the AI is asked each time. */
 const AI_CONSENT_FROM=Date.parse('2026-11-09T22:20:00+05:30'),AGREEMENT_V='2026-11-09';
+/* "Help improve Doctine" (product measurements) started on 12 Nov 2026. Before that the same switch said Doctine collects
+   no analytics, so a choice made before then is not consent to measurements: it counts only if made (again) since. */
+const ANALYTICS_CONSENT_FROM=Date.parse('2026-11-12T04:30:00+05:30');
 async function initCloud(){
  if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.hostname))return false;
  let cfg=null;try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),4000);const r=await fetch(API+'/api/config',{signal:ac.signal}).finally(()=>clearTimeout(t));if(r.ok)cfg=await r.json()}catch{}
@@ -646,7 +649,7 @@ async function cloudEnter(user){
   if(CLOUD.epoch!==ep)return;   // signed out or switched while loading: show nothing of this account
   const bad=[pr,cs,ds,fs,ms,sc,de].find(r=>r.error);if(bad)throw bad.error;
   const p=pr.data||{},meta=user.user_metadata||{};
-  const consent={ai:false,analytics:false,history:false};(cs.data||[]).forEach(c=>{if(c.kind==='ai_chat')consent.ai=!!c.granted&&Date.parse(c.updated_at)>=AI_CONSENT_FROM;if(c.kind==='analytics')consent.analytics=c.granted;if(c.kind==='chat_history')consent.history=c.granted});
+  const consent={ai:false,analytics:false,history:false};(cs.data||[]).forEach(c=>{if(c.kind==='ai_chat')consent.ai=!!c.granted&&Date.parse(c.updated_at)>=AI_CONSENT_FROM;if(c.kind==='analytics')consent.analytics=!!c.granted&&Date.parse(c.updated_at)>=ANALYTICS_CONSENT_FROM;if(c.kind==='chat_history')consent.history=c.granted});
   const docByUuid={};CLOUD.ids={docs:{},meds:{}};CLOUD.files={};
   const reports=(ds.data||[]).map(d=>{docByUuid[d.id]=d.client_id;CLOUD.ids.docs[d.client_id]=d.id;return{id:Number(d.client_id),title:d.title,cat:d.category,date:d.document_date||'',lab:d.provider||'',fields:d.fields||{},hash:d.file_hash||undefined,imgs:d.page_count||0,scan:d.extraction||null,src:d.source,checked:d.source==='manual'&&(d.page_count||0)>0}});
   (fs.data||[]).forEach(f=>{const cid=docByUuid[f.document_id];if(cid==null)return;CLOUD.files[`${f.kind==='original'?'orig':'scan'}:${cid}:${f.page}`]=f.storage_path;if(f.content_type==='application/pdf'){const r=reports.find(x=>x.id===Number(cid));if(r)r.orig='pdf'}});
@@ -685,7 +688,10 @@ async function cloudSync(){
  const step=async p=>{const r=await p;if(CLOUD.epoch!==ep||CLOUD.uid!==uid)throw ABORT;return r};
  try{
   if(now.profile!==was.profile){const p=P;const{error}=await step(sb.from('health_profiles').upsert({user_id:uid,full_name:nn(p.name),date_of_birth:nn(p.dob),height_cm:nn(p.height)==null?null:+p.height,weight_kg:nn(p.weight)==null?null:+p.weight,blood_group:nn(p.blood),allergies:nn(p.allergies)}));if(error)throw error;was.profile=now.profile}
-  if(now.consent!==was.consent){const{error}=await step(sb.from('consents').upsert([{user_id:uid,kind:'ai_chat',granted:!!C.ai},{user_id:uid,kind:'analytics',granted:!!C.analytics},{user_id:uid,kind:'chat_history',granted:!!C.history}]));if(error)throw error;was.consent=now.consent}
+  if(now.consent!==was.consent){let P={};try{P=JSON.parse(was.consent)||{}}catch{}
+  // only the choices that changed: rewriting an unchanged row would refresh its date and turn an old choice into a new one
+  const rows=[['ai_chat','ai'],['analytics','analytics'],['chat_history','history']].filter(([,k])=>!!P[k]!==!!C[k]).map(([kind,k])=>({user_id:uid,kind,granted:!!C[k]}));
+  if(rows.length){const{error}=await step(sb.from('consents').upsert(rows));if(error)throw error}was.consent=now.consent}
   for(const r of R){if(was.docs[r.id]===now.docs[r.id]&&CLOUD.ids.docs[r.id])continue;
    const{data,error}=await step(sb.from('documents').upsert({user_id:uid,client_id:r.id,title:String(r.title||'Medical document').slice(0,160),category:['Lab report','Prescription','Imaging','Other'].includes(r.cat)?r.cat:'Other',document_date:nn(r.date),provider:nn(r.lab),source:r.imgs?(r.checked?'manual':'scan'):(r.src||'upload'),fields:r.fields||{},extraction:r.scan||null,page_count:r.imgs||0,file_hash:r.hash||null},{onConflict:'user_id,client_id'}).select('id').single());
    if(error)throw error;CLOUD.ids.docs[r.id]=data.id;await uploadPages(r,data.id,uid,step);was.docs[r.id]=now.docs[r.id]}

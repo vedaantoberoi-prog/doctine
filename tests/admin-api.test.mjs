@@ -148,9 +148,9 @@ await test("a signed-in event is stored against the account from the token", asy
   calls = []; const r = await ev(tok("user"), { name: "record_exported", props: { format: "pdf" }, key: "exp-1", user_id: "someone-else" }, "10.2.0.1");
   assert.equal(r.status, 200); assert.equal(calls.find((c) => c.url.endsWith("/rpc/record_event")).body.p_user, "b0000000-0000-0000-0000-000000000001");
 });
-await test("signed-out visitors may only report sign-in failures and errors", async () => {
+await test("signed-out visitors cannot send any event (so failure counts can't be inflated anonymously)", async () => {
   assert.equal((await ev(null, { name: "record_exported", props: {}, key: "k" }, "10.2.0.2")).status, 401);
-  assert.equal((await ev(null, { name: "login_failure", props: { reason: "invalid_credentials" }, key: "k" }, "10.2.0.3")).status, 200);
+  assert.equal((await ev(null, { name: "login_failure", props: { reason: "invalid_credentials" }, key: "k" }, "10.2.0.3")).status, 401);
 });
 await test("free text is refused", async () => {
   assert.equal((await ev(tok("user"), { name: "document_upload_failed", props: { reason: "Haemoglobin 13.1" }, key: "k2" }, "10.2.0.4")).status, 400);

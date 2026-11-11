@@ -9,7 +9,9 @@ import { serviceHeaders } from "../lib/supabase-keys.mjs";
 import { json, readJson } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 
-const ANON_OK = new Set(["login_failure", "signup_failed", "app_error"]);
+// Every event needs a signed-in account: anonymous reports could be used to inflate failure counts and trigger false
+// alerts. (App errors go to /api/errors, which has its own limits and stores no account.)
+const ANON_OK = new Set();
 
 export default async (req, context) => {
   if (req.method !== "POST") return json({ error: "invalid" }, 405);

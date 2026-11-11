@@ -14,7 +14,7 @@ const CARDS: { home: [number, number, number]; target: [number, number, number];
 export function Instruments({ reduced, light }: { reduced: boolean; light: boolean }) {
   const rings = useRef<THREE.Group>(null);
   const cards = useRef<(THREE.Mesh | null)[]>([]);
-  const gold = useMemo(() => new THREE.MeshStandardMaterial({ color: '#BFD3E6', metalness: 0.8, roughness: 0.22, emissive: '#4FB6DA', emissiveIntensity: 0.25 }), []);
+  const gold = useMemo(() => new THREE.MeshStandardMaterial({ color: '#C89A57', metalness: 0.85, roughness: 0.25 }), []);
   // Frosted, not see-through glass: transmission would cost a second pass over the whole scene for three small cards.
   const frosted = useMemo(
     () => new THREE.MeshStandardMaterial({ color: '#EAF2FB', roughness: 0.35, metalness: 0.1, transparent: true, opacity: light ? 0.6 : 0.72 }),

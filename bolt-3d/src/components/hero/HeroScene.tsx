@@ -20,10 +20,10 @@ type HeroSceneProps = {
 
 const DAY = { top: SKY_TOP.clone(), mid: SKY_MID.clone(), horizon: SKY_HORIZON.clone(), fog: new THREE.Color('#B9D3F2') };
 const DUSK = {
-  top: new THREE.Color('#040916'),
-  mid: new THREE.Color('#0A2152'),
-  horizon: new THREE.Color('#2A5FB8'),
-  fog: new THREE.Color('#16356B'),
+  top: new THREE.Color('#071436'),
+  mid: new THREE.Color('#123B78'),
+  horizon: new THREE.Color('#5C86C8'),
+  fog: new THREE.Color('#4A72B0'),
 };
 
 const COOL = new THREE.Color('#CFE3FF');

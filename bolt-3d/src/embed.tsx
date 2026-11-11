@@ -23,10 +23,10 @@ gsap.registerPlugin(ScrollTrigger);
 type Pose = Pick<WorldState, 'gather' | 'pull' | 'dusk' | 'shift'>;
 // Where the world starts and ends while each window crosses the middle of the screen.
 const CHAPTERS: Record<string, { from: Pose; to: Pose }> = {
-  hero: { from: { gather: 0, pull: 0.22, dusk: 0.8, shift: 0.2 }, to: { gather: 0.18, pull: 0.1, dusk: 0.85, shift: 0.22 } },
-  gather: { from: { gather: 0.18, pull: 0.1, dusk: 0.85, shift: 0.24 }, to: { gather: 1, pull: 0.15, dusk: 0.9, shift: 0.24 } },
-  future: { from: { gather: 1, pull: 0.35, dusk: 0.95, shift: -0.22 }, to: { gather: 1, pull: 0.8, dusk: 1, shift: -0.22 } },
-  close: { from: { gather: 1, pull: 0.8, dusk: 1, shift: 0 }, to: { gather: 1, pull: 1, dusk: 0.9, shift: 0 } },
+  hero: { from: { gather: 0, pull: 0.22, dusk: 0.15, shift: 0.2 }, to: { gather: 0.18, pull: 0.1, dusk: 0.2, shift: 0.22 } },
+  gather: { from: { gather: 0.18, pull: 0.1, dusk: 0.2, shift: 0.24 }, to: { gather: 1, pull: 0.15, dusk: 0.35, shift: 0.24 } },
+  future: { from: { gather: 1, pull: 0.35, dusk: 0.75, shift: -0.22 }, to: { gather: 1, pull: 0.8, dusk: 1, shift: -0.22 } },
+  close: { from: { gather: 1, pull: 0.8, dusk: 0.9, shift: 0 }, to: { gather: 1, pull: 1, dusk: 0.65, shift: 0 } },
 };
 
 function World({ host, windows }: { host: HTMLElement; windows: HTMLElement[] }) {

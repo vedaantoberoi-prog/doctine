@@ -19,11 +19,13 @@ type HeroSceneProps = {
 
 const DAY = { top: SKY_TOP.clone(), mid: SKY_MID.clone(), horizon: SKY_HORIZON.clone(), fog: new THREE.Color('#B9D3F2') };
 const DUSK = {
-  top: new THREE.Color('#0B1F4A'),
-  mid: new THREE.Color('#123B78'),
-  horizon: new THREE.Color('#6F95CF'),
-  fog: new THREE.Color('#5E84BF'),
+  top: new THREE.Color('#040916'),
+  mid: new THREE.Color('#0A2152'),
+  horizon: new THREE.Color('#2A5FB8'),
+  fog: new THREE.Color('#16356B'),
 };
+
+const COOL = new THREE.Color('#CFE3FF');
 
 // Daylight eases into a deep evening blue as the page reaches its later chapters.
 function Atmosphere() {
@@ -37,7 +39,8 @@ function Atmosphere() {
     SKY_HORIZON.copy(DAY.horizon).lerp(DUSK.horizon, d);
     if (scene.fog) (scene.fog as THREE.Fog).color.copy(DAY.fog).lerp(DUSK.fog, d);
     if (sun.current) {
-      sun.current.intensity = THREE.MathUtils.lerp(1.9, 1.15, d);
+      sun.current.intensity = THREE.MathUtils.lerp(1.9, 1.5, d);
+      sun.current.color.set('#FFF3DE').lerp(COOL, d);
       sun.current.position.set(THREE.MathUtils.lerp(5, -3, d), THREE.MathUtils.lerp(9, 5, d), 6);
     }
     if (fill.current) fill.current.intensity = THREE.MathUtils.lerp(0.7, 0.5, d);

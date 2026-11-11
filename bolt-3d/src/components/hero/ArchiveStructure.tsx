@@ -66,7 +66,7 @@ export function ArchiveStructure() {
     [],
   );
   const ribbonMaterial = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: '#C89A57', metalness: 0.5, roughness: 0.3 }),
+    () => new THREE.MeshStandardMaterial({ color: '#BFD3E6', metalness: 0.8, roughness: 0.22, emissive: '#4FB6DA', emissiveIntensity: 0.2 }),
     [],
   );
   const ribbonGeometries = useMemo(

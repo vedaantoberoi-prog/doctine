@@ -19,7 +19,7 @@ const ROLE_BY_EMAIL = { "owner@example.test": "owner", "analyst@example.test": "
 const NEEDS = { overview: "dashboard.view", series: "analytics.view", funnel: "analytics.view", retention: "analytics.view", adoption: "analytics.view", users: "users.view", user: "users.view",
   user_suspend: "users.suspend", user_restore: "users.suspend", user_revoke_sessions: "users.suspend", user_reset_password: "users.reset_password", user_note: "users.notes",
   documents: "documents.view", flags: "flags.view", set_flag: "flags.manage", announcements: "dashboard.view", announcement_save: "announcements.manage", incidents: "health.view",
-  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", team_set: "team.manage", audit: "audit.view", security: "security.view", health: "health.view", export: "reports.export" };
+  incident_save: "incidents.manage", uptime: "health.view", errors: "health.view", error_update: "alerts.manage", pdf: "reports.export", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", team_set: "team.manage", audit: "audit.view", security: "security.view", health: "health.view", export: "reports.export" };
 
 const out = [];
 const check = (n, ok, d = "") => { out.push((ok ? "PASS " : "FAIL ") + n + (d ? "  — " + d : "")); console.log(out[out.length - 1]); };
@@ -57,7 +57,9 @@ async function open(email, { width = 1440, hash = "" } = {}) {
         documents: { summary: { records: 5, records_total: 14, by_source: { scan: 3, manual: 2 }, by_category: { "Lab report": 4, Other: 1 }, files: 4, by_type: { "image/jpeg": 4 }, bytes: 400000, storage_bytes: 5242880, upload_completed: 0, upload_failed: 0, failure_reasons: {}, processing_completed: 0, processing_failed: 0, processing_ms_avg: null, events_since: null }, total: 1, rows: [{ id: "d0000000-0000", account: "1a2b3c4d", created_at: new Date().toISOString(), source: "scan", pages: 1, files: 1, bytes: 100000, types: ["image/jpeg"] }] },
         flags: [{ key: "ai_assistant", enabled: false, value: {}, updated_at: null }, { key: "document_upload", enabled: true, value: {}, updated_at: null }, { key: "maintenance", enabled: false, value: {}, updated_at: null }],
         set_flag: { ok: true },
-        health: { checks: [{ name: "Database (Data API)", ok: true, status: 200, ms: 80, checked_at: new Date().toISOString() }, { name: "Sign-in service", ok: false, status: null, ms: 5000, error: "timeout", checked_at: new Date().toISOString() }], configured: { ai_provider: false, shared_rate_limits: true, external_uptime_monitor: "GitHub Actions", error_tracking: "not configured" }, environment: "staging" },
+        health: { checks: [{ name: "Database (Data API)", ok: true, status: 200, ms: 80, checked_at: new Date().toISOString() }, { name: "Sign-in service", ok: false, status: null, ms: 5000, error: "timeout", checked_at: new Date().toISOString() }], configured: { ai_provider: false, shared_rate_limits: true, scheduled_checks: "Every 15 minutes", error_tracking: "Doctine's own", alert_email: null }, environment: "staging" },
+        uptime: { days: 7, since: new Date(Date.now() - 864e5).toISOString(), targets: ["app", "database", "auth", "storage"].map((t, i) => ({ target: t, checks: i === 2 ? 0 : 8, ok: i === 1 ? 6 : 8, checks_24h: i === 2 ? 0 : 8, ok_24h: i === 1 ? 6 : 8, ms_p50: 120, ms_p95: 400, last: i === 2 ? null : { at: new Date().toISOString(), ok: i !== 1, status: i === 1 ? 503 : 200, ms: 100 }, buckets: i === 2 ? [] : [{ at: new Date(Date.now() - 6 * 36e5).toISOString(), checks: 4, ok: 4, ms: 110 }, { at: new Date().toISOString(), checks: 4, ok: i === 1 ? 2 : 4, ms: 130 }] })) },
+        errors: { last_24h: 3, last_7d: 5, since: new Date(Date.now() - 2 * 864e5).toISOString(), hourly: Array.from({ length: 48 }, (_, i) => ({ hour: new Date(Date.now() - (47 - i) * 36e5).toISOString(), n: i === 40 ? 3 : 0 })), groups: [{ fingerprint: "0123456789abcdef0123456789abcdef", source: "client", kind: "TypeError", message: "Cannot read properties of undefined (reading …)", location: "/index.html:#:#", release: "abc1234", first_seen: new Date().toISOString(), last_seen: new Date().toISOString(), count: 5, status: "open", last_24h: 3 }] },
         team: [{ user_id: "x", email: "owner@example.test", role: "owner", status: "active", mfa: false, added_at: new Date().toISOString(), last_sign_in_at: null }],
         audit: { total: 1, rows: [{ at: new Date().toISOString(), actor_email: "owner@example.test", actor_role: "owner", action: "flag.set", target_type: "flag", target_id: "ai_assistant", reason: "fictional", outcome: "ok", before: { enabled: false }, after: { enabled: true }, request_id: "abc" }] },
         alerts: [], incidents: [], announcements: [], security: { denied_24h: 1, denied_recent: [], login_failures_24h: 2, login_failures_by_reason: {}, suspended_accounts: 0, admins_without_mfa: 1 },
@@ -91,11 +93,11 @@ await ctx.close();
 
 // ── owner ──
 ({ ctx, pg, log } = await open("owner@example.test"));
-check("the owner sees every section", JSON.stringify(await navKeys(pg)) === JSON.stringify(["dashboard", "analytics", "reports", "users", "documents", "health", "incidents", "alerts", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "access"]));
+check("the owner sees every section", JSON.stringify(await navKeys(pg)) === JSON.stringify(["dashboard", "analytics", "reports", "users", "documents", "health", "errors", "incidents", "alerts", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "access"]));
 check("dashboard: KPI tiles and four trend charts from the server's numbers", (await pg.$$eval(".kpi", (e) => e.length)) >= 12 && (await pg.$$eval(".chart svg", (e) => e.length)) === 4 && (await text(pg, "#view")).includes("11"));
 if (process.env.SHOTS) await pg.screenshot({ path: process.env.SHOTS + "/admin-dashboard.png", fullPage: true });
 check("measurements the app has not sent yet are labelled, not shown as a clean zero", (await text(pg, "#view")).includes("Not recorded yet"));
-check("availability is 'Not measured here', not a green light", (await text(pg, "#view")).includes("Not measured here"));
+check("availability comes from recorded checks (8 of 8 in the last 24 hours)", (await text(pg, "#view")).includes("8 of 8 scheduled checks passed"));
 check("the period and time zone are stated", (await text(pg, "#filters")).includes("India Standard Time"));
 await pg.hover(".chart svg", { position: { x: 300, y: 80 } }); await pg.waitForTimeout(100);
 check("hovering a chart shows that day's values", await pg.evaluate(() => [...document.querySelectorAll(".chart .tip")].some((t) => t.style.display === "block" && /\d/.test(t.textContent))));
@@ -122,7 +124,16 @@ check("confirming sends the change with its reason to the server", log.calls.som
 await pg.goto(BASE + "/admin/#/health"); await pg.waitForSelector("#hc table");
 const ht = await text(pg, "#hc");
 check("health: a service that did not answer is shown as not responding", ht.includes("Timed out"));
-check("health: unmeasured things say 'Monitoring not configured' / 'Not configured'", ht.includes("Monitoring not configured") && ht.includes("Not configured"));
+check("health: unconfigured things say so ('Not configured', 'Email not configured')", ht.includes("Not configured") && ht.includes("Email not configured"));
+await pg.waitForSelector("#uh svg");
+const uh = await text(pg, "#uh");
+check("uptime history: per service share of passed checks, and 'No checks yet' where there are none", uh.includes("75% of 8 checks passed") && uh.includes("No checks yet"));
+await pg.goto(BASE + "/admin/#/errors"); await pg.waitForSelector("[data-ef]");
+check("errors: grouped with counts, first and last seen, without values", (await text(pg, "#view")).includes("TypeError") && (await text(pg, "#view")).includes("Errors, last 24 hours"));
+await pg.click('[data-ef][data-s="resolved"]'); await pg.waitForTimeout(300);
+check("resolving an error sends it to the server", log.calls.some((c) => c.action === "error_update" && c.status === "resolved"));
+await pg.goto(BASE + "/admin/#/reports"); await pg.waitForSelector("[data-pdf]");
+check("reports offer a server-built PDF", !!(await pg.$("[data-pdf]")));
 await pg.goto(BASE + "/admin/#/documents"); await pg.waitForSelector(".callout");
 check("documents: says it shows technical information only", (await text(pg, "#view")).includes("Titles, providers, values, extracted text and files are never shown"));
 await pg.goto(BASE + "/admin/#/audit"); await pg.waitForSelector("#af");

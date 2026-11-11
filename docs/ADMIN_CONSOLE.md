@@ -25,8 +25,8 @@ The audit log refuses UPDATE, DELETE and TRUNCATE for everyone, including the da
 | Send password reset email | ✓ | ✓ | ✓ | | ✓ | |
 | Support notes | ✓ | ✓ | ✓ | | ✓ | |
 | Documents (technical metadata) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Platform health, incidents (view) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Manage incidents and alerts | ✓ | ✓ | ✓ | | | ✓ |
+| Platform health, uptime, errors, incidents (view) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Manage incidents, alerts and errors | ✓ | ✓ | ✓ | | | ✓ |
 | View switches | ✓ | ✓ | ✓ | | | ✓ |
 | Change switches, maintenance | ✓ | ✓ | | | | |
 | Announcements | ✓ | ✓ | ✓ | | | |
@@ -89,6 +89,22 @@ policy (`with check (bucket_id = 'health-documents' and (storage.foldername(name
 | Maintenance mode | off | App banner; uploads refused by the database; AI refused by the server; sign-ups refused by the hook (if enabled). Saving records continues. |
 
 Changes reach the app within about 20 seconds (server cache) on the next page load.
+
+## Monitoring, errors and alert email
+
+- **Scheduled health round:** `.github/workflows/uptime.yml` calls `GET /api/monitor` every 15 minutes. The server itself
+  checks the app (`/version.json`), the database, sign-in and storage, records the results (at most one round per
+  4 minutes, whoever calls), evaluates the alert rules, and replies with counts only.
+- **Uptime history:** Platform health shows per-service pass rates, typical and slow response times, and a bar per
+  hour or 6 hours for the last 7 days. Opening Platform health also records a round.
+- **Error tracking:** the app reports uncaught errors to `/api/errors` (same-origin only, rate-limited); the Cloudflare
+  router reports unhandled server errors. The database strips numbers, quoted text and email addresses from messages,
+  groups by fingerprint, counts per hour, and reopens resolved errors that recur. No account or IP is stored.
+- **Alert email:** with `RESEND_API_KEY`, `ALERT_EMAIL_TO` and `ALERT_EMAIL_FROM` set in Cloudflare, each new alert is
+  emailed once through Resend. Without them the uptime workflow fails while there are un-emailed alerts, so GitHub
+  emails the account that owns the workflow; acknowledging or resolving the alert in the console stops it.
+- **PDF reports:** Reports → Download PDF builds an A4 report on the server (headline figures with comparison, funnel,
+  adoption, day-by-day table). Logged like CSV exports.
 
 ## Measurements
 

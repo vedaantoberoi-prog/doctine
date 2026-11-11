@@ -8,6 +8,8 @@ import "./hermetic-env.mjs";
 import assert from "node:assert/strict";
 import admin from "../netlify/functions/admin.mjs";
 import events from "../netlify/functions/events.mjs";
+import monitor from "../netlify/functions/monitor.mjs";
+import errorsFn from "../netlify/functions/errors.mjs";
 import { _resetTokenCache } from "../netlify/lib/ratelimit.mjs";
 
 let passed = 0, failed = 0;
@@ -28,7 +30,7 @@ globalThis.fetch = async (url, init = {}) => {
   url = String(url); const body = init.body ? JSON.parse(init.body) : null; calls.push({ url, body, headers: init.headers || {} });
   if (url.endsWith("/auth/v1/user")) { const t = String(init.headers.authorization || "").replace("Bearer ", ""); return PEOPLE[t] ? new Response(JSON.stringify({ id: PEOPLE[t], user_metadata: { role: "owner" } })) : new Response("{}", { status: 401 }); }
   if (url.endsWith("/rpc/rate_limit_hit")) return new Response(JSON.stringify([{ allowed: true, hits: 1, reset_at: new Date(Date.now() + 6e5).toISOString() }]));
-  if (url.endsWith("/rpc/admin_me")) { const r = ROLES[body.p_actor]; return new Response(JSON.stringify(r ? { role: r, perms: [], mfa_enrolled: mfaEnrolled } : { role: null })); }
+  if (url.endsWith("/rpc/admin_me")) { const r = ROLES[body.p_actor]; return new Response(JSON.stringify(r ? { role: r, email: r + "@example.test", perms: r === "owner" ? ["analytics.view", "reports.export"] : [], mfa_enrolled: mfaEnrolled } : { role: null })); }
   if (url.endsWith("/rpc/admin_log_denied")) return new Response("null");
   // The database refuses analysts the user list, exactly as private.require does.
   if (url.endsWith("/rpc/admin_users")) return ROLES[body.p_actor] === "owner" ? new Response(JSON.stringify({ total: 1, rows: [{ id: "b0000000-0000-0000-0000-000000000001", email: "asha.sample@example.test" }] })) : new Response(JSON.stringify({ code: "42501", message: "forbidden" }), { status: 403 });
@@ -36,6 +38,15 @@ globalThis.fetch = async (url, init = {}) => {
   if (url.includes("/auth/v1/admin/users/")) return new Response("{}", { status: 200 });
   if (url.endsWith("/rpc/admin_log_action")) return new Response(JSON.stringify({ ok: true }));
   if (url.endsWith("/rpc/admin_series")) return new Response(JSON.stringify([{ day: "2026-11-11", users_total: 3, users_new: 1, dau: 1, wau: 1, mau: 1, documents: 0 }, { day: "=HYPERLINK(1)", users_total: 3 }]));
+  if (url.endsWith("/rpc/admin_overview")) return new Response(JSON.stringify({ users_total: 11, users_new: 2, users_new_prev: 1, documents_new: 3, documents_new_prev: 0, storage_bytes: 1048576 }));
+  if (url.endsWith("/rpc/admin_funnel")) return new Response(JSON.stringify({ account_created: 2, email_verified: 1, signed_in: 1, first_activity: 1 }));
+  if (url.endsWith("/rpc/admin_adoption")) return new Response(JSON.stringify({ accounts: 11, features: [{ label: "Record added", ever: 5, period: 2 }] }));
+  if (url.endsWith("/rpc/record_uptime")) return new Response("true");
+  if (url.endsWith("/rpc/monitor_run")) return new Response(JSON.stringify({ opened: 1, open: 1, to_notify: [{ id: "c0000000-0000-0000-0000-000000000001", severity: "critical", message: "Database failed its last two checks", opened_at: new Date().toISOString() }] }));
+  if (url.endsWith("/rpc/monitor_mark_notified")) return new Response("null");
+  if (url.endsWith("/rpc/report_error")) return new Response("true");
+  if (url.endsWith("/version.json") || url.endsWith("/auth/v1/health") || url.includes("/storage/v1/bucket/") || url.endsWith("/rpc/public_settings")) return new Response("{}");
+  if (url.startsWith("https://api.resend.com/")) return new Response("{}");
   if (url.endsWith("/rpc/record_event")) return body.p_props && Object.values(body.p_props).some((v) => typeof v === "string" && /\s/.test(v)) ? new Response(JSON.stringify({ code: "22023" }), { status: 400 }) : new Response("true");
   return new Response("{}", { status: 404 });
 };
@@ -96,7 +107,40 @@ await test("CSV export: a file, no health columns, and cells cannot run as sprea
   assert.equal(r.status, 200); assert.match(r.headers.get("content-disposition"), /attachment; filename="doctine-daily-/);
   const t = await r.text(); replies.push(t); assert.match(t.split("\n")[0], /^day,users_total,users_new,dau/); assert.match(t, /\n'=HYPERLINK\(1\),3/);
 });
+await test("PDF report: a real PDF file, permission checked before any figures are read", async () => {
+  calls = []; const r = await post(admin, tok("owner"), { action: "pdf", from: "2026-11-01T00:00:00Z", to: "2026-11-12T00:00:00Z" });
+  assert.equal(r.status, 200); assert.equal(r.headers.get("content-type"), "application/pdf");
+  const buf = Buffer.from(await r.arrayBuffer()); assert.equal(buf.subarray(0, 5).toString(), "%PDF-"); replies.push(buf.toString("latin1"));
+  const first = calls.findIndex((c) => c.url.endsWith("/rpc/admin_log_action")), data = calls.findIndex((c) => c.url.endsWith("/rpc/admin_overview"));
+  assert.ok(first >= 0 && first < data, "the export permission is checked (and logged) before the figures are fetched");
+});
 await test("the server key is never in any reply", async () => { assert.ok(replies.length > 10); for (const t of replies) assert.ok(!t.includes(SECRET)); });
+
+console.log("scheduled monitoring and error reports");
+await test("/api/monitor checks and records on its own, and replies with counts only", async () => {
+  calls = []; const r = await monitor(new Request("https://app.doctine.test/api/monitor", { method: "POST", body: JSON.stringify({ rows: [{ target: "app", ok: false }] }) }), { ip: "10.3.0.1" });
+  const j = await r.json(); replies.push(JSON.stringify(j));
+  assert.equal(r.status, 200); assert.equal(j.recorded, true); assert.equal(j.open_alerts, 1);
+  const rec = calls.find((c) => c.url.endsWith("/rpc/record_uptime")); assert.ok(rec.body.p_rows.every((x) => x.ok === true), "the caller's own 'results' are ignored");
+  assert.ok(!JSON.stringify(j).includes("Database failed"), "no alert text in the public reply");
+  assert.equal(j.email, "not_configured"); assert.equal(j.unnotified_alerts, 1, "the workflow is told to fail, so GitHub emails the owner");
+  assert.ok(!calls.some((c) => c.url.endsWith("/rpc/monitor_mark_notified")), "not marked as emailed when no email was sent");
+});
+await test("with Resend configured, new alerts are emailed once and marked", async () => {
+  Object.assign(process.env, { RESEND_API_KEY: "re_TEST_not_real", ALERT_EMAIL_TO: "ops@example.test", ALERT_EMAIL_FROM: "alerts@example.test" });
+  calls = []; const j = await (await monitor(new Request("https://app.doctine.test/api/monitor"), { ip: "10.3.0.2" })).json();
+  const mail = calls.find((c) => c.url.startsWith("https://api.resend.com/"));
+  assert.equal(j.email, "sent"); assert.equal(j.unnotified_alerts, 0); assert.match(mail.body.subject, /Database failed/); assert.deepEqual(mail.body.to, ["ops@example.test"]);
+  assert.ok(calls.some((c) => c.url.endsWith("/rpc/monitor_mark_notified")));
+  for (const k of ["RESEND_API_KEY", "ALERT_EMAIL_TO", "ALERT_EMAIL_FROM"]) delete process.env[k];
+});
+await test("/api/errors takes reports from this site only, and passes just kind, message, place and release", async () => {
+  calls = [];
+  const bad = await errorsFn(new Request("https://app.doctine.test/api/errors", { method: "POST", headers: { origin: "https://evil.example" }, body: "{}" }), { ip: "10.4.0.1" });
+  assert.equal(bad.status, 403);
+  const ok = await errorsFn(new Request("https://app.doctine.test/api/errors", { method: "POST", headers: { origin: "https://app.doctine.test" }, body: JSON.stringify({ kind: "TypeError", message: "x", location: "/index.html:1:2", release: "abc", user: "someone", record: "Haemoglobin" }) }), { ip: "10.4.0.2" });
+  assert.equal(ok.status, 200); assert.deepEqual(Object.keys(calls.find((c) => c.url.endsWith("/rpc/report_error")).body).sort(), ["p_kind", "p_location", "p_message", "p_release", "p_source"]);
+});
 
 console.log("measurement events");
 const ev = (token, body, ip) => events(new Request("https://d/api/events", { method: "POST", headers: token ? { authorization: "Bearer " + token } : {}, body: JSON.stringify(body) }), { ip });

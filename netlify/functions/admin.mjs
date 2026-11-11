@@ -14,6 +14,8 @@ import { serviceHeaders } from "../lib/supabase-keys.mjs";
 import { json, readJson } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { _resetSettingsCache } from "../lib/settings.mjs";
+import { runChecks, recordChecks, reportServerError } from "../lib/monitor.mjs";
+import { makePdf } from "../lib/pdf.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY = 86400000;
@@ -60,27 +62,18 @@ function claims(token) {
 }
 
 /* ─────────────── platform checks (measured now, never assumed) ─────────────── */
-async function probe(name, url, init) {
-  const t0 = Date.now();
-  try {
-    const r = await call(url, init, 5000);
-    return { name, checked_at: new Date().toISOString(), ok: r.status < 500, status: r.status, ms: Date.now() - t0 };
-  } catch (e) { return { name, checked_at: new Date().toISOString(), ok: false, status: null, ms: Date.now() - t0, error: e.name === "AbortError" ? "timeout" : "unreachable" }; }
-}
-async function healthChecks() {
-  const { base, anon, service } = env();
-  const [db, auth, storage] = await Promise.all([
-    probe("Database (Data API)", `${base}/rest/v1/rpc/public_settings`, { method: "POST", headers: serviceHeaders(service, { "content-type": "application/json" }), body: "{}" }),
-    probe("Sign-in service", `${base}/auth/v1/health`, { headers: { apikey: anon } }),
-    probe("File storage", `${base}/storage/v1/bucket/health-documents`, { headers: serviceHeaders(service) }),
-  ]);
+async function healthChecks(origin) {
+  const { base, service } = env();
+  const checks = await runChecks(origin);
+  await recordChecks(checks); // also adds to the uptime history (at most one round per 4 minutes)
   return {
-    checks: [db, auth, storage],
+    checks,
     configured: {
       ai_provider: Boolean(process.env.ANTHROPIC_API_KEY),
       shared_rate_limits: Boolean(base && service),
-      external_uptime_monitor: "GitHub Actions workflow .github/workflows/uptime.yml (every 15 minutes; history is in GitHub, not shown here)",
-      error_tracking: "not configured",
+      scheduled_checks: "Every 15 minutes: the GitHub uptime workflow calls /api/monitor, which checks, records and evaluates alerts",
+      error_tracking: "Doctine's own: app and server errors, grouped, without personal data",
+      alert_email: process.env.RESEND_API_KEY && process.env.ALERT_EMAIL_TO && process.env.ALERT_EMAIL_FROM ? "Resend: " + String(process.env.ALERT_EMAIL_TO).split(",").length + " recipient(s)" : null,
     },
     environment: process.env.DOCTINE_ENV || "unset",
   };
@@ -111,6 +104,44 @@ async function exportReport(uid, b, rid) {
   name = `doctine-${kind}-${p.p_from.slice(0, 10)}-to-${p.p_to.slice(0, 10)}.csv`;
   await log("ok", { report: kind, from: p.p_from, to: p.p_to, bytes: body.length });
   return { filename: name, content_type: "text/csv", body };
+}
+
+/* ─────────────── PDF report: the dashboard and its daily figures, built on the server ─────────────── */
+const IST = 330 * 60000;
+const ist = (v) => { const d = new Date(Date.parse(v) + IST); return d.toISOString().slice(0, 16).replace("T", " ") + " IST"; };
+const fmt = (v) => (v == null ? "-" : typeof v === "number" ? v.toLocaleString("en-IN") : String(v));
+const mb = (b) => (b == null ? "-" : (b / 1048576).toFixed(1) + " MB");
+async function pdfReport(uid, b, rid) {
+  const p = period(b);
+  // the permission check comes first: admin_log_action refuses anyone without reports.export
+  await rpc("admin_log_action", { p_actor: uid, p_perm: "reports.export", p_action: "report.export", p_target_type: "report", p_target_id: "pdf", p_reason: null, p_detail: { report: "pdf", from: p.p_from, to: p.p_to }, p_outcome: "requested", p_request: rid });
+  const [o, series, me] = await Promise.all([rpc("admin_overview", { p_actor: uid, ...p }), rpc("admin_series", { p_actor: uid, ...p }), rpc("admin_me", { p_actor: uid })]);
+  let funnel = null, adoption = null;
+  if ((me.perms || []).includes("analytics.view")) [funnel, adoption] = await Promise.all([rpc("admin_funnel", { p_actor: uid, ...p }), rpc("admin_adoption", { p_actor: uid, ...p })]);
+  const chg = (a, b2) => (b2 ? `${a >= b2 ? "+" : ""}${Math.round(((a - b2) / b2) * 100)}% vs ${fmt(b2)}` : b2 === 0 ? (a ? "new" : "no change") : "");
+  const blocks = [
+    { h: "Headline figures" },
+    { table: { cols: ["Measure", "Value", "Compared with the previous period"], align: ["", "r", ""], rows: [
+      ["Total accounts", fmt(o.users_total), `${fmt(o.users_verified)} with email confirmed`],
+      ["New accounts", fmt(o.users_new), chg(o.users_new, o.users_new_prev)],
+      ["Active people in period", fmt(o.active), chg(o.active, o.active_prev)],
+      ["Returning people", fmt(o.returning), ""],
+      ["Daily / 7-day / 30-day active (now)", `${fmt(o.dau)} / ${fmt(o.wau)} / ${fmt(o.mau)}`, ""],
+      ["Signed in during period", fmt(o.signed_in), ""],
+      ["Records added", fmt(o.documents_new), chg(o.documents_new, o.documents_new_prev)],
+      ["Records in total", fmt(o.documents_total), ""],
+      ["Document storage", mb(o.storage_bytes), `${fmt(o.storage_files)} files`],
+      ["Failed uploads", fmt(o.uploads_failed), o.events_since ? "" : "not recorded yet"],
+      ["App errors reported", fmt(o.app_errors), o.events_since ? "" : "not recorded yet"],
+    ] } },
+  ];
+  if (funnel) blocks.push({ h: "Sign-up funnel (accounts created in the period)" }, { table: { cols: ["Step", "People"], align: ["", "r"], rows: [["Account created", fmt(funnel.account_created)], ["Email confirmed", fmt(funnel.email_verified)], ["Signed in", fmt(funnel.signed_in)], ["First qualifying activity", fmt(funnel.first_activity)]] } });
+  if (adoption) blocks.push({ h: "Feature adoption" }, { table: { cols: ["Feature", "People, ever", "In period"], align: ["", "r", "r"], rows: adoption.features.map((f) => [f.label, fmt(f.ever), fmt(f.period)]) } });
+  blocks.push({ h: "Day by day" }, { table: { cols: ["Day", "Accounts", "New", "Active", "Records", "Failed uploads"], align: ["", "r", "r", "r", "r", "r"], rows: series.map((d) => [d.day, fmt(d.users_total), fmt(d.users_new), fmt(d.dau), fmt(d.documents), fmt(d.uploads_failed)]) } });
+  blocks.push({ h: "Definitions" }, { p: "Active means did something with their records (added or changed a record, file, dose, medicine or profile, searched, exported or used the assistant); signing in alone does not count. Days are calendar days in India Standard Time. The previous period is the same length immediately before. This report contains no health information." });
+  const body = makePdf({ title: "Doctine platform report", subtitle: `${ist(p.p_from)} to ${ist(p.p_to)} · generated ${ist(new Date().toISOString())} for ${me.email || "an admin"} (${me.role})`, blocks });
+  await rpc("admin_log_action", { p_actor: uid, p_perm: "reports.export", p_action: "report.export", p_target_type: "report", p_target_id: "pdf", p_reason: null, p_detail: { report: "pdf", from: p.p_from, to: p.p_to, bytes: body.length }, p_outcome: "ok", p_request: rid });
+  return { filename: `doctine-report-${p.p_from.slice(0, 10)}-to-${p.p_to.slice(0, 10)}.pdf`, content_type: "application/pdf", body };
 }
 
 /* ─────────────── actions ─────────────── */
@@ -160,7 +191,11 @@ const ACTIONS = {
   team_set: (uid, b, rid) => rpc("admin_team_set", { p_actor: uid, p_email: s(b.email, 254), p_role: s(b.role, 20) || null, p_status: s(b.status, 20) || "active", p_reason: s(b.reason, 500), p_request: rid }),
   audit: (uid, b) => rpc("admin_audit", { p_actor: uid, p_admin: s(b.admin, 120) || null, p_action: s(b.filter_action, 64) || null, p_target: s(b.target, 80) || null, p_from: iso(b.from), p_to: iso(b.to), p_page: int(b.page, 1), p_size: int(b.size, 50) }),
   security: (uid) => rpc("admin_security", { p_actor: uid }),
-  health: async (uid) => { await rpc("admin_incidents", { p_actor: uid }); return healthChecks(); }, // the incidents call checks health.view
+  health: async (uid, b, rid, req) => { await rpc("admin_incidents", { p_actor: uid }); return healthChecks(new URL(req.url).origin); }, // the incidents call checks health.view
+  uptime: (uid, b) => rpc("admin_uptime", { p_actor: uid, p_days: Math.min(Math.max(int(b.days, 7), 1), 90) }),
+  errors: (uid, b) => rpc("admin_errors", { p_actor: uid, p_status: s(b.status, 20) || null }),
+  error_update: (uid, b, rid) => { if (!/^[0-9a-f]{32}$/.test(b.id || "")) throw httpError(400, "invalid_id"); return rpc("admin_error_update", { p_actor: uid, p_fp: b.id, p_status: s(b.status, 20), p_request: rid }); },
+  pdf: (uid, b, rid) => pdfReport(uid, b, rid),
   export: (uid, b, rid) => exportReport(uid, b, rid),
 };
 
@@ -213,12 +248,13 @@ export default async (req, context) => {
     }
     if (action === "me") return json({ ...me, aal, request_id: rid });
 
-    const out = await ACTIONS[action](uid, b, rid);
-    if (out && out.content_type) return new Response(out.body, { status: 200, headers: { "content-type": out.content_type + "; charset=utf-8", "content-disposition": `attachment; filename="${out.filename}"`, "cache-control": "no-store", "x-request-id": rid } });
+    const out = await ACTIONS[action](uid, b, rid, req);
+    if (out && out.content_type) return new Response(out.body, { status: 200, headers: { "content-type": out.content_type + (out.content_type.startsWith("text/") ? "; charset=utf-8" : ""), "content-disposition": `attachment; filename="${out.filename}"`, "cache-control": "no-store", "x-request-id": rid } });
     return json({ data: out, request_id: rid });
   } catch (e) {
     if (e && e.status) return json({ error: e.error, request_id: rid }, e.status);
     console.error("[admin]", action, e && e.name);
+    await reportServerError("/api/admin " + action, e);
     return json({ error: "server_error", request_id: rid }, 502);
   }
 };

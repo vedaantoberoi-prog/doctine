@@ -181,4 +181,44 @@ select pg_temp.expect((select count(*) from jsonb_array_elements(public.admin_al
 select pg_temp.expect(not exists (select 1 from jsonb_array_elements(public.admin_alerts(:dev, true)) a where a->>'rule' = 'login_failures'), 'no alert without measurements behind it');
 select pg_temp.denied(format('select public.admin_alert_update(%L, gen_random_uuid(), ''resolved'', null)', :support), 'support cannot resolve alerts');
 reset role;
+
+-- error tracking: cleaned, grouped, reopened when they come back
+set role service_role;
+select public.report_error('client', 'TypeError', 'Cannot read "Haemoglobin 13.1" for asha.sample@example.test at 42', '/index.html:120:7?x=SECRET', 'abc123');
+select public.report_error('client', 'TypeError', 'Cannot read "something else 9.9" for ravi@example.test at 7', '/index.html:120:9', 'abc123');
+reset role;
+select pg_temp.expect((select count(*) from private.error_groups) = 1 and (select count from private.error_groups) = 2, 'the same error is grouped, whatever values were in it');
+select pg_temp.expect((select message from private.error_groups) !~ '(13|Haemoglobin|example|42)' and (select location from private.error_groups) !~ 'SECRET', 'values, quoted text, emails and query strings are removed before storage');
+set role service_role;
+select pg_temp.expect((public.admin_errors(:dev, null)->>'last_24h')::int = 2, 'developers see error counts');
+select pg_temp.denied(format('select public.admin_errors(%L, null)', :asha), 'ordinary accounts cannot see errors');
+select public.admin_error_update(:dev, (select fingerprint from jsonb_to_recordset(public.admin_errors(:dev, null)->'groups') x(fingerprint text)), 'resolved', null);
+select public.report_error('server', 'x', 'y', null, null);
+select public.report_error('client', 'TypeError', 'Cannot read "z" for a@b.c at 1', '/index.html:120:1', null);
+select pg_temp.expect((select count(*) from jsonb_to_recordset(public.admin_errors(:dev, 'open')->'groups') x(fingerprint text)) = 2, 'a resolved error that happens again is reopened');
+do $$ begin
+  begin perform public.report_error('browser', 'x', 'y', null, null); raise exception 'FAILED: unknown source accepted';
+  exception when invalid_parameter_value then raise notice 'ok: only client or server errors are accepted'; end;
+end $$;
+reset role;
+set role authenticated;
+select pg_temp.denied($$select public.report_error('client', 'x', 'y', null, null)$$, 'browsers cannot write errors directly (only through the rate-limited server)');
+reset role;
+
+-- uptime history and scheduled alerts
+set role service_role;
+select pg_temp.expect(public.record_uptime('[{"target":"app","ok":true,"status":200,"ms":120},{"target":"database","ok":false,"status":503,"ms":900},{"target":"nonsense","ok":true}]'), 'a round of checks is recorded');
+select pg_temp.expect(not public.record_uptime('[{"target":"app","ok":true,"status":200,"ms":1}]'), 'a second round within 4 minutes is ignored');
+reset role;
+select pg_temp.expect((select count(*) from private.uptime_checks) = 2, 'unknown targets are dropped');
+update private.uptime_checks set at = at - interval '10 minutes';
+set role service_role;
+select public.record_uptime('[{"target":"app","ok":true,"status":200,"ms":110},{"target":"database","ok":false,"status":503,"ms":900}]');
+select pg_temp.expect((select (t->>'checks')::int = 2 and (t->>'ok')::int = 0 from jsonb_array_elements(public.admin_uptime(:analyst, 7)->'targets') t where t->>'target' = 'database'), 'uptime history per service');
+select pg_temp.denied(format('select public.admin_uptime(%L, 7)', :asha), 'ordinary accounts cannot see uptime history');
+select pg_temp.expect((public.monitor_run()->>'opened')::int >= 1, 'two failed database checks in a row open an alert on the scheduled run');
+select pg_temp.expect(exists (select 1 from jsonb_array_elements(public.monitor_run()->'to_notify') a where a->>'message' like 'Database failed%'), '…which is waiting to be emailed');
+select public.monitor_mark_notified(array(select (a->>'id')::uuid from jsonb_array_elements(public.monitor_run()->'to_notify') a), 'github');
+select pg_temp.expect(jsonb_array_length(public.monitor_run()->'to_notify') = 0, 'nobody is emailed twice about the same alert');
+reset role;
 \echo ALL ADMIN TESTS PASSED

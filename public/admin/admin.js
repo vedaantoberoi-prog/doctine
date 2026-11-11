@@ -149,7 +149,7 @@ async function renderMfa() {
 /* ───────── shell & navigation ───────── */
 const NAV = [
   ["Overview", [["dashboard", "Dashboard", "dashboard.view"], ["analytics", "Analytics", "analytics.view"], ["reports", "Reports", "reports.export"]]],
-  ["Operations", [["users", "Users", "users.view"], ["documents", "Documents", "documents.view"], ["health", "Platform health", "health.view"], ["incidents", "Incidents", "health.view"], ["alerts", "Alerts", "health.view"]]],
+  ["Operations", [["users", "Users", "users.view"], ["documents", "Documents", "documents.view"], ["health", "Platform health", "health.view"], ["errors", "Errors", "health.view"], ["incidents", "Incidents", "health.view"], ["alerts", "Alerts", "health.view"]]],
   ["Control", [["flags", "Feature switches", "flags.view"], ["maintenance", "Maintenance", "flags.view"], ["announcements", "Announcements", "dashboard.view"]]],
   ["Security", [["team", "Admin team", "team.view"], ["audit", "Audit log", "audit.view"], ["security", "Security events", "security.view"]]],
   ["Settings", [["definitions", "Metric definitions", "dashboard.view"], ["access", "Your access", "dashboard.view"]]],
@@ -201,7 +201,7 @@ async function route() {
 
 /* ───────── charts (plain SVG; hover for values; table view) ───────── */
 let chartN = 0;
-function lineChart(rows, series, { height = 220, bars = false, fmt = n } = {}) {
+function lineChart(rows, series, { height = 220, bars = false, fmt = n, xlabel = dayLabel } = {}) {
   if (!rows.length) return `<div class="empty">No data in this period.</div>`;
   const id = "c" + (++chartN), W = 640, H = height, L = 44, R = 12, T = 10, B = 26;
   const max = Math.max(1, ...rows.flatMap((r) => series.map((s) => +r[s.key] || 0)));
@@ -214,7 +214,7 @@ function lineChart(rows, series, { height = 220, bars = false, fmt = n } = {}) {
   const step = Math.max(1, Math.ceil(rows.length / 7));
   let svg = `<g class="grid">${ticks.map((t) => `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/>`).join("")}</g>`;
   svg += `<g class="axis">${ticks.map((t) => `<text x="${L - 8}" y="${y(t) + 4}" text-anchor="end">${fmt(Math.round(t))}</text>`).join("")}`;
-  svg += rows.map((r, i) => (i % step === 0 || i === rows.length - 1) ? `<text x="${bars ? xb(i) : x(i)}" y="${H - 6}" text-anchor="middle">${esc(dayLabel(r.day))}</text>` : "").join("") + `</g>`;
+  svg += rows.map((r, i) => (i % step === 0 || i === rows.length - 1) ? `<text x="${bars ? xb(i) : x(i)}" y="${H - 6}" text-anchor="middle">${esc(xlabel(r.day))}</text>` : "").join("") + `</g>`;
   if (bars) {
     const s = series[0];
     svg += rows.map((r, i) => { const v = +r[s.key] || 0, h = (H - T - B) * (v / nice); return v ? `<path d="M${xb(i) - bw / 2},${y(0)} v${-Math.max(h - 3, 0)} q0,-3 3,-3 h${bw - 6} q3,0 3,3 v${Math.max(h - 3, 0)} z" fill="${s.color}"/>` : ""; }).join("");
@@ -228,7 +228,7 @@ function lineChart(rows, series, { height = 220, bars = false, fmt = n } = {}) {
   svg += `<line class="cross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="#9aa4b0" stroke-dasharray="3 3" style="display:none"/>`;
   svg += `<rect class="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/>`;
   const legend = series.length > 1 ? `<div class="legend">${series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join("")}</div>` : "";
-  const table = `<details><summary class="linkish">Show as table</summary><div class="tablewrap" style="margin-top:8px;max-height:260px"><table><thead><tr><th>Day</th>${series.map((s) => `<th class="num">${esc(s.label)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(dayLabel(r.day))}</td>${series.map((s) => `<td class="num">${fmt(r[s.key])}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>`;
+  const table = `<details><summary class="linkish">Show as table</summary><div class="tablewrap" style="margin-top:8px;max-height:260px"><table><thead><tr><th>Day</th>${series.map((s) => `<th class="num">${esc(s.label)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(xlabel(r.day))}</td>${series.map((s) => `<td class="num">${fmt(r[s.key])}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>`;
   queueMicrotask(() => {
     const host = document.getElementById(id); if (!host) return;
     const sv = host.querySelector("svg"), tip = host.querySelector(".tip"), cross = sv.querySelector(".cross");
@@ -237,13 +237,13 @@ function lineChart(rows, series, { height = 220, bars = false, fmt = n } = {}) {
       const i = bars ? Math.min(rows.length - 1, Math.max(0, Math.floor(((px - L) / (W - L - R)) * rows.length))) : Math.min(rows.length - 1, Math.max(0, Math.round(((px - L) / (W - L - R)) * (rows.length - 1))));
       const cx = bars ? xb(i) : x(i), r = rows[i];
       cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.style.display = "";
-      tip.innerHTML = `<b>${esc(dayLabel(r.day))}</b><br>` + series.map((s) => `${esc(s.label)}: <b>${fmt(r[s.key])}</b>`).join("<br>");
+      tip.innerHTML = `<b>${esc(xlabel(r.day))}</b><br>` + series.map((s) => `${esc(s.label)}: <b>${fmt(r[s.key])}</b>`).join("<br>");
       tip.style.display = "block"; tip.style.left = (cx / W) * 100 + "%"; tip.style.top = (y(Math.max(...series.map((s) => +r[s.key] || 0))) / H) * b.height + "px";
     };
     sv.addEventListener("pointermove", move); sv.addEventListener("pointerdown", move);
     sv.addEventListener("pointerleave", () => { tip.style.display = "none"; cross.style.display = "none"; });
   });
-  return `${legend}<div class="chart" id="${id}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map((s) => s.label).join(", "))} by day">${svg}</svg><div class="tip"></div></div>${table}`;
+  return `${legend}<div class="chart" id="${id}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map((s) => s.label).join(", "))} over time">${svg}</svg><div class="tip"></div></div>${table}`;
 }
 function hbars(items, { total, fmt = n } = {}) {
   if (!items.length) return `<div class="empty">No data yet.</div>`;
@@ -266,7 +266,8 @@ const VIEWS = {};
 
 VIEWS.dashboard = async (v) => {
   const p = periodRange();
-  const [o, series] = await Promise.all([api("overview", p), can("analytics.view") ? api("series", p) : Promise.resolve(null)]);
+  const [o, series, up] = await Promise.all([api("overview", p), can("analytics.view") ? api("series", p) : Promise.resolve(null), can("health.view") ? api("uptime", { days: 1 }).catch(() => null) : Promise.resolve(null)]);
+  const appUp = up && up.targets.find((t) => t.target === "app");
   const prevNote = `vs previous ${esc(p.label.toLowerCase().startsWith("last") ? "period" : "period")}`;
   v.innerHTML = `
   <p class="note" style="margin:0 0 12px">${esc(p.label)} · ${dt(p.from)} to ${dt(p.to)} IST · updated ${dt(o.generated_at)}</p>
@@ -282,7 +283,7 @@ VIEWS.dashboard = async (v) => {
     ${kpi("Failed uploads", n(o.uploads_failed), since(o.events_since))}
     ${kpi("Sign-in failures", n(o.login_failures), since(o.events_since))}
     ${kpi("App errors", n(o.app_errors), since(o.events_since))}
-    ${kpi("Availability", "Not measured here", `The uptime check runs in GitHub Actions; see <a href="#/health">Platform health</a>`)}
+    ${appUp && appUp.checks_24h ? kpi("Availability, last 24 h", pct(appUp.ok_24h, appUp.checks_24h), `${n(appUp.ok_24h)} of ${n(appUp.checks_24h)} scheduled checks passed · <a href="#/health">history</a>`) : kpi("Availability", "No checks yet", `Checked every 15 minutes once scheduled; see <a href="#/health">Platform health</a>`)}
   </div>
   ${series ? `
   <div class="section-title">Trends</div>
@@ -426,20 +427,47 @@ VIEWS.documents = async (v) => {
 };
 
 /* Platform health */
+function uptimeStrip(t) {
+  if (!t.buckets.length) return `<div class="empty">No checks recorded yet.</div>`;
+  const W = 640, H = 34, bw = W / t.buckets.length;
+  const cells = t.buckets.map((b, i) => { const r = b.checks ? b.ok / b.checks : 0; const col = !b.checks ? "#d8dde3" : r === 1 ? "var(--s3)" : r >= 0.5 ? "var(--s2)" : "var(--bad)";
+    return `<rect x="${(i * bw + 0.5).toFixed(1)}" y="2" width="${Math.max(bw - 1.5, 1).toFixed(1)}" height="${H - 4}" rx="2" fill="${col}"><title>${esc(dt(b.at))}: ${b.ok} of ${b.checks} checks passed${b.ms ? ", " + n(b.ms) + " ms average" : ""}</title></rect>`; }).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t.target)} check results over time" style="width:100%;height:auto;display:block">${cells}</svg>`;
+}
 VIEWS.health = async (v) => {
-  v.innerHTML = `<div class="row" style="margin-bottom:12px"><p class="note" style="margin:0">Each check runs now, from the server, when you open this page or press Re-check. Nothing is shown as working unless it was just checked.</p><span class="spacer"></span><button class="btn" id="rc">Re-check</button></div><div id="hc"><p class="note">Checking…</p></div>`;
+  v.innerHTML = `<div class="row" style="margin-bottom:12px"><p class="note" style="margin:0">Each check below runs now, from the server, when you open this page or press Re-check, and is added to the history. Nothing is shown as working unless it was just checked.</p><span class="spacer"></span><button class="btn" id="rc">Re-check</button></div><div id="hc"><p class="note">Checking…</p></div><div id="uh"></div>`;
   $("#rc").onclick = () => VIEWS.health(v);
   const h = await api("health");
   const st = (c) => c.ok ? `<span class="st good">Responding</span>` : `<span class="st bad">${c.error === "timeout" ? "Timed out" : "Not responding"}</span>`;
   $("#hc").innerHTML = `<div class="tablewrap"><table><thead><tr><th>Service</th><th>Status</th><th class="num">Response time</th><th>HTTP</th><th>Checked</th></tr></thead><tbody>
-    <tr><td>This app's server</td><td><span class="st good">Responding</span></td><td class="num">—</td><td>200</td><td>${dt(new Date())}</td></tr>
     ${h.checks.map((c) => `<tr><td>${esc(c.name)}</td><td>${st(c)}</td><td class="num">${n(c.ms)} ms</td><td>${esc(c.status == null ? "—" : c.status)}</td><td>${dt(c.checked_at)}</td></tr>`).join("")}
     <tr><td>AI provider (Anthropic)</td><td>${h.configured.ai_provider ? `<span class="st none">Key set · not called by this check</span>` : `<span class="st none">Not configured</span>`}</td><td class="num">—</td><td>—</td><td>—</td></tr>
   </tbody></table></div>
   <div class="grid two" style="margin-top:14px">
-    <div class="panel"><h3>Monitoring</h3><dl class="dl"><dt>Uptime history</dt><dd>${esc(h.configured.external_uptime_monitor)}</dd><dt>Error tracking</dt><dd><span class="st none">Monitoring not configured</span></dd><dt>Shared rate limits</dt><dd>${h.configured.shared_rate_limits ? "On (Supabase)" : "Local only"}</dd><dt>Environment</dt><dd>${esc(h.environment)}</dd></dl></div>
-    <div class="panel"><h3>What this does not measure</h3><p class="sub">Doctine does not yet record server response times over time, database load or Supabase quota use. Check those in the Supabase dashboard (Reports) and Cloudflare (Analytics). App errors and failed uploads reported by the app are on the dashboard.</p></div>
+    <div class="panel"><h3>Monitoring</h3><dl class="dl"><dt>Scheduled checks</dt><dd>${esc(h.configured.scheduled_checks)}</dd><dt>Error tracking</dt><dd>${esc(h.configured.error_tracking)} · <a href="#/errors">Errors</a></dd><dt>Alert email</dt><dd>${h.configured.alert_email ? esc(h.configured.alert_email) : `<span class="st none">Email not configured</span> GitHub emails the owner when the uptime workflow finds new alerts`}</dd><dt>Shared rate limits</dt><dd>${h.configured.shared_rate_limits ? "On (Supabase)" : "Local only"}</dd><dt>Environment</dt><dd>${esc(h.environment)}</dd></dl></div>
+    <div class="panel"><h3>What this does not measure</h3><p class="sub">Database load, Supabase quota use and Cloudflare traffic. Check those in the Supabase dashboard (Reports) and Cloudflare (Analytics).</p></div>
   </div>`;
+  const u = await api("uptime", { days: 7 });
+  const label = { app: "This app", database: "Database", auth: "Sign-in service", storage: "File storage" };
+  $("#uh").innerHTML = `<div class="section-title">Uptime history · last ${u.days} days</div>
+    ${u.since ? `<p class="note" style="margin:-4px 0 10px">Recorded since ${dt(u.since)}. Each bar is ${u.days > 2 ? "6 hours" : "an hour"}; hover for details. Gaps mean no check ran.</p>` : ""}
+    <div class="grid">${u.targets.map((t) => `<div class="panel"><div class="row"><h3 style="margin:0">${esc(label[t.target] || t.target)}</h3><span class="spacer"></span>
+      ${t.checks ? `<span class="note">${pct(t.ok, t.checks)} of ${n(t.checks)} checks passed · last 24 h ${pct(t.ok_24h, t.checks_24h)} · typical ${n(Math.round(t.ms_p50 || 0))} ms, slowest 5% ${n(Math.round(t.ms_p95 || 0))} ms</span>` : `<span class="st none">No checks yet</span>`}</div>
+      <div style="margin-top:8px">${uptimeStrip(t)}</div>${t.last ? `<p class="note">Last check ${dt(t.last.at)}: ${t.last.ok ? "passed" : "failed"}${t.last.status ? " (HTTP " + esc(t.last.status) + ")" : ""}</p>` : ""}</div>`).join("")}</div>`;
+};
+
+/* Errors */
+let ESTATUS = "open";
+VIEWS.errors = async (v) => {
+  const e = await api("errors", { status: ESTATUS });
+  const SRC = { client: "App (browser)", server: "Server" };
+  v.innerHTML = `<div class="grid kpis">${kpi("Errors, last 24 hours", n(e.last_24h), e.since ? "Recorded since " + dt(e.since, false) : "None recorded yet")}${kpi("Errors, last 7 days", n(e.last_7d), "All occurrences, grouped below")}</div>
+  <div class="panel" style="margin-top:14px"><h3>Errors per hour</h3><p class="sub">Last 48 hours</p>${lineChart(e.hourly.map((x) => ({ day: x.hour, n: x.n })), [{ key: "n", label: "Errors", color: S1 }], { bars: true, height: 160, xlabel: (d) => new Intl.DateTimeFormat("en-IN", { timeZone: TZ, hour: "numeric", day: "numeric", month: "short" }).format(new Date(d)) })}</div>
+  <div class="row" style="margin:16px 0 10px"><div class="seg" role="group" aria-label="Status">${[["open", "Open"], ["resolved", "Resolved"], ["ignored", "Ignored"], ["", "All"]].map(([k, t]) => `<button data-es="${k}" aria-pressed="${ESTATUS === k}">${t}</button>`).join("")}</div><span class="spacer"></span><span class="note">Messages are stored without numbers, quoted text or email addresses.</span></div>
+  ${e.groups.length ? `<div class="tablewrap"><table><thead><tr><th>Error</th><th>Where</th><th class="num">Last 24 h</th><th class="num">Total</th><th>First seen</th><th>Last seen</th><th>Status</th><th></th></tr></thead><tbody>${e.groups.map((g) => `<tr><td><b>${esc(g.kind)}</b><div>${esc(g.message)}</div><div class="note">${esc(SRC[g.source] || g.source)}${g.release ? " · release " + esc(g.release.slice(0, 7)) : ""}</div></td><td class="mono">${esc(g.location || "—")}</td><td class="num">${n(g.last_24h)}</td><td class="num">${n(g.count)}</td><td>${dt(g.first_seen)}</td><td>${dt(g.last_seen)}</td><td>${esc(g.status)}</td><td>${can("alerts.manage") ? (g.status === "open" ? `<button class="btn" data-ef="${esc(g.fingerprint)}" data-s="resolved">Resolve</button> <button class="btn ghost" data-ef="${esc(g.fingerprint)}" data-s="ignored">Ignore</button>` : `<button class="btn" data-ef="${esc(g.fingerprint)}" data-s="open">Reopen</button>`) : ""}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">No ${ESTATUS ? esc(ESTATUS) + " " : ""}errors.</div>`}
+  <p class="note">A resolved error that happens again reopens by itself.</p>`;
+  v.querySelectorAll("[data-es]").forEach((b) => b.onclick = () => { ESTATUS = b.dataset.es; VIEWS.errors(v); });
+  v.querySelectorAll("[data-ef]").forEach((b) => b.onclick = async () => { try { await api("error_update", { id: b.dataset.ef, status: b.dataset.s }); toast("Updated."); VIEWS.errors(v); } catch (er) { toast(ERR[er.code] || "Not updated."); } });
 };
 
 /* Incidents */
@@ -468,15 +496,17 @@ VIEWS.incidents = async (v) => {
 VIEWS.alerts = async (v) => {
   const list = await api("alerts", { evaluate: true });
   const SEV = { info: "none", warning: "warn", critical: "bad" };
-  v.innerHTML = `<p class="note" style="margin:0 0 12px">Rules are checked each time this page opens (there is no background scheduler). An alert opens only when there are enough measurements to judge.</p>
-  ${list.length ? `<div class="tablewrap"><table><thead><tr><th>Opened</th><th>Severity</th><th>Alert</th><th>Status</th><th></th></tr></thead><tbody>${list.map((a) => `<tr><td>${dt(a.opened_at)}</td><td><span class="st ${SEV[a.severity]}">${esc(a.severity)}</span></td><td>${esc(a.message)}<div class="note">Updated ${dt(a.updated_at)}</div></td><td>${esc(a.status)}</td><td>${can("alerts.manage") && a.status !== "resolved" ? `${a.status === "open" ? `<button class="btn" data-a="acknowledged" data-id="${esc(a.id)}">Acknowledge</button>` : ""} <button class="btn" data-a="resolved" data-id="${esc(a.id)}">Resolve</button>` : ""}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">No alerts. All rules were checked just now.</div>`}
+  v.innerHTML = `<p class="note" style="margin:0 0 12px">Rules are checked every 15 minutes by the scheduled health round and each time this page opens. An alert opens only when there are enough measurements to judge. New alerts are emailed once: through Resend when it is configured, otherwise GitHub emails the owner because the uptime workflow fails.</p>
+  ${list.length ? `<div class="tablewrap"><table><thead><tr><th>Opened</th><th>Severity</th><th>Alert</th><th>Status</th><th></th></tr></thead><tbody>${list.map((a) => `<tr><td>${dt(a.opened_at)}</td><td><span class="st ${SEV[a.severity]}">${esc(a.severity)}</span></td><td>${esc(a.message)}<div class="note">Updated ${dt(a.updated_at)}${a.notified_at ? " · emailed " + dt(a.notified_at) : ""}</div></td><td>${esc(a.status)}</td><td>${can("alerts.manage") && a.status !== "resolved" ? `${a.status === "open" ? `<button class="btn" data-a="acknowledged" data-id="${esc(a.id)}">Acknowledge</button>` : ""} <button class="btn" data-a="resolved" data-id="${esc(a.id)}">Resolve</button>` : ""}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">No alerts. All rules were checked just now.</div>`}
   <div class="section-title">Rules</div>
   <div class="panel"><div class="tablewrap"><table><thead><tr><th>Rule</th><th>Opens when</th><th>Needs</th></tr></thead><tbody>
     <tr><td>Upload failure rate</td><td>20% or more of uploads failed in the last 24 hours</td><td>At least 5 uploads reported</td></tr>
     <tr><td>Sign-in failures</td><td>30 or more failed sign-ins in the last hour</td><td>Sign-in measurements from the app</td></tr>
     <tr><td>Sign-up failures</td><td>10 or more failed account creations in 24 hours</td><td>Sign-up measurements from the app</td></tr>
     <tr><td>Storage near limit</td><td>Document storage at 80% (warning) or 95% (critical) of 1 GB</td><td>Supabase Storage sizes</td></tr>
-  </tbody></table></div><p class="note">Not alerted yet (not measured): server errors, response times, AI provider failures and costs, database load.</p></div>`;
+    <tr><td>Service down</td><td>The app, database, sign-in or storage failed its last two scheduled checks</td><td>Uptime history</td></tr>
+    <tr><td>Error spike</td><td>25 or more errors reported within about an hour</td><td>Error tracking</td></tr>
+  </tbody></table></div><p class="note">Not alerted (not measured): AI provider failures and costs, database load, slow responses.</p></div>`;
   v.querySelectorAll("[data-a]").forEach((b) => b.onclick = async () => { try { await api("alert_update", { id: b.dataset.id, status: b.dataset.a }); toast("Updated."); VIEWS.alerts(v); } catch (e) { toast(ERR[e.code] || "Not updated."); } });
 };
 
@@ -607,7 +637,9 @@ VIEWS.reports = async (v) => {
   const items = [["summary", "Summary measures", "Every number on the dashboard for the period", "reports.export"], ["daily", "Daily measures", "One row per day: accounts, active people, records, failures", "reports.export"], ["users", "Account list", "Email, dates, status, record and file counts. No health information.", "users.view"], ["audit", "Audit log", "Admin actions in the period (up to 200 rows)", "audit.view"]];
   v.innerHTML = `<p class="note" style="margin:0 0 12px">Period: ${esc(p.label)} (${dt(p.from)} to ${dt(p.to)} IST). Every export is recorded in the audit log. No export contains health information.</p>
   <div class="grid two">${items.filter(([, , , perm]) => can(perm)).map(([k, t, d]) => `<div class="panel"><h3>${t}</h3><p class="sub">${d}</p><button class="btn primary" data-r="${k}">Download CSV</button></div>`).join("")}
-  <div class="panel"><h3>PDF</h3><p class="sub">Open the Dashboard or Analytics page and use your browser's Print → Save as PDF. The navigation is left out of the printout.</p><a class="btn" href="#/dashboard">Open dashboard</a></div></div>`;
+  <div class="panel"><h3>PDF report</h3><p class="sub">Headline figures with comparison, funnel, feature adoption and day-by-day table for the period, built on the server.</p><button class="btn primary" data-pdf="1">Download PDF</button></div></div>`;
+  const pb = v.querySelector("[data-pdf]");
+  if (pb) pb.onclick = async () => { pb.disabled = true; try { const r = await api("pdf", p, { raw: true }); const blob = await r.blob(); const name = (r.headers.get("content-disposition") || "").match(/filename="([^"]+)"/); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name ? name[1] : "doctine-report.pdf"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast("Downloaded. The export was recorded."); } catch (e) { toast(ERR[e.code] || "The PDF could not be made."); } finally { pb.disabled = false; } };
   v.querySelectorAll("[data-r]").forEach((b) => b.onclick = async () => {
     b.disabled = true;
     try { const r = await api("export", { report: b.dataset.r, ...p }, { raw: true }); const blob = await r.blob(); const name = (r.headers.get("content-disposition") || "").match(/filename="([^"]+)"/); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name ? name[1] : "doctine-report.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast("Downloaded. The export was recorded."); }
@@ -630,7 +662,7 @@ VIEWS.definitions = async (v) => {
     ["Records added", "Rows in documents created in the period, any source (scan, upload, typed)."],
     ["Storage", "Total size of files in the private health-documents bucket, from Supabase Storage."],
     ["Failed uploads, failed readings, sign-in failures, app errors", "Counted from measurements the app sends to /api/events. Retries with the same key count once. Before the app sent its first measurement these read zero; the dashboard shows the date recording began."],
-    ["Availability", "Not measured inside the console. The GitHub uptime workflow checks the site every 15 minutes; Platform health runs live checks on demand."],
+    ["Availability", "Share of scheduled checks that passed, per service (app, database, sign-in, storage). Checks run every 15 minutes from the server, triggered by the GitHub uptime workflow, and when an admin opens Platform health."],
     ["Previous period", "The same length of time immediately before the selected period."],
   ];
   v.innerHTML = `<div class="panel"><dl class="dl" style="grid-template-columns:220px 1fr;gap:12px 16px">${D.map(([t, d]) => `<dt><b>${esc(t)}</b></dt><dd>${esc(d)}</dd>`).join("")}</dl></div>

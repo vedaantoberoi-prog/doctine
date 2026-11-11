@@ -635,42 +635,201 @@ begin
   return jsonb_build_object('ok', true, 'id', iid);
 end $$;
 
--- Alert rules, evaluated when an admin opens the alert centre (there is no background scheduler). Each rule needs enough
--- measurements to judge; with too little data it stays quiet rather than guessing.
+-- ───────────────────────── error tracking (first-party) ─────────────────────────
+-- Errors from the app (browser) and the server, grouped by fingerprint. Messages are cleaned before storage: quoted text,
+-- numbers and email addresses are removed, so a value or name that ends up in an error message is never kept.
+-- No account id, IP address or page content is stored.
+create table if not exists private.error_groups (
+  fingerprint text primary key,
+  source      text not null check (source in ('client', 'server')),
+  kind        text not null check (char_length(kind) <= 60),
+  message     text not null check (char_length(message) <= 200),
+  location    text check (char_length(location) <= 120),
+  release     text check (char_length(release) <= 40),
+  first_seen  timestamptz not null default now(),
+  last_seen   timestamptz not null default now(),
+  count       bigint not null default 1,
+  status      text not null default 'open' check (status in ('open', 'resolved', 'ignored')),
+  updated_by  uuid
+);
+create table if not exists private.error_hits (
+  fingerprint text not null references private.error_groups (fingerprint) on delete cascade,
+  hour        timestamptz not null,
+  n           int not null default 0,
+  primary key (fingerprint, hour)
+);
+
+create or replace function private.clean_error_text(t text, n int) returns text language sql immutable as $$
+  select left(regexp_replace(regexp_replace(regexp_replace(regexp_replace(coalesce(t, ''),
+    '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+', '[email]', 'g'),
+    '("[^"]*"|''[^'']*''|“[^”]*”|`[^`]*`)', '…', 'g'),
+    '[0-9]+([.,][0-9]+)*', '#', 'g'),
+    '\s+', ' ', 'g'), n) $$;
+
+create or replace function public.report_error(p_source text, p_kind text, p_message text, p_location text, p_release text) returns boolean
+language plpgsql security definer set search_path = pg_catalog, private, public as $$
+declare k text := left(regexp_replace(coalesce(nullif(trim(p_kind), ''), 'Error'), '[^A-Za-z0-9_.: -]', '', 'g'), 60);
+        m text := private.clean_error_text(p_message, 200);
+        l text := left(regexp_replace(private.clean_error_text(regexp_replace(coalesce(p_location, ''), '\?.*$', ''), 120), '^https?://[^/]+', ''), 120);
+        fp text;
+begin
+  if p_source not in ('client', 'server') then raise exception 'invalid source' using errcode = '22023'; end if;
+  fp := md5(p_source || '|' || k || '|' || m || '|' || l);
+  insert into private.error_groups (fingerprint, source, kind, message, location, release)
+  values (fp, p_source, k, coalesce(nullif(m, ''), '(no message)'), nullif(l, ''), left(regexp_replace(coalesce(p_release, ''), '[^a-f0-9]', '', 'g'), 40))
+  on conflict (fingerprint) do update set count = private.error_groups.count + 1, last_seen = now(),
+    release = coalesce(nullif(excluded.release, ''), private.error_groups.release),
+    status = case when private.error_groups.status = 'resolved' then 'open' else private.error_groups.status end; -- a fixed error that comes back reopens
+  insert into private.error_hits (fingerprint, hour, n) values (fp, date_trunc('hour', now()), 1)
+  on conflict (fingerprint, hour) do update set n = private.error_hits.n + 1;
+  if random() < 0.01 then
+    delete from private.error_hits where hour < now() - interval '90 days';
+    delete from private.error_groups where last_seen < now() - interval '180 days';
+  end if;
+  return true;
+end $$;
+
+create or replace function public.admin_errors(p_actor uuid, p_status text) returns jsonb
+language plpgsql stable security definer set search_path = pg_catalog, private, public as $$
+begin
+  perform private.require(p_actor, 'health.view');
+  return jsonb_build_object(
+    'last_24h', (select coalesce(sum(n), 0) from private.error_hits where hour >= now() - interval '24 hours'),
+    'last_7d', (select coalesce(sum(n), 0) from private.error_hits where hour >= now() - interval '7 days'),
+    'hourly', coalesce((select jsonb_agg(jsonb_build_object('hour', h, 'n', coalesce((select sum(n) from private.error_hits e where e.hour = h), 0)) order by h)
+       from generate_series(date_trunc('hour', now()) - interval '47 hours', date_trunc('hour', now()), interval '1 hour') h), '[]'::jsonb),
+    'groups', coalesce((select jsonb_agg(to_jsonb(g) - 'updated_by' || jsonb_build_object('last_24h', (select coalesce(sum(n), 0) from private.error_hits e where e.fingerprint = g.fingerprint and e.hour >= now() - interval '24 hours'))
+       order by g.last_seen desc) from (select * from private.error_groups where (coalesce(p_status, '') = '' or status = p_status) order by last_seen desc limit 200) g), '[]'::jsonb),
+    'since', (select min(first_seen) from private.error_groups));
+end $$;
+
+create or replace function public.admin_error_update(p_actor uuid, p_fp text, p_status text, p_request text) returns jsonb
+language plpgsql security definer set search_path = pg_catalog, private, public as $$
+declare r text; old text;
+begin
+  r := private.require(p_actor, 'alerts.manage');
+  if p_status not in ('open', 'resolved', 'ignored') then raise exception 'invalid status' using errcode = '22023'; end if;
+  select status into old from private.error_groups where fingerprint = p_fp for update;
+  if old is null then raise exception 'no such error' using errcode = 'P0002'; end if;
+  update private.error_groups set status = p_status, updated_by = p_actor where fingerprint = p_fp;
+  perform private.audit(p_actor, r, 'error.' || p_status, 'error', p_fp, null, jsonb_build_object('status', old), jsonb_build_object('status', p_status), 'ok', p_request);
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- ───────────────────────── uptime history ─────────────────────────
+-- Checks made by Doctine's own server (/api/monitor), called every 15 minutes by the GitHub uptime workflow and whenever an
+-- admin opens Platform health. The server measures; nothing a caller sends is recorded. At most one round per 4 minutes.
+create table if not exists private.uptime_checks (
+  id     bigint generated always as identity primary key,
+  at     timestamptz not null default now(),
+  target text not null check (target in ('app', 'database', 'auth', 'storage')),
+  ok     boolean not null,
+  status int,
+  ms     int
+);
+create index if not exists uptime_checks_target_at on private.uptime_checks (target, at desc);
+
+create or replace function public.record_uptime(p_rows jsonb) returns boolean
+language plpgsql security definer set search_path = pg_catalog, private, public as $$
+begin
+  if exists (select 1 from private.uptime_checks where at > now() - interval '4 minutes') then return false; end if;
+  insert into private.uptime_checks (target, ok, status, ms)
+  select x->>'target', (x->>'ok')::boolean, nullif(x->>'status', '')::int, least(greatest((x->>'ms')::int, 0), 600000)
+  from jsonb_array_elements(p_rows) x where x->>'target' in ('app', 'database', 'auth', 'storage');
+  if random() < 0.02 then delete from private.uptime_checks where at < now() - interval '90 days'; end if;
+  return true;
+end $$;
+
+create or replace function public.admin_uptime(p_actor uuid, p_days int) returns jsonb
+language plpgsql stable security definer set search_path = pg_catalog, private, public as $$
+declare d int := least(greatest(coalesce(p_days, 7), 1), 90);
+begin
+  perform private.require(p_actor, 'health.view');
+  return jsonb_build_object(
+    'days', d,
+    'since', (select min(at) from private.uptime_checks),
+    'targets', coalesce((select jsonb_agg(jsonb_build_object(
+        'target', t,
+        'checks', (select count(*) from private.uptime_checks where target = t and at >= now() - make_interval(days => d)),
+        'ok', (select count(*) filter (where ok) from private.uptime_checks where target = t and at >= now() - make_interval(days => d)),
+        'ok_24h', (select count(*) filter (where ok) from private.uptime_checks where target = t and at >= now() - interval '24 hours'),
+        'checks_24h', (select count(*) from private.uptime_checks where target = t and at >= now() - interval '24 hours'),
+        'ms_p50', (select percentile_cont(0.5) within group (order by ms) from private.uptime_checks where target = t and ok and at >= now() - make_interval(days => d)),
+        'ms_p95', (select percentile_cont(0.95) within group (order by ms) from private.uptime_checks where target = t and ok and at >= now() - make_interval(days => d)),
+        'last', (select jsonb_build_object('at', at, 'ok', ok, 'status', status, 'ms', ms) from private.uptime_checks where target = t order by at desc limit 1),
+        'buckets', coalesce((select jsonb_agg(jsonb_build_object('at', b, 'checks', c, 'ok', o, 'ms', ms) order by b) from (
+            select date_trunc('hour', at) - make_interval(hours => extract(hour from at)::int % case when d > 2 then 6 else 1 end) as b,
+                   count(*) c, count(*) filter (where ok) o, round(avg(ms) filter (where ok)) ms
+            from private.uptime_checks where target = t and at >= now() - make_interval(days => d) group by 1) z), '[]'::jsonb)
+      ) order by t) from unnest(array['app', 'database', 'auth', 'storage']) t), '[]'::jsonb));
+end $$;
+
+-- ───────────────────────── alert rules ─────────────────────────
+-- Evaluated every 15 minutes by /api/monitor and whenever an admin opens the alert centre. Each rule needs enough
+-- measurements to judge; with too little data it stays quiet rather than guessing. Returns the number of new alerts.
+alter table private.admin_alerts add column if not exists notified_at timestamptz;
+alter table private.admin_alerts add column if not exists notified_via text;
+
+create or replace function private.raise_alert(p_rule text, p_sev text, p_msg text, p_measured jsonb) returns int language plpgsql as $$
+declare is_new boolean;
+begin
+  insert into private.admin_alerts (rule, severity, message, measured) values (p_rule, p_sev, p_msg, p_measured)
+  on conflict (rule) where status <> 'resolved' do update set measured = excluded.measured, message = excluded.message, updated_at = now(),
+    severity = case when excluded.severity = 'critical' then 'critical' else private.admin_alerts.severity end
+  returning (xmax = 0) into is_new;
+  return case when is_new then 1 else 0 end;
+end $$;
+
+create or replace function private.evaluate_alerts() returns int language plpgsql as $$
+declare up_ok int; up_bad int; lf int; sf int; store bigint; cap bigint; errs bigint; cnt int := 0; t text;
+begin
+  select count(*) filter (where name = 'document_upload_completed'), count(*) filter (where name = 'document_upload_failed'),
+         count(*) filter (where name = 'login_failure' and at >= now() - interval '1 hour'), count(*) filter (where name = 'signup_failed')
+    into up_ok, up_bad, lf, sf from private.analytics_events where at >= now() - interval '24 hours';
+  if up_ok + up_bad >= 5 and up_bad::numeric / (up_ok + up_bad) >= 0.2 then
+    cnt := cnt + private.raise_alert('upload_failure_rate', 'warning', format('%s of %s uploads failed in the last 24 hours', up_bad, up_ok + up_bad), jsonb_build_object('failed', up_bad, 'completed', up_ok));
+  end if;
+  if lf >= 30 then cnt := cnt + private.raise_alert('login_failures', 'warning', format('%s failed sign-ins in the last hour', lf), jsonb_build_object('failures_1h', lf)); end if;
+  if sf >= 10 then cnt := cnt + private.raise_alert('signup_failures', 'warning', format('%s account creations failed in the last 24 hours', sf), jsonb_build_object('failures_24h', sf)); end if;
+  store := (select coalesce(sum((metadata->>'size')::bigint), 0) from storage.objects where bucket_id = 'health-documents');
+  cap := coalesce(((select value->>'storage_limit_bytes' from private.feature_flags where key = 'document_upload'))::bigint, 1073741824); -- Supabase Free: 1 GB
+  if store >= cap * 0.8 then
+    cnt := cnt + private.raise_alert('storage_near_limit', case when store >= cap * 0.95 then 'critical' else 'warning' end,
+      format('Document storage is at %s%% of %s MB', round(store * 100.0 / cap), cap / 1048576), jsonb_build_object('bytes', store, 'limit', cap));
+  end if;
+  errs := (select coalesce(sum(h.n), 0) from private.error_hits h where h.hour >= date_trunc('hour', now()) - interval '1 hour');
+  if errs >= 25 then cnt := cnt + private.raise_alert('error_spike', 'warning', format('%s errors reported in the last hour or so', errs), jsonb_build_object('errors', errs)); end if;
+  -- a service that failed its last two checks
+  foreach t in array array['app', 'database', 'auth', 'storage'] loop
+    if (select count(*) = 2 and bool_and(not ok) from (select ok from private.uptime_checks where target = t order by at desc limit 2) z) then
+      cnt := cnt + private.raise_alert('down_' || t, 'critical', format('%s failed its last two checks', initcap(t)), (select jsonb_build_object('status', status, 'at', at) from private.uptime_checks where target = t order by at desc limit 1));
+    end if;
+  end loop;
+  return cnt;
+end $$;
+
 create or replace function public.admin_alerts(p_actor uuid, p_evaluate boolean) returns jsonb
 language plpgsql security definer set search_path = pg_catalog, private, public as $$
-declare r text; up_ok int; up_bad int; lf int; sf int; store bigint; cap bigint;
 begin
-  r := private.require(p_actor, 'health.view');
-  if p_evaluate then
-    select count(*) filter (where name = 'document_upload_completed'), count(*) filter (where name = 'document_upload_failed'),
-           count(*) filter (where name = 'login_failure' and at >= now() - interval '1 hour'), count(*) filter (where name = 'signup_failed')
-      into up_ok, up_bad, lf, sf from private.analytics_events where at >= now() - interval '24 hours';
-    if up_ok + up_bad >= 5 and up_bad::numeric / (up_ok + up_bad) >= 0.2 then
-      insert into private.admin_alerts (rule, severity, message, measured) values ('upload_failure_rate', 'warning',
-        format('%s of %s uploads failed in the last 24 hours', up_bad, up_ok + up_bad), jsonb_build_object('failed', up_bad, 'completed', up_ok))
-      on conflict (rule) where status <> 'resolved' do update set measured = excluded.measured, message = excluded.message, updated_at = now();
-    end if;
-    if lf >= 30 then
-      insert into private.admin_alerts (rule, severity, message, measured) values ('login_failures', 'warning',
-        format('%s failed sign-ins in the last hour', lf), jsonb_build_object('failures_1h', lf))
-      on conflict (rule) where status <> 'resolved' do update set measured = excluded.measured, message = excluded.message, updated_at = now();
-    end if;
-    if sf >= 10 then
-      insert into private.admin_alerts (rule, severity, message, measured) values ('signup_failures', 'warning',
-        format('%s account creations failed in the last 24 hours', sf), jsonb_build_object('failures_24h', sf))
-      on conflict (rule) where status <> 'resolved' do update set measured = excluded.measured, message = excluded.message, updated_at = now();
-    end if;
-    store := (select coalesce(sum((metadata->>'size')::bigint), 0) from storage.objects where bucket_id = 'health-documents');
-    cap := coalesce(((select value->>'storage_limit_bytes' from private.feature_flags where key = 'document_upload'))::bigint, 1073741824); -- Supabase Free: 1 GB
-    if store >= cap * 0.8 then
-      insert into private.admin_alerts (rule, severity, message, measured) values ('storage_near_limit', case when store >= cap * 0.95 then 'critical' else 'warning' end,
-        format('Document storage is at %s%% of %s MB', round(store * 100.0 / cap), cap / 1048576), jsonb_build_object('bytes', store, 'limit', cap))
-      on conflict (rule) where status <> 'resolved' do update set measured = excluded.measured, message = excluded.message, updated_at = now();
-    end if;
-  end if;
+  perform private.require(p_actor, 'health.view');
+  if p_evaluate then perform private.evaluate_alerts(); end if;
   return coalesce((select jsonb_agg(to_jsonb(a) - 'updated_by' order by (a.status = 'resolved'), a.opened_at desc) from (select * from private.admin_alerts order by opened_at desc limit 100) a), '[]'::jsonb);
 end $$;
+
+-- For /api/monitor: evaluate the rules and hand back the open alerts nobody has been told about yet.
+create or replace function public.monitor_run() returns jsonb
+language plpgsql security definer set search_path = pg_catalog, private, public as $$
+declare opened int := private.evaluate_alerts();
+begin
+  return jsonb_build_object('opened', opened,
+    'open', (select count(*) from private.admin_alerts where status = 'open'),
+    'to_notify', coalesce((select jsonb_agg(jsonb_build_object('id', id, 'severity', severity, 'message', message, 'opened_at', opened_at) order by opened_at)
+       from private.admin_alerts where status = 'open' and notified_at is null), '[]'::jsonb));
+end $$;
+
+create or replace function public.monitor_mark_notified(p_ids uuid[], p_via text) returns void
+language sql security definer set search_path = pg_catalog, private, public as $$
+  update private.admin_alerts set notified_at = now(), notified_via = left(p_via, 40) where id = any (p_ids) and notified_at is null $$;
 
 create or replace function public.admin_alert_update(p_actor uuid, p_id uuid, p_status text, p_request text) returns jsonb
 language plpgsql security definer set search_path = pg_catalog, private, public as $$
@@ -761,7 +920,7 @@ do $$
 declare f record;
 begin
   for f in select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-           where n.nspname = 'public' and (p.proname like 'admin\_%' or p.proname in ('record_event', 'public_settings')) loop
+           where n.nspname = 'public' and (p.proname like 'admin\_%' or p.proname in ('record_event', 'public_settings', 'report_error', 'record_uptime', 'monitor_run', 'monitor_mark_notified')) loop
     execute format('revoke all on function %s from public, anon, authenticated', f.sig);
     execute format('grant execute on function %s to service_role', f.sig);
   end loop;

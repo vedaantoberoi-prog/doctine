@@ -31,8 +31,9 @@ check("every internal link and asset exists", broken.length === 0, broken.join("
 const anchors = PAGES.flatMap((p) => [...html[p].matchAll(/href="\/#([\w-]+)"/g)].map((m) => m[1])).filter((id) => !html["/"].includes(`id="${id}"`));
 check("links to homepage sections point at real sections", anchors.length === 0, anchors.join(" "));
 { const fs = await import("node:fs"); const b = fs.readFileSync(new URL("../../website/assets/hero3d/hero3d.js", import.meta.url), "utf8");
-  check("3D hero: loads only where WebGL works and not when saving data; the text needs no script", /data-hero3d aria-hidden="true"/.test(html["/"]) && /saveData/.test(html["/"]) && /getContext\('webgl/.test(html["/"]) && /<h1 id="hero-title">/.test(html["/"]));
+  check("3D hero: loads only where WebGL works and not when saving data; the text needs no script", /data-world aria-hidden="true"/.test(html["/"]) && (html["/"].match(/data-scene="/g) || []).length === 4 && /saveData/.test(html["/"]) && /getContext\('webgl/.test(html["/"]) && /<h1 id="hero-title">/.test(html["/"]));
   check("3D hero bundle: no router, database client or websockets inside", !/react-router|supabase|realtime-js|new WebSocket/.test(b), String(b.length)); }
+check("homepage carries every section of the brief, with honest status labels", ["Your health has a history.", "Health information rarely lives in one place.", "One private record of your health.", "Every record, organised and accessible.", "Making medical information easier to understand.", "Your medicines, in one organised schedule.", "Your health records remain yours.", "Building a more connected future for personal health information.", "A record keeper, not a doctor.", "Start your health record today."].every((t) => html["/"].includes(t)) && /Medical intelligence<\/p>[\s\S]{0,400}In development · not yet available/.test(html["/"]) && /Stage 2<\/span>[\s\S]{0,300}In development/.test(html["/"]) && /Stage 4<\/span>[\s\S]{0,300}Planned/.test(html["/"]));
 check("sign-up buttons go to the real app", (html["/"].match(/href="https:\/\/app\.doctine\.com\/"/g) || []).length >= 3);
 
 // honesty: what isn't available is labelled, and unsupported claims stay out
@@ -82,8 +83,8 @@ for (const w of [320, 360, 390, 430, 768, 1280]) {
     check("…which opens and links to every main page", (await pg.isVisible('.menu .panel a[href="/medical-safety/"]')) && (await pg.isVisible('.menu .panel a[href="/about/"]')));
     const small = await pg.evaluate(`[...document.querySelectorAll('.btn,.menu summary,.signin')].filter(e=>e.offsetParent&&e.getBoundingClientRect().height<40).length`);
     check("buttons are at least 40px tall on phones", small === 0, String(small));
-    const fontState = await pg.evaluate(async () => { await document.fonts.ready; return { serif: document.fonts.check("600 32px Fraunces"), sans: document.fonts.check("400 16px 'Instrument Sans'"), loaded: [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family) }; });
-    check("the homepage renders with its own Fraunces and Instrument Sans (Google is blocked in this test)", fontState.serif && fontState.sans && fontState.loaded.some((f) => /Fraunces/.test(f)) && fontState.loaded.some((f) => /Instrument Sans/.test(f)), JSON.stringify(fontState));
+    const fontState = await pg.evaluate(async () => { await document.fonts.ready; return { serif: document.fonts.check("600 32px Newsreader"), sans: document.fonts.check("400 16px Manrope"), loaded: [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family) }; });
+    check("the homepage renders with its own Newsreader and Manrope (Google is blocked in this test)", fontState.serif && fontState.sans && fontState.loaded.some((f) => /Newsreader/.test(f)) && fontState.loaded.some((f) => /Manrope/.test(f)), JSON.stringify(fontState));
   }
   await pg.close();
 }

@@ -20,8 +20,8 @@
   --btn-bg: var(--navy); --btn-ink: var(--white); --band: var(--navy); --band-ink: #E9ECEF; --band-soft: #A9B4C2;
 
   /* Type */
-  --serif: "Newsreader", "Fraunces", Georgia, "Times New Roman", serif;
-  --sans: "Manrope", "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --sans: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --t-xs: .8125rem; --t-sm: .9375rem; --t-md: 1.0625rem; --t-lg: 1.25rem;
   --t-h3: 1.25rem; --t-h2: clamp(1.75rem, 3.4vw, 2.5rem); --t-h1: clamp(2.6rem, 7vw, 5rem);
 
@@ -259,12 +259,12 @@ main > section.band { background: var(--band); }
 .window::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: linear-gradient(to top, rgba(12,22,36,.95) 0%, rgba(12,22,36,.88) 55%, rgba(12,22,36,.66) 82%, rgba(12,22,36,.45)); }
 @media (min-width: 900px) {
-  .window::before { background: linear-gradient(to right, rgba(12,22,36,.94) 0%, rgba(12,22,36,.87) 38%, rgba(12,22,36,.5) 55%, rgba(12,22,36,0) 72%); }
+  .window::before { background: linear-gradient(to right, rgba(12,22,36,.94) 0%, rgba(12,22,36,.9) 44%, rgba(12,22,36,.5) 60%, rgba(12,22,36,0) 76%); }
   .window.right::before { background: linear-gradient(to left, rgba(12,22,36,.95) 0%, rgba(12,22,36,.9) 42%, rgba(12,22,36,.5) 58%, rgba(12,22,36,0) 74%); }
   .window.right .window-copy { margin-left: auto; }
   .window.center::before { background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(12,22,36,.9) 0%, rgba(12,22,36,.82) 45%, rgba(12,22,36,.3) 100%); }
 }
-.window-copy { max-width: 40rem; }
+.window-copy { max-width: 38rem; }
 .window h2 { margin-bottom: var(--s5); }
 .window.hero h1 { max-width: 12ch; }
 .window.right .window-copy { max-width: 36rem; }

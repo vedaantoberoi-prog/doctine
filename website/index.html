@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Doctine · Your health has a history</title>
-<meta name="description" content="Doctine keeps your prescriptions, lab reports, medicines and health profile together in one private account, built in India.">
+<title>Doctine — Your Personal Health Record</title>
+<meta name="description" content="Bring your health records, reports, prescriptions and medicine schedules together in one private place.">
 <meta name="theme-color" content="#101C2B">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/fonts/fonts.css">
@@ -14,8 +14,8 @@
 <meta property="og:site_name" content="Doctine">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://doctine.com/">
-<meta property="og:title" content="Doctine · Your health has a history">
-<meta property="og:description" content="Doctine keeps your prescriptions, lab reports, medicines and health profile together in one private account, built in India.">
+<meta property="og:title" content="Doctine — Your Personal Health Record">
+<meta property="og:description" content="Bring your health records, reports, prescriptions and medicine schedules together in one private place.">
 <meta property="og:image" content="https://doctine.com/assets/brand/og-image.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Doctine: your health has a history.">
@@ -67,7 +67,7 @@
           <a class="btn on-dark" href="https://app.doctine.com/">Create your free account</a>
           <a class="btn ghost on-dark-ghost" href="#platform">Explore the platform</a>
         </div>
-        <p class="fine">Sign up with your email address or Google. Or <a href="/app-preview/">look around with sample records</a>: made-up data, nothing saved.</p>
+        <p class="fine">Sign up with your email address or Google. Or <a href="/app-preview/">explore with sample records</a>: fictional data, nothing saved.</p>
       </div>
     </div>
     <script type="module">
@@ -96,13 +96,20 @@
     </div>
   </section>
 
-  <!-- 3 · Personal health records -->
+  <!-- 4 · Personal health profile -->
   <section class="section" id="platform" aria-labelledby="records-title">
     <div class="wrap split">
       <div>
-        <p class="eyebrow">Personal health profiles <span class="status now" style="margin-left:.5rem;vertical-align:middle">Available now</span></p>
+        <p class="eyebrow">Personal health profile <span class="status now" style="margin-left:.5rem;vertical-align:middle">Available now</span></p>
         <h2 id="records-title">One private record of your health.</h2>
-      <div class="demo" style="margin-top:var(--s6)">
+        <p class="lede" style="margin-top:var(--s5)">Start with the basics about you. You enter them, and you can edit or remove them whenever you like.</p>
+        <ul class="ticks" style="margin-top:var(--s5)">
+          <li>Date of birth, blood group, height, weight and allergies, entered by you.</li>
+          <li>Your profile, reports, prescriptions and medicines live together in one account.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="demo">
           <div class="demo-top"><b>Health profile</b><span>Made-up example</span></div>
           <div class="demo-body">
             <dl class="facts">
@@ -112,10 +119,18 @@
               <div><dt>Weight</dt><dd>64 kg</dd></div>
               <div class="wide"><dt>Allergies</dt><dd>Penicillin</dd></div>
             </dl>
-            <p class="tl-note">Entered by you, and yours to edit or remove. Each report sits on the timeline by the date of the test, not the day you uploaded it.</p>
+            <p class="tl-note">A made-up person. Entered by you in the real app, and yours to edit or remove.</p>
           </div>
         </div>
-      <figure class="records-figure">
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · The health timeline -->
+  <section class="section" aria-labelledby="timeline-title">
+    <div class="wrap split">
+      <div>
+        <figure class="records-figure" style="margin-top:0">
           <div class="record" role="img" aria-label="Illustration of a Doctine record with made-up examples: a timeline of a blood count, a prescription and a diabetes panel, with two medicines below.">
             <div class="record-top"><b>Health timeline</b><small>Example</small></div>
             <ol class="tl" aria-hidden="true">
@@ -133,14 +148,15 @@
           </figure>
       </div>
       <div>
-        <p class="lede" style="margin-bottom:var(--s5)">Your profile, reports, prescriptions and medicines live together in one account, so the history a doctor asks about is in one place.</p>
+        <p class="eyebrow">The health timeline <span class="status now" style="margin-left:.5rem;vertical-align:middle">Available now</span></p>
+        <h2 id="timeline-title">Your health, in context.</h2>
+        <p class="lede" style="margin:var(--s5) 0">Reports, prescriptions and medicines sit together in date order, so the history a doctor asks about is in one place.</p>
         <ul class="ticks">
-          <li><strong>A health profile</strong> with date of birth, height, weight, blood group and allergies, entered by you.</li>
-          <li><strong>A timeline</strong> that places each report by the date of the test, not the day you uploaded it.</li>
+          <li><strong>By the date of the test,</strong> not the day you uploaded it.</li>
           <li><strong>Search</strong> by title, type, lab or test name, on your phone or computer.</li>
           <li><strong>You stay in control:</strong> edit or remove any record, and export or delete everything in your account from Settings.</li>
         </ul>
-        <p class="muted small" style="margin-top:var(--s5)">Doctine organises what you add. It doesn't interpret trends, predict conditions or give medical advice.</p>
+        <p class="note-line">Doctine organises what you add. It does not interpret trends, predict conditions or give medical advice.</p>
       </div>
     </div>
   </section>
@@ -198,12 +214,12 @@ Platelets        2.4 lakh     1.5 - 4.5</pre>
         <p>We're building an assistant that explains medical terms and the values in your own reports in plain language, points back to the report it used, and suggests questions worth taking to your doctor.</p>
         <p>It will only be switched on after its answers have passed our safety evaluation and been reviewed by doctors. When it is, it will use your records only in the chats where you choose to share them, and it will never be a diagnosis or a substitute for medical care.</p>
         <div class="demo planned" style="margin:var(--s5) 0">
-          <div class="demo-top"><b>Illustration of the planned assistant</b><span>Not available yet</span></div>
+          <div class="demo-top"><b>In development — not yet available</b><span>Illustration</span></div>
           <div class="demo-body chat" role="img" aria-label="Illustration, not a working feature: a person asks what a high TSH means; the planned assistant gives a general plain-language explanation, names the report it used, and suggests questions for a doctor.">
             <div class="q" aria-hidden="true">What does a high TSH mean? Use my July report.</div>
             <div class="a" aria-hidden="true"><p>TSH is a hormone that tells the thyroid how hard to work. A value above the lab's range can have several causes, and only your doctor can say what it means for you.</p><p><strong>Questions you could ask your doctor:</strong></p><ul><li>Should this test be repeated?</li><li>Do any of my medicines affect it?</li></ul><span class="src">Source: Thyroid panel, 18 Jul 2026 (shared by you in this chat)</span></div>
           </div>
-          <p class="demo-note">A picture of the intended experience, with made-up content. The assistant is switched off until it passes safety review, and it will never diagnose.</p>
+          <p class="demo-note">Illustration of a planned experience. Fictional content. The assistant is currently switched off.</p>
         </div>
         <p class="muted small" style="margin:0">Automatic reading of scanned photos depends on the same review. Until then, scans are saved as photos and you add the details by hand.</p>
       </div>
@@ -310,15 +326,17 @@ Platelets        2.4 lakh     1.5 - 4.5</pre>
         <div class="doesnt">
           <div><h3>What Doctine does</h3>
             <ul class="ticks">
-              <li>Stores and organises the health information you add: your profile, reports, prescriptions and medicines.</li>
+              <li>Stores and organises the health information you add.</li>
+              <li>Keeps your profile, reports, prescriptions and medicine schedule.</li>
               <li>Shows the values it finds in a text-based PDF report, and saves nothing until you've checked and confirmed them.</li>
               <li>Shows fixed guidance to call 112 if a message describes a possible emergency.</li>
             </ul></div>
           <div><h3>What it doesn't do</h3>
             <ul class="ticks no">
-              <li>It doesn't diagnose, treat, prescribe or recommend changes to your medicines.</li>
-              <li>It doesn't interpret trends in your results or predict conditions.</li>
-              <li>It hasn't been clinically validated, and it isn't monitored by medical staff.</li>
+              <li>Diagnose diseases or treat medical conditions.</li>
+              <li>Prescribe medicines or recommend changing a dose.</li>
+              <li>Interpret trends in your results or predict conditions.</li>
+              <li>Replace a doctor. It hasn't been clinically validated and isn't monitored by medical staff.</li>
             </ul></div>
         </div>
         <p class="muted small" style="margin-top:var(--s5)">Software can misread a document, and AI-generated health information can be wrong or incomplete. That is why the assistant stays switched off until its answers pass our safety evaluation and a qualified doctor signs them off. Always follow your doctor's advice, and check anything important against your original documents.</p>
@@ -389,7 +407,7 @@ Platelets        2.4 lakh     1.5 - 4.5</pre>
     </div>
     <div class="foot-safety">
       <span><strong>In a medical emergency, call 112.</strong> Mental-health support: Tele-MANAS, <strong>14416</strong>.</span>
-      <span>© 2026 Doctine Private Limited</span>
+      <span>© 2026 Doctine</span>
     </div>
   </div>
 </footer>

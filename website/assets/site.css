@@ -385,3 +385,5 @@ html.rv main > section:not(.hero) > .wrap.in { opacity: 1; transform: none; }
 .facts dd { margin: .2rem 0 0; color: var(--ink-strong); font-weight: 600; }
 .facts .wide { grid-column: 1 / -1; }
 .demo .tl-note { margin: var(--s4) 0 0; font-size: var(--t-xs); color: var(--ink-soft); }
+
+.note-line { margin: var(--s5) 0 0; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); font-size: var(--t-sm); color: var(--ink); }

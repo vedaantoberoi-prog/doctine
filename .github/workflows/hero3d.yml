@@ -24,12 +24,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - name: Apply non-breaking security fixes to the lockfile
+      - name: Install (updates the lockfile when package.json has new entries)
         working-directory: bolt-3d
-        run: npm audit fix --package-lock-only --no-fund || true
-      - name: Install from the lockfile
-        working-directory: bolt-3d
-        run: npm ci --no-audit --no-fund
+        run: |
+          npm install --no-audit --no-fund
+          npm audit fix --package-lock-only --no-fund || true
+          npm ci --no-audit --no-fund
       - name: Type check and lint
         working-directory: bolt-3d
         run: npm run typecheck && npm run lint
@@ -43,7 +43,7 @@ jobs:
       - name: The bundle contains only the 3D scene (no router, no database client, no websockets)
         working-directory: bolt-3d
         run: |
-          for s in react-router supabase realtime-js "new WebSocket" GoTrue; do
+          for s in react-router supabase realtime-js "new WebSocket" GoTrue; do # gsap is expected
             if grep -q "$s" dist-embed/hero3d.js; then echo "::error::hero3d.js contains $s"; exit 1; fi
           done
           grep -oE "https?://[a-zA-Z0-9./_-]+" dist-embed/hero3d.js | sort | uniq -c | sort -rn || true
@@ -52,7 +52,15 @@ jobs:
         run: |
           mkdir -p website/assets/hero3d
           cp bolt-3d/dist-embed/hero3d.js website/assets/hero3d/hero3d.js
-          git add website/assets/hero3d/hero3d.js bolt-3d/package-lock.json
+          # Website typefaces (SIL OFL 1.1), from the @fontsource-variable packages in the lockfile
+          for f in newsreader manrope; do
+            for sub in latin latin-ext; do
+              cp "bolt-3d/node_modules/@fontsource-variable/$f/files/$f-$sub-wght-normal.woff2" "website/assets/fonts/$f-$sub.woff2"
+            done
+            cp "bolt-3d/node_modules/@fontsource-variable/$f/LICENSE" "website/assets/fonts/$f-LICENSE.txt"
+          done
+          ls -la website/assets/fonts
+          git add website/assets/hero3d/hero3d.js website/assets/fonts bolt-3d/package-lock.json
           if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -m "Build website/assets/hero3d/hero3d.js from bolt-3d (${GITHUB_SHA::7})"

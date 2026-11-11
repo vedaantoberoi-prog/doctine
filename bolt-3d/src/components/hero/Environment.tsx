@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { Cloud, Clouds } from '@react-three/drei';
 import * as THREE from 'three';
 
-const SKY_TOP = new THREE.Color('#1B56C2');
-const SKY_MID = new THREE.Color('#246BDB');
-const SKY_HORIZON = new THREE.Color('#B9D3F2');
+export const SKY_TOP = new THREE.Color('#1B56C2');
+export const SKY_MID = new THREE.Color('#246BDB');
+export const SKY_HORIZON = new THREE.Color('#B9D3F2');
 
 const skyVertex = /* glsl */ `
   varying vec3 vDir;

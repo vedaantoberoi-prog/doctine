@@ -20,10 +20,10 @@
   --btn-bg: var(--navy); --btn-ink: var(--white); --band: var(--navy); --band-ink: #E9ECEF; --band-soft: #A9B4C2;
 
   /* Type */
-  --serif: "Fraunces", Georgia, "Times New Roman", serif;
-  --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --serif: "Newsreader", "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Manrope", "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --t-xs: .8125rem; --t-sm: .9375rem; --t-md: 1.0625rem; --t-lg: 1.25rem;
-  --t-h3: 1.25rem; --t-h2: clamp(1.75rem, 3.4vw, 2.5rem); --t-h1: clamp(2.35rem, 6vw, 4rem);
+  --t-h3: 1.25rem; --t-h2: clamp(1.75rem, 3.4vw, 2.5rem); --t-h1: clamp(2.6rem, 7vw, 5rem);
 
   /* Space (4px base) and shape */
   --s1: .25rem; --s2: .5rem; --s3: .75rem; --s4: 1rem; --s5: 1.5rem; --s6: 2rem; --s7: 3rem; --s8: 4.5rem; --s9: 6.5rem;
@@ -243,30 +243,71 @@ th { font-weight: 600; color: var(--ink-strong); background: color-mix(in srgb, 
 .foot-safety { margin-top: var(--s6); padding-top: var(--s5); border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s3); }
 .foot-safety strong { color: var(--ink-strong); }
 
-/* ---- Immersive hero: a sky-blue band; the 3D scene (assets/hero3d/) fades in behind the text where it can run ---- */
-.hero.immersive { position: relative; isolation: isolate; overflow: hidden; color: #F3F1EB; display: flex; align-items: center;
-  min-height: calc(100svh - 4.25rem); padding: var(--s8) 0;
-  background: radial-gradient(ellipse at 78% 38%, #4A8BEA 0%, #246BDB 34%, #123B78 62%, #0E2A55 100%); }
-.hero.immersive + .section { border-top: 0; }
-.hero.immersive > .wrap { width: 100%; }
-.hero.immersive::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(to top, rgba(12,22,36,.94) 0%, rgba(12,22,36,.86) 55%, rgba(12,22,36,.6) 80%, rgba(12,22,36,.35)); }
-@media (min-width: 900px) { .hero.immersive::before { background: linear-gradient(to right, rgba(12,22,36,.93) 0%, rgba(12,22,36,.86) 38%, rgba(12,22,36,.5) 55%, rgba(12,22,36,0) 72%); } }
-.hero3d { position: absolute; inset: 0; z-index: -2; opacity: 0; transition: opacity 1.2s ease-out; }
-.hero3d.is-ready { opacity: 1; }
-.hero3d canvas { display: block; }
-.hero-copy { max-width: 40rem; }
-.hero.immersive .eyebrow { color: #FFFFFF; width: fit-content; }
-.hero.immersive h1 { color: #FFFFFF; }
-.hero.immersive .lede { color: #F4F7FB; }
-.hero.immersive .fine { color: #DCE6F2; }
-.hero.immersive .btn.on-dark-ghost { background: transparent; color: #FFFFFF; border-color: rgba(255,255,255,.6); }
-.hero.immersive .btn.on-dark-ghost:hover { border-color: #FFFFFF; background: rgba(255,255,255,.08); }
-.hero.immersive a:focus-visible { outline-color: #FFFFFF; }
-/* The hero's one entrance: its words rise in once on load (none for reduced motion) */
-@keyframes hero-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-.hero-copy > * { animation: hero-in .7s cubic-bezier(.2,.7,.2,1) both; }
-.hero-copy > :nth-child(2) { animation-delay: .06s; } .hero-copy > :nth-child(3) { animation-delay: .12s; }
-.hero-copy > :nth-child(4) { animation-delay: .18s; } .hero-copy > :nth-child(5) { animation-delay: .24s; }
-@media (prefers-reduced-motion: reduce) { .hero3d { transition: none; } .hero-copy > * { animation: none; } }
+/* ---- The 3D world and its windows ---------------------------------------------------------------------------------
+   One fixed scene sits behind the whole page (assets/hero3d/). "Window" sections are transparent and show it under a
+   dark shade; every other section is opaque and covers it. Without WebGL the world is a still deep-blue sky. */
+.world { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse at 76% 36%, #4A8BEA 0%, #246BDB 32%, #123B78 60%, #0E2A55 100%); }
+.world canvas { display: block; opacity: 0; transition: opacity 1.4s ease-out; }
+.world.is-ready canvas { opacity: 1; }
+main > section:not(.window), .site-foot { background: var(--bg); position: relative; }
+main > section.band { background: var(--band); }
+.window { position: relative; isolation: isolate; color: #F4F7FB; display: flex; align-items: center; min-height: 100svh; padding: var(--s9) 0; border: 0; }
+.window.hero { min-height: calc(100svh - 4.25rem); padding: var(--s8) 0; }
+.window + .section, .section + .window { border-top: 0; }
+.window > .wrap { width: 100%; }
+.window::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(to top, rgba(12,22,36,.95) 0%, rgba(12,22,36,.88) 55%, rgba(12,22,36,.66) 82%, rgba(12,22,36,.45)); }
+@media (min-width: 900px) {
+  .window::before { background: linear-gradient(to right, rgba(12,22,36,.94) 0%, rgba(12,22,36,.87) 38%, rgba(12,22,36,.5) 55%, rgba(12,22,36,0) 72%); }
+  .window.right::before { background: linear-gradient(to left, rgba(12,22,36,.95) 0%, rgba(12,22,36,.9) 42%, rgba(12,22,36,.5) 58%, rgba(12,22,36,0) 74%); }
+  .window.right .window-copy { margin-left: auto; }
+  .window.center::before { background: radial-gradient(ellipse at 50% 50%, rgba(12,22,36,.9) 0%, rgba(12,22,36,.8) 40%, rgba(12,22,36,.45) 100%); }
+}
+.window-copy { max-width: 40rem; }
+.window h2 { margin-bottom: var(--s5); }
+.window.hero h1 { max-width: 12ch; }
+.window.right .window-copy { max-width: 36rem; }
+.window.center .window-copy { margin-inline: auto; text-align: center; }
+.window.center .lede { margin-inline: auto; }
+.window.center .actions { justify-content: center; }
+.window .eyebrow { color: #FFFFFF; width: fit-content; }
+.window.center .eyebrow { margin-inline: auto; }
+.window h1, .window h2, .window h3 { color: #FFFFFF; }
+.window .lede, .window p { color: #EEF3F9; }
+.window .fine { color: #DCE6F2; }
+.window a:not(.btn) { color: #FFFFFF; text-decoration-color: rgba(255,255,255,.55); }
+.window .btn.on-dark-ghost { background: transparent; color: #FFFFFF; border-color: rgba(255,255,255,.6); }
+.window .btn.on-dark-ghost:hover { border-color: #FFFFFF; background: rgba(255,255,255,.08); }
+.window a:focus-visible { outline-color: #FFFFFF; }
+.window .scatter li { border-bottom-color: rgba(255,255,255,.22); }
+.window .scatter b { color: #FFFFFF; }
+.window .scatter span { color: #DCE6F2; }
+.window-next { margin: var(--s5) 0 0; font: 500 var(--t-lg)/1.4 var(--serif); color: #FFFFFF; }
+/* Stages of the roadmap: a ruled list, one line each, with its honest status */
+.stages { list-style: none; margin: var(--s6) 0 0; padding: 0; border-top: 1px solid rgba(255,255,255,.28); }
+.stages li { display: grid; grid-template-columns: 4.6rem 1fr; gap: var(--s2) var(--s4); align-items: start; padding: var(--s4) 0; border-bottom: 1px solid rgba(255,255,255,.22); }
+.stages .stage-n { font: 600 var(--t-xs)/1.6 var(--sans); letter-spacing: .09em; text-transform: uppercase; color: #E7C592; }
+.stages h3 { font: 600 var(--t-md)/1.35 var(--sans); margin: 0 0 .2rem; }
+.stages p { margin: 0; font-size: var(--t-sm); color: #DCE6F2; }
+.stages .status { grid-column: 2; width: fit-content; }
+.stages .status.now { background: rgba(141,181,174,.22); color: #CFE6E1; }
+.stages .status.dev { background: rgba(200,154,87,.24); color: #F1DDB9; }
+.stages .status.later { color: #DCE6F2; border-color: rgba(255,255,255,.4); }
+@media (min-width: 640px) { .stages li { grid-template-columns: 4.6rem 1fr auto; align-items: center; } .stages .status { grid-column: 3; } }
+/* Medical safety: does / doesn't */
+.doesnt { display: grid; gap: var(--s6); }
+@media (min-width: 640px) { .doesnt { grid-template-columns: 1fr 1fr; } }
+.doesnt h3 { margin-bottom: var(--s3); }
+.ticks.no li::before { content: ""; border: 0; width: .7rem; height: 2px; background: var(--ink-soft); transform: none; top: .82em; border-radius: 1px; }
+/* Entrances: the hero's words rise in once on load; other sections rise in once when first seen.
+   Only when the page's script is running (html.rv), and never for reduced motion. */
+@keyframes rise-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.window.hero .window-copy > * { animation: rise-in .7s cubic-bezier(.2,.7,.2,1) both; }
+.window.hero .window-copy > :nth-child(2) { animation-delay: .06s; } .window.hero .window-copy > :nth-child(3) { animation-delay: .12s; }
+.window.hero .window-copy > :nth-child(4) { animation-delay: .18s; } .window.hero .window-copy > :nth-child(5) { animation-delay: .24s; }
+html.rv main > section:not(.hero) > .wrap { opacity: 0; transform: translateY(18px); transition: opacity .8s ease-out, transform .8s cubic-bezier(.2,.7,.2,1); }
+html.rv main > section:not(.hero) > .wrap.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .world canvas { transition: none; } .window.hero .window-copy > * { animation: none; }
+  html.rv main > section:not(.hero) > .wrap { opacity: 1; transform: none; transition: none; } }
 .records-figure { margin: var(--s6) 0 0; }

@@ -1,26 +1,53 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { isNarrowViewport } from '@/lib/device';
+import { world } from '@/lib/world';
 import { ArchiveStructure } from './ArchiveStructure';
-import { CloudField, Pillars, SkyDome, StonePlatform } from './Environment';
+import { CloudField, Pillars, SKY_HORIZON, SKY_MID, SKY_TOP, SkyDome, StonePlatform } from './Environment';
 import { FloatingDocuments } from './FloatingDocuments';
+import { Instruments } from './Instruments';
 
 type HeroSceneProps = {
-  progress: RefObject<number>;
+  /** Optional: a 0–1 value that drives how gathered the papers are. Without it, the scene follows `world`. */
+  progress?: RefObject<number>;
   reduced: boolean;
   onReady: () => void;
   frameloop?: 'always' | 'demand' | 'never';
-  shift?: number;
 };
 
-function Lights() {
+const DAY = { top: SKY_TOP.clone(), mid: SKY_MID.clone(), horizon: SKY_HORIZON.clone(), fog: new THREE.Color('#B9D3F2') };
+const DUSK = {
+  top: new THREE.Color('#0B1F4A'),
+  mid: new THREE.Color('#123B78'),
+  horizon: new THREE.Color('#6F95CF'),
+  fog: new THREE.Color('#5E84BF'),
+};
+
+// Daylight eases into a deep evening blue as the page reaches its later chapters.
+function Atmosphere() {
+  const scene = useThree((state) => state.scene);
+  const sun = useRef<THREE.DirectionalLight>(null);
+  const fill = useRef<THREE.HemisphereLight>(null);
+  useFrame(() => {
+    const d = world.dusk;
+    SKY_TOP.copy(DAY.top).lerp(DUSK.top, d);
+    SKY_MID.copy(DAY.mid).lerp(DUSK.mid, d);
+    SKY_HORIZON.copy(DAY.horizon).lerp(DUSK.horizon, d);
+    if (scene.fog) (scene.fog as THREE.Fog).color.copy(DAY.fog).lerp(DUSK.fog, d);
+    if (sun.current) {
+      sun.current.intensity = THREE.MathUtils.lerp(1.9, 1.15, d);
+      sun.current.position.set(THREE.MathUtils.lerp(5, -3, d), THREE.MathUtils.lerp(9, 5, d), 6);
+    }
+    if (fill.current) fill.current.intensity = THREE.MathUtils.lerp(0.7, 0.5, d);
+  });
   return (
     <>
-      <hemisphereLight args={['#D6E6FA', '#F3F1EB', 0.7]} />
+      <hemisphereLight ref={fill} args={['#D6E6FA', '#F3F1EB', 0.7]} />
       <ambientLight intensity={0.35} color="#E8F0FA" />
       <directionalLight
+        ref={sun}
         position={[5, 9, 6]}
         intensity={1.9}
         color="#FFF3DE"
@@ -36,45 +63,54 @@ function Lights() {
   );
 }
 
-function CameraRig({ progress, reduced }: { progress: RefObject<number>; reduced: boolean }) {
+// The camera approaches as the papers gather, draws back and rises for the wide views, leans a little with the
+// pointer on desktop, and keeps the archive beside the text on wide screens by shifting its view window.
+function CameraRig({ reduced }: { reduced: boolean }) {
   const pointer = useThree((state) => state.pointer);
-  const aspect = useThree((state) => state.viewport.aspect);
-  const narrow = aspect < 0.9;
-  const lookAt = useRef(new THREE.Vector3(0, -0.2, 0));
+  const size = useThree((state) => state.size);
+  const lookAt = useMemo(() => new THREE.Vector3(0, -0.2, 0), []);
+  const shift = useRef(0);
 
   useFrame((state, delta) => {
-    const camera = state.camera;
-    const p = progress.current ?? 0;
-    const parallax = reduced ? 0 : 1;
-    const targetX = THREE.MathUtils.lerp(-1.3, -0.4, p) + pointer.x * 0.25 * parallax;
-    const targetY = THREE.MathUtils.lerp(0.6, 0.9, p) + pointer.y * 0.15 * parallax;
-    const targetZ = THREE.MathUtils.lerp(narrow ? 10.5 : 9, narrow ? 8 : 6.8, p);
+    const camera = state.camera as THREE.PerspectiveCamera;
+    const narrow = size.width / size.height < 0.9;
+    const g = world.gather;
+    const pull = world.pull;
+    const lean = reduced || narrow ? 0 : 1;
+    const targetX = THREE.MathUtils.lerp(-1.3, -0.4, g) + pull * 1.1 + pointer.x * 0.3 * lean;
+    const targetY = THREE.MathUtils.lerp(0.6, 0.9, g) + pull * 1.5 + pointer.y * 0.18 * lean;
+    const targetZ = THREE.MathUtils.lerp(narrow ? 10.5 : 9, narrow ? 8 : 6.8, g) + pull * (narrow ? 3.2 : 4.2);
     const k = reduced ? 1 : 1 - Math.exp(-delta * 3);
     camera.position.x += (targetX - camera.position.x) * k;
     camera.position.y += (targetY - camera.position.y) * k;
     camera.position.z += (targetZ - camera.position.z) * k;
-    camera.lookAt(lookAt.current);
+    camera.lookAt(lookAt);
+
+    const wide = size.width / size.height > 1.15;
+    const want = wide ? world.shift : 0;
+    shift.current += (want - shift.current) * k;
+    if (Math.abs(shift.current) > 0.002) {
+      camera.setViewOffset(size.width, size.height, -size.width * shift.current, 0, size.width, size.height);
+    } else if (camera.view) {
+      camera.clearViewOffset();
+    }
   });
 
   return null;
 }
 
-// On wide screens the text sits on the left, so shift the picture right (by moving the camera's view window)
-// to keep the archive beside the headline rather than behind it.
-function ViewShift({ amount }: { amount: number }) {
-  const camera = useThree((state) => state.camera) as THREE.PerspectiveCamera;
-  const size = useThree((state) => state.size);
-  useEffect(() => {
-    const wide = size.width / size.height > 1.15;
-    if (wide && amount) camera.setViewOffset(size.width, size.height, -size.width * amount, 0, size.width, size.height);
-    else camera.clearViewOffset();
-    camera.updateProjectionMatrix();
-  }, [camera, size, amount]);
+function ProgressBridge({ progress }: { progress: RefObject<number> }) {
+  useFrame(() => {
+    world.gather = progress.current ?? 0;
+  });
   return null;
 }
 
-export default function HeroScene({ progress, reduced, onReady, frameloop = 'always', shift = 0 }: HeroSceneProps) {
+export default function HeroScene({ progress, reduced, onReady, frameloop = 'always' }: HeroSceneProps) {
   const narrow = isNarrowViewport();
+  useEffect(() => {
+    if (reduced) world.intro = 1;
+  }, [reduced]);
 
   return (
     <Canvas
@@ -86,13 +122,14 @@ export default function HeroScene({ progress, reduced, onReady, frameloop = 'alw
       onCreated={() => onReady()}
     >
       <fog attach="fog" args={['#B9D3F2', 14, 44]} />
-      <Lights />
+      <Atmosphere />
       <SkyDome />
       <CloudField reduced={reduced} />
       <StonePlatform />
       <Pillars />
       <ArchiveStructure />
-      <FloatingDocuments progress={progress} reduced={reduced} count={narrow ? 5 : 8} />
+      <Instruments reduced={reduced} light={narrow} />
+      <FloatingDocuments reduced={reduced} count={narrow ? 5 : 8} />
       <Sparkles
         count={narrow ? 25 : 60}
         scale={[9, 5, 5]}
@@ -102,8 +139,8 @@ export default function HeroScene({ progress, reduced, onReady, frameloop = 'alw
         color="#FFFFFF"
         position={[0, 0.5, 0]}
       />
-      <CameraRig progress={progress} reduced={reduced} />
-      <ViewShift amount={shift} />
+      <CameraRig reduced={reduced} />
+      {progress ? <ProgressBridge progress={progress} /> : null}
     </Canvas>
   );
 }

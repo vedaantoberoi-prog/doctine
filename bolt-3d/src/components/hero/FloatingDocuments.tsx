@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { world } from '@/lib/world';
 import { createDocumentTexture, type DocumentKind } from './documentTextures';
 
 type Vec3 = [number, number, number];
@@ -33,12 +34,10 @@ function smootherStep(t: number) {
 function DocumentSheet({
   spec,
   index,
-  progress,
   reduced,
 }: {
   spec: DocumentSpec;
   index: number;
-  progress: RefObject<number>;
   reduced: boolean;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -48,7 +47,10 @@ function DocumentSheet({
   useFrame((state) => {
     const mesh = meshRef.current;
     if (!mesh) return;
-    const p = smootherStep(progress.current ?? 0);
+    // each paper leaves a little after the one before it, so they file in one by one, not as a block
+    const raw = THREE.MathUtils.clamp(world.gather * 1.35 - index * 0.05, 0, 1);
+    const p = smootherStep(raw);
+    const arrive = smootherStep(THREE.MathUtils.clamp(world.intro * 1.6 - index * 0.08, 0, 1));
     const t = state.clock.elapsedTime;
     const phase = index * 1.7;
     const bob = reduced ? 0 : Math.sin(t * 0.6 + phase) * 0.08 * (1 - p);
@@ -56,7 +58,7 @@ function DocumentSheet({
 
     mesh.position.set(
       THREE.MathUtils.lerp(spec.home[0], spec.target[0], p),
-      THREE.MathUtils.lerp(spec.home[1], spec.target[1], p) + bob,
+      THREE.MathUtils.lerp(spec.home[1], spec.target[1], p) + bob - (1 - arrive) * 0.9,
       THREE.MathUtils.lerp(spec.home[2], spec.target[2], p),
     );
     mesh.rotation.set(
@@ -64,30 +66,23 @@ function DocumentSheet({
       THREE.MathUtils.lerp(spec.homeRotation[1] + sway, 0, p),
       THREE.MathUtils.lerp(spec.homeRotation[2], 0, p),
     );
-    mesh.scale.setScalar(THREE.MathUtils.lerp(spec.homeScale, TARGET_SCALE, p));
+    mesh.scale.setScalar(THREE.MathUtils.lerp(spec.homeScale, TARGET_SCALE, p) * (0.6 + 0.4 * arrive));
+    (mesh.material as THREE.MeshStandardMaterial).opacity = arrive;
   });
 
   return (
     <mesh ref={meshRef} castShadow>
       <planeGeometry args={[1.1, 1.5]} />
-      <meshStandardMaterial map={texture} roughness={0.85} metalness={0} side={THREE.DoubleSide} />
+      <meshStandardMaterial map={texture} roughness={0.85} metalness={0} side={THREE.DoubleSide} transparent />
     </mesh>
   );
 }
 
-export function FloatingDocuments({
-  progress,
-  reduced,
-  count,
-}: {
-  progress: RefObject<number>;
-  reduced: boolean;
-  count: number;
-}) {
+export function FloatingDocuments({ reduced, count }: { reduced: boolean; count: number }) {
   return (
     <group>
       {DOCUMENT_SPECS.slice(0, count).map((spec, i) => (
-        <DocumentSheet key={i} spec={spec} index={i} progress={progress} reduced={reduced} />
+        <DocumentSheet key={i} spec={spec} index={i} reduced={reduced} />
       ))}
     </group>
   );

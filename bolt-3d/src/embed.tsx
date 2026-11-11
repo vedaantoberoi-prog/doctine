@@ -1,64 +1,90 @@
 /*
- * Doctine website · 3D hero scene, as a self-contained bundle for doctine.com.
+ * Doctine website · the 3D world, as one self-contained bundle for doctine.com.
  * Built with `npm run build:embed` into dist-embed/hero3d.js and copied to website/assets/hero3d/.
  *
- * The page stays complete without it: the scene only adds a picture behind the hero text.
- * It mounts into [data-hero3d], reads scroll progress from the hero section it sits in,
- * stops drawing while the hero is off screen, and draws a still frame when the visitor
- * prefers reduced motion. It makes no network requests.
+ * The page is complete without it. The world mounts into the fixed [data-world] element behind the page and is seen
+ * through the page's "window" sections (those with data-scene). GSAP ScrollTrigger ties each window's scroll range
+ * to the state of the world (lib/world.ts): how gathered the papers are, how far the camera has drawn back, how late
+ * the light is, and which side the picture sits on. Scrolling is never taken over.
+ *
+ * It stops drawing while no window is on screen, draws still frames for visitors who prefer reduced motion, and
+ * makes no network requests.
  */
-import { StrictMode, useEffect, useRef, useState } from 'react';
+import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import HeroScene from './components/hero/HeroScene';
 import { prefersReducedMotion, supportsWebGL } from './lib/device';
+import { world, type WorldState } from './lib/world';
 
-function EmbeddedScene({ host, section }: { host: HTMLElement; section: HTMLElement }) {
-  const progress = useRef(0);
+gsap.registerPlugin(ScrollTrigger);
+
+type Pose = Pick<WorldState, 'gather' | 'pull' | 'dusk' | 'shift'>;
+// Where the world starts and ends while each window crosses the middle of the screen.
+const CHAPTERS: Record<string, { from: Pose; to: Pose }> = {
+  hero: { from: { gather: 0, pull: 0, dusk: 0, shift: 0.24 }, to: { gather: 0.18, pull: 0, dusk: 0, shift: 0.24 } },
+  gather: { from: { gather: 0.18, pull: 0, dusk: 0.1, shift: 0.24 }, to: { gather: 1, pull: 0.15, dusk: 0.25, shift: 0.24 } },
+  future: { from: { gather: 1, pull: 0.35, dusk: 0.7, shift: -0.22 }, to: { gather: 1, pull: 0.8, dusk: 1, shift: -0.22 } },
+  close: { from: { gather: 1, pull: 0.8, dusk: 0.85, shift: 0 }, to: { gather: 1, pull: 1, dusk: 0.6, shift: 0 } },
+};
+
+function World({ host, windows }: { host: HTMLElement; windows: HTMLElement[] }) {
   const [visible, setVisible] = useState(true);
   const [reduced] = useState(prefersReducedMotion);
 
   useEffect(() => {
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const rect = section.getBoundingClientRect();
-      const raw = rect.height > 0 ? -rect.top / rect.height : 0;
-      progress.current = Math.min(1, Math.max(0, raw));
-    };
-    const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    update();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-    const io = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting));
-    io.observe(section);
+    const ctx = gsap.context(() => {
+      Object.assign(world, CHAPTERS.hero.from);
+      if (!reduced) {
+        world.intro = 0;
+        gsap.to(world, { intro: 1, duration: 2.2, ease: 'power2.out', delay: 0.15 });
+      }
+      windows.forEach((section) => {
+        const chapter = CHAPTERS[section.dataset.scene ?? ''];
+        if (!chapter) return;
+        const first = section.dataset.scene === 'hero';
+        gsap.fromTo(world, { ...chapter.from }, {
+          ...chapter.to,
+          ease: 'none',
+          immediateRender: first,
+          scrollTrigger: {
+            trigger: section,
+            start: first ? 'top top' : 'top center',
+            end: 'bottom center',
+            scrub: reduced ? true : 0.8,
+          },
+        });
+      });
+    });
+    const seen = new Set<Element>();
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target)));
+      setVisible(seen.size > 0);
+    });
+    windows.forEach((w) => io.observe(w));
     return () => {
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
+      ctx.revert();
       io.disconnect();
-      if (frame) cancelAnimationFrame(frame);
     };
-  }, [section]);
+  }, [windows, reduced]);
 
   return (
     <HeroScene
-      progress={progress}
       reduced={reduced}
-      frameloop={!visible ? 'never' : reduced ? 'demand' : 'always'}
-      shift={0.24}
+      frameloop={visible ? 'always' : 'never'}
       onReady={() => host.classList.add('is-ready')}
     />
   );
 }
 
 function mount() {
-  const host = document.querySelector<HTMLElement>('[data-hero3d]');
-  const section = host?.closest<HTMLElement>('section');
-  if (!host || !section || !supportsWebGL()) return;
+  const host = document.querySelector<HTMLElement>('[data-world]');
+  const windows = [...document.querySelectorAll<HTMLElement>('[data-scene]')];
+  if (!host || !windows.length || !supportsWebGL()) return;
   createRoot(host).render(
     <StrictMode>
-      <EmbeddedScene host={host} section={section} />
+      <World host={host} windows={windows} />
     </StrictMode>,
   );
 }

@@ -10,6 +10,7 @@ import scan from "../netlify/functions/scan.mjs";
 import { emergencyCheck } from "../netlify/lib/safety.mjs";
 import config from "../netlify/functions/config.mjs";
 import { checkRate, _resetTokenCache } from "../netlify/lib/ratelimit.mjs";
+import { _resetSettingsCache } from "../netlify/lib/settings.mjs";
 import { CASES, KNOWN_GAPS } from "./safety-cases.mjs";
 import { readFileSync } from "node:fs";
 import * as await_import_fs from "node:fs";
@@ -285,11 +286,43 @@ await test("config offers Google sign-in only when AUTH_GOOGLE is exactly true",
   if (saved === undefined) delete process.env.AUTH_GOOGLE; else process.env.AUTH_GOOGLE = saved;
 });
 await test("config says whether an AI model is switched on, as a yes or no only", async () => {
-  const saved = process.env.ANTHROPIC_API_KEY;
+  const saved = { k: process.env.ANTHROPIC_API_KEY, s: process.env.SUPABASE_SERVICE_ROLE_KEY };
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY; _resetSettingsCache(); // no database: no admin switches to obey
   delete process.env.ANTHROPIC_API_KEY; let j = await (await config(new Request("https://d/api/config"))).json(); assert.strictEqual(j.aiAvailable, false);
   process.env.ANTHROPIC_API_KEY = "sk-ant-test-not-real"; const raw = await (await config(new Request("https://d/api/config"))).text(); j = JSON.parse(raw);
   assert.strictEqual(j.aiAvailable, true); assert.ok(!raw.includes("sk-ant"), "the key itself is never sent");
-  if (saved === undefined) delete process.env.ANTHROPIC_API_KEY; else process.env.ANTHROPIC_API_KEY = saved;
+  if (saved.k === undefined) delete process.env.ANTHROPIC_API_KEY; else process.env.ANTHROPIC_API_KEY = saved.k;
+  if (saved.s === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = saved.s;
+});
+await test("admin switches reach the app through config, and the assistant switch is enforced on the server", async () => {
+  const saved = { ...process.env }, prev = globalThis.fetch; _resetSettingsCache(); _resetTokenCache();
+  Object.assign(process.env, { SUPABASE_URL: "https://abc.supabase.co", SUPABASE_ANON_KEY: "sb_publishable_x", SUPABASE_SERVICE_ROLE_KEY: "service-secret", ANTHROPIC_API_KEY: "sk-test" });
+  let settings = { flags: { ai_assistant: false, document_upload: false }, maintenance: { on: true, message: "Back at 10:00" }, announcements: [{ id: "1", kind: "service", title: "Notice", body: "" }] };
+  let aiCalls = 0;
+  globalThis.fetch = async (url, init = {}) => {
+    url = String(url);
+    if (url.endsWith("/rpc/public_settings")) return new Response(JSON.stringify(settings));
+    if (url.endsWith("/auth/v1/user")) return new Response(JSON.stringify({ id: "aaaaaaaa-0000-0000-0000-00000000000a" }));
+    if (url.endsWith("/rpc/rate_limit_hit")) return new Response(JSON.stringify([{ allowed: true, hits: 1, reset_at: new Date(Date.now() + 6e5).toISOString() }]));
+    if (url.includes("anthropic")) { aiCalls++; return new Response(JSON.stringify(toolReply("respond", { reply: "ok", sections: [], urgency: "routine" }))); }
+    return new Response("{}", { status: 404 });
+  };
+  try {
+    let j = await (await config(new Request("https://d/api/config"))).json();
+    assert.equal(j.aiAvailable, false); assert.equal(j.features.document_upload, false); assert.equal(j.maintenance.on, true); assert.equal(j.announcements[0].title, "Notice");
+    assert.ok(!JSON.stringify(j).includes("service-secret"));
+    const auth = { authorization: "Bearer t" };
+    let r = await chat(new Request("https://d/api/chat", { method: "POST", headers: auth, body: JSON.stringify({ messages: [user("hello")] }) }), { ip: "9.9.9.1" });
+    assert.equal(r.status, 503); assert.equal((await r.json()).error, "ai_paused");
+    r = await chat(new Request("https://d/api/chat", { method: "POST", headers: auth, body: JSON.stringify({ messages: [user("I have crushing chest pain and can't breathe")] }) }), { ip: "9.9.9.1" });
+    assert.equal(r.status, 200, "emergency guidance still works while the assistant is paused");
+    r = await scan(new Request("https://d/api/scan", { method: "POST", headers: auth, body: JSON.stringify({ action: "explain", document: { title: "x" } }) }), { ip: "9.9.9.1" });
+    assert.equal(r.status, 503); assert.equal(aiCalls, 0, "no AI call while paused");
+    settings = { flags: { ai_assistant: true }, maintenance: { on: false }, announcements: [] }; _resetSettingsCache();
+    j = await (await config(new Request("https://d/api/config"))).json(); assert.equal(j.aiAvailable, true); assert.equal(j.settingsSource, "database");
+    globalThis.fetch = async () => { throw new TypeError("fetch failed"); }; _resetSettingsCache();
+    j = await (await config(new Request("https://d/api/config"))).json(); assert.equal(j.aiAvailable, false, "database unreachable: the assistant stays off"); assert.equal(j.settingsSource, "default");
+  } finally { globalThis.fetch = prev; for (const k of Object.keys(process.env)) if (!(k in saved)) delete process.env[k]; Object.assign(process.env, saved); _resetSettingsCache(); }
 });
 await test("config publishes only a public Supabase key: publishable or legacy anon, never a secret or service-role key", async () => {
   const saved = { u: process.env.SUPABASE_URL, a: process.env.SUPABASE_ANON_KEY };
@@ -394,9 +427,11 @@ await test("a bad token removes nothing", async () => {
 
 console.log("shared rate limiting (netlify/lib/ratelimit.mjs)");
 function limiterSim({ down = false, users = { "tok-a": "aaaaaaaa-0000-0000-0000-000000000001", "tok-b": "bbbbbbbb-0000-0000-0000-000000000002" } } = {}) {
-  const counts = new Map(), bodies = []; const sim = { counts, bodies, calls: 0 };
+  const counts = new Map(), bodies = []; const sim = { counts, bodies, calls: 0, settings: { flags: { ai_assistant: true }, maintenance: { on: false }, announcements: [] } };
+  _resetSettingsCache();
   globalThis.fetch = async (url, init = {}) => {
     if (url.endsWith("/auth/v1/user")) { const t = (init.headers.authorization || "").replace("Bearer ", ""); return users[t] ? new Response(JSON.stringify({ id: users[t] })) : new Response("{}", { status: 401 }); }
+    if (url.endsWith("/rest/v1/rpc/public_settings")) return new Response(JSON.stringify(sim.settings));
     if (url.endsWith("/rest/v1/rpc/rate_limit_hit")) { sim.calls++; if (down) return new Response("{}", { status: 503 });
       const b = JSON.parse(init.body); bodies.push({ ...b, auth: init.headers.authorization }); const k = b.p_bucket + "|" + b.p_subject; const n = (counts.get(k) || 0) + 1; counts.set(k, n);
       return new Response(JSON.stringify([{ allowed: n <= b.p_limit, hits: n, reset_at: new Date(Date.now() + b.p_window_seconds * 1000).toISOString() }])); }

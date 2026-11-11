@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "node tools/dev-server.mjs",
     "check": "node tools/check-syntax.mjs && node tools/check-config.mjs && node tools/scan-secrets.mjs",
-    "test:server": "node tests/functions.test.mjs",
+    "test:server": "node tests/functions.test.mjs && node tests/admin-api.test.mjs",
     "test:db": "bash tests/run-db-tests.sh",
     "test:browser": "node tools/run-browser-tests.mjs",
     "test": "npm run check && npm run test:server && npm run eval:grader && npm run test:gates && npm run test:tools",

@@ -184,6 +184,21 @@ drop policy if exists "health-documents: owner uploads" on storage.objects;
 create policy "health-documents: owner uploads" on storage.objects for insert to authenticated
   with check (bucket_id = 'health-documents' and (storage.foldername(name))[1] = auth.uid()::text and public.uploads_allowed());
 
+-- New sign-ups obey the "registrations" switch through Supabase's "Before User Created" Auth hook. The hook only takes
+-- effect once it is selected in the dashboard (Authentication → Hooks → Before User Created → this function); until
+-- then the console labels the switch "not enforced yet". Existing accounts can always sign in.
+create or replace function public.hook_before_user_created(event jsonb) returns jsonb language sql stable security definer set search_path = pg_catalog, private as $$
+  select case when coalesce((select enabled from private.feature_flags where key = 'registrations'), true)
+                   and not coalesce((select enabled from private.feature_flags where key = 'maintenance'), false)
+    then '{}'::jsonb
+    else jsonb_build_object('error', jsonb_build_object('http_code', 403, 'message', 'New accounts are paused for a short while. Please try again later.')) end $$;
+revoke all on function public.hook_before_user_created(jsonb) from public, anon, authenticated;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    execute 'grant execute on function public.hook_before_user_created(jsonb) to supabase_auth_admin';
+  end if;
+end $$;
+
 -- ───────────────────────── operations: incidents, alerts, support notes ─────────────────────────
 create table if not exists private.incidents (
   id          uuid primary key default gen_random_uuid(),
@@ -244,7 +259,8 @@ declare r text := private.actor_role(p_actor);
 begin
   if r is null then return jsonb_build_object('role', null, 'perms', '[]'::jsonb); end if;
   return jsonb_build_object('role', r, 'perms', to_jsonb(private.role_perms(r)),
-    'email', (select email from auth.users where id = p_actor));
+    'email', (select email from auth.users where id = p_actor),
+    'mfa_enrolled', exists (select 1 from auth.mfa_factors f where f.user_id = p_actor and f.status = 'verified'));
 end $$;
 
 -- Overview for a period [p_from, p_to), with the same measures for the equal-length period just before it.

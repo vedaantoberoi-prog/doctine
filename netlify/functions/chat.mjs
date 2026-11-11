@@ -14,6 +14,7 @@
 import { json, settings, limited, clientIp, readJson, callClaude, str, arr } from "../lib/ai.mjs";
 import { emergencyCheck, emergencyGuidance } from "../lib/safety.mjs";
 import { retrieve } from "../lib/knowledge.mjs";
+import { aiSwitchedOff } from "../lib/settings.mjs";
 import { checkRate, evalAccess } from "../lib/ratelimit.mjs";
 import { evalLog } from "../lib/evallog.mjs";
 
@@ -181,6 +182,9 @@ export default async (req, context) => {
   // fixed guidance, so nobody is left without it. (Evaluation runs on staging are exempt.)
   const accountsOn = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) || /^prod/i.test(process.env.DOCTINE_ENV || "");
   if (accountsOn && rl.who !== "user" && rl.who !== "eval") return flags.length ? json({ ...emergencyGuidance(flags), state, ai_unavailable: "sign_in_required" }) : json({ error: "sign_in_required", message: "Please sign in to use the assistant." }, 401);
+
+  // Switched off in the admin console (or maintenance mode): enforced here on the server. Emergency guidance still works.
+  if (await aiSwitchedOff()) return flags.length ? json({ ...emergencyGuidance(flags), state, ai_unavailable: "ai_paused" }) : json({ error: "ai_paused", message: "The assistant is paused at the moment." }, 503);
 
   let system = SYSTEM;
   if (state) system += `\n\nYour notes from earlier in this conversation (written by you; the person may have corrected them since):\n${JSON.stringify(state)}`;

@@ -66,15 +66,20 @@
         <div class="actions">
           <a class="btn on-dark" href="https://app.doctine.com/">Create your free account</a>
           <a class="btn ghost on-dark-ghost" href="#platform">Explore the platform</a>
+          <a class="btn text on-dark-text" href="/app-preview/">Explore with sample records <span aria-hidden="true">→</span></a>
         </div>
-        <p class="fine">Sign up with your email address or Google. Or <a href="/app-preview/">explore with sample records</a>: fictional data, nothing saved.</p>
+        <p class="fine">Sign up with your email address or Google. The sample records are fictional, and nothing you do there is saved.</p>
       </div>
     </div>
     <script type="module">
-      // Load the 3D world only where it can run, and not for visitors saving data.
-      const c = document.createElement('canvas');
-      const saveData = navigator.connection && navigator.connection.saveData;
-      if (!saveData && (c.getContext('webgl2') || c.getContext('webgl'))) import('/assets/hero3d/hero3d.js').catch(() => {});
+      // The 3D world (about 1 MB) loads after the page has settled, and only where it will run well. Data saver, 2G
+      // connections and low-memory phones keep the still picture of the same scene instead (CSS: .world).
+      const c = document.createElement('canvas'), net = navigator.connection || {};
+      const light = net.saveData || /(^|-)2g$/.test(net.effectiveType || '') || (navigator.deviceMemory && navigator.deviceMemory < 3);
+      if (!light && (c.getContext('webgl2') || c.getContext('webgl'))) {
+        const go = () => import('/assets/hero3d/hero3d.js').catch(() => {});
+        'requestIdleCallback' in window ? requestIdleCallback(go, { timeout: 1500 }) : setTimeout(go, 300);
+      }
     </script>
   </section>
 
@@ -363,7 +368,7 @@ Platelets        2.4 lakh     1.5 - 4.5</pre>
   // Product demonstrations: made-up data, nothing leaves the page.
   (() => {
     const doc = document.getElementById('doc-demo');
-    const say = { original: 'The photo or PDF is kept exactly as you added it, and stays attached to the record.', read: 'Values found in a text-based PDF are shown to you first. Nothing is saved until you compare them with the original and confirm.', checked: 'Once you confirm, the values are saved as checked by you. The original stays attached.' };
+    const say = { original: 'The photo or PDF is kept exactly as you added it, and stays attached to the record. You can add its details by hand whenever you like.', read: 'Values found in a text-based PDF are shown to you first. Nothing is saved until you compare them with the original and confirm.', checked: 'Once you confirm, the values are saved as checked by you. The original stays attached.' };
     doc?.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
       doc.dataset.state = b.dataset.state;
       doc.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));

@@ -248,7 +248,8 @@ th { font-weight: 600; color: var(--ink-strong); background: color-mix(in srgb, 
    One fixed scene sits behind the whole page (assets/hero3d/). "Window" sections are transparent and show it under a
    dark shade; every other section is opaque and covers it. Without WebGL the world is a still deep-blue sky. */
 .world { position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: radial-gradient(ellipse at 76% 36%, #4A8BEA 0%, #246BDB 32%, #123B78 60%, #0E2A55 100%); }
+  background: url(/assets/brand/scene-wide.webp) center / cover no-repeat, radial-gradient(ellipse at 76% 36%, #4A8BEA 0%, #246BDB 32%, #123B78 60%, #0E2A55 100%); }
+@media (max-aspect-ratio: 23/20) { .world { background-image: url(/assets/brand/scene-tall.webp), radial-gradient(ellipse at 50% 30%, #4A8BEA 0%, #246BDB 32%, #123B78 60%, #0E2A55 100%); background-position: center top; } }
 .world canvas { display: block; opacity: 0; transition: opacity 1.4s ease-out; }
 .world.is-ready canvas { opacity: 1; }
 main > section:not(.window), .site-foot { background: var(--bg); position: relative; }
@@ -279,6 +280,10 @@ main > section.band { background: var(--band); }
 .window .fine { color: #DCE6F2; }
 .window a:not(.btn) { color: #FFFFFF; text-decoration-color: rgba(255,255,255,.55); }
 .window .btn.on-dark-ghost { background: transparent; color: #FFFFFF; border-color: rgba(255,255,255,.6); }
+/* The third hero action: a quiet text button with a full-size tap target. */
+.btn.text { background: transparent; border-color: transparent; padding-inline: .6rem; text-decoration: underline; text-underline-offset: .3em; text-decoration-thickness: 1px; }
+.btn.text:hover { box-shadow: none; text-decoration-thickness: 2px; }
+.window .btn.on-dark-text { color: #FFFFFF; }
 .window .btn.on-dark-ghost:hover { border-color: #FFFFFF; background: rgba(255,255,255,.08); }
 .window a:focus-visible { outline-color: #FFFFFF; }
 .window .scatter li { border-bottom-color: rgba(255,255,255,.22); }
@@ -340,7 +345,7 @@ html.rv main > section:not(.hero) > .wrap.in { opacity: 1; transform: none; }
 .vals li:last-child { border-bottom: 0; }
 .vals b { color: var(--ink-strong); font-weight: 600; }
 .vals .v { font-variant-numeric: tabular-nums; color: var(--ink); }
-.vals .tag { grid-column: 1 / -1; width: fit-content; font: 600 .72rem/1 var(--sans); padding: .34rem .55rem; border-radius: var(--r-pill); }
+.vals .tag { grid-column: 1 / -1; width: fit-content; font: 600 .75rem/1 var(--sans); padding: .34rem .55rem; border-radius: var(--r-pill); }
 .demo[data-state="original"] .vals, .demo:not([data-state="original"]) .paper { display: none; }
 .demo[data-state="read"] .vals .tag { background: var(--amber-wash); color: var(--amber-ink); border: 1px dashed #8A7436; }
 .demo[data-state="read"] .vals .tag::before { content: "Read automatically · not yet checked"; }
@@ -365,7 +370,7 @@ html.rv main > section:not(.hero) > .wrap.in { opacity: 1; transform: none; }
 .chat .q { justify-self: end; background: #17304F; color: #EAF2FB; }
 .chat .a { background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
 .chat .a p { margin: 0 0 var(--s2); } .chat .a ul { margin: 0; padding-left: 1.1rem; }
-.chat .src { display: inline-block; margin-top: var(--s2); font: 600 .72rem/1 var(--sans); padding: .34rem .55rem; border-radius: var(--r-pill); border: 1px solid var(--line); color: var(--ink-soft); }
+.chat .src { display: inline-block; margin-top: var(--s2); font: 600 .75rem/1 var(--sans); padding: .34rem .55rem; border-radius: var(--r-pill); border: 1px solid var(--line); color: var(--ink-soft); }
 .demo.planned { border-style: dashed; }
 .demo.planned .demo-top { background: var(--amber-wash); color: var(--amber-ink); } .demo.planned .demo-top b { color: var(--amber-ink); }
 .split > *, .demo, .demo-body { min-width: 0; }
@@ -375,13 +380,13 @@ html.rv main > section:not(.hero) > .wrap.in { opacity: 1; transform: none; }
   .doses li { grid-template-columns: 3.2rem 1fr; }
   .doses .acts { grid-column: 1 / -1; }
   .paper { white-space: pre; font-size: .7rem; padding: var(--s3); }
-  .seg button { font-size: .72rem; padding: .3rem .2rem; }
+  .seg button { font-size: .75rem; padding: .3rem .2rem; }
 }
 
 /* Health profile panel (made-up data) */
 .facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; margin: 0; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
 .facts div { background: #101C2B; padding: var(--s3) var(--s4); }
-.facts dt { font: 600 .72rem/1.3 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+.facts dt { font: 600 .75rem/1.3 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
 .facts dd { margin: .2rem 0 0; color: var(--ink-strong); font-weight: 600; }
 .facts .wide { grid-column: 1 / -1; }
 .demo .tl-note { margin: var(--s4) 0 0; font-size: var(--t-xs); color: var(--ink-soft); }

@@ -14,15 +14,17 @@ type DocumentSpec = {
   homeScale: number;
 };
 
+// Before you scroll, the papers float in a loose ring around the archive: close enough to stay in frame on a
+// phone (no sideways shift) and beside the text on a wide screen (picture shifted right), then they file in.
 const DOCUMENT_SPECS: DocumentSpec[] = [
-  { kind: 'report', home: [3.4, 1.4, 1.2], homeRotation: [0.2, -0.5, 0.08], target: [-0.65, 0.35, 0.1], homeScale: 1 },
-  { kind: 'prescription', home: [4.1, -0.9, 0.6], homeRotation: [-0.1, 0.4, -0.12], target: [0.65, 0.35, 0.1], homeScale: 1 },
-  { kind: 'schedule', home: [2.2, -1.9, 1.8], homeRotation: [0.3, 0.2, 0.1], target: [-0.65, -1.25, 0.1], homeScale: 0.95 },
-  { kind: 'profile', home: [0.2, 1.9, -0.8], homeRotation: [-0.2, -0.3, -0.05], target: [0.65, -1.25, 0.1], homeScale: 0.9 },
-  { kind: 'dates', home: [5.0, 0.6, -1.5], homeRotation: [0, -0.6, 0.2], target: [0, 0.35, 0.25], homeScale: 0.9 },
-  { kind: 'report', home: [-1.6, 2.6, -3], homeRotation: [0.1, 0.3, 0], target: [0, -0.55, -0.35], homeScale: 0.7 },
-  { kind: 'prescription', home: [6, 1.8, -2.5], homeRotation: [0, -0.2, 0.15], target: [0, -2.05, -0.35], homeScale: 0.65 },
-  { kind: 'schedule', home: [-2.6, -2.1, -2], homeRotation: [0.2, 0.5, -0.1], target: [0, 0.9, -0.35], homeScale: 0.6 },
+  { kind: 'report', home: [1.7, 1.45, 1.1], homeRotation: [0.2, -0.5, 0.08], target: [-0.65, 0.35, 0.1], homeScale: 1 },
+  { kind: 'prescription', home: [1.75, -0.85, 0.8], homeRotation: [-0.1, 0.4, -0.12], target: [0.65, 0.35, 0.1], homeScale: 1 },
+  { kind: 'schedule', home: [-1.75, -1.5, 1.2], homeRotation: [0.3, 0.2, 0.1], target: [-0.65, -1.25, 0.1], homeScale: 0.95 },
+  { kind: 'profile', home: [-1.7, 1.5, 0.6], homeRotation: [-0.2, -0.3, -0.05], target: [0.65, -1.25, 0.1], homeScale: 0.9 },
+  { kind: 'dates', home: [1.55, 0.35, -1.3], homeRotation: [0, -0.6, 0.2], target: [0, 0.35, 0.25], homeScale: 0.9 },
+  { kind: 'report', home: [-2.3, 2.45, -2.4], homeRotation: [0.1, 0.3, 0], target: [0, -0.55, -0.35], homeScale: 0.7 },
+  { kind: 'prescription', home: [1.35, 2.5, -2.2], homeRotation: [0, -0.2, 0.15], target: [0, -2.05, -0.35], homeScale: 0.65 },
+  { kind: 'schedule', home: [-2.45, 0.15, -1.8], homeRotation: [0.2, 0.5, -0.1], target: [0, 0.9, -0.35], homeScale: 0.6 },
 ];
 
 const TARGET_SCALE = 0.55;

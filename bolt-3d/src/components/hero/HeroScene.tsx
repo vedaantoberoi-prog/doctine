@@ -99,9 +99,10 @@ function CameraRig({ reduced }: { reduced: boolean }) {
     const g = world.gather;
     const pull = world.pull;
     const lean = reduced || narrow ? 0 : 1;
-    const targetX = THREE.MathUtils.lerp(-1.3, -0.4, g) + pull * 1.1 + pointer.x * 0.3 * lean;
+    const targetX = THREE.MathUtils.lerp(0, -0.4, g) + pull * 1.1 + pointer.x * 0.3 * lean;
     const targetY = THREE.MathUtils.lerp(0.6, 0.9, g) + pull * 1.5 + pointer.y * 0.18 * lean;
-    const targetZ = THREE.MathUtils.lerp(narrow ? 19 : 9, narrow ? 17 : 6.8, g) + pull * (narrow ? 3 : 4.2);
+    // Before scrolling, wide screens stand back a little so the papers floating around the archive stay in frame.
+    const targetZ = THREE.MathUtils.lerp(narrow ? 19 : 10.5, narrow ? 17 : 6.8, g) + pull * (narrow ? 3 : 4.2);
     const k = reduced ? 1 : 1 - Math.exp(-delta * 3);
     camera.position.x += (targetX - camera.position.x) * k;
     camera.position.y += (targetY - camera.position.y) * k;
@@ -142,7 +143,7 @@ export default function HeroScene({ progress, reduced, onReady, frameloop = 'alw
       shadows
       frameloop={frameloop}
       dpr={dpr}
-      camera={{ position: [-1.3, 0.6, 9], fov: 34, near: 0.1, far: 120 }}
+      camera={{ position: [0, 0.6, 10.5], fov: 34, near: 0.1, far: 120 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       onCreated={() => onReady()}
     >

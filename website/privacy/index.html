@@ -188,5 +188,12 @@
     </div>
   </div>
 </footer>
+<script>
+  // Menu: Escape closes it and returns focus to the button; choosing a link closes it.
+  document.querySelectorAll('details.menu').forEach((m) => {
+    m.addEventListener('keydown', (e) => { if (e.key === 'Escape' && m.open) { m.open = false; m.querySelector('summary').focus(); } });
+    m.querySelectorAll('.panel a').forEach((a) => a.addEventListener('click', () => { m.open = false; }));
+  });
+</script>
 </body>
 </html>

@@ -12,7 +12,7 @@ if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error("no commit id to stamp (CF_PAGE
 writeFileSync("public/version.json", JSON.stringify({ commit: sha }) + "\n");
 // Scripts only from this site and the two libraries' CDNs. This also keeps out anything a host injects into pages, such
 // as an analytics beacon: the privacy policy says Doctine collects no analytics.
-const CSP = "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src 'self' blob: data: https://*.supabase.co https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self'; frame-src 'none'; form-action 'self'";
+const CSP = "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src 'self' blob: data: https://ggqctflfwpfkemgehizq.supabase.co https://hmlxqmhqfaxfgbizcjyg.supabase.co https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self'; frame-src 'none'; form-action 'self'";
 writeFileSync("public/_headers", `/*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

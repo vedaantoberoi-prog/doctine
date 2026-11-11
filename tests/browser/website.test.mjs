@@ -24,7 +24,10 @@ const strip = (s) => s.replace(/ aria-current="page"/g, "");
 // structure shared by every page
 const head0 = strip(between(html["/"], '<header class="site-head">', "</header>")), foot0 = between(html["/"], '<footer class="site-foot">', "</footer>");
 check("every page has the same header and footer", PAGES.every((p) => strip(between(html[p], '<header class="site-head">', "</header>")) === head0 && between(html[p], '<footer class="site-foot">', "</footer>") === foot0));
-check("every page uses the shared stylesheet and has one h1", PAGES.every((p) => html[p].includes('href="/assets/site.css"') && (html[p].match(/<h1[\s>]/g) || []).length === 1));
+check("every page uses the shared stylesheet and has one h1", PAGES.every((p) => /href="\/assets\/site\.css\?v=[0-9a-f]{10}"/.test(html[p]) && (html[p].match(/<h1[\s>]/g) || []).length === 1));
+{ const { execFileSync } = await import("node:child_process"); let ok = true; try { execFileSync(process.execPath, [new URL("../../tools/build-website.mjs", import.meta.url).pathname, "--check"], { stdio: "pipe" }); } catch { ok = false; }
+  check("every page links the current fingerprint of site.css, fonts.css and the 3D bundle, so updates reach returning visitors at once (node tools/build-website.mjs)", ok); }
+check("support addresses are kept out of Cloudflare's email rewriting, so they work without its script", PAGES.every((p) => !/mailto:/.test(html[p].replace(/<!--email_off-->[\s\S]*?<!--\/email_off-->/g, ""))));
 const internal = [...new Set(PAGES.flatMap((p) => [...html[p].matchAll(/(?:href|src)="(\/[^"]*)"/g)].map((m) => m[1])))];
 const broken = internal.filter((u) => !resolve(u));
 check("every internal link and asset exists", broken.length === 0, broken.join(" "));

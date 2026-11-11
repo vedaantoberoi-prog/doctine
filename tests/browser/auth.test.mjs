@@ -146,6 +146,9 @@ check("…the error is removed from the address bar", (await pg.evaluate(() => l
 await pg.click(".au-card [data-auth=forgot]"); await W(pg, 150);
 check("…and leads straight to requesting a new link", (await pg.textContent(".au-card h1")) === "Reset your password");
 await ctx.close();
+({ ctx, pg } = await open(390, { hash: "#error=access_denied&error_code=flow_state_not_found&error_description=Email+link+could+not+be+used" }));
+check("an email link that fails for another reason says the link didn't work (not a Google error) and offers the way forward", (await pg.textContent(".au-card h1")) === "That link didn’t work" && (await pg.textContent(".au-note")).includes("Request a new one") && !(await pg.evaluate(() => S.oauthErr)));
+await ctx.close();
 ({ ctx, pg } = await open(390, { search: "?error=access_denied&error_description=The+user+denied", googleFlag: true }));
 check("cancelling Google sign-in is still reported as a Google cancellation", (await pg.evaluate(() => S.oauthErr)) === "Google sign-in was cancelled." && (await pg.textContent(".au-card h1")) === "Welcome back");
 await ctx.close();

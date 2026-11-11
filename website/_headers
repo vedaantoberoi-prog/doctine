@@ -4,5 +4,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=()
   X-Frame-Options: DENY
+  Cross-Origin-Opener-Policy: same-origin
+  ! Access-Control-Allow-Origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Content-Security-Policy: script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src 'self' blob: data: https://ggqctflfwpfkemgehizq.supabase.co https://hmlxqmhqfaxfgbizcjyg.supabase.co https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self'; frame-src 'none'; form-action 'self'

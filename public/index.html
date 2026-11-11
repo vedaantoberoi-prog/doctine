@@ -184,7 +184,7 @@ h1,h2,h3,.serif{font-family:var(--serif);font-weight:500;letter-spacing:-.012em;
 @media (min-width:960px){
  .au{grid-template-columns:min(42%,75dvh) minmax(0,1fr);height:100dvh} /* the picture is 3:4; on very wide, short screens the panel narrows instead of cropping it */
  .au-art{display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;padding:3rem clamp(2rem,3.4vw,3.5rem);color:#F3F1EB;
-  background:#101C2B image-set(url(img/auth-still-1x.webp) 1x,url(img/auth-still-2x.webp) 2x) 76% 0%/cover no-repeat}
+  background:#101C2B url(img/auth-still-2x.webp) 76% 0%/cover no-repeat;background-image:-webkit-image-set(url(img/auth-still-1x.webp) 1x,url(img/auth-still-2x.webp) 2x);background-image:image-set(url(img/auth-still-1x.webp) 1x,url(img/auth-still-2x.webp) 2x)}
  .au-art::before{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(11,20,34,.72) 0%,rgba(11,20,34,.2) 32%,rgba(11,20,34,0) 50%);pointer-events:none}
  .au-art>*{position:relative}
  .au-eyebrow{margin:0;font:600 .6875rem/1.2 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:rgba(243,241,235,.78)}
@@ -610,7 +610,7 @@ async function initCloud(){
  CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;CLOUD.ai=cfg.aiAvailable!==false;
  {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1)),e=q.get('error')||h.get('error');if(e){const code=q.get('error_code')||h.get('error_code')||'',desc=q.get('error_description')||h.get('error_description')||'';let viaGoogle=false;try{viaGoogle=sessionStorage.getItem('doctine:google-consent')==='1'}catch{}
-  if(!viaGoogle&&(/otp_expired|expired|invalid/i.test(code+' '+desc)||/link/i.test(desc))){S.auth='expired';S.authMsg=''}
+  if(!viaGoogle&&(/otp_expired/.test(code)||/\b(email|link)\b/i.test(desc))){S.auth='expired';const exp=/otp_expired|expired/i.test(code+' '+desc);S.authTitle=exp?'':'That link didn’t work';S.authMsg=exp?'':'The link from your email couldn’t be used. Request a new one, or sign in if you’ve already confirmed your account.'}
   else S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}for(const k of['error','error_code','error_description'])q.delete(k);const rest=q.toString();history.replaceState(null,'',location.pathname+(rest?'?'+rest:''))}}
  CLOUD.sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){S.auth='newpw';S.email=null;render()}if(ev==='SIGNED_OUT'&&S.cloud){leaveCloud()}if(ev==='SIGNED_IN'&&session&&S.cloud&&CLOUD.uid&&session.user.id!==CLOUD.uid){leaveCloud();cloudEnter(session.user)}});
  const{data}=await CLOUD.sb.auth.getSession();
@@ -928,7 +928,7 @@ function cloudAuthView(){
  const m=S.auth;let h='',sub='',body='';
  if(S.loadingCloud){h='Opening your records';body=`<p class="au-status" role="status" aria-live="polite"><span class="au-spin" aria-hidden="true"></span>Signing you in…</p>`}
  else if(m==='check'){h=S.authTitle||'Check your email';body=`<div class="au-note">${AU_ICON.mail}<p role="status">${esc(S.authMsg||'We sent you an email. Open the link in it, then come back and sign in.')}</p></div>${S.resendTo?`<p class="au-fine">Didn’t get it? Check your spam folder, or <button type="button" class="au-link" id="resend">send it again</button>.</p><div id="aerr" aria-live="polite"></div>`:''}<button type="button" class="au-btn" data-auth="login">Back to sign in</button>`}
- else if(m==='expired'){h='This link has expired';body=`<div class="au-note">${AU_ICON.clock}<p>${esc(S.authMsg||'Email links from Doctine work once and expire after an hour. Request a new one and use the latest email.')}</p></div><button type="button" class="au-btn" data-auth="forgot">Send a new reset link</button><p class="au-alt"><button type="button" class="au-link" data-auth="login">Back to sign in</button></p>`}
+ else if(m==='expired'){h=S.authTitle||'This link has expired';body=`<div class="au-note">${AU_ICON.clock}<p>${esc(S.authMsg||'Email links from Doctine work once and expire after an hour. Request a new one and use the latest email.')}</p></div><button type="button" class="au-btn" data-auth="forgot">Send a new reset link</button><p class="au-alt"><button type="button" class="au-link" data-auth="login">Back to sign in</button></p>`}
  else if(m==='forgot'){h='Reset your password';sub='Enter the email you use for Doctine. If it matches an account, we’ll send a link to set a new password.';
   body=`<form id="ff" class="au-form" novalidate>${auField('email','Email','email','autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"')}<div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Sending link…">Send reset link</button></form><p class="au-alt"><button type="button" class="au-link" data-auth="login">Back to sign in</button></p>`}
  else if(m==='newpw'){h='Choose a new password';sub='You’re signed in from your reset link. Pick a new password to finish.';

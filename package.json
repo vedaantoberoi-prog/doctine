@@ -22,7 +22,8 @@
     "build:preview": "node tools/build-preview.mjs",
     "build:direct": "node tools/build-direct.mjs",
     "test:gates": "node tests/release-gates.test.mjs",
-    "test:tools": "node tests/netlify-guard.test.mjs && node tests/cloudflare-adapter.test.mjs"
+    "test:tools": "node tests/netlify-guard.test.mjs && node tests/cloudflare-adapter.test.mjs",
+    "build:website": "node tools/build-website.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",

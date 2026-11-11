@@ -59,7 +59,8 @@ jobs:
             cp "bolt-3d/node_modules/@fontsource-variable/$f/LICENSE" "website/assets/fonts/$f-LICENSE.txt"
           done
           ls -la website/assets/fonts
-          git add website/assets/hero3d/hero3d.js website/assets/fonts bolt-3d/package-lock.json
+          node tools/build-website.mjs   # re-stamps the pages with the new bundle's fingerprint
+          git add website/assets/hero3d/hero3d.js website/assets/fonts bolt-3d/package-lock.json website/index.html website/404.html website/*/index.html
           if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -m "Build website/assets/hero3d/hero3d.js from bolt-3d (${GITHUB_SHA::7})"

@@ -18,6 +18,8 @@ writeFileSync("public/_headers", `/*
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=()
   X-Frame-Options: DENY
+  Cross-Origin-Opener-Policy: same-origin
+  ! Access-Control-Allow-Origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Content-Security-Policy: ${CSP}
   X-Robots-Tag: noindex, nofollow

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { PerformanceMonitor, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { isNarrowViewport } from '@/lib/device';
 import { world } from '@/lib/world';
 import { ArchiveStructure } from './ArchiveStructure';
@@ -64,6 +65,24 @@ function Atmosphere() {
       />
     </>
   );
+}
+
+// Soft studio reflections for the glass and metal, built in the page (no image is downloaded).
+function Reflections() {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = env;
+    scene.environmentIntensity = 0.45;
+    return () => {
+      scene.environment = null;
+      env.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
+  return null;
 }
 
 // The camera approaches as the papers gather, draws back and rises for the wide views, leans a little with the
@@ -129,6 +148,7 @@ export default function HeroScene({ progress, reduced, onReady, frameloop = 'alw
     >
       <fog attach="fog" args={['#B9D3F2', 14, 44]} />
       <Atmosphere />
+      <Reflections />
       <SkyDome />
       <CloudField reduced={reduced} />
       <StonePlatform />

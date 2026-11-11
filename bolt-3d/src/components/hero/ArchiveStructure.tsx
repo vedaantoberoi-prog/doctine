@@ -49,15 +49,17 @@ const ribbonCurves: THREE.Vector3[][] = [
 
 export function ArchiveStructure() {
   const frameMaterial = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: '#D8DEE6', metalness: 0.45, roughness: 0.3 }),
+    () => new THREE.MeshStandardMaterial({ color: '#DCE3EC', metalness: 0.9, roughness: 0.22 }),
     [],
   );
   const glassMaterial = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
         color: '#E4EFFC',
-        roughness: 0.06,
-        transmission: 0.92,
+        roughness: 0.04,
+        clearcoat: 1,
+        clearcoatRoughness: 0.05,
+        transmission: 0.94,
         thickness: 0.3,
         ior: 1.45,
         attenuationColor: '#BFD9F5',

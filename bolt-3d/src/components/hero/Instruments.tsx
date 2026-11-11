@@ -24,8 +24,8 @@ export function Instruments({ reduced, light }: { reduced: boolean; light: boole
   useFrame((state) => {
     const t = reduced ? 0 : state.clock.elapsedTime;
     if (rings.current) {
-      rings.current.rotation.y = t * 0.05;
-      rings.current.rotation.z = 0.32 + Math.sin(t * 0.11) * 0.04;
+      rings.current.rotation.z = t * 0.03;
+      rings.current.rotation.y = Math.sin(t * 0.11) * 0.08;
       rings.current.scale.setScalar(0.85 + 0.15 * world.intro);
     }
     const g = THREE.MathUtils.smootherstep(world.gather, 0.1, 0.95);
@@ -45,12 +45,13 @@ export function Instruments({ reduced, light }: { reduced: boolean; light: boole
 
   return (
     <group>
-      <group ref={rings} position={[0, -0.4, -1.4]}>
-        <mesh material={gold} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[3.1, 0.012, 8, 160]} />
+      {/* The rings stand behind the archive, facing the viewer, so they frame it and never cross the papers */}
+      <group ref={rings} position={[0, -0.3, -1.9]}>
+        <mesh material={gold}>
+          <torusGeometry args={[2.75, 0.012, 8, 160]} />
         </mesh>
-        <mesh material={gold} rotation={[Math.PI / 2.6, 0.5, 0]}>
-          <torusGeometry args={[2.6, 0.008, 8, 160]} />
+        <mesh material={gold} rotation={[0.5, 0.2, 0]}>
+          <torusGeometry args={[2.35, 0.008, 8, 160]} />
         </mesh>
       </group>
       {CARDS.map((_, i) => (

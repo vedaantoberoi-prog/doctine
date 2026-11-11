@@ -1,4 +1,4 @@
-# Doctine · uptime and security-header check, every 15 minutes.
+# Doctine · uptime and security-header check, every 15 minutes; also runs the admin console's health round (/api/monitor).
 # A failed run makes GitHub email the account that last changed this schedule
 # (Settings → Notifications → Actions: "Send notifications for failed workflows only").
 # Note: GitHub pauses schedules in public repositories after 60 days with no commits; re-enable them under Actions.
@@ -29,4 +29,14 @@ jobs:
           code=$(get https://app.doctine.com/api/account); [ "$code" = 405 ] || [ "$code" = 401 ] || { echo "::error::/api/account without sign-in returned $code"; fail=1; }
           code=$(curl -sS -m 20 -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{"messages":[{"role":"user","content":"hi"}]}' https://app.doctine.com/api/chat || echo 000)
           case "$code" in 401|503) echo "ok   guest chat refused ($code)";; *) echo "::error::guest chat returned $code (expected 401 or 503)"; fail=1;; esac
+          # The admin console's scheduled round: the app checks itself, the database, sign-in and storage, records the
+          # results (uptime history) and evaluates alert rules. New alerts that could not be emailed fail this run, so
+          # GitHub emails the owner; acknowledging the alert in app.doctine.com/admin stops it.
+          code=$(get https://app.doctine.com/api/monitor)
+          if [ "$code" = 200 ]; then
+            echo "ok   monitor: $(cat "$RUNNER_TEMP/b")"
+            grep -q '"alerts_ok":true' "$RUNNER_TEMP/b" || { echo "::error::monitor could not evaluate alerts"; fail=1; }
+            n=$(grep -o '"unnotified_alerts":[0-9]*' "$RUNNER_TEMP/b" | cut -d: -f2)
+            if [ "${n:-0}" -gt 0 ]; then echo "::error::$n new alert(s): open https://app.doctine.com/admin/#/alerts"; fail=1; fi
+          else echo "::error::/api/monitor returned $code"; fail=1; fi
           exit $fail

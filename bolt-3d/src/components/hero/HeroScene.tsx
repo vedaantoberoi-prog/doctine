@@ -79,7 +79,7 @@ function CameraRig({ reduced }: { reduced: boolean }) {
     const lean = reduced || narrow ? 0 : 1;
     const targetX = THREE.MathUtils.lerp(-1.3, -0.4, g) + pull * 1.1 + pointer.x * 0.3 * lean;
     const targetY = THREE.MathUtils.lerp(0.6, 0.9, g) + pull * 1.5 + pointer.y * 0.18 * lean;
-    const targetZ = THREE.MathUtils.lerp(narrow ? 10.5 : 9, narrow ? 8 : 6.8, g) + pull * (narrow ? 3.2 : 4.2);
+    const targetZ = THREE.MathUtils.lerp(narrow ? 19 : 9, narrow ? 17 : 6.8, g) + pull * (narrow ? 3 : 4.2);
     const k = reduced ? 1 : 1 - Math.exp(-delta * 3);
     camera.position.x += (targetX - camera.position.x) * k;
     camera.position.y += (targetY - camera.position.y) * k;
@@ -90,7 +90,7 @@ function CameraRig({ reduced }: { reduced: boolean }) {
     const wide = size.width / size.height > 1.15;
     const want = wide ? world.shift : 0;
     shift.current += (want - shift.current) * k;
-    const lift = wide ? 0 : 0.2;
+    const lift = wide ? 0 : narrow ? 0.33 : 0.2;
     if (Math.abs(shift.current) > 0.002 || lift) {
       camera.setViewOffset(size.width, size.height, -size.width * shift.current, size.height * lift, size.width, size.height);
     } else if (camera.view) {

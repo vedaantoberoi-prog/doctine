@@ -100,7 +100,7 @@ export function StonePlatform() {
     <group>
       <mesh position={[0, -2.6, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[4.2, 4.5, 0.5, 96]} />
-        <meshPhysicalMaterial color="#E9E6DE" roughness={0.38} clearcoat={0.4} clearcoatRoughness={0.3} />
+        <meshPhysicalMaterial color="#8E9BB0" roughness={0.3} clearcoat={0.6} clearcoatRoughness={0.25} />
       </mesh>
       <mesh position={[0, -2.9, 0]} receiveShadow>
         <cylinderGeometry args={[4.6, 4.6, 0.12, 96]} />
@@ -119,7 +119,7 @@ export function Pillars() {
       ].map(([x, y, z]) => (
         <mesh key={`${x}-${z}`} position={[x, y, z]} castShadow receiveShadow>
           <cylinderGeometry args={[0.28, 0.32, 6.4, 32]} />
-          <meshStandardMaterial color="#EFEBE2" roughness={0.6} />
+          <meshStandardMaterial color="#9AA6BA" roughness={0.5} />
         </mesh>
       ))}
     </group>

@@ -75,7 +75,7 @@ function Reflections() {
     const pmrem = new THREE.PMREMGenerator(gl);
     const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     scene.environment = env;
-    scene.environmentIntensity = 0.45;
+    scene.environmentIntensity = 0.35;
     return () => {
       scene.environment = null;
       env.dispose();

@@ -18,6 +18,12 @@ await t("unknown and nested routes are 404, not passed to a handler", async () =
 await t("/api/account refuses a request without a sign-in token", async () => {
   const r = await call("account", { method: "DELETE" }); assert.ok([401, 403].includes(r.status), "status " + r.status);
 });
+await t("/api/admin and /api/events are routed, and refuse requests without a sign-in token", async () => {
+  const a = await call("admin", { method: "POST", headers: { "content-type": "application/json" }, body: '{"action":"overview"}' });
+  assert.ok([401, 503].includes(a.status), "admin status " + a.status);
+  const e = await call("events", { method: "POST", headers: { "content-type": "application/json" }, body: '{"name":"record_exported","props":{},"key":"k"}' });
+  assert.ok([401, 202].includes(e.status), "events status " + e.status);
+});
 await t("/api/chat without an AI key says the assistant isn't configured (no AI call)", async () => {
   const r = await call("chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: "What is HbA1c?" }] }) }, { ...env, RATE_LIMIT_REQUIRE_SHARED: "false", SUPABASE_SERVICE_ROLE_KEY: "" });
   const j = await r.json(); assert.ok(j.error === "not_configured" || j.ai_unavailable === "not_configured", JSON.stringify(j).slice(0, 160));

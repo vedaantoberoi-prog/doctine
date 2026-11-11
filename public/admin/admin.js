@@ -483,7 +483,7 @@ VIEWS.alerts = async (v) => {
 /* Feature switches */
 const FLAG_INFO = {
   registrations: { label: "New account sign-ups", what: "When off, nobody can create a new account. Existing accounts are unaffected.", enforced: "Database: Supabase Auth hook (once enabled in Supabase → Authentication → Hooks). Until then, not enforced.", sensitive: false },
-  document_upload: { label: "Document uploads", what: "When off, nobody can store new document files. Typing records in still works.", enforced: "Database: storage policy refuses new files. The app also hides the upload buttons.", sensitive: false },
+  document_upload: { label: "Storing document files", what: "When off, no new document files are stored. Records still save; their files stay on the person's device and are stored when this is back on.", enforced: "Database: the storage policy refuses new files. The app also stops sending them and says so.", sensitive: false },
   pdf_reading: { label: "Reading PDFs into records", what: "When off, PDFs can still be attached but the app does not read text out of them.", enforced: "App: the reading happens in the person's browser, so this is applied by the app.", sensitive: false },
   sample_data: { label: "Sample records for new people", what: "When off, the 'try with sample records' option is not offered.", enforced: "App: applied by the app.", sensitive: false },
   ai_assistant: { label: "AI assistant and AI document reading", what: "Sends people's messages and documents to the AI provider. Off by default; turn on only with consent, legal review and the provider agreement in place.", enforced: "Server: /api/chat and /api/scan refuse requests while off (emergency guidance still works).", sensitive: true },
@@ -504,7 +504,7 @@ VIEWS.flags = async (v) => {
 VIEWS.maintenance = async (v) => {
   const m = (await api("flags")).find((f) => f.key === "maintenance") || { enabled: false, value: {} };
   v.innerHTML = `<div class="panel"><div class="row"><h3 style="margin:0">Maintenance mode</h3>${m.enabled ? `<span class="st warn">On</span>` : `<span class="st none">Off</span>`}</div>
-    <p class="sub" style="margin-top:6px">While on: the app shows your message to everyone and pauses saving; new document files are refused by the database; the AI assistant and reading are refused by the server; new sign-ups are refused once the Auth hook is enabled. People can still sign in and read their records.</p>
+    <p class="sub" style="margin-top:6px">While on: the app shows your message to everyone; new document files are refused by the database (records still save, and their files stay on the person's device until uploads resume); the AI assistant and AI reading are refused by the server; new sign-ups are refused once the Auth hook is enabled. People can still sign in, read and edit their records.</p>
     <label class="f" for="mm">Message shown in the app</label><textarea id="mm" maxlength="300" placeholder="For example: Doctine is being updated. Saving is paused until 10:00 IST.">${esc(m.value && m.value.message || "")}</textarea>
     <p class="note">Last changed ${m.updated_by ? `by ${esc(m.updated_by)} ` : ""}${dt(m.updated_at)}</p>
     ${can("maintenance.manage") ? `<div class="row" style="margin-top:10px">${m.enabled ? `<button class="btn" id="msave">Update message</button><button class="btn primary" id="moff">Turn maintenance off</button>` : `<button class="btn danger" id="mon">Turn maintenance on</button>`}</div>` : `<p class="note">Only the owner and super admins can change maintenance mode.</p>`}</div>`;
@@ -519,7 +519,7 @@ VIEWS.announcements = async (v) => {
   const stl = (a) => a.live ? `<span class="st good">Showing now</span>` : a.status === "published" ? (a.ends_at && Date.parse(a.ends_at) < Date.now() ? `<span class="st none">Expired</span>` : `<span class="st warn">Scheduled</span>`) : `<span class="st none">${esc(a.status)}</span>`;
   v.innerHTML = `${can("announcements.manage") ? `<div class="row" style="margin-bottom:12px"><span class="spacer"></span><button class="btn primary" id="na">New announcement</button></div>` : ""}
     ${list.length ? `<div class="tablewrap"><table><thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Shows</th><th>Updated</th><th></th></tr></thead><tbody>${list.map((a) => `<tr><td>${esc(a.title)}</td><td>${esc(a.kind)}</td><td>${stl(a)}</td><td>${a.starts_at ? dt(a.starts_at) : "Now"} → ${a.ends_at ? dt(a.ends_at) : "until archived"}</td><td>${dt(a.updated_at)}</td><td>${can("announcements.manage") ? `<button class="btn" data-id="${esc(a.id)}">Edit</button>` : ""}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">No announcements yet.</div>`}
-    <p class="note">Published announcements appear as a banner at the top of the app during their dates. At most five show at once.</p>`;
+    <p class="note">Published announcements appear as a banner at the top of the app during their dates, for people signed in to a Doctine account (they can dismiss them). At most five show at once; changes reach the app within about 20 seconds of the next page load.</p>`;
   const toLocal = (s) => (s ? new Date(Date.parse(s) + IST).toISOString().slice(0, 16) : "");
   const fromLocal = (s) => (s ? new Date(s + ":00+05:30").toISOString() : "");
   const edit = (a = { kind: "product", status: "draft" }) => {

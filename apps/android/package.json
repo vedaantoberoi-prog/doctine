@@ -10,18 +10,18 @@
     "build:release": "cd android && ./gradlew --no-daemon bundleRelease assembleRelease"
   },
   "dependencies": {
-    "@capacitor/android": "latest",
-    "@capacitor/app": "latest",
-    "@capacitor/browser": "latest",
-    "@capacitor/core": "latest",
-    "@capacitor/filesystem": "latest",
-    "@capacitor/local-notifications": "latest",
-    "@capacitor/share": "latest",
-    "@capacitor/splash-screen": "latest",
-    "@capacitor/status-bar": "latest"
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/share": "8.0.3",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4"
   },
   "devDependencies": {
-    "@capacitor/assets": "latest",
-    "@capacitor/cli": "latest"
+    "@capacitor/assets": "4.0.0",
+    "@capacitor/cli": "8.6.0"
   }
 }

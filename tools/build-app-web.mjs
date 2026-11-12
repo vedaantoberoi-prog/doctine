@@ -18,11 +18,11 @@ rmSync(out, { recursive: true, force: true }); mkdirSync(out, { recursive: true 
 const KEEP = ["index.html", "native.js", "manifest.webmanifest", "sw.js", "vendor", "fonts", "icons", "img"];
 for (const k of KEEP) if (existsSync(join(pub, k))) cpSync(join(pub, k), join(out, k), { recursive: true });
 
-// The app page's CSP from public/_headers ("/*" block), adapted for a packaged app.
-const headers = readFileSync(join(pub, "_headers"), "utf8");
-const block = headers.split(/\n(?=\/)/).find((b) => b.startsWith("/*")) || "";
-let csp = (block.match(/Content-Security-Policy:\s*(.+)/) || [])[1];
-if (!csp) { console.error("build-app-web: no CSP found for /* in public/_headers"); process.exit(1); }
+// The app page's CSP from netlify.toml (the source public/_headers is generated from), "/*" block, adapted for an app.
+const toml = readFileSync(join(root, "netlify.toml"), "utf8");
+const block = toml.split(/\[\[headers\]\]/).find((b) => /for\s*=\s*"\/\*"/.test(b)) || "";
+let csp = (block.match(/Content-Security-Policy\s*=\s*"([^"]+)"/) || [])[1];
+if (!csp) { console.error("build-app-web: no CSP found for /* in netlify.toml"); process.exit(1); }
 csp = csp.split(";").map((d) => d.trim()).filter((d) => d && !/^frame-ancestors\b/.test(d)) // not allowed in <meta>
   .map((d) => (/^connect-src\b/.test(d) && !d.includes("https://app.doctine.com") ? d + " https://app.doctine.com" : d))
   // the Mac app's own channel to its Rust core (Tauri IPC); nothing else is added

@@ -72,6 +72,18 @@ await test("no sign-in token: 401, and the database is never asked", async () =>
   calls = []; _resetTokenCache(); const { status } = await read(await post(admin, null, { action: "overview" }));
   assert.equal(status, 401); assert.ok(!calls.some((c) => c.url.includes("/rpc/admin_")));
 });
+await test("missing dates mean no date filter, never 1 January 1970 (the Users list once came back empty)", async () => {
+  for (const v of [null, "", undefined]) {
+    calls = []; const { status } = await read(await post(admin, tok("owner"), { action: "users", reg_from: v, reg_to: v }));
+    const c = calls.find((x) => x.url.endsWith("/rpc/admin_users")).body;
+    assert.equal(status, 200); assert.equal(c.p_from, null); assert.equal(c.p_to, null);
+  }
+  calls = []; await read(await post(admin, tok("owner"), { action: "audit", from: null, to: "" }));
+  const a = calls.find((x) => x.url.endsWith("/rpc/admin_audit"));
+  assert.ok(!a || (a.body.p_from === null && a.body.p_to === null));
+  calls = []; await read(await post(admin, tok("owner"), { action: "users", reg_from: "2026-11-01T00:00:00Z" }));
+  assert.equal(calls.find((x) => x.url.endsWith("/rpc/admin_users")).body.p_from, "2026-11-01T00:00:00.000Z");
+});
 await test("a forged or expired token: 401", async () => {
   const { status } = await read(await post(admin, jwt({ sub: "owner", role: "service_role", aal: "aal2" }), { action: "overview" })); assert.equal(status, 401);
 });

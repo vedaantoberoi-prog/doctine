@@ -22,7 +22,8 @@ import { buildReport, toCsv, toPdf, REPORTS } from "../lib/reports.mjs";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY = 86400000;
 const s = (v, n = 300) => (typeof v === "string" ? v.trim().slice(0, n) : "");
-const iso = (v) => { const d = new Date(v); return isFinite(d) ? d.toISOString() : null; };
+// A missing or empty date is "no date" (null). new Date(null) would be 1 January 1970, which once filtered every account out.
+const iso = (v) => { if (v == null || v === "" || typeof v === "boolean") return null; const d = new Date(v); return isFinite(d) ? d.toISOString() : null; };
 const int = (v, d) => (Number.isFinite(+v) ? Math.floor(+v) : d);
 const uuid = (v) => { if (typeof v !== "string" || !UUID.test(v)) throw httpError(400, "invalid_id"); return v; };
 const period = (b) => {

@@ -133,3 +133,9 @@ Metric definitions are in the console under Settings → Metric definitions.
 - `tests/admin-api.test.mjs`: token-only identity, refusals logged, MFA, database refusals kept, no key in replies, CSV.
 - `tests/browser/admin.test.mjs`: what each role sees, confirmations with reasons, honest health and measurement labels,
   layout from 320 px.
+- `tests/browser/admin-shapes.test.mjs` and `tests/admin-reports.test.mjs`: every page, drawer, dialog and report built
+  from data shaped exactly like the real database output (`tests/browser/fixtures/admin-shapes.json`: field names and
+  types only, captured from staging on 12 Nov 2026), empty and busy, at 1440, 390 and 320 px.
+- On staging (12 Nov 2026): the v2 migration applied; the whole of `tests/admin.test.sql` (127 checks) run against
+  the real project inside a transaction that was then rolled back; every database call the server makes matched exactly
+  one function, executable by the server role only.

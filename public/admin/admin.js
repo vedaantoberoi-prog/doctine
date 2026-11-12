@@ -21,10 +21,14 @@ const bytes = (b) => { if (b == null) return "—"; b = +b || 0; const u = ["B",
 const TZ = "Asia/Kolkata", IST = 330 * 60000, DAY = 864e5;
 const fmtDT = new Intl.DateTimeFormat("en-IN", { timeZone: TZ, day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 const fmtD = new Intl.DateTimeFormat("en-IN", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
-const dt = (v, time = true) => (v ? (time ? fmtDT : fmtD).format(new Date(v)) : "—");
-const ago = (v) => { if (!v) return "—"; const s = (Date.now() - Date.parse(v)) / 1000; if (s < 60) return "just now"; if (s < 3600) return Math.round(s / 60) + " min ago"; if (s < 86400) return Math.round(s / 3600) + " h ago"; if (s < 86400 * 30) return Math.round(s / 86400) + " d ago"; return dt(v, false); };
-const dayLabel = (d) => new Intl.DateTimeFormat("en-IN", { timeZone: "UTC", day: "numeric", month: "short" }).format(new Date(String(d).slice(0, 10) + "T00:00:00Z"));
-const hourLabel = (h) => new Intl.DateTimeFormat("en-IN", { timeZone: TZ, day: "numeric", month: "short", hour: "numeric" }).format(new Date(h));
+const okDate = (v) => v != null && v !== "" && !Number.isNaN(new Date(v).getTime());
+const dt = (v, time = true) => (okDate(v) ? (time ? fmtDT : fmtD).format(new Date(v)) : "—");
+const ago = (v) => {
+  if (!okDate(v)) return "—"; const s = (Date.now() - Date.parse(v)) / 1000, a = Math.abs(s), f = s < 0 ? (x) => "in " + x : (x) => x + " ago";
+  if (a < 60) return s < 0 ? "in under a minute" : "just now"; if (a < 3600) return f(Math.round(a / 60) + " min"); if (a < 86400) return f(Math.round(a / 3600) + " h"); if (a < 86400 * 30) return f(Math.round(a / 86400) + " d"); return dt(v, false);
+};
+const dayLabel = (d) => (okDate(String(d).slice(0, 10) + "T00:00:00Z") ? new Intl.DateTimeFormat("en-IN", { timeZone: "UTC", day: "numeric", month: "short" }).format(new Date(String(d).slice(0, 10) + "T00:00:00Z")) : "—");
+const hourLabel = (h) => (okDate(h) ? new Intl.DateTimeFormat("en-IN", { timeZone: TZ, day: "numeric", month: "short", hour: "numeric" }).format(new Date(h)) : "—");
 const ls = { get: (k, d) => { try { const v = localStorage.getItem("doctine-admin:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set: (k, v) => { try { localStorage.setItem("doctine-admin:" + k, JSON.stringify(v)); } catch {} } };
 
 const ICON = {
@@ -446,7 +450,7 @@ VIEWS.dashboard = async (v, seq) => {
     ${kpi({ id: "errors", label: "Application errors", value: o.app_errors, meta: o.errors_since ? delta(o.app_errors, o.app_errors_prev, { invert: true }) : `<span class="muted">Tracking is on · nothing ever reported, an actual zero</span>`, tip: "Errors reported by the app and the server in the period.", href: can("health.view") ? "#/errors" : null, sparkline: sl("app_errors") })}
     ${o.events_since ? kpi({ id: "failed", label: "Failed uploads", value: o.uploads_failed, meta: delta(o.uploads_failed, o.uploads_failed_prev, { invert: true }), tip: "Uploads the app reported as failed (opt-in measurement).", href: can("documents.view") ? "#/documents" : null, sparkline: sl("uploads_failed") })
       : kpi({ id: "failed", label: "Failed uploads", state: "not_measured", meta: "Sent only by people who switched on Help improve Doctine; none received yet.", href: can("documents.view") ? "#/documents" : null })}
-    ${av && av.checks ? kpi({ id: "availability", label: "Platform availability", display: av.pct + "%", meta: `<span class="muted">${n(av.ok)} of ${n(av.checks)} checks passed${avp && avp.checks ? ` · previous ${avp.pct}%` : " · no checks in the previous period"}</span>`, tip: "Share of scheduled health checks of the app that passed in the period.", href: can("health.view") ? "#/health" : null })
+    ${av && av.checks ? kpi({ id: "availability", label: "Platform availability", display: av.pct + "%", meta: `<span class="muted">${n(av.ok)} of ${n(av.checks)} checks passed${avp && avp.checks && avp.pct != null ? ` · previous ${avp.pct}%` : " · no checks in the previous period"}</span>`, tip: "Share of scheduled health checks of the app that passed in the period.", href: can("health.view") ? "#/health" : null })
       : kpi({ id: "availability", label: "Platform availability", state: "insufficient", meta: o.checks_since ? "No checks were recorded in this period." : "No health checks have been recorded yet.", href: can("health.view") ? "#/health" : null })}
   </div>
   ${s ? `${section("Trends", `${esc(p.label)}, day by day (IST). The dashed line is the previous period.`)}<div class="grid cols-2" id="charts"></div>`
@@ -572,7 +576,7 @@ VIEWS.users = async (v, seq) => {
   const args = { q: UQ.q, status: UQ.status, sort: UQ.sort, page: UQ.page, size: UQ.size, reg_from: UQ.reg_from ? new Date(UQ.reg_from + "T00:00:00+05:30").toISOString() : null, reg_to: UQ.reg_to ? new Date(Date.parse(UQ.reg_to + "T00:00:00+05:30") + DAY).toISOString() : null };
   const d = await api("users", args);
   if (stale(seq)) return;
-  const pages = Math.max(1, Math.ceil(d.total / d.size)), on = (c) => UQ.cols.includes(c);
+  const pages = Math.max(1, Math.ceil((d.total || 0) / (d.size || UQ.size || 25))), on = (c) => UQ.cols.includes(c);
   const sortBtn = (label, asc, desc) => `<button data-sort="${UQ.sort === desc ? asc : desc}" aria-label="Sort by ${label}">${label}${UQ.sort === desc ? " ▼" : UQ.sort === asc ? " ▲" : ""}</button>`;
   const cell = { id: (u) => `<td class="mono" title="${esc(u.id)}">${esc(u.id.slice(0, 8))}</td>`, email: (u) => `<td>${esc(u.email || "(no email)")}</td>`, created_at: (u) => `<td>${dt(u.created_at, false)}</td>`,
     verified: (u) => `<td>${u.email_confirmed_at ? `<span class="st good">Verified</span>` : `<span class="st warn">Not verified</span>`}</td>`, last_sign_in_at: (u) => `<td>${u.last_sign_in_at ? ago(u.last_sign_in_at) : `<span class="muted">Never</span>`}</td>`,

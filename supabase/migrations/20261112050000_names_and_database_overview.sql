@@ -7,9 +7,14 @@
 --    every table in the app's schemas with its purpose, row count, rows added in the period, last write, size on disk and
 --    row-level-security state, plus storage buckets. Counts and sizes only: no row, field or file content is ever read
 --    out. Health tables are counted, never opened.
+-- 3. Search and filter text matches literally (%, _ and \ are no longer treated as patterns or dropped).
 -- Safety: no table, column or row is changed or deleted; function signatures are unchanged, so the live console keeps
 -- working before and after. Rollback: re-run 20261112030000_admin_console_v2.sql's admin_users/admin_user/admin_search and
 -- 20261112040000_leadership.sql's perm_catalog, and drop public.admin_data_overview.
+
+-- Search text as a literal ILIKE pattern: backslash, % and _ match themselves (they used to be dropped, so "%" matched everyone).
+create or replace function private.like_literal(q text) returns text language sql immutable as $$
+  select replace(replace(replace(coalesce(q, ''), '\', '\\'), '%', '\%'), '_', '\_') $$;
 
 create or replace function private.account_name(meta jsonb) returns text language sql immutable as $$
   select nullif(left(trim(coalesce(nullif(trim(meta->>'full_name'), ''), nullif(trim(meta->>'name'), ''), '')), 120), '') $$;
@@ -63,8 +68,8 @@ begin
              (u.banned_until is not null and u.banned_until > now()) as suspended, m.role as admin_role
       from auth.users u left join private.admin_members m on m.user_id = u.id and m.status = 'active'
       where coalesce(u.is_anonymous, false) = false and u.deleted_at is null
-        and (q is null or u.email ilike '%' || replace(replace(q, '%', ''), '_', '\_') || '%' or u.id::text = q
-             or private.account_name(u.raw_user_meta_data) ilike '%' || replace(replace(q, '%', ''), '_', '\_') || '%')
+        and (q is null or u.email ilike '%' || private.like_literal(q) || '%' or u.id::text = q
+             or private.account_name(u.raw_user_meta_data) ilike '%' || private.like_literal(q) || '%')
         and (p_from is null or u.created_at >= p_from) and (p_to is null or u.created_at < p_to)
         and (p_status is null or p_status = '' or (p_status = 'suspended' and u.banned_until > now()) or (p_status = 'active' and (u.banned_until is null or u.banned_until <= now()))
              or (p_status = 'unverified' and u.email_confirmed_at is null) or (p_status = 'verified' and u.email_confirmed_at is not null)
@@ -131,7 +136,7 @@ declare q text := nullif(trim(coalesce(p_q, '')), '');
 begin
   perform private.require(p_actor, 'dashboard.view');
   if q is null or char_length(q) < 2 then return jsonb_build_object('users', '[]'::jsonb, 'errors', '[]'::jsonb, 'incidents', '[]'::jsonb); end if;
-  q := replace(replace(q, '%', ''), '_', '\_');
+  q := private.like_literal(q);
   return jsonb_build_object(
     'users', case when private.can(p_actor, 'users.view') then coalesce((select jsonb_agg(jsonb_build_object('id', id, 'email', email, 'name', name))
         from (select id, email, private.account_name(raw_user_meta_data) name from auth.users where deleted_at is null
@@ -140,6 +145,21 @@ begin
         from (select * from private.error_groups where message ilike '%' || q || '%' or kind ilike '%' || q || '%' or location ilike '%' || q || '%' order by last_seen desc limit 5) e), '[]'::jsonb) else '[]'::jsonb end,
     'incidents', case when private.can(p_actor, 'health.view') then coalesce((select jsonb_agg(jsonb_build_object('id', id, 'title', title, 'status', status))
         from (select * from private.incidents where title ilike '%' || q || '%' order by started_at desc limit 5) i), '[]'::jsonb) else '[]'::jsonb end);
+end $$;
+
+-- Audit log filters: the admin-email and action filters match literally too.
+create or replace function public.admin_audit(p_actor uuid, p_admin text, p_action text, p_target text, p_from timestamptz, p_to timestamptz, p_page int, p_size int) returns jsonb
+language plpgsql stable security definer set search_path = pg_catalog, private, public as $$
+declare size int := least(greatest(coalesce(p_size, 50), 1), 200); off int := greatest(coalesce(p_page, 1) - 1, 0) * least(greatest(coalesce(p_size, 50), 1), 200);
+begin
+  perform private.require(p_actor, 'audit.view');
+  return (with f as (select l.*, u.email as actor_email from private.admin_audit_log l left join auth.users u on u.id = l.actor
+      where (nullif(p_admin, '') is null or u.email ilike '%' || private.like_literal(p_admin) || '%')
+        and (nullif(p_action, '') is null or l.action like private.like_literal(p_action) || '%')
+        and (nullif(p_target, '') is null or l.target_id = p_target)
+        and (p_from is null or l.at >= p_from) and (p_to is null or l.at < p_to))
+    select jsonb_build_object('total', (select count(*) from f),
+      'rows', coalesce((select jsonb_agg(to_jsonb(x) - 'actor' order by x.at desc) from (select * from f order by at desc limit size offset off) x), '[]'::jsonb)));
 end $$;
 
 -- What each table holds, in plain words. Tables not listed here still appear (purpose "Not described yet").
@@ -203,7 +223,7 @@ end $$;
 do $$ declare f record;
 begin
   for f in select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-           where n.nspname = 'public' and p.proname in ('admin_users', 'admin_user', 'admin_search', 'admin_data_overview') loop
+           where n.nspname = 'public' and p.proname in ('admin_users', 'admin_user', 'admin_search', 'admin_audit', 'admin_data_overview') loop
     execute format('revoke all on function %s from public, anon, authenticated', f.sig);
     execute format('grant execute on function %s to service_role', f.sig);
   end loop;

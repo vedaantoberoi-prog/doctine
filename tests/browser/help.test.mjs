@@ -14,7 +14,8 @@ const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { 
 const pg = await ctx.newPage(); const errs = []; pg.on("pageerror", (e) => errs.push(e.message)); pg.on("dialog", (d) => d.accept());
 await pg.route("**/*", async (r) => { const u = r.request().url();
   if (u.endsWith("/api/config")) return r.fulfill({ contentType: "application/json", body: JSON.stringify({ supabaseUrl: "https://x.supabase.co", supabaseAnonKey: "anon", accounts: "supabase",
-    whatsNew: [{ id: "n1", title: "Faster record search", body: "Search now finds records by provider.", published_at: "2026-11-12T06:00:00Z" }] }) });
+    whatsNew: [{ id: "n1", title: "Faster record search", body: "Search now finds records by provider.", published_at: "2026-11-12T06:00:00Z" },
+    { id: "n2", title: '<img src=x onerror="window.__xss=1">Hostile title', body: '<svg onload="window.__xss=1"></svg>Hostile body', published_at: "2026-11-11T06:00:00Z" }] }) });
   if (u.startsWith(BASE)) return r.continue(); return r.abort(); });
 await pg.goto(BASE + "/index.html"); await pg.waitForTimeout(700);
 const W = (ms) => pg.waitForTimeout(ms);
@@ -34,9 +35,10 @@ check("sending a request gives a reference and lists it", /Your reference is S-\
 const sent = await pg.evaluate(() => window.__writes.find((w) => w.table === "rpc:support_submit").rows[0]);
 check("the request goes through the support function with topic, subject and message only", JSON.stringify(Object.keys(sent).sort()) === JSON.stringify(["p_body", "p_category", "p_subject"]) && sent.p_category === "sign_in");
 // staff reply and an internal note, added the way the database would hold them
-await pg.evaluate(() => { const db = window.__sbdb, r = db.tables.support_requests[0], t = new Date().toISOString(); db.tables.support_messages.push({ request_id: r.id, at: t, from_staff: true, internal: false, body: "Please try the email link instead." }, { request_id: r.id, at: t, from_staff: true, internal: true, body: "INTERNAL-NOTE-SECRET" }); r.status = "waiting"; localStorage.setItem("__sbdb", JSON.stringify(db)); });
+await pg.evaluate(() => { const db = window.__sbdb, r = db.tables.support_requests[0], t = new Date().toISOString(); db.tables.support_messages.push({ request_id: r.id, at: t, from_staff: true, internal: false, body: "Please try the email link instead." }, { request_id: r.id, at: t, from_staff: true, internal: false, body: '<img src=x onerror="window.__xss=1">Hostile reply' }, { request_id: r.id, at: t, from_staff: true, internal: true, body: "INTERNAL-NOTE-SECRET" }); r.status = "waiting"; localStorage.setItem("__sbdb", JSON.stringify(db)); });
 await pg.evaluate("go('home')"); await W(200); await pg.evaluate("S.help=null"); await settings(); await W(400);
 check("the person sees the support reply and its status", (await view()).includes("Doctine replied") && (await pg.evaluate(() => document.querySelector("#help").innerHTML.includes("Please try the email link instead."))));
+check("text from staff and release notes is shown as text: injected markup is never inserted or run", (await pg.evaluate(() => !window.__xss && !document.querySelector('img[src="x"], svg[onload], [onerror]'))) && (await view()).includes("Hostile reply") && (await view()).includes("Hostile title"));
 check("…but never an internal staff note", !(await pg.evaluate(() => document.body.innerHTML.includes("INTERNAL-NOTE-SECRET"))));
 await pg.evaluate(() => document.querySelectorAll("#help details").forEach((d) => { d.open = true; }));
 const rid = await pg.evaluate(() => document.querySelector("[data-supreply]").dataset.supreply);

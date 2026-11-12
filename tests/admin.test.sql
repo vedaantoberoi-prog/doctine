@@ -91,6 +91,14 @@ set role service_role;
 select pg_temp.expect((select r->>'name' from jsonb_array_elements(public.admin_users(:support, null, null, null, 1, 25, null, null)->'rows') r where r->>'email' = 'asha.sample@example.test') = 'Asha Sample', 'the account list shows the name given at sign-up');
 select pg_temp.expect((public.admin_users(:support, 'asha samp', null, null, 1, 25, null, null)->>'total')::int = 1 and public.admin_user(:support, :asha)->>'name' = 'Asha Sample', 'people can be found by name, and the account panel shows it');
 select pg_temp.expect(public.admin_search(:support, 'Asha S')->'users'->0->>'name' = 'Asha Sample', 'global search finds people by name');
+select pg_temp.expect((public.admin_users(:support, $$'; drop table private.admin_members; --$$, null, null, 1, 25, null, null)->>'total')::int = 0 and exists (select 1 from pg_tables where schemaname = 'private' and tablename = 'admin_members'), 'search text is data, never SQL');
+select pg_temp.expect((public.admin_users(:support, '%', null, null, 1, 25, null, null)->>'total')::int = 0 and (public.admin_users(:support, '_', null, null, 1, 25, null, null)->>'total')::int = 0
+  and (public.admin_users(:support, '\', null, null, 1, 25, null, null)->>'total')::int = 0 and jsonb_array_length(public.admin_search(:support, '%%')->'users') = 0, 'wildcards in search text match literally, not as patterns');
+select pg_temp.expect((public.admin_audit(:owner, '%', null, null, null, null, 1, 50)->>'total')::int = 0, 'audit filters match literally too');
+reset role;
+update auth.users set raw_user_meta_data = jsonb_build_object('full_name', repeat('A very long name ', 40)) where id = 'b0000000-0000-0000-0000-000000000002';
+set role service_role;
+select pg_temp.expect(char_length(public.admin_user(:support, :ravi)->>'name') <= 120, 'names are cut to 120 characters');
 select pg_temp.denied(format('select public.admin_data_overview(%L, now() - interval ''1 day'', now())', :adm), 'the database overview needs its own permission');
 select pg_temp.expect((select (t->>'rows')::int = 1 and t->>'area' = 'Health data' and not (t ? 'sample') from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t where t->>'table' = 'health_profiles'), 'the Founder sees each table''s purpose and row count, not its rows');
 select pg_temp.expect((select bool_and((t->>'rls')::boolean) from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t), 'the overview reports row-level security for every table');

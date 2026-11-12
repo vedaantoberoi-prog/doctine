@@ -56,13 +56,14 @@ function data(action, body) {
       errors: [{ fingerprint: "0123456789abcdef0123456789abcdef", kind: "TypeError", message: "x is undefined", last_seen: iso(now - 600e3), count: 3, source: "client" }], checks: [{ target: "app", ok: true, ms: 120, at: iso(now - 300e3), status: 200 }],
       admin_actions: ROLE.perms.includes("audit.view") ? [{ at: iso(now - 900e3), action: "flag.set", outcome: "ok", by: "owner@example.test" }] : null, incidents: [], alerts: [{ id: "c0000000-0000-0000-0000-000000000001", severity: "warning", message: "No scheduled health check has run since 10 Nov 10:00 IST", service: "monitoring", status: "open", opened_at: iso(now - 7200e3) }] },
     search: { users: ROLE.perms.includes("users.view") ? [{ id: "b0000000-0000-0000-0000-000000000001", email: "asha.sample@example.test" }] : [], errors: [], incidents: [] },
-    users: { total: 60, page: body.page || 1, size: body.size || 25, rows: Array.from({ length: Math.min(body.size || 25, 3) }, (_, i) => ({ id: `b0000000-0000-0000-0000-00000000000${i + 1}`, email: `person${i + 1}.sample@example.test`, name: i === 1 ? null : `Person ${i + 1} Sample`, created_at: iso(now - i * 864e5), email_confirmed_at: i ? iso(now) : null, last_sign_in_at: null, suspended: false, admin_role: null, records: i, files: 0, last_activity: null })) },
+    users: { total: 60, page: body.page || 1, size: body.size || 25, rows: Array.from({ length: Math.min(body.size || 25, 3) }, (_, i) => ({ id: `b0000000-0000-0000-0000-00000000000${i + 1}`, email: `person${i + 1}.sample@example.test`, name: i === 1 ? null : `Person ${i + 1} Sample`, created_at: iso(now - i * 864e5), email_confirmed_at: i ? iso(now) : null, last_sign_in_at: null, suspended: false, admin_role: null, records: i, files: 0, last_activity: null, profile_pct: [100, 33, 0][i], profile_filled: [6, 2, 0][i] })) },
     data_overview: { generated_at: iso(now), database_bytes: 12582912, accounts: 14, accounts_new: 3,
       tables: [{ schema: "public", table: "health_profiles", area: "Health data", purpose: "Health profiles", rows: 11, estimated: false, new_in_period: 2, last_write: iso(now - 3600e3), bytes: 65536, rls: true, rls_forced: false, policies: 4, browser_access: true },
         { schema: "public", table: "medicines", area: "Health data", purpose: "Medicines", rows: 2, estimated: false, new_in_period: 0, last_write: iso(now - 864e5), bytes: 32768, rls: true, rls_forced: false, policies: 4, browser_access: true },
         { schema: "private", table: "admin_audit_log", area: "Administration", purpose: "Audit log (append-only)", rows: 40, estimated: false, new_in_period: 40, last_write: null, bytes: 98304, rls: true, rls_forced: false, policies: 0, browser_access: false }],
       buckets: [{ id: "documents", public: false, file_size_limit: 10485760, objects: 0, bytes: 0, new_in_period: 0 }] },
     user: { id: "b0000000-0000-0000-0000-000000000001", email: "person1.sample@example.test", name: "Person 1 Sample", created_at: iso(now), email_confirmed_at: null, last_sign_in_at: null, suspended: false, admin_role: null, sign_in_methods: ["email"], mfa: false, first_activity: null,
+      profile: { pct: 50, filled: 3, total: 6, fields: { name: true, date_of_birth: true, height: false, weight: false, blood_group: true, allergies: false }, updated_at: iso(now) },
       usage: { records: 2, records_by_source: { scan: 2 }, files: 1, file_bytes: 120000, medicines: 0, doses_recorded: 0, profile_saved: true, last_activity: null, active_days_30: 1 }, adoption: { profile: true, record: true, file: true, schedule: false, dose: false, search: false, export: false },
       uploads: { failed_30d: 0, processing_failed_30d: 0 }, notes: ROLE.perms.includes("users.notes") ? [] : null, admin_actions: [] },
     user_suspend: { ok: true, sessions_ended: 1 }, user_reset_password: { ok: true },
@@ -216,6 +217,13 @@ check("the funnel shows conversion and drop-off between steps", (await text(pg, 
 await go(pg, "#/users", "tr.click");
 check("users: the default columns include account ID, verification, last activity, records, files and status", ["Account ID", "Email verification", "Last activity", "Records", "Files", "Status"].every((h) => (log, true)) && await pg.evaluate(() => ["Account ID", "Email verification", "Last activity", "Records", "Files", "Status"].every((h) => document.querySelector("thead").innerText.includes(h))));
 check("users: names given at sign-up are shown, with 'Not given' where there is none", (await text(pg, "tbody")).includes("Person 1 Sample") && (await text(pg, "tbody")).includes("Not given") && (await text(pg, "thead")).includes("Name"));
+check("users: a Profile column shows how complete each profile is", (await text(pg, "thead")).includes("Profile") && ["100%", "33%", "0%"].every((x) => pg && true) && await pg.evaluate(() => ["100%", "33%", "0%"].every((x) => document.querySelector("tbody").innerText.includes(x))) && (await pg.$$eval("tbody .pcell .meter", (e) => e.length)) === 3);
+await pg.click('[data-sort="profile_desc"]'); await settle(pg);
+check("users can be sorted by profile completion", log.calls.filter((c) => c.action === "users").pop().sort === "profile_desc");
+await pg.click('[data-sort="created_desc"]'); await settle(pg);
+await pg.selectOption("#us", "profile_incomplete"); await pg.click("#uf button.primary"); await settle(pg);
+check("users can be filtered to incomplete profiles", log.calls.filter((c) => c.action === "users").pop().status === "profile_incomplete");
+await pg.selectOption("#us", ""); await pg.click("#uf button.primary"); await settle(pg);
 await pg.click("#pn"); await settle(pg);
 check("8 · pagination asks the server for page 2", log.calls.filter((c) => c.action === "users").pop().page === 2);
 await pg.selectOption("#usz", "50"); await settle(pg);
@@ -232,6 +240,7 @@ check("9 · CSV export of the account list downloads a file and goes through the
 await pg.click("tr.click"); await pg.waitForSelector(".drawer h3");
 await pg.waitForFunction(() => /feature adoption/i.test(document.querySelector(".drawer")?.innerText || ""), null, { timeout: 5000 }).catch(() => {});
 const drw = await text(pg, ".drawer");
+check("account drawer: profile completion with which details are added, never their values", /profile completion/i.test(drw) && drw.includes("50%") && drw.includes("3 of 6 details added") && ["Date of birth", "Height", "Weight", "Blood group", "Allergies"].every((x) => drw.includes(x)) && (await pg.$$eval(".drawer .chips .chip.yes", (e) => e.length)) >= 3);
 check("account drawer: metadata, sign-in methods, usage counts, feature adoption; no record contents", /feature adoption/i.test(drw) && /sign-in method/i.test(drw) && !drw.includes(SECRET_MARK), drw.slice(0, 200).replace(/\n/g, " / "));
 await pg.click('[data-act="suspend"]'); await pg.waitForSelector("dialog[open]"); await pg.click("dialog #co"); await pg.waitForTimeout(150);
 check("suspending needs a reason before anything is sent", (await text(pg, "dialog #cerr")) === "Please give a reason." && !log.calls.some((c) => c.action === "user_suspend"));

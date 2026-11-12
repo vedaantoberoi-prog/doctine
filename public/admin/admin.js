@@ -633,25 +633,33 @@ VIEWS.reports = async (v, seq) => {
 };
 
 /* Users */
-const COLS = [["id", "Account ID"], ["name", "Name"], ["email", "Email"], ["created_at", "Registered"], ["verified", "Email verification"], ["last_sign_in_at", "Last sign-in"], ["last_activity", "Last meaningful activity"], ["records", "Records"], ["files", "Files"], ["status", "Status"], ["role", "Role"]];
-const UQ = { q: "", status: "", sort: "created_desc", page: 1, size: ls.get("usize", 25), reg_from: "", reg_to: "", cols: ls.get("ucols.v2", ["id", "name", "email", "created_at", "verified", "last_sign_in_at", "last_activity", "records", "files", "status"]) };
+// Profile completion: how many of the six profile details a person has added. Never the details themselves.
+const PROFILE_FIELDS = [["name", "Name"], ["date_of_birth", "Date of birth"], ["height", "Height"], ["weight", "Weight"], ["blood_group", "Blood group"], ["allergies", "Allergies"]];
+const profileTone = (p) => (p >= 100 ? "" : p >= 50 ? "warn" : "bad");
+function profileCell(pct, filled) {
+  if (!Number.isFinite(+pct)) return `<td><span class="muted">—</span></td>`;
+  const p = Math.max(0, Math.min(100, Math.round(+pct)));
+  return `<td><div class="pcell" title="${n(filled)} of 6 profile details added"><div class="meter ${profileTone(p)}" role="img" aria-label="Profile ${p}% complete"><div style="width:${p}%"></div></div><span>${p}%</span></div></td>`;
+}
+const COLS = [["id", "Account ID"], ["name", "Name"], ["profile", "Profile"], ["email", "Email"], ["created_at", "Registered"], ["verified", "Email verification"], ["last_sign_in_at", "Last sign-in"], ["last_activity", "Last meaningful activity"], ["records", "Records"], ["files", "Files"], ["status", "Status"], ["role", "Role"]];
+const UQ = { q: "", status: "", sort: "created_desc", page: 1, size: ls.get("usize", 25), reg_from: "", reg_to: "", cols: ls.get("ucols.v3", ["id", "name", "profile", "email", "created_at", "verified", "last_sign_in_at", "last_activity", "records", "files", "status"]) };
 VIEWS.users = async (v, seq) => {
   const args = { q: UQ.q, status: UQ.status, sort: UQ.sort, page: UQ.page, size: UQ.size, reg_from: UQ.reg_from ? new Date(UQ.reg_from + "T00:00:00+05:30").toISOString() : null, reg_to: UQ.reg_to ? new Date(Date.parse(UQ.reg_to + "T00:00:00+05:30") + DAY).toISOString() : null };
   const d = await api("users", args);
   if (stale(seq)) return;
   const pages = Math.max(1, Math.ceil((d.total || 0) / (d.size || UQ.size || 25))), on = (c) => UQ.cols.includes(c);
   const sortBtn = (label, asc, desc) => `<button data-sort="${UQ.sort === desc ? asc : desc}" aria-label="Sort by ${label}">${label}${UQ.sort === desc ? " ▼" : UQ.sort === asc ? " ▲" : ""}</button>`;
-  const cell = { id: (u) => `<td class="mono" title="${esc(u.id)}">${esc(u.id.slice(0, 8))}</td>`, name: (u) => `<td>${u.name ? esc(u.name) : `<span class="muted">Not given</span>`}</td>`, email: (u) => `<td>${esc(u.email || "(no email)")}</td>`, created_at: (u) => `<td>${dt(u.created_at, false)}</td>`,
+  const cell = { id: (u) => `<td class="mono" title="${esc(u.id)}">${esc(u.id.slice(0, 8))}</td>`, name: (u) => `<td>${u.name ? esc(u.name) : `<span class="muted">Not given</span>`}</td>`, email: (u) => `<td>${esc(u.email || "(no email)")}</td>`, profile: (u) => profileCell(u.profile_pct, u.profile_filled), created_at: (u) => `<td>${dt(u.created_at, false)}</td>`,
     verified: (u) => `<td>${u.email_confirmed_at ? `<span class="st good">Verified</span>` : `<span class="st warn">Not verified</span>`}</td>`, last_sign_in_at: (u) => `<td>${u.last_sign_in_at ? ago(u.last_sign_in_at) : `<span class="muted">Never</span>`}</td>`,
     last_activity: (u) => `<td>${u.last_activity ? ago(u.last_activity) : `<span class="muted">None yet</span>`}</td>`, records: (u) => `<td class="num">${n(u.records)}</td>`, files: (u) => `<td class="num">${n(u.files)}</td>`,
     status: (u) => `<td>${u.suspended ? `<span class="st bad">Suspended</span>` : `<span class="st good">Active</span>`}</td>`, role: (u) => `<td>${u.admin_role ? titleBadge(u.admin_role) : `<span class="muted">Member</span>`}</td>` };
-  const head = { id: "<th>Account ID</th>", name: `<th>${sortBtn("Name", "name", "name")}</th>`, email: `<th>${sortBtn("Email", "email", "email")}</th>`, created_at: `<th>${sortBtn("Registered", "created_asc", "created_desc")}</th>`, verified: "<th>Email verification</th>", last_sign_in_at: "<th>Last sign-in</th>",
+  const head = { id: "<th>Account ID</th>", name: `<th>${sortBtn("Name", "name", "name")}</th>`, email: `<th>${sortBtn("Email", "email", "email")}</th>`, profile: `<th>${sortBtn("Profile", "profile_asc", "profile_desc")}</th>`, created_at: `<th>${sortBtn("Registered", "created_asc", "created_desc")}</th>`, verified: "<th>Email verification</th>", last_sign_in_at: "<th>Last sign-in</th>",
     last_activity: `<th>${sortBtn("Last activity", "activity_asc", "activity_desc")}</th>`, records: `<th class="num">${sortBtn("Records", "records_desc", "records_desc")}</th>`, files: '<th class="num">Files</th>', status: "<th>Status</th>", role: "<th>Role</th>" };
   const filtered = UQ.q || UQ.status || UQ.reg_from || UQ.reg_to;
   v.innerHTML = `<div class="card">
     <form class="toolbar" id="uf" role="search">
       <label class="sr" for="uq">Search by name, email or account ID</label><input id="uq" type="search" placeholder="Search name, email or account ID" value="${esc(UQ.q)}" style="min-width:min(240px,100%)">
-      <label class="sr" for="us">Status</label><select id="us">${[["", "All accounts"], ["active", "Active"], ["suspended", "Suspended"], ["verified", "Email verified"], ["unverified", "Email not verified"], ["admins", "Admin team"]].map(([k, t]) => `<option value="${k}" ${UQ.status === k ? "selected" : ""}>${t}</option>`).join("")}</select>
+      <label class="sr" for="us">Status</label><select id="us">${[["", "All accounts"], ["active", "Active"], ["suspended", "Suspended"], ["verified", "Email verified"], ["unverified", "Email not verified"], ["admins", "Admin team"], ["profile_complete", "Profile complete"], ["profile_incomplete", "Profile incomplete"]].map(([k, t]) => `<option value="${k}" ${UQ.status === k ? "selected" : ""}>${t}</option>`).join("")}</select>
       <span class="muted" style="font-size:12px">Registered</span><label class="sr" for="urf">Registered from</label><input type="date" id="urf" value="${esc(UQ.reg_from)}"><label class="sr" for="urt">Registered to</label><input type="date" id="urt" value="${esc(UQ.reg_to)}">
       <button class="btn primary sm">Apply</button>${filtered ? `<button class="btn ghost sm" type="button" id="uclear">Clear</button>` : ""}
       <span class="spacer"></span>
@@ -673,7 +681,7 @@ VIEWS.users = async (v, seq) => {
   $("#pp").onclick = () => { UQ.page--; again(); }; $("#pn").onclick = () => { UQ.page++; again(); };
   $$("tr.click", v).forEach((tr) => { tr.onclick = () => openUser(tr.dataset.id); tr.onkeydown = (e) => { if (e.key === "Enter") openUser(tr.dataset.id); }; });
   $("#ucols").onclick = (e) => popover(e.currentTarget, `<h4>Show columns</h4>${COLS.map(([k, t]) => `<label style="display:flex;gap:8px;padding:6px 8px;cursor:pointer"><input type="checkbox" data-col="${k}" ${on(k) ? "checked" : ""}> ${t}</label>`).join("")}`, (pop) => {
-    $$("[data-col]", pop).forEach((c) => c.onchange = () => { UQ.cols = $$("[data-col]", pop).filter((x) => x.checked).map((x) => x.dataset.col); if (!UQ.cols.length) UQ.cols = ["email"]; ls.set("ucols.v2", UQ.cols); closePop(); again(); });
+    $$("[data-col]", pop).forEach((c) => c.onchange = () => { UQ.cols = $$("[data-col]", pop).filter((x) => x.checked).map((x) => x.dataset.col); if (!UQ.cols.length) UQ.cols = ["email"]; ls.set("ucols.v3", UQ.cols); closePop(); again(); });
   });
   const csvB = $("#ucsv"); if (csvB) csvB.onclick = async () => {
     const r = args.reg_from && args.reg_to ? { from: args.reg_from, to: args.reg_to } : { from: new Date(Date.now() - 399 * DAY).toISOString(), to: new Date().toISOString() };
@@ -700,6 +708,8 @@ async function openUser(id) {
   const chip = (ok, label) => `<span class="chip ${ok ? "yes" : "no"}">${ok ? "✓" : "–"} ${label}</span>`;
   D.body.innerHTML = `<div class="row" style="margin-bottom:12px">${u.suspended ? `<span class="st bad">Suspended</span>` : `<span class="st good">Active</span>`}${u.admin_role ? titleBadge(u.admin_role) : ""}<span class="mono muted">${esc(u.id)}</span></div>
     <h4>Account</h4><dl class="dl"><dt>Name</dt><dd>${u.name ? esc(u.name) : `<span class="muted">Not given at sign-up</span>`}</dd><dt>Email</dt><dd>${esc(u.email || "—")}</dd><dt>Registered</dt><dd>${dt(u.created_at)}</dd><dt>Email confirmed</dt><dd>${u.email_confirmed_at ? dt(u.email_confirmed_at) : "Not yet"}</dd><dt>First meaningful activity</dt><dd>${dt(u.first_activity)}</dd><dt>Last sign-in</dt><dd>${dt(u.last_sign_in_at)}</dd><dt>Last meaningful activity</dt><dd>${dt(g.last_activity)}</dd><dt>Sign-in methods</dt><dd>${(u.sign_in_methods || []).map((m) => `<span class="tag">${esc(m)}</span>`).join(" ") || "—"}</dd><dt>Two-step sign-in</dt><dd>${u.mfa ? "On" : "Off"}</dd></dl>
+    ${u.profile ? `<h4>Profile completion</h4><div class="pcell" style="max-width:320px;margin-bottom:8px"><div class="meter ${profileTone(u.profile.pct)}" role="img" aria-label="Profile ${n(u.profile.pct)}% complete"><div style="width:${Math.max(0, Math.min(100, +u.profile.pct || 0))}%"></div></div><span><b>${n(u.profile.pct)}%</b> · ${n(u.profile.filled)} of ${n(u.profile.total)} details added</span></div>
+      <div class="chips">${PROFILE_FIELDS.map(([k, t]) => chip(u.profile.fields && u.profile.fields[k] === true, t)).join("")}</div><p class="hint">Shows only whether each detail is added, never what was entered.</p>` : ""}
     <h4>Usage summary (counts only)</h4><dl class="dl"><dt>Records</dt><dd>${n(g.records)} ${Object.keys(g.records_by_source || {}).length ? `<span class="muted">(${Object.entries(g.records_by_source).map(([k, c]) => esc(k) + " " + n(c)).join(", ")})</span>` : ""}</dd><dt>Files stored</dt><dd>${n(g.files)} · ${bytes(g.file_bytes)}</dd><dt>Medicines</dt><dd>${n(g.medicines)}</dd><dt>Doses recorded</dt><dd>${n(g.doses_recorded)}</dd><dt>Active days (30 days)</dt><dd>${n(g.active_days_30)}</dd><dt>Failed uploads (30 days)</dt><dd>${n(u.uploads.failed_30d)}</dd></dl>
     <h4>Feature adoption</h4><div class="chips">${chip(ad.profile, "Profile")}${chip(ad.record, "Records")}${chip(ad.file, "Documents")}${chip(ad.schedule, "Medicine schedules")}${chip(ad.dose, "Dose tracking")}${chip(ad.search, "Search")}${chip(ad.export, "Export")}</div><p class="hint">Search and export show only if the person switched on measurements.</p>
     <h4>Actions</h4><div class="row">

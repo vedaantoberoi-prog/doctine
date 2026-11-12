@@ -193,6 +193,7 @@ details.tv summary::-webkit-details-marker{display:none}
 .hbar .v{text-align:right;font-weight:600;min-width:64px} .hbar .v small{color:var(--ink-3);font-weight:500}
 .meter{height:8px;background:var(--line-2);border-radius:4px;overflow:hidden} .meter > div{height:100%;background:var(--s1)}
 .meter.warn > div{background:#dc8a12} .meter.bad > div{background:var(--bad)}
+.pcell{display:flex;align-items:center;gap:8px;min-width:96px} .pcell .meter{flex:1;min-width:48px} .pcell > span{white-space:nowrap;font-variant-numeric:tabular-nums;font-size:12.5px}
 .funnel{display:flex;flex-direction:column;gap:8px}
 .funnel .step{display:grid;grid-template-columns:200px 1fr 120px;gap:12px;align-items:center;font-size:12.5px}
 .funnel .fb{height:26px;background:var(--line-2);border-radius:4px;overflow:hidden;position:relative}

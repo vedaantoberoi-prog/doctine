@@ -125,13 +125,16 @@ jobs:
         run: cd src-tauri && cargo test --locked 2>/dev/null || cargo test
       - name: Build Doctine.app and the DMG (universal)
         env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: npx tauri build --target universal-apple-darwin --bundles app,dmg
+          S_CERT: ${{ secrets.APPLE_CERTIFICATE }}
+          S_CERT_PW: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          S_IDENT: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          S_ID: ${{ secrets.APPLE_ID }}
+          S_PW: ${{ secrets.APPLE_PASSWORD }}
+          S_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        # Signing and notarisation only when the Apple secrets exist (Tauri treats an empty value as "sign").
+        run: |
+          if [ -n "$S_CERT" ]; then export APPLE_CERTIFICATE="$S_CERT" APPLE_CERTIFICATE_PASSWORD="$S_CERT_PW" APPLE_SIGNING_IDENTITY="$S_IDENT" APPLE_ID="$S_ID" APPLE_PASSWORD="$S_PW" APPLE_TEAM_ID="$S_TEAM"; else echo "No Apple signing secrets: building an unsigned (ad-hoc) app"; fi
+          npx tauri build --target universal-apple-darwin --bundles app,dmg
       - name: What was built (architectures, signature, Gatekeeper)
         run: |
           B=src-tauri/target/universal-apple-darwin/release/bundle

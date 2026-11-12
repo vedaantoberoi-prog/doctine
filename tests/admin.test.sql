@@ -84,6 +84,16 @@ select pg_temp.expect(jsonb_array_length(public.admin_series(:analyst, now() - i
 select pg_temp.denied(format('select public.admin_series(%L, now() - interval ''7 days'', now())', :support), 'support cannot see analytics charts');
 select pg_temp.denied(format('select public.admin_users(%L, null, null, null, 1, 25, null, null)', :analyst), 'analysts cannot see the user list');
 select pg_temp.expect((public.admin_users(:support, 'sample', null, null, 1, 25, null, null)->>'total')::int = 2, 'support can search people by email');
+-- names come from sign-up details only (never the health profile, whose full_name holds SECRET-NAME here)
+reset role;
+update auth.users set raw_user_meta_data = '{"full_name":"Asha Sample"}' where id = 'b0000000-0000-0000-0000-000000000001';
+set role service_role;
+select pg_temp.expect((select r->>'name' from jsonb_array_elements(public.admin_users(:support, null, null, null, 1, 25, null, null)->'rows') r where r->>'email' = 'asha.sample@example.test') = 'Asha Sample', 'the account list shows the name given at sign-up');
+select pg_temp.expect((public.admin_users(:support, 'asha samp', null, null, 1, 25, null, null)->>'total')::int = 1 and public.admin_user(:support, :asha)->>'name' = 'Asha Sample', 'people can be found by name, and the account panel shows it');
+select pg_temp.expect(public.admin_search(:support, 'Asha S')->'users'->0->>'name' = 'Asha Sample', 'global search finds people by name');
+select pg_temp.denied(format('select public.admin_data_overview(%L, now() - interval ''1 day'', now())', :adm), 'the database overview needs its own permission');
+select pg_temp.expect((select (t->>'rows')::int = 1 and t->>'area' = 'Health data' and not (t ? 'sample') from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t where t->>'table' = 'health_profiles'), 'the Founder sees each table''s purpose and row count, not its rows');
+select pg_temp.expect((select bool_and((t->>'rls')::boolean) from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t), 'the overview reports row-level security for every table');
 
 -- no health information leaves the database through any admin function
 do $$ declare blob text; begin
@@ -91,7 +101,9 @@ do $$ declare blob text; begin
     public.admin_user('a0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001'),
     public.admin_documents('a0000000-0000-0000-0000-000000000001', now() - interval '30 days', now() + interval '1 hour', 1, 100),
     public.admin_overview('a0000000-0000-0000-0000-000000000001', now() - interval '30 days', now()),
-    public.admin_adoption('a0000000-0000-0000-0000-000000000001', now() - interval '30 days', now()));
+    public.admin_adoption('a0000000-0000-0000-0000-000000000001', now() - interval '30 days', now()),
+    public.admin_search('a0000000-0000-0000-0000-000000000001', 'sample'),
+    public.admin_data_overview('a0000000-0000-0000-0000-000000000001', now() - interval '30 days', now() + interval '1 hour'));
   if blob like '%SECRET-%' then raise exception 'FAILED: an admin function returned health information'; end if;
   raise notice 'ok: no titles, providers, values, names or allergies appear in any admin response';
 end $$;

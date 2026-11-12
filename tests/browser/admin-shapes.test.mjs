@@ -12,8 +12,8 @@ const BASE = process.env.DOCTINE_BASE || "http://localhost:8888";
 const fakeSrc = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
 const SH = JSON.parse(readFileSync(new URL("./fixtures/admin-shapes.json", import.meta.url), "utf8"));
 // The Founder's permissions: every key in the catalogue, read from the migration that defines it.
-const MIG = readFileSync(new URL("../../supabase/migrations/20261112040000_leadership.sql", import.meta.url), "utf8");
-const PERMS = [...MIG.slice(MIG.indexOf("function private.perm_catalog"), MIG.indexOf("function private.grantable")).matchAll(/\('([a-z_.]+)', '[^']+', '[^']+', (?:true|false), (?:true|false)\)/g)].map((m) => m[1]);
+const MIG = readFileSync(new URL("../../supabase/migrations/20261112050000_names_and_database_overview.sql", import.meta.url), "utf8");
+const PERMS = [...MIG.slice(MIG.indexOf("function private.perm_catalog"), MIG.indexOf("$$;", MIG.indexOf("function private.perm_catalog"))).matchAll(/\('([a-z_.]+)', '[^']+', '[^']+', (?:true|false), (?:true|false)\)/g)].map((m) => m[1]);
 const now = Date.now();
 let ctr = 0;
 const STR = (k, path) => {

@@ -168,6 +168,7 @@ const ACTIONS = {
   },
   page_denied: async (uid, b, rid) => { await rpc("admin_log_denied", { p_actor: uid, p_action: "page:" + s(b.page, 30).replace(/[^a-z_]/g, ""), p_request: rid }); return { ok: true }; },
   product_overview: (uid, b) => rpc("admin_product_overview", { p_actor: uid, ...period(b) }),
+  data_overview: (uid, b) => rpc("admin_data_overview", { p_actor: uid, ...period(b) }),
   support_list: (uid, b) => rpc("admin_support", { p_actor: uid, p_status: s(b.status, 20) || null, p_mine: b.mine === true, p_page: int(b.page, 1) }),
   support_item: (uid, b, rid) => rpc("admin_support_item", { p_actor: uid, p_id: uuid(b.id), p_request: rid }),
   support_update: (uid, b, rid) => {

@@ -42,6 +42,7 @@ const ICON = {
   menu: "M3 6h18M3 12h18M3 18h18", collapse: "M11 17l-5-5 5-5M18 17l-5-5 5-5", out: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9", info: "M12 16v-4M12 8h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z",
   support: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM8 9h8M8 13h5", feedback: "M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z",
   work: "M9 11l3 3 8-8M4 6h4M4 12h4M4 18h16", content: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z", lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
+  data: "M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3",
   x: "M18 6 6 18M6 6l12 12", columns: "M12 3v18M3 3h18v18H3z", download: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3",
 };
 const ic = (k, cls = "i") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[k] || ICON.info}"/></svg>`;
@@ -223,14 +224,14 @@ async function renderMfa() {
 /* ───────────────────────── shell, navigation, top bar ───────────────────────── */
 const NAV = [
   ["Overview", [["dashboard", "Dashboard", "dashboard.view"], ["analytics", "Analytics", "analytics.view"], ["reports", "Reports", "reports.export"]]],
-  ["Operations", [["users", "Users", "users.view"], ["documents", "Documents", "documents.view"], ["health", "Platform health", "health.view"], ["errors", "Errors", "health.view"], ["incidents", "Incidents", "health.view"], ["alerts", "Alerts", "health.view"]]],
+  ["Operations", [["users", "Users", "users.view"], ["documents", "Documents", "documents.view"], ["data", "Database", "data.view"], ["health", "Platform health", "health.view"], ["errors", "Errors", "health.view"], ["incidents", "Incidents", "health.view"], ["alerts", "Alerts", "health.view"]]],
   ["Product", [["support", "Support", "support.view"], ["feedback", "Feedback", "feedback.view"], ["work", "Bugs and tasks", "bugs.view|feedback.view"], ["content", "Content and releases", "content.view|releases.view"]]],
   ["Control", [["flags", "Feature switches", "flags.view"], ["maintenance", "Maintenance", "flags.view|maintenance.manage"], ["announcements", "Announcements", "content.view"]]],
   ["Leadership", [["team", "Leadership", "team.view"], ["audit", "Audit log", "audit.view"], ["security", "Security events", "security.view"]]],
   ["Settings", [["definitions", "Metric definitions", "dashboard.view"], ["settings", "Admin settings", "dashboard.view"]]],
 ];
 const PAGES = Object.fromEntries(NAV.flatMap(([g, items]) => items.map(([k, t, p]) => [k, { title: t, group: g, perm: p }])));
-const PERIOD_VIEWS = new Set(["dashboard", "analytics", "documents", "reports", "audit", "support"]);
+const PERIOD_VIEWS = new Set(["dashboard", "analytics", "documents", "reports", "audit", "support", "data"]);
 
 function renderShell() {
   const env = (A.cfg.environment || "unset").toLowerCase();
@@ -321,7 +322,7 @@ function setupSearch() {
     if (q.length >= 2) { try { r = await api("search", { q }); } catch {} }
     if (input.value.trim() !== q) return;
     const html = `${pm.length ? `<h4>Pages</h4>${pm.map(([k, t]) => `<a href="#/${k}">${ic(k)}${esc(t)}</a>`).join("")}` : ""}
-      ${r.users.length ? `<h4>People</h4>${r.users.map((u) => `<button class="item" data-user="${esc(u.id)}">${ic("users")}<span>${esc(u.email)}<div class="muted mono">${esc(u.id.slice(0, 8))}</div></span></button>`).join("")}` : ""}
+      ${r.users.length ? `<h4>People</h4>${r.users.map((u) => `<button class="item" data-user="${esc(u.id)}">${ic("users")}<span>${esc(u.name || u.email)}<div class="muted mono">${u.name ? esc(u.email) + " · " : ""}${esc(u.id.slice(0, 8))}</div></span></button>`).join("")}` : ""}
       ${r.errors.length ? `<h4>Errors</h4>${r.errors.map((x) => `<button class="item" data-err="${esc(x.fingerprint)}">${ic("errors")}<span>${esc(x.kind)}<div class="muted">${esc(x.message)}</div></span></button>`).join("")}` : ""}
       ${r.incidents.length ? `<h4>Incidents</h4>${r.incidents.map((x) => `<a href="#/incidents">${ic("incidents")}<span>${esc(x.title)}<div class="muted">${esc(x.status)}</div></span></a>`).join("")}` : ""}
       ${!pm.length && !r.users.length && !r.errors.length && !r.incidents.length ? `<div class="muted" style="padding:8px">No matches for “${esc(q)}”.</div>` : ""}`;
@@ -632,24 +633,24 @@ VIEWS.reports = async (v, seq) => {
 };
 
 /* Users */
-const COLS = [["id", "Account ID"], ["email", "Email"], ["created_at", "Registered"], ["verified", "Email verification"], ["last_sign_in_at", "Last sign-in"], ["last_activity", "Last meaningful activity"], ["records", "Records"], ["files", "Files"], ["status", "Status"], ["role", "Role"]];
-const UQ = { q: "", status: "", sort: "created_desc", page: 1, size: ls.get("usize", 25), reg_from: "", reg_to: "", cols: ls.get("ucols", ["id", "email", "created_at", "verified", "last_sign_in_at", "last_activity", "records", "files", "status"]) };
+const COLS = [["id", "Account ID"], ["name", "Name"], ["email", "Email"], ["created_at", "Registered"], ["verified", "Email verification"], ["last_sign_in_at", "Last sign-in"], ["last_activity", "Last meaningful activity"], ["records", "Records"], ["files", "Files"], ["status", "Status"], ["role", "Role"]];
+const UQ = { q: "", status: "", sort: "created_desc", page: 1, size: ls.get("usize", 25), reg_from: "", reg_to: "", cols: ls.get("ucols.v2", ["id", "name", "email", "created_at", "verified", "last_sign_in_at", "last_activity", "records", "files", "status"]) };
 VIEWS.users = async (v, seq) => {
   const args = { q: UQ.q, status: UQ.status, sort: UQ.sort, page: UQ.page, size: UQ.size, reg_from: UQ.reg_from ? new Date(UQ.reg_from + "T00:00:00+05:30").toISOString() : null, reg_to: UQ.reg_to ? new Date(Date.parse(UQ.reg_to + "T00:00:00+05:30") + DAY).toISOString() : null };
   const d = await api("users", args);
   if (stale(seq)) return;
   const pages = Math.max(1, Math.ceil((d.total || 0) / (d.size || UQ.size || 25))), on = (c) => UQ.cols.includes(c);
   const sortBtn = (label, asc, desc) => `<button data-sort="${UQ.sort === desc ? asc : desc}" aria-label="Sort by ${label}">${label}${UQ.sort === desc ? " ▼" : UQ.sort === asc ? " ▲" : ""}</button>`;
-  const cell = { id: (u) => `<td class="mono" title="${esc(u.id)}">${esc(u.id.slice(0, 8))}</td>`, email: (u) => `<td>${esc(u.email || "(no email)")}</td>`, created_at: (u) => `<td>${dt(u.created_at, false)}</td>`,
+  const cell = { id: (u) => `<td class="mono" title="${esc(u.id)}">${esc(u.id.slice(0, 8))}</td>`, name: (u) => `<td>${u.name ? esc(u.name) : `<span class="muted">Not given</span>`}</td>`, email: (u) => `<td>${esc(u.email || "(no email)")}</td>`, created_at: (u) => `<td>${dt(u.created_at, false)}</td>`,
     verified: (u) => `<td>${u.email_confirmed_at ? `<span class="st good">Verified</span>` : `<span class="st warn">Not verified</span>`}</td>`, last_sign_in_at: (u) => `<td>${u.last_sign_in_at ? ago(u.last_sign_in_at) : `<span class="muted">Never</span>`}</td>`,
     last_activity: (u) => `<td>${u.last_activity ? ago(u.last_activity) : `<span class="muted">None yet</span>`}</td>`, records: (u) => `<td class="num">${n(u.records)}</td>`, files: (u) => `<td class="num">${n(u.files)}</td>`,
     status: (u) => `<td>${u.suspended ? `<span class="st bad">Suspended</span>` : `<span class="st good">Active</span>`}</td>`, role: (u) => `<td>${u.admin_role ? titleBadge(u.admin_role) : `<span class="muted">Member</span>`}</td>` };
-  const head = { id: "<th>Account ID</th>", email: `<th>${sortBtn("Email", "email", "email")}</th>`, created_at: `<th>${sortBtn("Registered", "created_asc", "created_desc")}</th>`, verified: "<th>Email verification</th>", last_sign_in_at: "<th>Last sign-in</th>",
+  const head = { id: "<th>Account ID</th>", name: `<th>${sortBtn("Name", "name", "name")}</th>`, email: `<th>${sortBtn("Email", "email", "email")}</th>`, created_at: `<th>${sortBtn("Registered", "created_asc", "created_desc")}</th>`, verified: "<th>Email verification</th>", last_sign_in_at: "<th>Last sign-in</th>",
     last_activity: `<th>${sortBtn("Last activity", "activity_asc", "activity_desc")}</th>`, records: `<th class="num">${sortBtn("Records", "records_desc", "records_desc")}</th>`, files: '<th class="num">Files</th>', status: "<th>Status</th>", role: "<th>Role</th>" };
   const filtered = UQ.q || UQ.status || UQ.reg_from || UQ.reg_to;
   v.innerHTML = `<div class="card">
     <form class="toolbar" id="uf" role="search">
-      <label class="sr" for="uq">Search by email or account ID</label><input id="uq" type="search" placeholder="Search email or account ID" value="${esc(UQ.q)}" style="min-width:min(240px,100%)">
+      <label class="sr" for="uq">Search by name, email or account ID</label><input id="uq" type="search" placeholder="Search name, email or account ID" value="${esc(UQ.q)}" style="min-width:min(240px,100%)">
       <label class="sr" for="us">Status</label><select id="us">${[["", "All accounts"], ["active", "Active"], ["suspended", "Suspended"], ["verified", "Email verified"], ["unverified", "Email not verified"], ["admins", "Admin team"]].map(([k, t]) => `<option value="${k}" ${UQ.status === k ? "selected" : ""}>${t}</option>`).join("")}</select>
       <span class="muted" style="font-size:12px">Registered</span><label class="sr" for="urf">Registered from</label><input type="date" id="urf" value="${esc(UQ.reg_from)}"><label class="sr" for="urt">Registered to</label><input type="date" id="urt" value="${esc(UQ.reg_to)}">
       <button class="btn primary sm">Apply</button>${filtered ? `<button class="btn ghost sm" type="button" id="uclear">Clear</button>` : ""}
@@ -672,7 +673,7 @@ VIEWS.users = async (v, seq) => {
   $("#pp").onclick = () => { UQ.page--; again(); }; $("#pn").onclick = () => { UQ.page++; again(); };
   $$("tr.click", v).forEach((tr) => { tr.onclick = () => openUser(tr.dataset.id); tr.onkeydown = (e) => { if (e.key === "Enter") openUser(tr.dataset.id); }; });
   $("#ucols").onclick = (e) => popover(e.currentTarget, `<h4>Show columns</h4>${COLS.map(([k, t]) => `<label style="display:flex;gap:8px;padding:6px 8px;cursor:pointer"><input type="checkbox" data-col="${k}" ${on(k) ? "checked" : ""}> ${t}</label>`).join("")}`, (pop) => {
-    $$("[data-col]", pop).forEach((c) => c.onchange = () => { UQ.cols = $$("[data-col]", pop).filter((x) => x.checked).map((x) => x.dataset.col); if (!UQ.cols.length) UQ.cols = ["email"]; ls.set("ucols", UQ.cols); closePop(); again(); });
+    $$("[data-col]", pop).forEach((c) => c.onchange = () => { UQ.cols = $$("[data-col]", pop).filter((x) => x.checked).map((x) => x.dataset.col); if (!UQ.cols.length) UQ.cols = ["email"]; ls.set("ucols.v2", UQ.cols); closePop(); again(); });
   });
   const csvB = $("#ucsv"); if (csvB) csvB.onclick = async () => {
     const r = args.reg_from && args.reg_to ? { from: args.reg_from, to: args.reg_to } : { from: new Date(Date.now() - 399 * DAY).toISOString(), to: new Date().toISOString() };
@@ -694,11 +695,11 @@ async function openUser(id) {
   const D = drawer("Account");
   let u; try { u = await api("user", { id }); } catch (e) { D.body.innerHTML = `<div class="callout bad">${errText(e)}</div>`; return; }
   if (!u) { D.body.innerHTML = stateBox("unavailable", "Account not found."); return; }
-  D.head.textContent = u.email || "(no email)";
+  D.head.textContent = u.name ? `${u.name} · ${u.email || "(no email)"}` : u.email || "(no email)";
   const g = u.usage, ad = u.adoption || {};
   const chip = (ok, label) => `<span class="chip ${ok ? "yes" : "no"}">${ok ? "✓" : "–"} ${label}</span>`;
   D.body.innerHTML = `<div class="row" style="margin-bottom:12px">${u.suspended ? `<span class="st bad">Suspended</span>` : `<span class="st good">Active</span>`}${u.admin_role ? titleBadge(u.admin_role) : ""}<span class="mono muted">${esc(u.id)}</span></div>
-    <h4>Account</h4><dl class="dl"><dt>Registered</dt><dd>${dt(u.created_at)}</dd><dt>Email confirmed</dt><dd>${u.email_confirmed_at ? dt(u.email_confirmed_at) : "Not yet"}</dd><dt>First meaningful activity</dt><dd>${dt(u.first_activity)}</dd><dt>Last sign-in</dt><dd>${dt(u.last_sign_in_at)}</dd><dt>Last meaningful activity</dt><dd>${dt(g.last_activity)}</dd><dt>Sign-in methods</dt><dd>${(u.sign_in_methods || []).map((m) => `<span class="tag">${esc(m)}</span>`).join(" ") || "—"}</dd><dt>Two-step sign-in</dt><dd>${u.mfa ? "On" : "Off"}</dd></dl>
+    <h4>Account</h4><dl class="dl"><dt>Name</dt><dd>${u.name ? esc(u.name) : `<span class="muted">Not given at sign-up</span>`}</dd><dt>Email</dt><dd>${esc(u.email || "—")}</dd><dt>Registered</dt><dd>${dt(u.created_at)}</dd><dt>Email confirmed</dt><dd>${u.email_confirmed_at ? dt(u.email_confirmed_at) : "Not yet"}</dd><dt>First meaningful activity</dt><dd>${dt(u.first_activity)}</dd><dt>Last sign-in</dt><dd>${dt(u.last_sign_in_at)}</dd><dt>Last meaningful activity</dt><dd>${dt(g.last_activity)}</dd><dt>Sign-in methods</dt><dd>${(u.sign_in_methods || []).map((m) => `<span class="tag">${esc(m)}</span>`).join(" ") || "—"}</dd><dt>Two-step sign-in</dt><dd>${u.mfa ? "On" : "Off"}</dd></dl>
     <h4>Usage summary (counts only)</h4><dl class="dl"><dt>Records</dt><dd>${n(g.records)} ${Object.keys(g.records_by_source || {}).length ? `<span class="muted">(${Object.entries(g.records_by_source).map(([k, c]) => esc(k) + " " + n(c)).join(", ")})</span>` : ""}</dd><dt>Files stored</dt><dd>${n(g.files)} · ${bytes(g.file_bytes)}</dd><dt>Medicines</dt><dd>${n(g.medicines)}</dd><dt>Doses recorded</dt><dd>${n(g.doses_recorded)}</dd><dt>Active days (30 days)</dt><dd>${n(g.active_days_30)}</dd><dt>Failed uploads (30 days)</dt><dd>${n(u.uploads.failed_30d)}</dd></dl>
     <h4>Feature adoption</h4><div class="chips">${chip(ad.profile, "Profile")}${chip(ad.record, "Records")}${chip(ad.file, "Documents")}${chip(ad.schedule, "Medicine schedules")}${chip(ad.dose, "Dose tracking")}${chip(ad.search, "Search")}${chip(ad.export, "Export")}</div><p class="hint">Search and export show only if the person switched on measurements.</p>
     <h4>Actions</h4><div class="row">
@@ -1074,13 +1075,14 @@ VIEWS.team = async (v, seq) => {
       e.preventDefault(); const email = $("#te", d).value.trim(), reason = $("#tir", d).value.trim();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $("#terr", d).textContent = "Enter an email address."; return; }
       if (!reason) { $("#terr", d).textContent = "Please give a reason."; return; }
+      const sb = $("button.primary", d); if (sb.disabled) return; sb.disabled = true; sb.textContent = "Sending…"; // one invitation per click
       try {
         const out = await api("invite", { email, permissions: readPerms(d), reason });
-        if (out && out.ok === false) { $("#terr", d).textContent = out.error === "already_member" ? "That account is already in the leadership team." : "Not sent."; return; }
+        if (out && out.ok === false) { sb.disabled = false; sb.textContent = "Send invitation"; $("#terr", d).textContent = out.error === "already_member" ? "That account is already in the leadership team." : "Not sent."; return; }
         d.close(); d.remove();
         toast(out.delivery === "email_sent" ? `Invitation emailed to ${email}. It expires in 7 days.` : out.delivery === "existing_account" ? `${email} already has a Doctine account: ask them to sign in at app.doctine.com/admin to accept.` : `Invitation recorded, but the email could not be sent (Supabase may be limiting emails). Ask ${email} to create a Doctine account and sign in at /admin, or revoke and try later.`, out.delivery === "email_failed");
         reload();
-      } catch (er) { $("#terr", d).innerHTML = errText(er); }
+      } catch (er) { sb.disabled = false; sb.textContent = "Send invitation"; $("#terr", d).innerHTML = errText(er); }
     };
   };
   $$("[data-revoke]", v).forEach((b) => b.onclick = async () => {
@@ -1106,6 +1108,32 @@ VIEWS.team = async (v, seq) => {
     const re = $("#mre", D.body); if (re) re.onclick = () => set("active", "Reactivate this Co-Founder?", false, null);
     $("#mrm", D.body).onclick = () => set("removed", "Remove this person from leadership?", true, null);
   });
+};
+
+/* Database overview: what is stored, never what is in it */
+const AREA_ORDER = ["Health data", "Consent", "App data", "Support and product", "Administration", "Operations", "Measurements"];
+VIEWS.data = async (v, seq) => {
+  const p = periodRange(); const d = await api("data_overview", p); if (stale(seq)) return;
+  const tables = d.tables || [], buckets = d.buckets || [], rlsOff = tables.filter((t) => !t.rls);
+  const sBytes = buckets.reduce((a, b) => a + (+b.bytes || 0), 0), sFiles = buckets.reduce((a, b) => a + (+b.objects || 0), 0);
+  const areas = [...new Set([...AREA_ORDER, ...tables.map((t) => t.area)])].filter((a) => tables.some((t) => t.area === a));
+  const health = tables.filter((t) => t.area === "Health data");
+  v.innerHTML = `<div class="callout" style="margin-bottom:12px">${ic("lock")}<span>What Doctine stores, table by table: counts, growth, size and security, never the contents. Health tables are counted, not opened, by design. Generated ${dt(d.generated_at)} IST.</span></div>
+  <div class="grid kpis">
+    ${kpi({ id: "d-acc", label: "Accounts", value: d.accounts, meta: `<span class="muted">${n(d.accounts_new)} new in ${esc(p.label.toLowerCase())}</span>`, href: can("users.view") ? "#/users" : undefined })}
+    ${kpi({ id: "d-size", label: "Database size", display: bytes(d.database_bytes), meta: `<span class="muted">${n(tables.length)} tables</span>` })}
+    ${kpi({ id: "d-files", label: "Files in storage", value: sFiles, meta: `<span class="muted">${bytes(sBytes)} in ${n(buckets.length)} bucket${buckets.length === 1 ? "" : "s"}</span>` })}
+    ${kpi({ id: "d-rls", label: "Tables without row-level security", value: rlsOff.length, meta: rlsOff.length ? `<span class="st bad">Needs attention</span>` : `<span class="st good">Every table protected</span>` })}
+  </div>
+  <div class="grid cols-2" style="margin-top:12px">
+    ${card("Where health data is", "Rows per health table", hbars(health.filter((t) => +t.rows > 0).sort((a, b) => b.rows - a.rows).map((t) => ({ label: t.purpose, value: +t.rows })), {}), {})}
+    ${card("Storage buckets", "Files and space used", buckets.length ? `<div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Bucket</th><th>Access</th><th class="num">Files</th><th class="num">Size</th><th class="num">New</th></tr></thead><tbody>${buckets.map((b) => `<tr><td class="mono">${esc(b.id)}</td><td>${b.public ? `<span class="st bad">Public</span>` : `<span class="st good">Private</span>`}</td><td class="num">${n(b.objects)}</td><td class="num">${bytes(b.bytes)}</td><td class="num">${n(b.new_in_period)}</td></tr>`).join("")}</tbody></table></div>` : none("No storage buckets."), {})}
+  </div>
+  ${areas.map((a) => `${section(a)}<div class="card"><div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Table</th><th class="num">Rows</th><th class="num">New in period</th><th>Last write</th><th class="num">Size</th><th>Row-level security</th></tr></thead><tbody>
+    ${tables.filter((t) => t.area === a).map((t) => `<tr data-table="${esc(t.schema + "." + t.table)}"><td><b>${esc(t.purpose)}</b><div class="muted mono">${esc(t.schema)}.${esc(t.table)}</div></td><td class="num">${t.estimated ? "≈" : ""}${n(t.rows)}</td><td class="num">${t.new_in_period == null ? `<span class="muted">—</span>` : n(t.new_in_period)}</td><td>${t.last_write ? ago(t.last_write) : `<span class="muted">—</span>`}</td><td class="num">${bytes(t.bytes)}</td>
+      <td>${t.rls ? `<span class="st good">On</span> <span class="muted">${t.schema === "private" ? "server functions only" : `${n(t.policies)} polic${t.policies === 1 ? "y" : "ies"}${t.browser_access ? " · each person reaches only their own rows" : ""}`}</span>` : `<span class="st bad">Off</span>`}</td></tr>`).join("")}
+  </tbody></table></div></div>`).join("")}
+  <p class="hint" style="margin-top:12px">Looking inside individual rows is deliberately not possible here. The Supabase dashboard's Table Editor can, but Doctine does not record who looks there, so keep that access to the Founder and use it only when there is no other way.</p>`;
 };
 
 /* Support requests (people write in from the app's Settings → Help and feedback) */

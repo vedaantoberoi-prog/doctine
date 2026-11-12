@@ -13,12 +13,12 @@ const BASE = process.env.DOCTINE_BASE || "http://localhost:8888";
 const fakeSrc = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
 const migDir = new URL("../../supabase/migrations/", import.meta.url);
 // The permission catalogue and presets, read from the migration that defines them (so the stand-in cannot drift).
-const latest = readdirSync(migDir).filter((f) => readFileSync(new URL(f, migDir), "utf8").includes("function private.perm_catalog")).sort().pop();
-const sql = readFileSync(new URL(latest, migDir), "utf8");
-const CATALOG = [...sql.slice(sql.indexOf("function private.perm_catalog"), sql.indexOf("function private.grantable")).matchAll(/\('([a-z_.]+)', '([^']+)', '([^']+)', (true|false), (true|false)\)/g)].map((m) => ({ key: m[1], group: m[2], label: m[3], founder_only: m[4] === "true", standard: m[5] === "true" }));
+const lastDefining = (fn) => readFileSync(new URL(readdirSync(migDir).filter((f) => readFileSync(new URL(f, migDir), "utf8").includes("function " + fn + "(")).sort().pop(), migDir), "utf8");
+const sql = lastDefining("private.perm_catalog"), presetSql = lastDefining("private.perm_preset");
+const CATALOG = [...sql.slice(sql.indexOf("function private.perm_catalog"), sql.indexOf("$$;", sql.indexOf("function private.perm_catalog"))).matchAll(/\('([a-z_.]+)', '([^']+)', '([^']+)', (true|false), (true|false)\)/g)].map((m) => ({ key: m[1], group: m[2], label: m[3], founder_only: m[4] === "true", standard: m[5] === "true" }));
 const GRANTABLE = CATALOG.filter((c) => !c.founder_only).map((c) => c.key);
 const PRESET = { standard: CATALOG.filter((c) => c.standard).map((c) => c.key), operations: GRANTABLE };
-for (const m of sql.slice(sql.indexOf("function private.perm_preset")).matchAll(/when '([a-z_]+)' then array\[([^\]]+)\]/g)) PRESET[m[1]] = [...m[2].matchAll(/'([a-z_.]+)'/g)].map((x) => x[1]);
+for (const m of presetSql.slice(presetSql.indexOf("function private.perm_preset")).matchAll(/when '([a-z_]+)' then array\[([^\]]+)\]/g)) PRESET[m[1]] = [...m[2].matchAll(/'([a-z_.]+)'/g)].map((x) => x[1]);
 // The Founder, and Co-Founders holding the presets named after the earlier roles.
 const MEMBER_BY_EMAIL = { "owner@example.test": ["founder", CATALOG.map((c) => c.key)], "admin@example.test": ["co_founder", PRESET.admin], "analyst@example.test": ["co_founder", PRESET.analyst],
   "support@example.test": ["co_founder", PRESET.support], "auditor@example.test": ["co_founder", PRESET.auditor], "product@example.test": ["co_founder", PRESET.standard] };
@@ -26,7 +26,7 @@ const NEEDS = { overview: "dashboard.view", series: "analytics.view", funnel: "a
   users: "users.view", user: "users.view", user_suspend: "users.suspend", user_restore: "users.suspend", user_revoke_sessions: "users.suspend", user_reset_password: "users.reset_password", user_note: "users.notes",
   documents: "documents.view", flags: "flags.view", set_flag: "flags.manage", set_maintenance: "maintenance.manage", announcements: "dashboard.view", announcement_save: "content.edit", incidents: "health.view",
   incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view",
-  perm_catalog: "dashboard.view", invite: "team.manage", invite_revoke: "team.manage", member_set: "team.manage", session: "dashboard.view", page_denied: "dashboard.view", product_overview: "dashboard.view",
+  data_overview: "data.view", perm_catalog: "dashboard.view", invite: "team.manage", invite_revoke: "team.manage", member_set: "team.manage", session: "dashboard.view", page_denied: "dashboard.view", product_overview: "dashboard.view",
   support_list: "support.view", support_item: "support.view", support_update: "support.view", support_message: "support.respond", feedback: "feedback.view", feedback_update: "feedback.manage",
   work: "bugs.view|feedback.view", work_save: "bugs.manage|feedback.manage", content: "content.view|releases.view", content_save: "content.edit",
   errors: "health.view", error: "health.view", error_update: "alerts.manage", report: "reports.export", exports: "reports.export", prefs: "dashboard.view", set_prefs: "dashboard.view", settings_status: "dashboard.view" };
@@ -56,8 +56,13 @@ function data(action, body) {
       errors: [{ fingerprint: "0123456789abcdef0123456789abcdef", kind: "TypeError", message: "x is undefined", last_seen: iso(now - 600e3), count: 3, source: "client" }], checks: [{ target: "app", ok: true, ms: 120, at: iso(now - 300e3), status: 200 }],
       admin_actions: ROLE.perms.includes("audit.view") ? [{ at: iso(now - 900e3), action: "flag.set", outcome: "ok", by: "owner@example.test" }] : null, incidents: [], alerts: [{ id: "c0000000-0000-0000-0000-000000000001", severity: "warning", message: "No scheduled health check has run since 10 Nov 10:00 IST", service: "monitoring", status: "open", opened_at: iso(now - 7200e3) }] },
     search: { users: ROLE.perms.includes("users.view") ? [{ id: "b0000000-0000-0000-0000-000000000001", email: "asha.sample@example.test" }] : [], errors: [], incidents: [] },
-    users: { total: 60, page: body.page || 1, size: body.size || 25, rows: Array.from({ length: Math.min(body.size || 25, 3) }, (_, i) => ({ id: `b0000000-0000-0000-0000-00000000000${i + 1}`, email: `person${i + 1}.sample@example.test`, created_at: iso(now - i * 864e5), email_confirmed_at: i ? iso(now) : null, last_sign_in_at: null, suspended: false, admin_role: null, records: i, files: 0, last_activity: null })) },
-    user: { id: "b0000000-0000-0000-0000-000000000001", email: "person1.sample@example.test", created_at: iso(now), email_confirmed_at: null, last_sign_in_at: null, suspended: false, admin_role: null, sign_in_methods: ["email"], mfa: false, first_activity: null,
+    users: { total: 60, page: body.page || 1, size: body.size || 25, rows: Array.from({ length: Math.min(body.size || 25, 3) }, (_, i) => ({ id: `b0000000-0000-0000-0000-00000000000${i + 1}`, email: `person${i + 1}.sample@example.test`, name: i === 1 ? null : `Person ${i + 1} Sample`, created_at: iso(now - i * 864e5), email_confirmed_at: i ? iso(now) : null, last_sign_in_at: null, suspended: false, admin_role: null, records: i, files: 0, last_activity: null })) },
+    data_overview: { generated_at: iso(now), database_bytes: 12582912, accounts: 14, accounts_new: 3,
+      tables: [{ schema: "public", table: "health_profiles", area: "Health data", purpose: "Health profiles", rows: 11, estimated: false, new_in_period: 2, last_write: iso(now - 3600e3), bytes: 65536, rls: true, rls_forced: false, policies: 4, browser_access: true },
+        { schema: "public", table: "medicines", area: "Health data", purpose: "Medicines", rows: 2, estimated: false, new_in_period: 0, last_write: iso(now - 864e5), bytes: 32768, rls: true, rls_forced: false, policies: 4, browser_access: true },
+        { schema: "private", table: "admin_audit_log", area: "Administration", purpose: "Audit log (append-only)", rows: 40, estimated: false, new_in_period: 40, last_write: null, bytes: 98304, rls: true, rls_forced: false, policies: 0, browser_access: false }],
+      buckets: [{ id: "documents", public: false, file_size_limit: 10485760, objects: 0, bytes: 0, new_in_period: 0 }] },
+    user: { id: "b0000000-0000-0000-0000-000000000001", email: "person1.sample@example.test", name: "Person 1 Sample", created_at: iso(now), email_confirmed_at: null, last_sign_in_at: null, suspended: false, admin_role: null, sign_in_methods: ["email"], mfa: false, first_activity: null,
       usage: { records: 2, records_by_source: { scan: 2 }, files: 1, file_bytes: 120000, medicines: 0, doses_recorded: 0, profile_saved: true, last_activity: null, active_days_30: 1 }, adoption: { profile: true, record: true, file: true, schedule: false, dose: false, search: false, export: false },
       uploads: { failed_30d: 0, processing_failed_30d: 0 }, notes: ROLE.perms.includes("users.notes") ? [] : null, admin_actions: [] },
     user_suspend: { ok: true, sessions_ended: 1 }, user_reset_password: { ok: true },
@@ -167,7 +172,7 @@ await ctx.close();
 
 // ── owner ──
 ({ ctx, pg, log } = await open("owner@example.test"));
-check("2 · the Founder sees every section, grouped", JSON.stringify(await navKeys(pg)) === JSON.stringify(["dashboard", "analytics", "reports", "users", "documents", "health", "errors", "incidents", "alerts", "support", "feedback", "work", "content", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"]));
+check("2 · the Founder sees every section, grouped", JSON.stringify(await navKeys(pg)) === JSON.stringify(["dashboard", "analytics", "reports", "users", "documents", "data", "health", "errors", "incidents", "alerts", "support", "feedback", "work", "content", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"]));
 check("5 · the Founder is titled FOUNDER in the top bar and on a Founder dashboard", /founder/i.test(await text(pg, "#who .title-badge")) && (await text(pg, ".hello h2")) === "Founder dashboard");
 check("console sign-in is recorded once on entry", log.calls.filter((c) => c.action === "session" && c.event === "sign_in").length === 1);
 check("top bar: title, breadcrumb, date range, search, notifications, refresh, environment and profile", (await text(pg, "#title")) === "Dashboard" && (await text(pg, "#crumb")) === "Overview" && !!(await pg.$("#q")) && !!(await pg.$("#bell")) && !!(await pg.$("#refresh")) && (await text(pg, ".env")).toLowerCase() === "staging" && (await text(pg, "#who")).includes("owner@example.test"));
@@ -210,6 +215,7 @@ check("the funnel shows conversion and drop-off between steps", (await text(pg, 
 // users
 await go(pg, "#/users", "tr.click");
 check("users: the default columns include account ID, verification, last activity, records, files and status", ["Account ID", "Email verification", "Last activity", "Records", "Files", "Status"].every((h) => (log, true)) && await pg.evaluate(() => ["Account ID", "Email verification", "Last activity", "Records", "Files", "Status"].every((h) => document.querySelector("thead").innerText.includes(h))));
+check("users: names given at sign-up are shown, with 'Not given' where there is none", (await text(pg, "tbody")).includes("Person 1 Sample") && (await text(pg, "tbody")).includes("Not given") && (await text(pg, "thead")).includes("Name"));
 await pg.click("#pn"); await settle(pg);
 check("8 · pagination asks the server for page 2", log.calls.filter((c) => c.action === "users").pop().page === 2);
 await pg.selectOption("#usz", "50"); await settle(pg);
@@ -292,6 +298,10 @@ await go(pg, "#/settings", "#pe");
 check("admin settings: email preference saved but clearly marked as not delivering while no email provider is configured", (await text(pg, "#view")).includes("Email delivery is not configured"));
 await pg.click("#pe"); await pg.click("#psave"); await settle(pg);
 check("notification preferences are saved on the server", log.calls.some((c) => c.action === "set_prefs" && c.email_alerts === true));
+// database overview
+await go(pg, "#/data", '[data-table="public.health_profiles"]');
+check("database: accounts, size, storage and tables without row-level security, then each table's purpose, rows, growth, size and security", (await text(pg, '[data-kpi="d-acc"]')).includes("14") && (await text(pg, '[data-kpi="d-rls"]')).includes("Every table protected") && (await text(pg, '[data-table="public.health_profiles"]')).includes("11") && (await text(pg, "#view")).includes("never the contents"));
+check("database: no row contents, only counts (no names, values or file links)", !/@example\.test|Sample|https?:\/\//.test(await text(pg, "#view")));
 // leadership
 await go(pg, "#/team", "[data-member]");
 check("leadership: Founder and Co-Founder titles, permissions, two-step status and invitations", /founder/i.test(await text(pg, '[data-member="a0000000-0000-0000-0000-000000000001"] .title-badge')) && /co-founder/i.test(await text(pg, '[data-member="a0000000-0000-0000-0000-000000000002"] .title-badge')) && (await text(pg, "#view")).includes("pending.person@example.test"));

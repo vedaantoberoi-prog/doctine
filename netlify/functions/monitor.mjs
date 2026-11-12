@@ -21,8 +21,8 @@ export default async (req, context) => {
   if (run.ok) {
     const pending = run.data.to_notify || [];
     if (pending.length) {
-      email = await emailAlerts(pending);
-      if (email === "sent") await rpc("monitor_mark_notified", { p_ids: pending.map((a) => a.id), p_via: "email" });
+      email = await emailAlerts(pending, run.data.recipients);
+      if (email === "sent" || email === "partly_sent") await rpc("monitor_mark_notified", { p_ids: pending.map((a) => a.id), p_via: "email" });
       else unnotified = pending.length;
     } else email = "nothing_new";
   }

@@ -326,11 +326,11 @@ const API=(window.DOCTINE_API||'').replace(/\/$/,''); // empty on the website; t
 /* Error reports for Doctine's own error tracker: the error type, a short message and where in the code it happened.
    The server removes quoted text, numbers and email addresses before storing; no account, page content or record is sent.
    At most 5 different errors per page load, and only on the real site (not the website's preview or local files). */
-(()=>{const seen=new Set();const send=(kind,msg,where)=>{try{if(!/^https:$/.test(location.protocol)||/app-preview/.test(location.pathname))return;const k=kind+'|'+msg+'|'+where;if(seen.has(k)||seen.size>=5)return;seen.add(k);
- fetch(API+'/api/errors',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({kind:String(kind).slice(0,60),message:String(msg).slice(0,300),location:String(where).slice(0,160)})}).catch(()=>{})}catch{}};
+(()=>{const seen=new Set();const send=(kind,msg,where,stack)=>{try{if(!/^https:$/.test(location.protocol)||/app-preview/.test(location.pathname))return;const k=kind+'|'+msg+'|'+where;if(seen.has(k)||seen.size>=5)return;seen.add(k);
+ fetch(API+'/api/errors',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({kind:String(kind).slice(0,60),message:String(msg).slice(0,300),location:String(where).slice(0,160),stack:String(stack||'').slice(0,1500),route:(location.hash||'').slice(0,40)})}).catch(()=>{})}catch{}};
  const here=f=>{try{const u=new URL(f,location.href);return u.origin===location.origin?u.pathname:'(external script)'}catch{return''}};
- addEventListener('error',e=>{if(!e.error&&!e.message)return;send(e.error&&e.error.name||'Error',e.message||'',here(e.filename||'')+':'+(e.lineno||0)+':'+(e.colno||0))});
- addEventListener('unhandledrejection',e=>{const r=e.reason;if(r&&r.name==='AbortError')return;const st=r&&r.stack&&String(r.stack).split('\n').find(l=>/https?:\/\//.test(l))||'';const m=st.match(/(https?:\/\/[^\s)]+?):(\d+):(\d+)/);send((r&&r.name)||'UnhandledRejection',(r&&r.message)||String(r||''),m?here(m[1])+':'+m[2]+':'+m[3]:'(promise)')})})();
+ addEventListener('error',e=>{if(!e.error&&!e.message)return;send(e.error&&e.error.name||'Error',e.message||'',here(e.filename||'')+':'+(e.lineno||0)+':'+(e.colno||0),e.error&&e.error.stack)});
+ addEventListener('unhandledrejection',e=>{const r=e.reason;if(r&&r.name==='AbortError')return;const st=r&&r.stack&&String(r.stack).split('\n').find(l=>/https?:\/\//.test(l))||'';const m=st.match(/(https?:\/\/[^\s)]+?):(\d+):(\d+)/);send((r&&r.name)||'UnhandledRejection',(r&&r.message)||String(r||''),m?here(m[1])+':'+m[2]+':'+m[3]:'(promise)',r&&r.stack)})})();
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const isOn=(m,d)=>(m.status||'active')==='active'&&d>=m.start&&(!m.end||d<=m.end)&&((m.freq||'daily')==='daily'||(m.days||[]).includes(new Date(d+'T00:00:00').getDay()));
@@ -961,7 +961,7 @@ function cloudAuthView(){
   body=`<form id="lf" class="au-form" novalidate>${auField('email','Email','email','autocomplete="username email" inputmode="email" autocapitalize="off" spellcheck="false"')}<div class="au-field"><div class="au-row"><label for="au-pw">Password</label><button type="button" class="au-link" data-auth="forgot">Forgot password?</button></div><div class="au-pw"><input class="au-inp" id="au-pw" name="pw" type="password" autocomplete="current-password" required><button type="button" class="au-eye" id="pwtoggle" aria-controls="au-pw" aria-pressed="false" aria-label="Show password">Show</button></div></div>
   <div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Signing in…">Sign in</button></form>${auGoogle()}<p class="au-alt">New to Doctine? <button type="button" class="au-link" data-auth="register">Create an account</button></p>
   ${feat('sample_data')?'<p class="au-sample"><button type="button" id="samp" class="au-link">Explore with sample data</button><span>Fictional records. Nothing is saved.</span></p>':''}`}
- return authShell(`<div class="au-card"><h1>${h}</h1>${sub?`<p class="au-sub">${sub}</p>`:''}${body}</div>`)}
+ return authShell(`<div class="au-card">${authNotices()}<h1>${h}</h1>${sub?`<p class="au-sub">${sub}</p>`:''}${body}</div>`)}
 function authView(){
  if(S.auth==='about')return`<div class="ab-wrap" style="padding-block:1rem 0;display:flex;justify-content:space-between;align-items:center;gap:1rem"><span class="flex items-center gap-2">${LOGO}<span class="serif text-xl">Doctine</span></span><button class="btn" data-auth="login">Sign in</button></div>${aboutBody('public')}`;
  if(CLOUD.on)return cloudAuthView();
@@ -1181,6 +1181,11 @@ function track(name,props={},key){try{if(!S.cloud||!S.consent||!S.consent.analyt
  key=key||name+':'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
  CLOUD.sb.auth.getSession().then(({data})=>{const t=data&&data.session&&data.session.access_token;if(!t)return;
   fetch(API+'/api/events',{method:'POST',keepalive:true,headers:{'content-type':'application/json',authorization:'Bearer '+t},body:JSON.stringify({name,props,key})}).catch(()=>{})}).catch(()=>{})}catch{}}
+/* On the sign-in screen: maintenance and announcements meant for everyone (not only signed-in people). */
+function authNotices(){if(!CLOUD.on)return'';let h='';
+ if(CLOUD.maint&&CLOUD.maint.on)h+=`<div class="warn" role="status" style="margin-bottom:1rem"><b>Maintenance.</b> ${esc(CLOUD.maint.message||'Doctine is being updated.')}</div>`;
+ for(const n of CLOUD.notices||[])if(n&&n.audience==='all')h+=`<div class="card p-3" role="status" style="margin-bottom:1rem;font-size:.9rem"><b>${esc(n.title)}</b>${n.body?' '+esc(n.body):''}</div>`;
+ return h}
 function noticesHTML(){if(!CLOUD.on)return'';let h='';
  if(CLOUD.maint&&CLOUD.maint.on)h+=`<div class="warn m-3" role="status"><b>Maintenance.</b> ${esc(CLOUD.maint.message||'Doctine is being updated.')} Your records are safe and you can keep using Doctine; new file uploads and the assistant are paused for now.</div>`;
  let gone=[];try{gone=JSON.parse(localStorage.getItem('doctine:notices-dismissed')||'[]')}catch{}

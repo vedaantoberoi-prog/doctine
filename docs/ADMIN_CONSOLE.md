@@ -15,25 +15,24 @@ The audit log refuses UPDATE, DELETE and TRUNCATE for everyone, including the da
 
 ### Roles
 
-| Permission | owner | super_admin | operations | analyst | support | developer |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| Dashboard | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Analytics | ✓ | ✓ | ✓ | ✓ | | ✓ |
-| CSV exports | ✓ | ✓ | ✓ | ✓ | | |
-| View accounts | ✓ | ✓ | ✓ | | ✓ | |
-| Suspend / restore / end sessions | ✓ | ✓ | ✓ | | | |
-| Send password reset email | ✓ | ✓ | ✓ | | ✓ | |
-| Support notes | ✓ | ✓ | ✓ | | ✓ | |
-| Documents (technical metadata) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Platform health, uptime, errors, incidents (view) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Manage incidents, alerts and errors | ✓ | ✓ | ✓ | | | ✓ |
-| View switches | ✓ | ✓ | ✓ | | | ✓ |
-| Change switches, maintenance | ✓ | ✓ | | | | |
-| Announcements | ✓ | ✓ | ✓ | | | |
-| View team | ✓ | ✓ | | | | |
-| Appoint / change / remove admins | ✓ | | | | | |
-| Audit log | ✓ | ✓ | | | | |
-| Security events | ✓ | ✓ | | | | ✓ |
+Five roles, least privilege first. Migration `20261112030000_admin_console_v2.sql` maps the earlier roles across:
+super_admin and operations → admin, developer → analyst.
+
+| Permission | owner | admin | analyst | support | auditor |
+|---|:-:|:-:|:-:|:-:|:-:|
+| Dashboard headline figures | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Analytics and trend charts | ✓ | ✓ | ✓ | | |
+| Reports (CSV, PDF) and export history | ✓ | ✓ | ✓ | | ✓ |
+| View accounts | ✓ | ✓ | | ✓ | |
+| Suspend / restore / end sessions | ✓ | ✓ | | | |
+| Send password reset email, support notes | ✓ | ✓ | | ✓ | |
+| Documents (technical metadata) | ✓ | ✓ | ✓ | | |
+| Platform health, uptime, errors, incidents, alerts (view) | ✓ | ✓ | ✓ | ✓ | |
+| Manage incidents, alerts and errors | ✓ | ✓ | | | |
+| View and change switches, maintenance, announcements | ✓ | ✓ | | | |
+| View team | ✓ | ✓ | | | ✓ |
+| Appoint / change / suspend / remove admins | ✓ | | | | |
+| Audit log, security events | ✓ | ✓ | | | ✓ |
 
 The single source is `private.role_perms()` in the migration. Extra rules: nobody can suspend or change themselves;
 only an owner can suspend another admin; there must always be one active owner; admins are appointed from existing
@@ -47,6 +46,11 @@ or file links. The document view is counts, sources, sizes, file types and failu
 
 ## Setting it up (owner, once) — needs your approval at each step
 
+0. **Later migrations, in order:** `20261112010000_admin_profile_activity.sql` (applied),
+   `20261112020000_private_rls.sql` and `20261112030000_admin_console_v2.sql` (the redesign). The v2 migration replaces
+   `admin_users` with an 8-argument version, so the app build containing the redesigned console must be deployed
+   straight after it; the old console would show an error on Users until then. Nothing in v2 deletes rows: it adds
+   columns, tables, indexes and functions, and maps old role names.
 1. **Review the migration** `supabase/migrations/20261112000000_admin_console.sql`. It only adds: a `private` schema with
    new tables, new functions, five indexes on existing tables, and one replaced storage policy
    ("health-documents: owner uploads" gains `and public.uploads_allowed()`). No existing table, column or row changes.
@@ -95,6 +99,10 @@ Changes reach the app within about 20 seconds (server cache) on the next page lo
 - **Scheduled health round:** `.github/workflows/uptime.yml` calls `GET /api/monitor` every 15 minutes. The server itself
   checks the app (`/version.json`), the database, sign-in and storage, records the results (at most one round per
   4 minutes, whoever calls), evaluates the alert rules, and replies with counts only.
+- **AI provider check:** when `ANTHROPIC_API_KEY` is set, each round lists models (no AI request, no health data) and the
+  console shows Operational / Configured but failing / Disabled by switch / Not configured.
+- **Maintenance windows:** a window with a start and end turns maintenance on and off at those times, enforced in the
+  database (`private.maintenance_on()`), so it needs no scheduler.
 - **Uptime history:** Platform health shows per-service pass rates, typical and slow response times, and a bar per
   hour or 6 hours for the last 7 days. Opening Platform health also records a round.
 - **Error tracking:** the app reports uncaught errors to `/api/errors` (same-origin only, rate-limited); the Cloudflare

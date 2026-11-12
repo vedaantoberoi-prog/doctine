@@ -103,9 +103,13 @@ await test("bad ids, unknown actions, oversized bodies and GET are refused", asy
   assert.equal((await admin(new Request("https://d/api/admin"), {})).status, 405);
 });
 await test("CSV export: a file, no health columns, and cells cannot run as spreadsheet formulas", async () => {
-  const r = await post(admin, tok("owner"), { action: "export", report: "daily", from: "2026-11-01T00:00:00Z", to: "2026-11-12T00:00:00Z" });
-  assert.equal(r.status, 200); assert.match(r.headers.get("content-disposition"), /attachment; filename="doctine-daily-/);
-  const t = await r.text(); replies.push(t); assert.match(t.split("\n")[0], /^day,users_total,users_new,dau/); assert.match(t, /\n'=HYPERLINK\(1\),3/);
+  calls = [];
+  const r = await post(admin, tok("owner"), { action: "report", report: "growth", format: "csv", from: "2026-11-01T00:00:00Z", to: "2026-11-12T00:00:00Z" });
+  assert.equal(r.status, 200); assert.match(r.headers.get("content-disposition"), /attachment; filename="doctine-growth-2026-11-01-to-2026-11-12\.csv"/);
+  const t = await r.text(); replies.push(t); assert.match(t, /^# User growth/); assert.match(t, /\nDay,New accounts,Total accounts\n/); assert.match(t, /\n'=HYPERLINK\(1\),/);
+  const logs = calls.filter((c) => c.url.endsWith("/rpc/admin_log_action")).map((c) => c.body.p_outcome);
+  assert.deepEqual(logs, ["requested", "ok"], "each export is logged before and after");
+  const bad = await post(admin, tok("owner"), { action: "report", report: "medical_records", format: "csv" }); assert.equal(bad.status, 400, "unknown report kinds are refused");
 });
 await test("PDF report: a real PDF file, permission checked before any figures are read", async () => {
   calls = []; const r = await post(admin, tok("owner"), { action: "pdf", from: "2026-11-01T00:00:00Z", to: "2026-11-12T00:00:00Z" });
@@ -139,7 +143,9 @@ await test("/api/errors takes reports from this site only, and passes just kind,
   const bad = await errorsFn(new Request("https://app.doctine.test/api/errors", { method: "POST", headers: { origin: "https://evil.example" }, body: "{}" }), { ip: "10.4.0.1" });
   assert.equal(bad.status, 403);
   const ok = await errorsFn(new Request("https://app.doctine.test/api/errors", { method: "POST", headers: { origin: "https://app.doctine.test" }, body: JSON.stringify({ kind: "TypeError", message: "x", location: "/index.html:1:2", release: "abc", user: "someone", record: "Haemoglobin" }) }), { ip: "10.4.0.2" });
-  assert.equal(ok.status, 200); assert.deepEqual(Object.keys(calls.find((c) => c.url.endsWith("/rpc/report_error")).body).sort(), ["p_kind", "p_location", "p_message", "p_release", "p_source"]);
+  assert.equal(ok.status, 200); const sent = calls.find((c) => c.url.endsWith("/rpc/report_error")).body;
+  assert.deepEqual(Object.keys(sent).sort(), ["p_env", "p_kind", "p_location", "p_message", "p_release", "p_request", "p_route", "p_source", "p_stack"]);
+  assert.ok(!JSON.stringify(sent).includes("someone") && !JSON.stringify(sent).includes("Haemoglobin"), "fields outside the list are dropped");
 });
 
 console.log("measurement events");

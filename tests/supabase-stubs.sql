@@ -5,6 +5,7 @@ create schema auth; create schema storage;
 create table auth.users (id uuid primary key, email text, created_at timestamptz default now(), email_confirmed_at timestamptz,
   last_sign_in_at timestamptz, banned_until timestamptz, is_anonymous boolean not null default false, deleted_at timestamptz);
 create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users (id) on delete cascade, created_at timestamptz default now());
+create table auth.identities (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users (id) on delete cascade, provider text not null);
 create table auth.mfa_factors (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users (id) on delete cascade, status text not null);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);

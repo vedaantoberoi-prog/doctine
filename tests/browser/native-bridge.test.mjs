@@ -27,7 +27,7 @@ const capacitor = `(() => {
     DoctineSecure: { async get({ key }) { log("secure.get", key); return { value: key in sec ? sec[key] : null }; }, async set({ key, value }) { log("secure.set", key); sec[key] = value; saveSec(); }, async remove({ key }) { log("secure.remove", key); delete sec[key]; saveSec(); } },
     App: { addListener(ev, fn) { (L[ev] = L[ev] || []).push(fn); return Promise.resolve({ remove() {} }); }, async getLaunchUrl() { return { url: sessionStorage.getItem("__launch") || null }; }, exitApp() { log("exitApp", 1); } },
     Browser: { async open({ url }) { log("browser.open", url); }, async close() { log("browser.close", 1); } },
-    Filesystem: { async writeFile(o) { log("fs.write", o.path + "|" + o.directory); return { uri: "file:///cache/" + o.path }; }, async rmdir(o) { log("fs.rmdir", o.path); } },
+    Filesystem: { async stat(o) { return { type: "directory" }; }, async writeFile(o) { log("fs.write", o.path + "|" + o.directory); return { uri: "file:///cache/" + o.path }; }, async rmdir(o) { log("fs.rmdir", o.path); } },
     Share: { async share(o) { log("share", o.url); } }, StatusBar: { async setStyle() {} }, SplashScreen: { async hide() { log("splash.hide", 1); } },
     LocalNotifications: { async checkPermissions() { return { display: "prompt" }; }, async requestPermissions() { log("notif.request", 1); return { display: "granted" }; },
       async createChannel(c) { log("notif.channel", c.visibility); }, async registerActionTypes() {}, async checkExactNotificationSetting() { return { exact_alarm: "granted" }; },

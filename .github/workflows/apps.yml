@@ -93,13 +93,14 @@ jobs:
             echo "On screen after launch:"; grep -o 'text="[^"]\+"' out/1-launch.xml | head -25
             adb logcat -d -s Capacitor/Console:* Capacitor:* | grep -viE "token|code=" | tail -30
             curl -s -o /dev/null -w "%{http_code} %header{access-control-allow-origin}\n" -X OPTIONS -H "Origin: https://localhost" -H "Access-Control-Request-Method: GET" https://app.doctine.com/api/config > out/cors.txt || true; echo "Server CORS for the app: $(cat out/cors.txt)"
-            adb shell am start -a android.intent.action.VIEW -d "'doctine://auth/callback?next=reset&error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired'" com.doctine.app; sleep 8
+            adb shell am start -W -a android.intent.action.VIEW -d "'doctine://auth/callback?next=reset&error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired'" com.doctine.app; sleep 8
+            adb shell pidof com.doctine.app >/dev/null || { echo "FAIL: Doctine stopped after opening a doctine:// link"; adb logcat -d | grep -E "com.doctine.app|AndroidRuntime|ActivityManager: (Process|Killing)|lowmemorykiller" | grep -viE "token|code=" | tail -60; exit 1; }
             adb exec-out screencap -p > out/2-expired-link.png
             adb shell uiautomator dump /sdcard/ui.xml >/dev/null; adb pull /sdcard/ui.xml out/2-expired-link.xml >/dev/null
             echo "On screen after the link:"; grep -o 'text="[^"]\+"' out/2-expired-link.xml | head -25
             if grep -q "https://localhost" out/cors.txt; then grep -q "This link has expired" out/2-expired-link.xml && echo "PASS: an expired reset link opens the app's expired-link screen" || { echo "FAIL: expired-link screen not shown"; exit 1; }; else echo "NOT RUN: app.doctine.com doesn't allow the app yet (CORS change not deployed), so account features can't start; link test skipped"; fi
             adb shell input keyevent KEYCODE_BACK; sleep 3; adb exec-out screencap -p > out/3-after-back.png
-            adb shell pidof com.doctine.app && echo "PASS: back from a sub-screen keeps Doctine open"
+            adb shell pidof com.doctine.app && echo "PASS: back from a sub-screen keeps Doctine open" || { echo "FAIL: Doctine is not running after Back"; adb logcat -d | grep -E "com.doctine.app|AndroidRuntime|ActivityManager: (Process|Killing)|lowmemorykiller" | grep -viE "token|code=" | tail -60; exit 1; }
             adb logcat -d | grep -iE "AndroidRuntime|FATAL" | tail -20 || true
             adb logcat -d | grep -iE "access_token|refresh_token|sb-.*-auth-token" && { echo "FAIL: a token appeared in the device log"; exit 1; } || echo "PASS: no tokens in the device log"
       - uses: actions/upload-artifact@v4

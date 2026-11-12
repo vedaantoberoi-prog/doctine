@@ -76,7 +76,7 @@
         .then(function () { return true; }, function (e) { return !/cancel/i.test(String(e && e.message)); });
     }).catch(function () { return false; });
   }
-  function clearExports() { if (P === 'android' && CP.Filesystem) CP.Filesystem.rmdir({ path: 'exports', directory: 'CACHE', recursive: true }).catch(function () { }); }
+  function clearExports() { if (P === 'android' && CP.Filesystem) CP.Filesystem.stat({ path: 'exports', directory: 'CACHE' }).then(function () { return CP.Filesystem.rmdir({ path: 'exports', directory: 'CACHE', recursive: true }); }).catch(function () { }); }
   clearExports();
 
   /* ---------- Mac: dose alarms with the LocalNotifications interface DoctineAlarms already uses ---------- */

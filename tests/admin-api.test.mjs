@@ -1,8 +1,9 @@
 /**
  * Doctine · /api/admin and /api/events, with Supabase simulated. The permission rules themselves are tested against a
  * real PostgreSQL in tests/admin.test.sql; these tests check the web server around them: identity comes only from the
- * sign-in token, refusals are logged, two-step sign-in is required where set up, database refusals stay refusals, and the
- * server key never appears in any reply. Fictional data only.
+ * sign-in token, refusals are logged, two-step sign-in is required for every admin, invitations are only accepted by the
+ * invited person and only send Supabase's invite email for new emails, database refusals stay refusals, and the server
+ * key never appears in any reply. Fictional data only.
  */
 import "./hermetic-env.mjs";
 import assert from "node:assert/strict";
@@ -19,21 +20,32 @@ const SECRET = "sb_secret_TEST_ONLY_not_real";
 Object.assign(process.env, { SUPABASE_URL: "https://abc.supabase.co", SUPABASE_ANON_KEY: "sb_publishable_x", SUPABASE_SERVICE_ROLE_KEY: SECRET });
 const jwt = (claims) => "h." + Buffer.from(JSON.stringify(claims)).toString("base64url") + ".s";
 const PEOPLE = {
-  [jwt({ sub: "owner", aal: "aal1" })]: "a0000000-0000-0000-0000-000000000001",
-  [jwt({ sub: "owner2", aal: "aal2" })]: "a0000000-0000-0000-0000-000000000001",
-  [jwt({ sub: "analyst", aal: "aal1" })]: "a0000000-0000-0000-0000-000000000004",
+  [jwt({ sub: "owner", aal: "aal2", session_id: "sess-founder-1" })]: "a0000000-0000-0000-0000-000000000001",
+  [jwt({ sub: "owner_aal1", aal: "aal1" })]: "a0000000-0000-0000-0000-000000000001",
+  [jwt({ sub: "analyst", aal: "aal2" })]: "a0000000-0000-0000-0000-000000000004",
+  [jwt({ sub: "analyst_aal1", aal: "aal1" })]: "a0000000-0000-0000-0000-000000000004",
   [jwt({ sub: "user", aal: "aal1" })]: "b0000000-0000-0000-0000-000000000001",
+  [jwt({ sub: "invitee", aal: "aal1" })]: "b0000000-0000-0000-0000-000000000002",
 };
-const ROLES = { "a0000000-0000-0000-0000-000000000001": "owner", "a0000000-0000-0000-0000-000000000004": "analyst" };
+// "owner" is the Founder; "analyst" a Co-Founder with analytics permissions only.
+const ROLES = { "a0000000-0000-0000-0000-000000000001": "founder", "a0000000-0000-0000-0000-000000000004": "co_founder" };
+const INVITE = { id: "d0000000-0000-0000-0000-000000000001", title: "Co-Founder" };
 let mfaEnrolled = false, calls = [];
 globalThis.fetch = async (url, init = {}) => {
   url = String(url); const body = init.body ? JSON.parse(init.body) : null; calls.push({ url, body, headers: init.headers || {} });
   if (url.endsWith("/auth/v1/user")) { const t = String(init.headers.authorization || "").replace("Bearer ", ""); return PEOPLE[t] ? new Response(JSON.stringify({ id: PEOPLE[t], user_metadata: { role: "owner" } })) : new Response("{}", { status: 401 }); }
   if (url.endsWith("/rpc/rate_limit_hit")) return new Response(JSON.stringify([{ allowed: true, hits: 1, reset_at: new Date(Date.now() + 6e5).toISOString() }]));
-  if (url.endsWith("/rpc/admin_me")) { const r = ROLES[body.p_actor]; return new Response(JSON.stringify(r ? { role: r, email: r + "@example.test", perms: r === "owner" ? ["analytics.view", "reports.export"] : [], mfa_enrolled: mfaEnrolled } : { role: null })); }
+  if (url.endsWith("/rpc/admin_me")) { const r = ROLES[body.p_actor]; return new Response(JSON.stringify(r ? { role: r, title: r === "founder" ? "Founder" : "Co-Founder", email: r + "@example.test", perms: r === "founder" ? ["analytics.view", "reports.export", "team.manage"] : ["analytics.view"], mfa_enrolled: mfaEnrolled }
+    : { role: null, invite: body.p_actor === "b0000000-0000-0000-0000-000000000002" ? INVITE : null })); }
+  if (url.endsWith("/rpc/admin_invite_accept")) return new Response(JSON.stringify(body.p_id === INVITE.id ? { ok: true } : { ok: false, error: "not_invited" }));
+  if (url.endsWith("/rpc/admin_invite_create")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ ok: true, id: "e0000000-0000-0000-0000-000000000001", existing_account: body.p_email === "has.account@example.test" })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
+  if (url.endsWith("/rpc/admin_invite_delivery")) return new Response(JSON.stringify({ ok: true }));
+  if (url.includes("/auth/v1/invite")) return new Response("{}", { status: 200 });
+  if (url.endsWith("/rpc/admin_log_session")) return new Response(JSON.stringify({ ok: true, recorded: true }));
+  if (url.endsWith("/rpc/admin_member_set")) return new Response(JSON.stringify({ ok: true }));
   if (url.endsWith("/rpc/admin_log_denied")) return new Response("null");
   // The database refuses analysts the user list, exactly as private.require does.
-  if (url.endsWith("/rpc/admin_users")) return ROLES[body.p_actor] === "owner" ? new Response(JSON.stringify({ total: 1, rows: [{ id: "b0000000-0000-0000-0000-000000000001", email: "asha.sample@example.test" }] })) : new Response(JSON.stringify({ code: "42501", message: "forbidden" }), { status: 403 });
+  if (url.endsWith("/rpc/admin_users")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ total: 1, rows: [{ id: "b0000000-0000-0000-0000-000000000001", email: "asha.sample@example.test" }] })) : new Response(JSON.stringify({ code: "42501", message: "forbidden" }), { status: 403 });
   if (url.endsWith("/rpc/admin_user_action")) return new Response(JSON.stringify({ ok: true, apply_ban: "on", sessions_ended: 2 }));
   if (url.includes("/auth/v1/admin/users/")) return new Response("{}", { status: 200 });
   if (url.endsWith("/rpc/admin_log_action")) return new Response(JSON.stringify({ ok: true }));
@@ -78,17 +90,40 @@ await test("a database refusal stays a refusal: analyst asking for the user list
 await test("the owner gets the user list", async () => {
   const { status, j } = await read(await post(admin, tok("owner"), { action: "users", q: "sample" })); assert.equal(status, 200); assert.equal(j.data.total, 1);
 });
-await test("an admin with two-step sign-in set up must use it (aal2)", async () => {
-  mfaEnrolled = true;
-  let { status, j } = await read(await post(admin, tok("owner"), { action: "overview" })); assert.equal(status, 403); assert.equal(j.error, "mfa_required");
-  ({ status, j } = await read(await post(admin, tok("owner"), { action: "me" }))); assert.equal(status, 200); assert.equal(j.mfa_required, true);
-  ({ status, j } = await read(await post(admin, tok("owner2"), { action: "series" }))); assert.equal(status, 200);
-  mfaEnrolled = false;
-});
-await test("ADMIN_REQUIRE_MFA=true requires two-step sign-in for every admin", async () => {
-  process.env.ADMIN_REQUIRE_MFA = "true";
-  const { status, j } = await read(await post(admin, tok("analyst"), { action: "series" })); assert.equal(status, 403); assert.equal(j.error, "mfa_required");
+await test("two-step sign-in (aal2) is required for every admin, Founder included, with no setting to turn it off", async () => {
+  process.env.ADMIN_REQUIRE_MFA = "false";
+  let { status, j } = await read(await post(admin, tok("owner_aal1"), { action: "overview" })); assert.equal(status, 403); assert.equal(j.error, "mfa_required");
+  ({ status, j } = await read(await post(admin, tok("owner_aal1"), { action: "me" }))); assert.equal(status, 200); assert.equal(j.mfa_required, true);
+  ({ status, j } = await read(await post(admin, tok("analyst_aal1"), { action: "series" }))); assert.equal(status, 403); assert.equal(j.error, "mfa_required");
+  ({ status } = await read(await post(admin, tok("owner"), { action: "series" }))); assert.equal(status, 200);
   delete process.env.ADMIN_REQUIRE_MFA;
+});
+await test("a non-member sees and accepts only their own invitation; everything else stays refused", async () => {
+  let { status, j } = await read(await post(admin, tok("invitee"), { action: "me" })); assert.equal(status, 200); assert.equal(j.role, null); assert.equal(j.invite.title, "Co-Founder");
+  ({ status } = await read(await post(admin, tok("invitee"), { action: "overview" }))); assert.equal(status, 403);
+  ({ status, j } = await read(await post(admin, tok("invitee"), { action: "accept_invite", id: "d0000000-0000-0000-0000-000000000009" }))); assert.equal(status, 403);
+  ({ status, j } = await read(await post(admin, tok("invitee"), { action: "accept_invite", id: INVITE.id }))); assert.equal(status, 200); assert.equal(j.data.ok, true);
+  ({ status } = await read(await post(admin, tok("user"), { action: "accept_invite", id: INVITE.id }))); assert.equal(status, 403, "someone without an invitation cannot accept one");
+});
+await test("inviting: the database checks the Founder first; Supabase's invite email goes only to emails without an account, back to /admin/", async () => {
+  calls = []; let { status, j } = await read(await post(admin, tok("owner"), { action: "invite", email: "New.Person@Example.test", permissions: ["analytics.view"], reason: "fictional" }));
+  assert.equal(status, 200); assert.equal(j.data.delivery, "email_sent");
+  const inv = calls.find((c) => c.url.includes("/auth/v1/invite")); assert.ok(inv); assert.equal(inv.body.email, "new.person@example.test");
+  assert.equal(new URL(inv.url).searchParams.get("redirect_to"), "https://app.doctine.test/admin/");
+  assert.ok(calls.some((c) => c.url.endsWith("/rpc/admin_invite_delivery") && c.body.p_delivery === "email_sent"));
+  calls = []; ({ j } = await read(await post(admin, tok("owner"), { action: "invite", email: "has.account@example.test", permissions: [], reason: "x" })));
+  assert.equal(j.data.delivery, "existing_account"); assert.ok(!calls.some((c) => c.url.includes("/auth/v1/invite")), "no email for an existing account");
+  calls = []; ({ status } = await read(await post(admin, tok("analyst"), { action: "invite", email: "x@example.test", permissions: [], reason: "x" })));
+  assert.equal(status, 403); assert.ok(!calls.some((c) => c.url.includes("/auth/v1/invite")), "a Co-Founder's invitation is refused before any email");
+  ({ status } = await read(await post(admin, tok("owner"), { action: "invite", email: "y@example.test", permissions: ["'; drop table x;--"], reason: "x" }))); assert.equal(status, 400);
+});
+await test("console sessions are recorded by a hash of the session id, never the id itself", async () => {
+  calls = []; const { status } = await read(await post(admin, tok("owner"), { action: "session", event: "sign_in" })); assert.equal(status, 200);
+  const c = calls.find((x) => x.url.endsWith("/rpc/admin_log_session")); assert.match(c.body.p_session, /^[0-9a-f]{16}$/); assert.ok(!JSON.stringify(c.body).includes("sess-founder-1"));
+});
+await test("permission lists are validated before the database sees them", async () => {
+  assert.equal((await read(await post(admin, tok("owner"), { action: "member_set", id: "a0000000-0000-0000-0000-000000000004", status: "active", permissions: "team.manage", reason: "x" }))).status, 400);
+  assert.equal((await read(await post(admin, tok("owner"), { action: "member_set", id: "a0000000-0000-0000-0000-000000000004", status: "active", permissions: ["analytics.view"], reason: "x" }))).status, 200);
 });
 await test("suspending uses Supabase's Auth admin API (ban) and records the outcome", async () => {
   calls = []; const { status, j } = await read(await post(admin, tok("owner"), { action: "user_suspend", id: "b0000000-0000-0000-0000-000000000001", reason: "fictional" }));

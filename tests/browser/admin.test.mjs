@@ -12,15 +12,23 @@ import { readFileSync, readdirSync } from "node:fs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8888";
 const fakeSrc = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
 const migDir = new URL("../../supabase/migrations/", import.meta.url);
-const latest = readdirSync(migDir).filter((f) => readFileSync(new URL(f, migDir), "utf8").includes("function private.role_perms")).sort().pop();
+// The permission catalogue and presets, read from the migration that defines them (so the stand-in cannot drift).
+const latest = readdirSync(migDir).filter((f) => readFileSync(new URL(f, migDir), "utf8").includes("function private.perm_catalog")).sort().pop();
 const sql = readFileSync(new URL(latest, migDir), "utf8");
-const PERMS = {};
-for (const m of sql.slice(sql.lastIndexOf("function private.role_perms")).matchAll(/when '([a-z_]+)' then array\[([^\]]+)\]/g)) PERMS[m[1]] = [...m[2].matchAll(/'([a-z_.]+)'/g)].map((x) => x[1]);
-const ROLE_BY_EMAIL = { "owner@example.test": "owner", "admin@example.test": "admin", "analyst@example.test": "analyst", "support@example.test": "support", "auditor@example.test": "auditor" };
+const CATALOG = [...sql.slice(sql.indexOf("function private.perm_catalog"), sql.indexOf("function private.grantable")).matchAll(/\('([a-z_.]+)', '([^']+)', '([^']+)', (true|false), (true|false)\)/g)].map((m) => ({ key: m[1], group: m[2], label: m[3], founder_only: m[4] === "true", standard: m[5] === "true" }));
+const GRANTABLE = CATALOG.filter((c) => !c.founder_only).map((c) => c.key);
+const PRESET = { standard: CATALOG.filter((c) => c.standard).map((c) => c.key), operations: GRANTABLE };
+for (const m of sql.slice(sql.indexOf("function private.perm_preset")).matchAll(/when '([a-z_]+)' then array\[([^\]]+)\]/g)) PRESET[m[1]] = [...m[2].matchAll(/'([a-z_.]+)'/g)].map((x) => x[1]);
+// The Founder, and Co-Founders holding the presets named after the earlier roles.
+const MEMBER_BY_EMAIL = { "owner@example.test": ["founder", CATALOG.map((c) => c.key)], "admin@example.test": ["co_founder", PRESET.admin], "analyst@example.test": ["co_founder", PRESET.analyst],
+  "support@example.test": ["co_founder", PRESET.support], "auditor@example.test": ["co_founder", PRESET.auditor], "product@example.test": ["co_founder", PRESET.standard] };
 const NEEDS = { overview: "dashboard.view", series: "analytics.view", funnel: "analytics.view", retention: "analytics.view", adoption: "analytics.view", adoption_trend: "analytics.view", engagement: "analytics.view", activity: "dashboard.view", search: "dashboard.view",
   users: "users.view", user: "users.view", user_suspend: "users.suspend", user_restore: "users.suspend", user_revoke_sessions: "users.suspend", user_reset_password: "users.reset_password", user_note: "users.notes",
-  documents: "documents.view", flags: "flags.view", set_flag: "flags.manage", set_maintenance: "maintenance.manage", announcements: "dashboard.view", announcement_save: "announcements.manage", incidents: "health.view",
-  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", team_set: "team.manage", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view",
+  documents: "documents.view", flags: "flags.view", set_flag: "flags.manage", set_maintenance: "maintenance.manage", announcements: "dashboard.view", announcement_save: "content.edit", incidents: "health.view",
+  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view",
+  perm_catalog: "dashboard.view", invite: "team.manage", invite_revoke: "team.manage", member_set: "team.manage", session: "dashboard.view", page_denied: "dashboard.view", product_overview: "dashboard.view",
+  support_list: "support.view", support_item: "support.view", support_update: "support.view", support_message: "support.respond", feedback: "feedback.view", feedback_update: "feedback.manage",
+  work: "bugs.view|feedback.view", work_save: "bugs.manage|feedback.manage", content: "content.view|releases.view", content_save: "content.edit",
   errors: "health.view", error: "health.view", error_update: "alerts.manage", report: "reports.export", exports: "reports.export", prefs: "dashboard.view", set_prefs: "dashboard.view", settings_status: "dashboard.view" };
 
 const out = [];
@@ -68,8 +76,26 @@ function data(action, body) {
     error: { fingerprint: "0123456789abcdef0123456789abcdef", source: "client", kind: "TypeError", message: "x is undefined", location: "/index.html:#:#", category: "code", release: "abc1234", route: "#reports", environment: "production", last_request_id: "req-1", first_seen: iso(now), last_seen: iso(now), count: 5, status: "open", sample_stack: "TypeError: x\n at render (/index.html:#:#)", hourly: [], history: [] },
     error_update: { ok: true }, alert_update: { ok: true },
     alerts: [{ id: "c0000000-0000-0000-0000-000000000001", rule: "monitor_stale", severity: "warning", message: "No scheduled health check has run since 10 Nov 10:00 IST", service: "monitoring", status: "open", opened_at: iso(now - 7200e3), updated_at: iso(now) }],
-    team: [{ user_id: "x", email: "owner@example.test", role: "owner", status: "active", mfa: false, added_at: iso(now), last_sign_in_at: null }],
-    audit: { total: 1, rows: [{ at: iso(now), actor_email: "owner@example.test", actor_role: "owner", action: "flag.set", target_type: "flag", target_id: "ai_assistant", reason: "fictional", outcome: "ok", before: { enabled: false }, after: { enabled: true }, request_id: "abc" }] },
+    team: { members: [{ user_id: "a0000000-0000-0000-0000-000000000001", email: "owner@example.test", role: "founder", title: "Founder", status: "active", permissions: ["*"], mfa: true, added_at: iso(now), last_sign_in_at: null },
+        { user_id: "a0000000-0000-0000-0000-000000000002", email: "admin@example.test", role: "co_founder", title: "Co-Founder", status: "active", permissions: ROLE.perms.includes("team.manage") ? PRESET.admin : null, mfa: false, added_at: iso(now), added_by: "owner@example.test", last_sign_in_at: null }],
+      invites: ROLE.perms.includes("team.manage") ? [{ id: "e0000000-0000-0000-0000-000000000001", email: "pending.person@example.test", state: "pending", permissions: PRESET.standard, created_at: iso(now), expires_at: iso(now + 6 * 864e5), delivery: "email_sent", invited_by: "owner@example.test" }] : null },
+    perm_catalog: { permissions: CATALOG, presets: PRESET },
+    invite: { ok: true, id: "e0000000-0000-0000-0000-000000000002", delivery: body.email === "has.account@example.test" ? "existing_account" : "email_sent" }, invite_revoke: { ok: true }, member_set: { ok: true }, session: { ok: true, recorded: true },
+    product_overview: { support: ROLE.perms.includes("support.view") ? { open: 2, new: 1, created: 3, resolved: 1, daily: Array.from({ length: len }, (_, i) => ({ day: day(i, len), created: i % 9 === 0 ? 1 : 0, resolved: i % 13 === 0 ? 1 : 0 })) } : null,
+      feedback: ROLE.perms.includes("feedback.view") ? { new: 4, period: 6 } : null, bugs: ROLE.perms.includes("bugs.view") ? { open: 3, critical: 1, resolved: 2 } : null,
+      content: ROLE.perms.includes("content.view") ? { in_review: 1, published: 2 } : null, leadership: ROLE.perms.includes("team.view") ? { co_founders: 1, suspended: 0, pending_invites: 1, without_mfa: 1, denied_24h: 2 } : null },
+    support_list: { counts: { new: 1, open: 1, waiting: 1, unassigned: 1, resolved_30d: 2, first_response_hours: 2.5, resolution_hours: 30 }, total: 1,
+      rows: [{ id: "f0000000-0000-0000-0000-000000000001", ref: "S-12", category: "sign_in", subject: "Cannot sign in", status: "new", priority: "normal", assigned_email: null, created_at: iso(now - 3600e3), updated_at: iso(now - 3600e3), messages: 1, awaiting_staff: true }] },
+    support_item: { id: "f0000000-0000-0000-0000-000000000001", ref: "S-12", category: "sign_in", subject: "Cannot sign in", status: "new", priority: "normal", assigned_email: null, created_at: iso(now - 3600e3), updated_at: iso(now), first_response_at: null, resolved_at: null,
+      requester: { id: "b0000000-0000-0000-0000-000000000001", email: "asha.sample@example.test", created_at: iso(now - 864e5), email_confirmed: true },
+      messages: [{ at: iso(now - 3600e3), from_staff: false, internal: false, body: "The code never arrives on my phone." }, { at: iso(now - 600e3), from_staff: true, internal: true, body: "Checking SMS provider", by: "support@example.test" }] },
+    support_update: { ok: true }, support_message: { ok: true }, feedback_update: { ok: true }, work_save: { ok: true, id: "w1" }, content_save: { ok: true, id: "c1" },
+    feedback: { counts: { new: 1, last_7d: 1, by_kind: { idea: 1 }, by_status: { new: 1 } }, total: 1, rows: [{ id: "a1000000-0000-0000-0000-000000000001", kind: "idea", area: "medicines", body: "A weekly view of doses would help", status: "new", created_at: iso(now), account: "9f3a1c2b", work_item: null, work_ref: null }] },
+    work: { counts: { open_bugs: 1, open_bugs_by_severity: { major: 1 }, open_features: 1, open_tasks: 0, bugs_resolved_30d: 1, bug_resolution_days: 2.5 }, weekly: ROLE.perms.includes("bugs.view") ? Array.from({ length: 12 }, (_, i) => ({ week: day(i * 2), bugs_opened: i % 3, bugs_resolved: i % 4 ? 1 : 0 })) : null,
+      rows: [{ id: "a2000000-0000-0000-0000-000000000001", ref: "B-3", type: "bug", title: "Reminder fires twice", description: "", status: "todo", priority: "high", severity: "major", category: "reminders", assigned_email: null, created_by: "owner@example.test", created_at: iso(now), updated_at: iso(now), resolved_at: null }] },
+    content: { counts: { drafts: 1, in_review: 0, approved: 0, published_30d: 1 }, rows: [{ id: "a3000000-0000-0000-0000-000000000001", type: "release_note", title: "Faster record search", body: "Search now finds records by provider.", status: "draft", clinical: false, updated_at: iso(now), created_at: iso(now), updated_by: "owner@example.test" },
+      { id: "a3000000-0000-0000-0000-000000000002", type: "education", title: "Understanding HbA1c", body: "Fictional", status: "approved", clinical: true, clinical_reviewed_at: null, updated_at: iso(now), created_at: iso(now) }] },
+    audit: { total: 1, rows: [{ at: iso(now), actor_email: "owner@example.test", actor_role: "founder", action: "flag.set", target_type: "flag", target_id: "ai_assistant", reason: "fictional", outcome: "ok", before: { enabled: false }, after: { enabled: true }, request_id: "abc" }] },
     incidents: [], announcements: [], exports: [], prefs: { email_alerts: false, min_severity: "warning" }, set_prefs: { ok: true },
     settings_status: { prefs: { email_alerts: false, min_severity: "warning" }, config: { environment: "staging", supabase: true, ai_key: false, email_provider: false, alert_email_to: false, admin_mfa_required: false, rate_limit_secret: true, google_sign_in: false, release: "abc" },
       reports: ["growth", "engagement", "funnel", "adoption", "documents", "storage", "availability", "errors", "admin_activity", "users"].map((k) => ({ key: k, title: k.replace("_", " "), description: "Fictional description" })) },
@@ -92,13 +118,20 @@ async function open(email, { width = 1440, hash = "" } = {}) {
       const body = JSON.parse(r.request().postData() || "{}"); log.calls.push(body);
       const tok = (r.request().headers().authorization || "").replace("Bearer ", "");
       const em = await pg.evaluate((t) => { const d = JSON.parse(localStorage.getItem("__sbdb") || "{}"); return Object.values(d.users || {}).find((x) => "tok-" + x.user.id === t)?.user.email || null; }, tok).catch(() => null);
-      const role = ROLE_BY_EMAIL[em];
       const send = (status, j) => r.fulfill({ status, contentType: "application/json", body: JSON.stringify(j) });
       if (!em) return send(401, { error: "unauthorized" });
-      if (!role) return send(403, { error: "forbidden", request_id: "11111111-aaaa" });
-      ROLE = { perms: PERMS[role] };
-      if (body.action === "me") return send(200, { role, perms: PERMS[role], email: em, mfa_enrolled: false, aal: "aal1" });
-      if (!PERMS[role].includes(NEEDS[body.action])) return send(403, { error: "forbidden", request_id: "22222222-bbbb" });
+      // An invited person: before accepting, they can only see and accept their own invitation.
+      if (em === "invited.person@example.test" && !log.accepted) {
+        if (body.action === "me") return send(200, { role: null, invite: { id: "e0000000-0000-0000-0000-000000000009", title: "Co-Founder", invited_by: "owner@example.test", expires_at: iso(now + 6 * 864e5), permissions: PRESET.standard, needs_password: true } });
+        if (body.action === "accept_invite" && body.id === "e0000000-0000-0000-0000-000000000009") { log.accepted = true; return send(200, { data: { ok: true } }); }
+        return send(403, { error: "forbidden" });
+      }
+      const mem = em === "invited.person@example.test" ? ["co_founder", PRESET.standard] : MEMBER_BY_EMAIL[em];
+      if (!mem) return send(403, { error: "forbidden", request_id: "11111111-aaaa" });
+      const [role, perms] = mem;
+      ROLE = { perms };
+      if (body.action === "me") return send(200, { role, title: role === "founder" ? "Founder" : "Co-Founder", perms, email: em, mfa_enrolled: true, aal: "aal2" });
+      if (!String(NEEDS[body.action]).split("|").some((p) => perms.includes(p))) return send(403, { error: "forbidden", request_id: "22222222-bbbb" });
       if (body.action === "set_flag") flagState = { ...flagState, [body.key]: body.enabled };
       if (body.action === "report") {
         const isPdf = body.format === "pdf";
@@ -132,10 +165,13 @@ await ctx.close();
 
 // ── owner ──
 ({ ctx, pg, log } = await open("owner@example.test"));
-check("2 · the owner sees every section, grouped", JSON.stringify(await navKeys(pg)) === JSON.stringify(["dashboard", "analytics", "reports", "users", "documents", "health", "errors", "incidents", "alerts", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"]));
+check("2 · the Founder sees every section, grouped", JSON.stringify(await navKeys(pg)) === JSON.stringify(["dashboard", "analytics", "reports", "users", "documents", "health", "errors", "incidents", "alerts", "support", "feedback", "work", "content", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"]));
+check("5 · the Founder is titled FOUNDER in the top bar and on a Founder dashboard", /founder/i.test(await text(pg, "#who .title-badge")) && (await text(pg, ".hello h2")) === "Founder dashboard");
+check("console sign-in is recorded once on entry", log.calls.filter((c) => c.action === "session" && c.event === "sign_in").length === 1);
 check("top bar: title, breadcrumb, date range, search, notifications, refresh, environment and profile", (await text(pg, "#title")) === "Dashboard" && (await text(pg, "#crumb")) === "Overview" && !!(await pg.$("#q")) && !!(await pg.$("#bell")) && !!(await pg.$("#refresh")) && (await text(pg, ".env")).toLowerCase() === "staging" && (await text(pg, "#who")).includes("owner@example.test"));
 await pg.waitForSelector("[data-kpi=accounts]");
-check("dashboard: twelve KPI cards", (await pg.$$eval("[data-kpi]", (e) => e.length)) === 12);
+check("dashboard: twelve platform KPI cards", (await pg.$$eval('[data-kpi]:not([data-kpi^="p-"])', (e) => e.length)) === 12);
+check("Founder dashboard: support, feedback, bugs and content cards plus leadership and governance", (await pg.$$eval('[data-kpi^="p-"]', (e) => e.length)) === 4 && (await text(pg, "#view")).includes("Leadership and governance") && (await text(pg, "#view")).includes("Pending invitations"));
 check("4 · KPI values are the server's values (12 accounts, 3 new, 1 DAU, 4 WAU, 8 MAU, 7 records, 5 MB)", (await kpiText(pg, "accounts")).includes("12") && (await kpiText(pg, "new")).includes("3") && (await kpiText(pg, "wau")).includes("4") && (await kpiText(pg, "mau")).includes("8") && (await kpiText(pg, "records")).includes("7") && (await kpiText(pg, "storage")).includes("5.00 MB"));
 check("comparisons: a real percentage where there is a previous value, 'New' where there was none, never a made-up 0%", (await kpiText(pg, "accounts")).includes("9.1%") && (await kpiText(pg, "new")).includes("New") && !(await kpiText(pg, "new")).includes("0%"));
 check("value states: 'Not measured' for uploads that are not instrumented yet, distinct from zero", (await kpiText(pg, "failed")).includes("Not measured") && (await pg.$eval('[data-kpi="failed"] .k-value', (e) => e.dataset.state)) === "not_measured");
@@ -254,6 +290,44 @@ await go(pg, "#/settings", "#pe");
 check("admin settings: email preference saved but clearly marked as not delivering while no email provider is configured", (await text(pg, "#view")).includes("Email delivery is not configured"));
 await pg.click("#pe"); await pg.click("#psave"); await pg.waitForTimeout(300);
 check("notification preferences are saved on the server", log.calls.some((c) => c.action === "set_prefs" && c.email_alerts === true));
+// leadership
+await go(pg, "#/team", "[data-member]");
+check("leadership: Founder and Co-Founder titles, permissions, two-step status and invitations", /founder/i.test(await text(pg, '[data-member="a0000000-0000-0000-0000-000000000001"] .title-badge')) && /co-founder/i.test(await text(pg, '[data-member="a0000000-0000-0000-0000-000000000002"] .title-badge')) && (await text(pg, "#view")).includes("pending.person@example.test"));
+check("the Founder's own row cannot be managed", !(await pg.$('[data-manage="a0000000-0000-0000-0000-000000000001"]')) && (await text(pg, '[data-member="a0000000-0000-0000-0000-000000000001"]')).includes("Protected"));
+await pg.click("#tinv"); await pg.waitForSelector("dialog[open] .perm-ed");
+check("the invitation form lists every permission, with Founder-only ones locked", (await pg.$$eval("dialog[open] [data-perm]", (e) => e.length)) === CATALOG.length && (await pg.$$eval("dialog[open] [data-perm]:disabled", (e) => e.map((x) => x.dataset.perm).sort().join())) === CATALOG.filter((c) => c.founder_only).map((c) => c.key).sort().join());
+await pg.selectOption("dialog[open] [data-preset]", "support");
+await pg.fill("dialog[open] #te", "new.cofounder@example.test"); await pg.fill("dialog[open] #tir", "fictional: support lead"); await pg.click("dialog[open] button.primary"); await pg.waitForTimeout(400);
+const invCall = log.calls.find((c) => c.action === "invite");
+check("9 · inviting a Co-Founder sends their email, the chosen permission preset and a reason", invCall && invCall.email === "new.cofounder@example.test" && JSON.stringify(invCall.permissions.sort()) === JSON.stringify([...PRESET.support].sort()) && invCall.reason === "fictional: support lead");
+await go(pg, "#/team", "[data-manage]");
+await pg.click('[data-manage="a0000000-0000-0000-0000-000000000002"]'); await pg.waitForSelector(".drawer .perm-ed");
+await pg.uncheck('.drawer [data-perm="flags.manage"]'); await pg.click(".drawer #msave"); await pg.waitForSelector("dialog[open]"); await pg.fill("dialog[open] #cr", "fictional narrowing"); await pg.click("dialog[open] #co"); await pg.waitForTimeout(400);
+const ms = log.calls.find((c) => c.action === "member_set");
+check("18 · the Founder edits a Co-Founder's permissions individually (sent with a reason)", ms && ms.status === "active" && !ms.permissions.includes("flags.manage") && ms.permissions.includes("audit.view") && ms.reason === "fictional narrowing");
+await pg.click('[data-manage="a0000000-0000-0000-0000-000000000002"]'); await pg.waitForSelector(".drawer #msus"); await pg.click(".drawer #msus"); await pg.waitForSelector("dialog[open]"); await pg.fill("dialog[open] #cr", "fictional suspension"); await pg.click("dialog[open] #co"); await pg.waitForTimeout(400);
+check("19 · …and suspends a Co-Founder's access", log.calls.some((c) => c.action === "member_set" && c.status === "suspended" && c.permissions == null));
+await pg.keyboard.press("Escape");
+// support, feedback, bugs, content
+await go(pg, "#/support", "tr[data-sup]");
+check("support: queue figures, trend, privacy reminder, and requests needing a reply", (await text(pg, "#view")).includes("Never ask them to send medical records") && (await text(pg, "#view")).includes("Needs a reply") && !!(await pg.$("#view .chart svg")));
+await pg.click("tr[data-sup]"); await pg.waitForSelector(".drawer .thread");
+check("a support request shows the person's account email (support only) and the thread, internal notes marked", (await text(pg, ".drawer")).includes("asha.sample@example.test") && !!(await pg.$(".drawer .msg.internal")) && (await text(pg, ".drawer")).includes("never available here"));
+await pg.fill(".drawer #sbody", "Please try the email link instead."); await pg.click(".drawer #srep button.primary"); await pg.waitForTimeout(400);
+check("replying sends the message (not an internal note)", log.calls.some((c) => c.action === "support_message" && c.internal === false && c.body.startsWith("Please try")));
+await pg.keyboard.press("Escape");
+await go(pg, "#/feedback", "[data-fwork]");
+check("feedback: pseudonymous code instead of the sender, with status and create-item controls", (await text(pg, "#view")).includes("9f3a1c2b") && !(await text(pg, "#view")).includes("@example.test"));
+await pg.click("[data-fwork]"); await pg.waitForSelector("dialog[open] #wti"); await pg.click("dialog[open] button.primary"); await pg.waitForTimeout(400);
+check("feedback can become a feature request, linked to its source", log.calls.some((c) => c.action === "work_save" && c.data.source_feedback === "a1000000-0000-0000-0000-000000000001"));
+await go(pg, "#/work", "tr[data-w]");
+check("bugs and tasks: open bugs by severity, a 12-week opened/resolved chart, and the list", (await text(pg, "#view")).includes("1 major") && !!(await pg.$("#view .chart svg")) && (await text(pg, "#view")).includes("B-3"));
+await go(pg, "#/content", "tr[data-c]");
+await pg.click('tr[data-c="a3000000-0000-0000-0000-000000000002"]'); await pg.waitForSelector("dialog[open]");
+check("clinical content shows that it needs a clinical review, with a button to record one", (await text(pg, "dialog[open]")).includes("Not clinically reviewed yet") && !!(await pg.$('dialog[open] [data-op="clinical_review"]')));
+await pg.click('dialog[open] [data-op="publish"]'); await pg.waitForTimeout(200); await pg.click("dialog[open] #co").catch(() => {}); await pg.waitForTimeout(300);
+check("publishing content goes to the server with the publish step", log.calls.some((c) => c.action === "content_save" && c.op === "publish"));
+await pg.evaluate(() => document.querySelectorAll("dialog").forEach((d) => { d.close?.(); d.remove(); }));
 check("18 · the console never calls the database or storage directly", log.direct.every((u) => u.includes("jsdelivr")));
 await pg.click('[data-k="dashboard"]');
 await ctx.close();
@@ -263,9 +337,13 @@ await ctx.close();
 const ak = await navKeys(pg);
 check("3 · analyst: dashboards, analytics, reports, documents, health; no users, switches, team or audit", ak.includes("analytics") && ak.includes("reports") && !ak.includes("users") && !ak.includes("team") && !ak.includes("audit") && !ak.includes("flags"));
 await pg.waitForSelector("#activity");
-check("analyst dashboard: registrations shown only as a count", (await text(pg, "#activity")).includes("Your role does not see account details"));
+check("analyst dashboard: registrations shown only as a count", (await text(pg, "#activity")).includes("Your permissions do not include account details"));
+check("4 · a Co-Founder is titled CO-FOUNDER on a Co-Founder dashboard with no Founder sections", /co-founder/i.test(await text(pg, "#who .title-badge")) && (await text(pg, ".hello h2")) === "Co-Founder dashboard" && !(await text(pg, "#view")).includes("Leadership and governance"));
+check("6 · the analyst's dashboard shows only sections their permissions allow (no support, feedback or bug cards)", (await pg.$$eval('[data-kpi^="p-"]', (e) => e.length)) === 0);
 await pg.evaluate(() => { location.hash = "#/users"; }); await pg.waitForTimeout(500);
-check("typing the users address as an analyst does not open it", (await text(pg, "#title")) !== "Users");
+check("12 · typing a page address outside their permissions shows a proper unauthorised screen (not a redirect), recorded on the server", (await text(pg, "#title")) === "Not authorised" && !!(await pg.$('[data-state="unauthorized"]')) && log.calls.some((c) => c.action === "page_denied" && c.page === "users"));
+await pg.evaluate(() => { location.hash = "#/team"; }); await pg.waitForTimeout(500);
+check("…including the Founder's leadership page", (await text(pg, "#view")).includes("This page is for the Founder"));
 const r403 = await pg.evaluate(async () => { const { data } = await window.supabase.createClient("https://x.supabase.co", "anon").auth.getSession(); const r = await fetch("/api/admin", { method: "POST", headers: { authorization: "Bearer " + data.session.access_token }, body: JSON.stringify({ action: "user_suspend", id: "b0000000-0000-0000-0000-000000000001", reason: "x" }) }); return r.status; });
 check("a hand-made suspend request from an analyst is refused (403)", r403 === 403);
 await ctx.close();
@@ -275,8 +353,24 @@ check("support: password reset and notes, no suspend; no analytics in the menu",
 await ctx.close();
 ({ ctx, pg, log } = await open("auditor@example.test"));
 const au = await navKeys(pg);
-check("auditor: audit log, security events and team only (plus dashboard, reports, definitions, settings)", au.includes("audit") && au.includes("security") && au.includes("team") && !au.includes("users") && !au.includes("flags") && !au.includes("analytics"));
+check("auditor-style Co-Founder: audit log, security events and team only (plus dashboard, reports, definitions, settings)", au.includes("audit") && au.includes("security") && au.includes("team") && !au.includes("users") && !au.includes("flags") && !au.includes("analytics"));
 check("auditor dashboard has headline figures but no trend charts", !!(await pg.$("[data-kpi=accounts]")) && (await text(pg, "#view")).includes("Trend charts need the analytics permission"));
+await ctx.close();
+
+// ── a Co-Founder with the operations-style preset cannot switch the AI assistant ──
+({ ctx, pg, log } = await open("admin@example.test", { hash: "#/flags" }));
+await pg.waitForSelector(".switch[data-k]");
+check("11 · only the Founder can switch the AI assistant; a Co-Founder's AI switch is disabled", await pg.$eval('.switch[data-k="ai_assistant"]', (b) => b.disabled) && !(await pg.$eval('.switch[data-k="document_upload"]', (b) => b.disabled)));
+check("10 · a Co-Founder sees no invite or manage controls on the leadership page", await (async () => { await go(pg, "#/team", "[data-member]"); return !(await pg.$("#tinv")) && !(await pg.$("[data-manage]")); })());
+await ctx.close();
+// ── invitation acceptance ──
+({ ctx, pg, log } = await open("invited.person@example.test"));
+await pg.waitForSelector("#inv");
+check("7 · an invited person sees the invitation as Co-Founder, sets a password and must accept (no console before that)", (await text(pg, ".gate h1")) === "You're invited" && /co-founder/i.test(await text(pg, "#inv .title-badge")) && !(await pg.$(".shell")) && !!(await pg.$("#np")));
+await pg.fill("#np", "short"); await pg.click("#inv button[type=submit]"); await pg.waitForTimeout(150);
+check("…a short password is refused before anything is sent", (await text(pg, "#ierr")).includes("10 characters") && !log.calls.some((c) => c.action === "accept_invite"));
+await pg.fill("#np", "a-fictional-long-password"); await pg.click("#inv button[type=submit]"); await pg.waitForSelector(".shell", { timeout: 8000 });
+check("…accepting opens their Co-Founder console", log.calls.some((c) => c.action === "accept_invite") && /co-founder/i.test(await text(pg, "#who .title-badge")));
 await ctx.close();
 
 // ── layout ──

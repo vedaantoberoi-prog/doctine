@@ -1,8 +1,8 @@
-/* Doctine · admin console design system. Navy chrome, light workspace, white surfaces, fine borders, restrained depth. */
+/* Doctine · leadership console design system. Navy chrome and type, ivory workspace, white cards, blue accents, fine borders, restrained depth. */
 :root{
   --nav:#0e1a2b;--nav-2:#16263c;--nav-3:#1f3350;--nav-ink:#c5d0de;--nav-mute:#7f8fa6;
-  --bg:#f5f6f8;--panel:#fff;--panel-2:#fafbfc;--line:#e4e7ec;--line-2:#eef0f3;
-  --ink:#101828;--ink-2:#475467;--ink-3:#667085;--ink-4:#98a2b3;
+  --bg:#f7f5f0;--panel:#fff;--panel-2:#fbfaf7;--line:#e6e2d9;--line-2:#efece5;
+  --ink:#0f1d33;--ink-2:#44526a;--ink-3:#5f6b80;--ink-4:#949db0;
   --brand:#1d3a5f;--accent:#2a62b8;--accent-bg:#eef4fc;--gold:#b08a4e;
   --s1:#2a62b8;--s2:#b8781c;--s3:#16927a;--s1-soft:rgba(42,98,184,.12);   /* chart series (validated: CVD-safe on light) */
   --good:#15803d;--good-bg:#ecfdf3;--warn:#b45309;--warn-bg:#fffaeb;--bad:#b42318;--bad-bg:#fef3f2;--none:#667085;--none-bg:#f2f4f7;
@@ -41,7 +41,7 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .shell.mini .nav a{justify-content:center}
 
 .main{min-width:0;display:flex;flex-direction:column}
-.top{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.92);backdrop-filter:saturate(1.4) blur(8px);border-bottom:1px solid var(--line)}
+.top{position:sticky;top:0;z-index:10;background:rgba(251,250,247,.82);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
 .top-row{display:flex;align-items:center;gap:10px;padding:10px 24px;min-height:56px}
 .crumbs{display:flex;flex-direction:column;min-width:0;margin-right:auto}
 .crumbs small{color:var(--ink-3);font-size:12px}
@@ -282,3 +282,31 @@ pre.stack{background:#0f172a;color:#e2e8f0;border-radius:var(--r-sm);padding:12p
 
 @media (max-width:640px){.card-h{flex-wrap:wrap}.card-h>div:first-child{flex:1 1 100%!important}}
 @media (max-width:640px){.tag{white-space:normal}.row>div{min-width:0;max-width:100%}input[type=datetime-local],input[type=date]{max-width:100%;min-width:0}}
+
+/* ── leadership ── */
+.title-badge{display:inline-flex;align-items:center;font:700 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;border-radius:4px;padding:2px 7px;white-space:nowrap;line-height:1.5;vertical-align:middle}
+.title-badge.fo{background:var(--nav);color:#f4ead8;border:1px solid #2b4466}
+.title-badge.co{background:var(--accent-bg);color:var(--brand);border:1px solid #cddcf2}
+.who .meta .title-badge{margin-top:2px;align-self:flex-start;font-size:9px;padding:0 5px}
+.hello{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 14px}
+.hello h2{margin:0;font:650 19px/1.2 var(--serif);letter-spacing:-.01em;color:var(--ink)}
+.hello .muted{flex-basis:100%;font-size:13px}
+.denied{max-width:520px;margin:40px auto;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:32px 28px;box-shadow:var(--sh)}
+.denied h2{font:650 18px var(--sans);margin:12px 0 6px}.denied p{color:var(--ink-2);margin:0 0 16px}
+svg.i.big{width:34px;height:34px;color:var(--brand)}
+ul.plain{margin:0;padding-left:18px;line-height:1.7;color:var(--ink-2)}
+dialog.wide{width:min(760px,calc(100% - 24px))}
+dialog form{max-height:calc(100dvh - 48px);overflow:auto}
+.perm-ed{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin:10px 0}
+.perm-g{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px 6px;margin:0;background:var(--panel-2);min-width:0}
+.perm-g legend{font:700 10.5px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:0 4px}
+.perm{display:flex;gap:8px;align-items:flex-start;padding:5px 2px;cursor:pointer;font-size:13px}
+.perm input{margin-top:3px;flex:none}
+.perm span{flex:1;min-width:0}.perm small{display:block;color:var(--ink-4);font-size:10.5px;overflow-wrap:anywhere}
+.perm.locked{opacity:.7;cursor:not-allowed}
+.thread{display:flex;flex-direction:column;gap:8px}
+.msg{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--panel);max-width:92%}
+.msg.person{align-self:flex-start}
+.msg.staff{align-self:flex-end;background:var(--accent-bg);border-color:#cddcf2}
+.msg.internal{align-self:flex-end;background:var(--warn-bg);border-color:#f3dfae}
+.msg .body{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:2px}

@@ -23,11 +23,15 @@ insert into auth.users (id, email, created_at, email_confirmed_at, last_sign_in_
   ('a0000000-0000-0000-0000-000000000007', 'former@example.test', now() - interval '10 days', now() - interval '10 days', now()),
   ('b0000000-0000-0000-0000-000000000001', 'asha.sample@example.test', now() - interval '3 days', now() - interval '3 days', now() - interval '1 day'),
   ('b0000000-0000-0000-0000-000000000002', 'ravi.sample@example.test', now() - interval '2 hours', null, null);
-insert into private.admin_members (user_id, role, status) values
-  ('a0000000-0000-0000-0000-000000000001', 'owner', 'active'), ('a0000000-0000-0000-0000-000000000002', 'admin', 'active'),
-  ('a0000000-0000-0000-0000-000000000003', 'admin', 'active'), ('a0000000-0000-0000-0000-000000000004', 'analyst', 'active'),
-  ('a0000000-0000-0000-0000-000000000005', 'support', 'active'), ('a0000000-0000-0000-0000-000000000006', 'auditor', 'active'),
-  ('a0000000-0000-0000-0000-000000000007', 'admin', 'suspended');
+-- One Founder; Co-Founders holding the presets named after the earlier roles (admin, analyst, support, auditor).
+insert into private.admin_members (user_id, role, status, permissions) values
+  ('a0000000-0000-0000-0000-000000000001', 'founder', 'active', '{}'),
+  ('a0000000-0000-0000-0000-000000000002', 'co_founder', 'active', private.perm_preset('admin')),
+  ('a0000000-0000-0000-0000-000000000003', 'co_founder', 'active', private.perm_preset('admin')),
+  ('a0000000-0000-0000-0000-000000000004', 'co_founder', 'active', private.perm_preset('analyst')),
+  ('a0000000-0000-0000-0000-000000000005', 'co_founder', 'active', private.perm_preset('support')),
+  ('a0000000-0000-0000-0000-000000000006', 'co_founder', 'active', private.perm_preset('auditor')),
+  ('a0000000-0000-0000-0000-000000000007', 'co_founder', 'suspended', private.perm_preset('admin'));
 insert into public.documents (user_id, client_id, title, category, provider, source, fields, page_count)
   values ('b0000000-0000-0000-0000-000000000001', 1, 'SECRET-TITLE Sample CBC', 'Lab report', 'SECRET-PROVIDER Sample Lab', 'scan', '{"Haemoglobin":"SECRET-VALUE 13.1"}', 1);
 insert into public.document_files (user_id, document_id, kind, page, storage_path, content_type, size_bytes)
@@ -53,13 +57,16 @@ select pg_temp.denied($$select public.admin_overview('a0000000-0000-0000-0000-00
 select pg_temp.denied($$select * from private.admin_members$$, 'a signed-in browser cannot read the admin team');
 select pg_temp.denied($$select * from private.admin_audit_log$$, 'a signed-in browser cannot read the audit log');
 select pg_temp.denied($$select * from private.analytics_events$$, 'a signed-in browser cannot read analytics');
-select pg_temp.denied($$insert into private.admin_members values ('b0000000-0000-0000-0000-000000000001', 'owner')$$, 'a signed-in browser cannot make itself an admin');
+select pg_temp.denied($$insert into private.admin_members values ('b0000000-0000-0000-0000-000000000001', 'founder')$$, 'a signed-in browser cannot make itself an admin');
+select pg_temp.denied($$update private.admin_members set permissions = '{team.manage}'$$, 'a signed-in browser cannot edit permission records');
+select pg_temp.denied($$select public.admin_member_set('a0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', 'active', '{team.manage}', 'x', null)$$, 'a signed-in browser cannot call the permission function');
 select pg_temp.denied($$select public.record_event('b0000000-0000-0000-0000-000000000001', 'login_success', '{}', 'k1')$$, 'a signed-in browser cannot write analytics directly');
 select pg_temp.denied($$select public.public_settings()$$, 'a signed-in browser cannot call the settings function directly');
 reset role;
 set role anon;
 select pg_temp.denied($$select public.admin_me('a0000000-0000-0000-0000-000000000001')$$, 'signed-out visitors cannot call admin functions');
-select pg_temp.denied($$select public.admin_team_set('a0000000-0000-0000-0000-000000000001', 'x@example.test', 'owner', 'active', 'x', null)$$, 'signed-out visitors cannot appoint admins');
+select pg_temp.denied($$select public.admin_invite_create('a0000000-0000-0000-0000-000000000001', 'x@example.test', '{}', 'x', null)$$, 'signed-out visitors cannot invite admins');
+select pg_temp.denied($$select public.support_submit('account', 'Help please', 'I cannot sign in at all')$$, 'signed-out visitors cannot open support requests');
 reset role;
 
 -- ── the server, acting for each role ──
@@ -68,7 +75,8 @@ select pg_temp.expect((public.admin_me(:asha)->>'role') is null, 'an ordinary ac
 select pg_temp.expect((public.admin_me(:former)->>'role') is null, 'a suspended admin has no admin role');
 select pg_temp.denied(format('select public.admin_overview(%L, now() - interval ''7 days'', now())', :asha), 'an ordinary account is refused the dashboard');
 select pg_temp.denied(format('select public.admin_users(%L, null, null, null, 1, 25, null, null)', :former), 'a suspended admin is refused the user list');
-select pg_temp.expect((public.admin_me(:owner)->>'role') = 'owner', 'the owner is recognised');
+select pg_temp.expect((public.admin_me(:owner)->>'role') = 'founder' and public.admin_me(:owner)->>'title' = 'Founder', 'the Founder is recognised, titled Founder');
+select pg_temp.expect(public.admin_me(:analyst)->>'title' = 'Co-Founder' and (public.admin_me(:analyst)->'perms') ? 'analytics.view', 'a Co-Founder is titled Co-Founder and holds their own permissions');
 select pg_temp.expect((public.admin_overview(:analyst, now() - interval '7 days', now())->>'users_total')::int = 9, 'analysts see the dashboard (9 accounts)');
 select pg_temp.expect((public.admin_overview(:owner, now() - interval '7 days', now())->>'users_new')::int = 2, 'new accounts in the period are counted (2)');
 select pg_temp.expect((public.admin_overview(:owner, now() - interval '7 days', now())->>'active')::int = 1, 'one person had qualifying activity this week');
@@ -101,7 +109,7 @@ select pg_temp.expect((public.admin_user_action(:ops, :asha, 'suspend', 'fiction
 reset role;
 select pg_temp.expect(not exists (select 1 from auth.sessions where user_id = :asha), 'suspending ends the person''s sessions');
 set role service_role;
-select pg_temp.expect((public.admin_user_action(:ops, :adm, 'suspend', 'x', null, null)->>'error') = 'admin_target_needs_owner', 'an admin cannot suspend another admin (only the owner can)');
+select pg_temp.expect((public.admin_user_action(:ops, :adm, 'suspend', 'x', null, null)->>'error') = 'admin_target_needs_founder', 'a Co-Founder cannot suspend another Co-Founder (only the Founder can)');
 select pg_temp.expect((public.admin_user_action(:owner, :owner, 'suspend', 'x', null, null)->>'error') = 'not_on_yourself', 'nobody can suspend themselves');
 select pg_temp.expect((public.admin_user_action(:support, :asha, 'note', null, 'Asked about export (fictional)', null)->>'ok')::boolean, 'support can add a note');
 select pg_temp.expect(jsonb_array_length(public.admin_user(:support, :asha)->'notes') = 1, 'support sees notes');
@@ -130,17 +138,11 @@ select public.admin_announcement_save(:ops, '{"kind":"service","title":"Live not
 select pg_temp.expect(jsonb_array_length(public.public_settings()->'announcements') = 1 and public.public_settings()->'announcements'->0->>'title' = 'Live notice', 'only live published announcements reach the app');
 select pg_temp.denied(format('select public.admin_announcement_save(%L, ''{"kind":"product","title":"x"}'', null)', :analyst), 'analysts cannot publish announcements');
 
--- team: only the owner, never an account that does not exist, always one owner left
-select pg_temp.denied(format('select public.admin_team_set(%L, ''ravi.sample@example.test'', ''analyst'', ''active'', ''x'', null)', :adm), 'an admin cannot appoint admins');
-select pg_temp.expect((public.admin_team_set(:owner, 'nobody@example.test', 'analyst', 'active', 'x', null)->>'error') = 'no_account', 'appointing needs an existing account (none are created)');
-select pg_temp.expect((public.admin_team_set(:owner, 'RAVI.sample@example.test', 'analyst', 'active', 'new analyst', null)->>'ok')::boolean, 'the owner can appoint an existing account');
-select pg_temp.expect((public.admin_me(:ravi)->>'role') = 'analyst', 'the appointment takes effect');
-select pg_temp.expect((public.admin_team_set(:owner, 'owner@example.test', 'analyst', 'active', 'x', null)->>'error') = 'not_on_yourself', 'the owner cannot demote themselves');
-select public.admin_team_set(:owner, 'admin@example.test', 'owner', 'active', 'second owner (fictional)', null);
-select pg_temp.expect((public.admin_team_set(:adm, 'owner@example.test', 'support', 'active', 'handover test', null)->>'ok')::boolean, 'a second owner can change the first owner''s role');
-select pg_temp.denied(format('select public.admin_team_set(%L, ''admin@example.test'', ''support'', ''active'', ''x'', null)', :owner), 'the demoted owner loses the power to appoint at once');
-select public.admin_team_set(:adm, 'owner@example.test', 'owner', 'active', 'restore', null);
-select public.admin_team_set(:owner, 'admin@example.test', 'admin', 'active', 'restore', null);
+-- leadership: only the Founder manages Co-Founders (full tests in the leadership section below)
+select pg_temp.denied(format('select public.admin_invite_create(%L, ''ravi.sample@example.test'', ''{}'', ''x'', null)', :adm), 'a Co-Founder cannot invite');
+select pg_temp.denied(format('select public.admin_member_set(%L, %L, ''active'', ''{analytics.view}'', ''x'', null)', :adm, :analyst), 'a Co-Founder cannot change another Co-Founder''s permissions');
+select pg_temp.expect((public.admin_member_set(:owner, :owner, 'active', '{}', 'x', null)->>'error') = 'not_on_yourself', 'the Founder cannot change their own membership (refusal recorded)');
+select pg_temp.expect((public.admin_user_action(:adm, :owner, 'revoke_sessions', 'x', null, null)->>'error') = 'admin_target_needs_founder', 'a Co-Founder cannot end the Founder''s sessions (refusal recorded)');
 
 -- audit log: everything is recorded and nothing can be altered, even by the server
 select pg_temp.denied($$update private.admin_audit_log set reason = 'edited'$$, 'the audit log cannot be edited');
@@ -230,9 +232,9 @@ reset role;
 set role service_role;
 select pg_temp.expect((public.admin_me(:auditor)->'perms') ? 'audit.view' and not ((public.admin_me(:auditor)->'perms') ? 'users.view'), 'auditors read audit and security history only');
 do $$ begin
-  begin perform public.admin_team_set('a0000000-0000-0000-0000-000000000001', 'ravi.sample@example.test', 'super_admin', 'active', 'x', null);
-    raise exception 'FAILED: an old role name was accepted';
-  exception when invalid_parameter_value then raise notice 'ok: only the five current roles can be given'; end;
+  begin perform public.admin_invite_create('a0000000-0000-0000-0000-000000000001', 'ravi.sample@example.test', '{team.manage}', 'x', null);
+    raise exception 'FAILED: a Founder-only permission was granted';
+  exception when invalid_parameter_value then raise notice 'ok: Founder-only permissions cannot be granted to a Co-Founder'; end;
 end $$;
 select pg_temp.expect((public.admin_overview(:owner, now() - interval '7 days', now() + interval '1 minute') ?& array['users_total_prev','returning_prev','files_new','app_errors','availability','checks_since']), 'the overview carries previous-period and reliability figures');
 select pg_temp.expect((select bool_and(d ?& array['documents_total','storage_total','returning','checks','app_errors']) from jsonb_array_elements(public.admin_series(:analyst, now() - interval '7 days', now())) d), 'the daily series carries records, storage, returning people, checks and errors');
@@ -307,6 +309,184 @@ select public.admin_log_action(:analyst, 'reports.export', 'report.export', 'rep
 select pg_temp.expect(jsonb_array_length(public.admin_exports(:analyst)) >= 1, 'exports are listed in the report history');
 select pg_temp.denied(format('select public.admin_exports(%L)', :support), 'support has no report history');
 reset role;
+
+-- ── leadership: Founder and Co-Founders, invitations, per-person permissions ──
+-- Fictional: ravi.sample is invited as a Co-Founder; new.person has no account yet.
+select set_config('t.std', private.perm_preset('standard')::text, false);
+set role service_role;
+select pg_temp.expect((public.admin_invite_create(:owner, 'ravi.sample@example.test', current_setting('t.std')::text[], 'fictional invite', 'req-inv')->>'existing_account')::boolean, 'the Founder can invite an existing account');
+select pg_temp.expect((public.admin_invite_create(:owner, 'new.person@example.test', '{analytics.view}', 'fictional invite', null)->>'existing_account')::boolean = false, '…or an email with no account yet (the database creates no account)');
+select pg_temp.expect((public.admin_invite_create(:owner, 'admin@example.test', '{}', 'x', null)->>'error') = 'already_member', 'an existing member cannot be invited again');
+select pg_temp.expect(public.admin_me(:ravi)->>'invite' is null, 'an invitation is not offered until the email is verified');
+reset role;
+update auth.users set email_confirmed_at = now() where id = 'b0000000-0000-0000-0000-000000000002';
+set role service_role;
+select pg_temp.expect(public.admin_me(:ravi)->'invite'->>'title' = 'Co-Founder', 'once verified, the invited person sees a Co-Founder invitation');
+select pg_temp.expect((public.admin_me(:ravi)->>'role') is null, '…and holds no access until they accept');
+select pg_temp.expect(public.admin_invite_accept(:asha, (public.admin_me(:ravi)->'invite'->>'id')::uuid, null)->>'error' = 'not_invited', 'nobody else can accept someone''s invitation');
+select pg_temp.expect((public.admin_invite_accept(:ravi, (public.admin_me(:ravi)->'invite'->>'id')::uuid, 'req-acc')->>'ok')::boolean, 'the invited person accepts');
+select pg_temp.expect(public.admin_me(:ravi)->>'role' = 'co_founder' and public.admin_me(:ravi)->>'title' = 'Co-Founder', '…and is a Co-Founder');
+select pg_temp.expect((select p ? 'dashboard.view' and p ? 'feedback.view' and not (p ? 'users.suspend') and not (p ? 'support.view') and not (p ? 'team.manage') and not (p ? 'audit.view')
+  from (select public.admin_me(:ravi)->'perms' p) x), 'with the least-privilege standard permissions (no account actions, support or governance)');
+reset role;
+select pg_temp.expect((select status from private.admin_invites where email = 'ravi.sample@example.test') = 'accepted', 'the invitation is marked accepted');
+select pg_temp.expect((select (public.admin_invite_accept('b0000000-0000-0000-0000-000000000002', id, null)->>'error') = 'not_invited' from private.admin_invites where email = 'ravi.sample@example.test'), 'an accepted invitation cannot be used again');
+set role service_role;
+
+-- the Founder's protections
+select pg_temp.expect((public.admin_member_set(:owner, :owner, 'suspended', null, 'x', null)->>'error') = 'not_on_yourself', 'the Founder cannot suspend or change themselves here');
+select pg_temp.denied(format('select public.admin_member_set(%L, %L, ''suspended'', null, ''takeover'', null)', :adm, :owner), 'a Co-Founder cannot suspend the Founder');
+select pg_temp.denied(format('select public.admin_member_set(%L, %L, ''active'', ''{team.manage,audit.view}'', ''self-promotion'', null)', :ravi, :ravi), 'a Co-Founder cannot change their own permissions');
+select pg_temp.expect((public.admin_user_action(:adm, :owner, 'suspend', 'takeover', null, null)->>'error') = 'admin_target_needs_founder', 'a Co-Founder cannot suspend the Founder''s account');
+select pg_temp.expect((public.admin_user_action(:adm, :ravi, 'revoke_sessions', 'x', null, null)->>'error') = 'admin_target_needs_founder', '…or another Co-Founder''s account');
+reset role;
+do $$ begin
+  begin insert into private.admin_members (user_id, role) values ('b0000000-0000-0000-0000-000000000001', 'founder');
+    raise exception 'FAILED: a second Founder was created';
+  exception when unique_violation then raise notice 'ok: there can only be one Founder'; end;
+end $$;
+set role service_role;
+select pg_temp.denied(format('select public.admin_set_flag(%L, ''ai_assistant'', true, null, ''x'', null)', :adm), 'only the Founder can switch the AI assistant');
+select public.admin_set_flag(:adm, 'sample_data', false, null, 'fictional', null);
+select public.admin_set_flag(:adm, 'sample_data', true, null, 'fictional', null);
+
+-- permission changes apply on the very next request; suspension removes access; reactivation restores it
+select pg_temp.expect(jsonb_array_length(public.admin_series(:ravi, now() - interval '7 days', now())) > 0, 'a Co-Founder with analytics sees charts');
+select pg_temp.expect((public.admin_member_set(:owner, :ravi, 'active', array_remove(current_setting('t.std')::text[], 'analytics.view'), 'narrow access (fictional)', 'req-perm')->>'ok')::boolean, 'the Founder changes a Co-Founder''s permissions');
+select pg_temp.denied(format('select public.admin_series(%L, now() - interval ''7 days'', now())', :ravi), '…and the removed permission is refused at once');
+select pg_temp.expect((public.admin_member_set(:owner, :ravi, 'suspended', null, 'fictional suspension', null)->>'ok')::boolean, 'the Founder suspends a Co-Founder');
+select pg_temp.denied(format('select public.admin_overview(%L, now() - interval ''7 days'', now())', :ravi), 'a suspended Co-Founder loses all access');
+select pg_temp.expect(public.admin_me(:ravi)->>'invite' is null and (public.admin_me(:ravi)->>'suspended')::boolean, '…and cannot re-enter through an old invitation');
+select public.admin_member_set(:owner, :ravi, 'active', null, 'reinstated', null);
+select pg_temp.expect(public.admin_me(:ravi)->>'role' = 'co_founder' and not ((public.admin_me(:ravi)->'perms') ? 'analytics.view'), 'reactivation restores the same permissions');
+do $$ begin
+  begin perform public.admin_member_set('a0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000002', 'active', '{security.manage}', 'x', null);
+    raise exception 'FAILED: security.manage was granted';
+  exception when invalid_parameter_value then raise notice 'ok: security and AI controls stay Founder-only'; end;
+end $$;
+
+-- invitations: revoke, expiry, and the sign-up hook lets only a pending invitee through while sign-ups are paused
+select pg_temp.expect((select (public.admin_invite_revoke(:owner, (i->>'id')::uuid, 'changed my mind', null)->>'ok')::boolean from jsonb_array_elements(public.admin_team(:owner)->'invites') i where i->>'email' = 'new.person@example.test'), 'the Founder revokes a pending invitation');
+select pg_temp.expect((select i->>'state' from jsonb_array_elements(public.admin_team(:owner)->'invites') i where i->>'email' = 'new.person@example.test') = 'revoked', 'the invitation list shows it revoked');
+select public.admin_invite_create(:owner, 'later.person@example.test', '{}', 'fictional', null);
+select public.admin_set_flag(:owner, 'registrations', false, null, 'fictional pause', null);
+reset role;
+select pg_temp.expect(public.hook_before_user_created('{"user":{"email":"later.person@example.test"}}') = '{}'::jsonb, 'while sign-ups are paused, a pending invitee can still create their account');
+select pg_temp.expect(public.hook_before_user_created('{"user":{"email":"stranger@example.test"}}') ? 'error', '…but nobody else can');
+set role service_role;
+select public.admin_set_flag(:owner, 'registrations', true, null, 'resume', null);
+reset role;
+update private.admin_invites set expires_at = now() - interval '1 minute' where email = 'later.person@example.test';
+set role service_role;
+select pg_temp.expect((select i->>'state' from jsonb_array_elements(public.admin_team(:owner)->'invites') i where i->>'email' = 'later.person@example.test') = 'expired', 'invitations expire after their week');
+select pg_temp.expect(public.admin_team(:adm)->'invites' = 'null'::jsonb or public.admin_team(:adm)->>'invites' is null, 'a Co-Founder who can see the team does not see invitations or others'' permissions');
+select pg_temp.expect((select bool_and(m->>'permissions' is null) from jsonb_array_elements(public.admin_team(:adm)->'members') m where m->>'role' = 'co_founder' and m->>'user_id' <> :adm), '…nor other Co-Founders'' permission lists');
+
+-- sessions are recorded once per session
+select pg_temp.expect((public.admin_log_session(:adm, 'sign_in', '0123456789abcdef', null)->>'recorded')::boolean, 'console sign-in is recorded');
+select pg_temp.expect(not (public.admin_log_session(:adm, 'sign_in', '0123456789abcdef', null)->>'recorded')::boolean, '…once per session, not on every page load');
+select pg_temp.expect((public.admin_log_session(:adm, 'sign_out', '0123456789abcdef', null)->>'recorded')::boolean, 'console sign-out is recorded');
+select pg_temp.denied(format('select public.admin_log_session(%L, ''sign_in'', ''0123456789abcdef'', null)', :asha), 'non-members cannot write session events');
+reset role;
+select pg_temp.expect((select count(*) from private.admin_audit_log where action in ('invite.create', 'invite.accept', 'invite.revoke', 'member.permissions', 'member.suspend', 'member.reactivate', 'console.sign_in', 'console.sign_out')) >= 9, 'invitations, permission changes, suspensions and sessions are in the audit log');
+select pg_temp.expect((select actor_role = 'founder' and before ? 'permissions' and after ? 'permissions' from private.admin_audit_log where action = 'member.permissions' order by at desc limit 1), 'permission changes record the role at the time and the before and after permissions');
+select pg_temp.expect((select count(*) from private.admin_audit_log where action = 'invite.accept' and outcome = 'denied') >= 1, 'a refused invitation acceptance is recorded');
+
+-- ── support requests: people write in from the app; staff with support permissions reply ──
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000001","is_anonymous":false}', false);
+select pg_temp.expect((public.support_submit('sign_in', 'Cannot sign in', 'The code never arrives on my phone')->>'ref') ~ '^S-\d+$', 'a signed-in person opens a support request');
+select pg_temp.expect(jsonb_array_length(public.support_mine()) = 1 and jsonb_array_length(public.support_mine()->0->'messages') = 1, '…and sees it with their message');
+select pg_temp.denied($$select * from private.support_requests$$, 'people cannot read the support table directly');
+select pg_temp.denied($$select public.admin_support('b0000000-0000-0000-0000-000000000001', null, false, 1)$$, 'people cannot call staff support functions');
+do $$ begin
+  begin perform public.support_submit('records', 'x', 'too short body text here'); raise exception 'FAILED: a 1-letter subject was accepted';
+  exception when check_violation then raise notice 'ok: support requests are validated'; end;
+end $$;
+select public.support_submit('other', 'Second request', 'Fictional request number two');
+select public.support_submit('other', 'Third request', 'Fictional request number three');
+select public.support_submit('other', 'Fourth request', 'Fictional request number four');
+select public.support_submit('other', 'Fifth request', 'Fictional request number five');
+select pg_temp.expect(public.support_submit('other', 'Sixth request', 'Fictional request number six')->>'error' = 'too_many', 'at most five new requests a day per person');
+select pg_temp.expect((public.feedback_submit('idea', 'medicines', 'A weekly view of doses would help')->>'ok')::boolean, 'a signed-in person sends product feedback');
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000001","is_anonymous":true}', false);
+select pg_temp.denied($$select public.support_submit('other', 'Anon', 'An anonymous visitor writing in')$$, 'anonymous sessions cannot open requests');
+reset role;
+select set_config('t.asha_req', (select id::text from private.support_requests where subject = 'Cannot sign in'), false);
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000002', false);
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000002","is_anonymous":false}', false);
+select pg_temp.expect(jsonb_array_length(public.support_mine()) = 0, 'people see only their own requests');
+do $$ begin
+  begin perform public.support_reply(current_setting('t.asha_req')::uuid, 'Replying to someone else');
+    raise exception 'FAILED: replied to another person''s request';
+  exception when no_data_found then raise notice 'ok: people cannot reply to someone else''s request'; end;
+end $$;
+reset role;
+set role anon;
+select pg_temp.denied($$select public.feedback_submit('idea', 'other', 'anonymous')$$, 'signed-out visitors cannot send feedback');
+reset role;
+
+set role service_role;
+select pg_temp.denied(format('select public.admin_support(%L, null, false, 1)', :analyst), 'support requests need the support permission');
+select pg_temp.expect((public.admin_support(:support, null, false, 1)->'counts'->>'new')::int = 5, 'support staff see the queue');
+select pg_temp.expect(public.admin_support_item(:support, (select (r->>'id')::uuid from jsonb_array_elements(public.admin_support(:support, null, false, 1)->'rows') r where r->>'subject' = 'Cannot sign in'), 'req-sup')->'requester'->>'email' = 'asha.sample@example.test', 'opening a request shows who wrote in');
+select public.admin_support_message(:support, (select (r->>'id')::uuid from jsonb_array_elements(public.admin_support(:support, null, false, 1)->'rows') r where r->>'subject' = 'Cannot sign in'), 'Please try the email link instead.', false, null);
+select public.admin_support_message(:support, (select (r->>'id')::uuid from jsonb_array_elements(public.admin_support(:support, null, false, 1)->'rows') r where r->>'subject' = 'Cannot sign in'), 'Internal: check SMS provider', true, null);
+select pg_temp.expect((select r->>'status' = 'waiting' and r->>'first_response_at' is not null from jsonb_array_elements(public.admin_support(:support, null, false, 1)->'rows') r where r->>'subject' = 'Cannot sign in'), 'a reply records the first response and waits for the person');
+select pg_temp.expect((public.admin_support_update(:support, (select (r->>'id')::uuid from jsonb_array_elements(public.admin_support(:support, null, false, 1)->'rows') r where r->>'subject' = 'Cannot sign in'), '{"assigned_email":"support@example.test","priority":"high"}', null)->>'ok')::boolean, 'support staff assign and prioritise');
+do $$ begin
+  begin perform public.admin_support_update('a0000000-0000-0000-0000-000000000005', current_setting('t.asha_req')::uuid, '{"assigned_email":"analyst@example.test"}', null);
+    raise exception 'FAILED: assigned to someone who cannot respond';
+  exception when invalid_parameter_value then raise notice 'ok: requests are only assigned to people who can respond'; end;
+end $$;
+reset role;
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+select set_config('request.jwt.claims', '{"sub":"b0000000-0000-0000-0000-000000000001","is_anonymous":false}', false);
+select pg_temp.expect((select jsonb_array_length(r->'messages') = 2 and r->'messages'->1->>'from' = 'Doctine support' and r->>'status' = 'waiting' from jsonb_array_elements(public.support_mine()) r where r->>'subject' = 'Cannot sign in'), 'the person sees the reply, never the internal note');
+select public.support_reply((select (r->>'id')::uuid from jsonb_array_elements(public.support_mine()) r where r->>'subject' = 'Cannot sign in'), 'Thanks, that worked');
+select pg_temp.expect((select r->>'status' from jsonb_array_elements(public.support_mine()) r where r->>'subject' = 'Cannot sign in') = 'open', 'their reply reopens the request for staff');
+reset role;
+set role service_role;
+select pg_temp.expect((select count(*) from jsonb_array_elements(public.admin_support_item(:support, (select (r->>'id')::uuid from jsonb_array_elements(public.admin_support(:support, null, false, 1)->'rows') r where r->>'subject' = 'Cannot sign in'), null)->'messages') m where (m->>'internal')::boolean) = 1, 'staff see their internal notes');
+
+-- ── feedback, bugs and tasks ──
+select pg_temp.denied(format('select public.admin_feedback(%L, null, null, 1)', :analyst), 'feedback needs the feedback permission');
+select pg_temp.expect((select f->>'account' ~ '^[0-9a-f]{8}$' and not (f::text ilike '%asha%') from jsonb_array_elements(public.admin_feedback(:ravi, null, null, 1)->'rows') f limit 1), 'feedback shows a pseudonymous code, never who sent it');
+select pg_temp.expect((public.admin_work_save(:ravi, jsonb_build_object('type', 'feature', 'title', 'Weekly dose view', 'source_feedback', (select f->>'id' from jsonb_array_elements(public.admin_feedback(:ravi, null, null, 1)->'rows') f limit 1)), null)->>'ok')::boolean, 'a Co-Founder turns feedback into a feature request');
+select pg_temp.expect((select f->>'status' = 'planned' and f->>'work_ref' ~ '^F-\d+$' from jsonb_array_elements(public.admin_feedback(:ravi, null, null, 1)->'rows') f limit 1), '…which links the feedback and marks it planned');
+select public.admin_work_save(:ravi, '{"type":"bug","title":"Reminder fires twice","severity":"major","category":"reminders"}', null);
+select pg_temp.denied(format('select public.admin_work_save(%L, ''{"type":"bug","title":"Analyst bug"}'', null)', :analyst), 'creating bugs needs bugs.manage');
+select pg_temp.expect((public.admin_work(:ravi, 'bug', 'open', 1)->'counts'->>'open_bugs')::int = 1 and jsonb_array_length(public.admin_work(:ravi, null, null, 1)->'weekly') = 12, 'open bugs are counted, with a 12-week trend');
+select public.admin_work_save(:ravi, jsonb_build_object('id', (select r->>'id' from jsonb_array_elements(public.admin_work(:ravi, 'bug', null, 1)->'rows') r limit 1), 'status', 'done'), null);
+select pg_temp.expect((select r->>'resolved_at' is not null from jsonb_array_elements(public.admin_work(:ravi, 'bug', null, 1)->'rows') r limit 1), 'closing a bug records when it was resolved');
+
+-- ── content and release notes: drafting is separate from publishing; clinical content needs review ──
+select pg_temp.expect((public.admin_content_save(:ravi, '{"type":"release_note","title":"Faster record search","body":"Search now finds records by provider."}', 'save', null)->>'ok')::boolean, 'a Co-Founder drafts release notes');
+select pg_temp.denied(format('select public.admin_content_save(%L, %L, ''publish'', null)', :ravi, jsonb_build_object('id', (select r->>'id' from jsonb_array_elements(public.admin_content(:ravi, 'release_note')->'rows') r limit 1))), 'publishing release notes needs explicit permission');
+select public.admin_content_save(:owner, jsonb_build_object('id', (select r->>'id' from jsonb_array_elements(public.admin_content(:owner, 'release_note')->'rows') r limit 1)), 'publish', null);
+select pg_temp.expect(public.public_settings()->'whats_new'->0->>'title' = 'Faster record search', 'published release notes reach the app''s What''s new');
+select public.admin_content_save(:owner, '{"type":"education","title":"Understanding HbA1c","body":"Fictional educational text.","clinical":true}', 'save', null);
+select pg_temp.expect((public.admin_content_save(:owner, jsonb_build_object('id', (select r->>'id' from jsonb_array_elements(public.admin_content(:owner, 'education')->'rows') r limit 1)), 'publish', null)->>'error') = 'clinical_review_required', 'clinical content cannot be published without a clinical review');
+select public.admin_content_save(:owner, jsonb_build_object('id', (select r->>'id' from jsonb_array_elements(public.admin_content(:owner, 'education')->'rows') r limit 1), 'clinical_note', 'Dr A. Sample, MBBS (fictional)'), 'clinical_review', null);
+select pg_temp.expect((public.admin_content_save(:owner, jsonb_build_object('id', (select r->>'id' from jsonb_array_elements(public.admin_content(:owner, 'education')->'rows') r limit 1)), 'publish', null)->>'ok')::boolean, '…and can be published once reviewed');
+select pg_temp.expect((public.admin_announcement_save(:ravi, '{"kind":"product","title":"Draft by a Co-Founder"}', null)->>'ok')::boolean, 'a Co-Founder drafts an announcement');
+select pg_temp.denied(format('select public.admin_announcement_save(%L, ''{"kind":"product","title":"Go live","status":"published"}'', null)', :ravi), '…but cannot publish it without content.publish');
+
+-- ── dashboards show only what each person may see ──
+select pg_temp.expect(public.admin_product_overview(:ravi, now() - interval '30 days', now() + interval '1 minute')->>'support' is null and public.admin_product_overview(:ravi, now() - interval '30 days', now() + interval '1 minute')->'bugs' is not null, 'a Co-Founder''s dashboard omits sections they have no permission for');
+select pg_temp.expect((public.admin_product_overview(:owner, now() - interval '30 days', now() + interval '1 minute')->'leadership'->>'co_founders')::int = 6, 'the Founder''s dashboard includes leadership figures');
+select pg_temp.expect((public.admin_product_overview(:owner, now() - interval '30 days', now() + interval '1 minute')->'support'->>'created')::int = 5, '…and support volume');
+select pg_temp.expect((select bool_and(p->>'founder_only' = 'true') from jsonb_array_elements(public.admin_perm_catalog(:owner)->'permissions') p where p->>'key' in ('team.manage', 'security.manage', 'ai.manage')), 'the permission catalogue marks Founder-only permissions');
+reset role;
+
+-- No admin function is callable by browsers; only the four people-facing functions are, and only when signed in.
+select pg_temp.expect(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname like 'admin\_%'
+  and (has_function_privilege('authenticated', p.oid, 'execute') or has_function_privilege('anon', p.oid, 'execute'))), 'no admin function can be called from a browser');
+select pg_temp.expect((select bool_and(has_function_privilege('authenticated', p.oid, 'execute') and not has_function_privilege('anon', p.oid, 'execute')) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public' and p.proname in ('support_submit', 'support_mine', 'support_reply', 'feedback_submit')), 'support and feedback functions are for signed-in people only');
 
 select pg_temp.expect(not exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'private' and c.relkind = 'r' and not c.relrowsecurity), 'every private table has row-level security on');
 \echo ALL ADMIN TESTS PASSED

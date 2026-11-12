@@ -11,6 +11,7 @@ export const DEFAULTS = Object.freeze({
   flags: { registrations: true, document_upload: true, pdf_reading: true, sample_data: true, ai_assistant: false },
   maintenance: { on: false, message: "" },
   announcements: [],
+  whatsNew: [],
 });
 let cache = null;
 
@@ -26,7 +27,8 @@ export async function getSettings({ env = process.env, fetchImpl = fetch, fresh 
       if (r.ok) {
         const s = await r.json();
         value = { flags: { ...DEFAULTS.flags, ...(s && s.flags) }, maintenance: { ...DEFAULTS.maintenance, ...(s && s.maintenance) },
-          announcements: Array.isArray(s && s.announcements) ? s.announcements.slice(0, 5) : [], source: "database" };
+          announcements: Array.isArray(s && s.announcements) ? s.announcements.slice(0, 5) : [],
+          whatsNew: Array.isArray(s && s.whats_new) ? s.whats_new.slice(0, 5) : [], source: "database" };
       }
     } catch { /* keep defaults */ }
   }

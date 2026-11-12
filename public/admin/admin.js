@@ -40,12 +40,17 @@ const ICON = {
   security: "M3 11h18v10H3zM7 11V7a5 5 0 0 1 10 0v4", definitions: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5", settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4",
   search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3", bell: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0", refresh: "M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6",
   menu: "M3 6h18M3 12h18M3 18h18", collapse: "M11 17l-5-5 5-5M18 17l-5-5 5-5", out: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9", info: "M12 16v-4M12 8h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z",
+  support: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM8 9h8M8 13h5", feedback: "M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z",
+  work: "M9 11l3 3 8-8M4 6h4M4 12h4M4 18h16", content: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z", lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
   x: "M18 6 6 18M6 6l12 12", columns: "M12 3v18M3 3h18v18H3z", download: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3",
 };
 const ic = (k, cls = "i") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[k] || ICON.info}"/></svg>`;
 
 const A = { sb: null, session: null, me: null, cfg: null, route: "dashboard", period: ls.get("period", { key: "30d" }), seq: 0, activity: null };
-const can = (p) => !!(A.me && A.me.perms && A.me.perms.includes(p));
+// "a|b" means either permission. Cosmetic only: the database checks every request.
+const can = (p) => !!(A.me && A.me.perms && String(p).split("|").some((x) => A.me.perms.includes(x)));
+const isFounder = () => !!(A.me && A.me.role === "founder");
+const titleBadge = (role, title) => `<span class="title-badge ${role === "founder" ? "fo" : "co"}">${esc(title || (role === "founder" ? "Founder" : "Co-Founder"))}</span>`;
 
 /* ───────────────────────── periods (calendar days in IST) ───────────────────────── */
 function istMidnight(ms) { const d = new Date(ms + IST); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - IST; }
@@ -82,9 +87,9 @@ async function api(action, args = {}, { raw = false } = {}) {
   }
   return j.data;
 }
-const ERR = { forbidden: "Your role does not allow this.", not_installed: "The admin database update has not been applied to this Supabase project yet.", not_configured: "The server is missing its Supabase settings.",
+const ERR = { forbidden: "Your permissions do not allow this.", not_installed: "The admin database update has not been applied to this Supabase project yet.", not_configured: "The server is missing its Supabase settings.",
   mfa_required: "Two-step sign-in is required.", invalid: "Some details were not accepted.", invalid_period: "That date range is not valid (up to 400 days).", not_found: "Not found.", rate_limited: "Too many requests. Please wait a moment.",
-  database_error: "The database did not answer. Please try again.", server_error: "The server hit an error. It has been recorded.", invalid_report: "Unknown report." };
+  database_error: "The database did not answer. Please try again.", server_error: "The server hit an error. It has been recorded.", invalid_report: "Unknown report.", not_invited: "This invitation is no longer valid." };
 const errText = (e) => esc(ERR[e.code] || "Something went wrong (" + (e.code || e.message) + ").") + (e.request_id ? ` <span class="mono">ref ${esc(e.request_id.slice(0, 8))}</span>` : "");
 function toast(msg, bad = false) { const t = document.createElement("div"); t.className = "toast" + (bad ? " bad" : ""); t.setAttribute("role", "status"); t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3800); }
 async function download(action, args, fallback) {
@@ -110,7 +115,7 @@ async function boot() {
     $("#root").innerHTML = `<main class="gate"><div class="card"><div class="mark">D</div><h1>Admin console unavailable</h1><p>This site is not connected to its account service, so there is nothing to administer here.</p></div></main>`;
     return;
   }
-  A.sb = window.supabase.createClient(A.cfg.supabaseUrl, A.cfg.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
+  A.sb = window.supabase.createClient(A.cfg.supabaseUrl, A.cfg.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
   A.sb.auth.onAuthStateChange((ev) => { if (ev === "SIGNED_OUT") renderGate(); });
   await enter();
 }
@@ -120,21 +125,23 @@ async function enter() {
     const t = await token();
     const r = await fetch("/api/admin", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + t }, body: '{"action":"me"}' });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) { const e = new Error(j.error); e.code = j.error; e.status = r.status; e.request_id = j.request_id; throw e; }
+    if (!r.ok) { const e = new Error(j.error); e.code = j.error; e.status = r.status; e.request_id = j.request_id; e.suspended = !!j.suspended; throw e; }
     A.me = j;
   } catch (e) {
     if (e.status === 401) return renderGate("Please sign in again.");
-    if (e.code === "forbidden") return renderNoAccess();
+    if (e.code === "forbidden") return renderNoAccess(e.suspended);
     return renderGate(null, errText(e));
   }
+  if (!A.me.role && A.me.invite) return renderInvite(A.me.invite);
   if (A.me.mfa_required) return renderMfa();
   renderShell();
+  api("session", { event: "sign_in" }).catch(() => {}); // recorded once per session in the audit log
 }
 function renderGate(msg, htmlErr) {
   $("#root").innerHTML = `<main class="gate"><form class="card" id="signin" novalidate>
     <div class="mark" aria-hidden="true">D</div>
     <h1>Doctine admin</h1>
-    <p>For the Doctine team only. Sign in with your Doctine account. Access is given by the owner; there is no sign-up here.</p>
+    <p>For Doctine's leadership only. Sign in with your Doctine account. Access is by invitation from the Founder; there is no sign-up here.</p>
     ${msg ? `<div class="callout" style="margin-bottom:10px">${esc(msg)}</div>` : ""}
     <label class="f" for="em">Email</label><input id="em" type="email" autocomplete="username" required>
     <label class="f" for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" required>
@@ -150,12 +157,35 @@ function renderGate(msg, htmlErr) {
     enter();
   });
 }
-function renderNoAccess() {
+function renderNoAccess(suspended) {
   const email = A.session && A.session.user && A.session.user.email;
-  $("#root").innerHTML = `<main class="gate"><div class="card"><div class="mark" aria-hidden="true">D</div><h1>No admin access</h1>
-    <p>${email ? `You are signed in as <b>${esc(email)}</b>, which` : "This account"} is not on the Doctine admin team. The attempt has been recorded.</p>
+  $("#root").innerHTML = `<main class="gate"><div class="card"><div class="mark" aria-hidden="true">D</div><h1>${suspended ? "Access suspended" : "No admin access"}</h1>
+    <p>${suspended ? `Your leadership access${email ? ` as <b>${esc(email)}</b>` : ""} has been suspended by the Founder. Your Doctine account itself is unaffected.` : `${email ? `You are signed in as <b>${esc(email)}</b>, which` : "This account"} is not part of Doctine's leadership team.`} The attempt has been recorded.</p>
     <div class="row"><a class="btn" href="/">Go to Doctine</a><button class="btn ghost" id="so">Sign out</button></div></div></main>`;
   $("#so").onclick = async () => { await A.sb.auth.signOut({ scope: "local" }); renderGate(); };
+}
+/* An invitation addressed to this account's verified email. Accepting is the only thing a non-member can do. */
+function renderInvite(inv) {
+  const email = A.session && A.session.user && A.session.user.email, k = (inv.permissions || []).length;
+  $("#root").innerHTML = `<main class="gate"><form class="card" id="inv" novalidate><div class="mark" aria-hidden="true">D</div><h1>You're invited</h1>
+    <p><b>${esc(inv.invited_by || "Doctine's Founder")}</b> has invited ${email ? `<b>${esc(email)}</b>` : "you"} to Doctine's leadership console as ${titleBadge("co_founder")}.</p>
+    <p class="muted">You will have ${n(k)} permission${k === 1 ? "" : "s"} chosen by the Founder, who can change them later. The invitation expires ${dt(inv.expires_at)} IST. Two-step sign-in is set up next; it is required for everyone.</p>
+    ${inv.needs_password ? `<label class="f" for="np">Choose a password for your Doctine account</label><input id="np" type="password" autocomplete="new-password" minlength="10" required><p class="hint">At least 10 characters.</p>` : ""}
+    <p class="err" id="ierr" role="alert"></p>
+    <button class="btn primary" style="width:100%;margin-top:12px;min-height:38px" type="submit">Accept and continue</button>
+    <button class="btn ghost" type="button" id="so" style="width:100%;margin-top:6px">Not now · sign out</button></form></main>`;
+  $("#so").onclick = async () => { await A.sb.auth.signOut({ scope: "local" }); renderGate(); };
+  $("#inv").onsubmit = async (ev) => {
+    ev.preventDefault(); const b = $("#inv button[type=submit]"); $("#ierr").textContent = "";
+    if (inv.needs_password) {
+      const pw = $("#np").value; if (pw.length < 10) { $("#ierr").textContent = "Use at least 10 characters."; return; }
+      b.disabled = true; const { error } = await A.sb.auth.updateUser({ password: pw });
+      if (error) { b.disabled = false; $("#ierr").textContent = "The password was not accepted: " + error.message; return; }
+    }
+    b.disabled = true;
+    try { await api("accept_invite", { id: inv.id }); toast("Welcome to Doctine's leadership console."); enter(); }
+    catch (e) { b.disabled = false; $("#ierr").textContent = e.status === 403 ? ERR.not_invited : "That did not work. Please try again."; }
+  };
 }
 async function renderMfa() {
   const { data } = await A.sb.auth.mfa.listFactors();
@@ -176,8 +206,8 @@ async function renderMfa() {
     return;
   }
   const { data: en, error } = await A.sb.auth.mfa.enroll({ factorType: "totp", friendlyName: "Doctine admin " + new Date().toISOString().slice(0, 10) });
-  if (error) { shell(`<h1>Two-step sign-in needed</h1><p>It could not be set up here (${esc(error.message)}). Ask the owner to check that TOTP is enabled in Supabase Auth.</p>`); return; }
-  shell(`<h1>Set up two-step sign-in</h1><p>Scan this with an authenticator app (Google Authenticator, 1Password, Authy…), then enter the code it shows.</p>
+  if (error) { shell(`<h1>Two-step sign-in needed</h1><p>It could not be set up here (${esc(error.message)}). Ask the Founder to check that TOTP is enabled in Supabase Auth.</p><button class="btn ghost" type="button" id="so" style="width:100%">Sign out</button>`); $("#so").onclick = async () => { await A.sb.auth.signOut({ scope: "local" }); renderGate(); }; return; }
+  shell(`<h1>Set up two-step sign-in</h1><p>Required for everyone in the leadership console. Scan this with an authenticator app (Google Authenticator, 1Password, Authy…), then enter the code it shows.</p>
     <img alt="QR code for your authenticator app" src="${esc(en.totp.qr_code)}" width="180" height="180" style="display:block;margin:0 auto 8px;background:#fff">
     <p class="hint">Can't scan? Enter this key: <span class="mono">${esc(en.totp.secret)}</span></p>
     <label class="f" for="code">Code</label><input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
@@ -194,19 +224,20 @@ async function renderMfa() {
 const NAV = [
   ["Overview", [["dashboard", "Dashboard", "dashboard.view"], ["analytics", "Analytics", "analytics.view"], ["reports", "Reports", "reports.export"]]],
   ["Operations", [["users", "Users", "users.view"], ["documents", "Documents", "documents.view"], ["health", "Platform health", "health.view"], ["errors", "Errors", "health.view"], ["incidents", "Incidents", "health.view"], ["alerts", "Alerts", "health.view"]]],
-  ["Control", [["flags", "Feature switches", "flags.view"], ["maintenance", "Maintenance", "flags.view"], ["announcements", "Announcements", "dashboard.view"]]],
-  ["Security", [["team", "Admin team", "team.view"], ["audit", "Audit log", "audit.view"], ["security", "Security events", "security.view"]]],
+  ["Product", [["support", "Support", "support.view"], ["feedback", "Feedback", "feedback.view"], ["work", "Bugs and tasks", "bugs.view|feedback.view"], ["content", "Content and releases", "content.view|releases.view"]]],
+  ["Control", [["flags", "Feature switches", "flags.view"], ["maintenance", "Maintenance", "flags.view|maintenance.manage"], ["announcements", "Announcements", "content.view"]]],
+  ["Leadership", [["team", "Leadership", "team.view"], ["audit", "Audit log", "audit.view"], ["security", "Security events", "security.view"]]],
   ["Settings", [["definitions", "Metric definitions", "dashboard.view"], ["settings", "Admin settings", "dashboard.view"]]],
 ];
 const PAGES = Object.fromEntries(NAV.flatMap(([g, items]) => items.map(([k, t, p]) => [k, { title: t, group: g, perm: p }])));
-const PERIOD_VIEWS = new Set(["dashboard", "analytics", "documents", "reports", "audit"]);
+const PERIOD_VIEWS = new Set(["dashboard", "analytics", "documents", "reports", "audit", "support"]);
 
 function renderShell() {
   const env = (A.cfg.environment || "unset").toLowerCase();
   $("#root").innerHTML = `<div class="shell${ls.get("mini", false) ? " mini" : ""}" id="shell">
     <aside class="side" id="side" aria-label="Admin sections">
-      <div class="brand"><div class="mark" aria-hidden="true">D</div><div><b>Doctine</b><small>Admin console</small></div></div>
-      <nav class="nav">${NAV.map(([g, items]) => { const vis = items.filter(([, , p]) => can(p)); return vis.length ? `<h2>${g}</h2>` + vis.map(([k, t]) => `<a href="#/${k}" data-k="${k}" title="${t}">${ic(k)}<span>${t}</span>${k === "alerts" ? `<b class="count" id="nav-alerts" hidden></b>` : ""}</a>`).join("") : ""; }).join("")}</nav>
+      <div class="brand"><div class="mark" aria-hidden="true">D</div><div><b>Doctine</b><small>Leadership console</small></div></div>
+      <nav class="nav">${NAV.map(([g, items]) => { const vis = items.filter(([, , p]) => can(p)); return vis.length ? `<h2>${g}</h2>` + vis.map(([k, t]) => `<a href="#/${k}" data-k="${k}" title="${t}">${ic(k)}<span>${t}</span>${k === "alerts" ? `<b class="count" id="nav-alerts" hidden></b>` : k === "support" ? `<b class="count" id="nav-support" hidden></b>` : ""}</a>`).join("") : ""; }).join("")}</nav>
       <div class="side-foot"><button class="collapse" id="collapse" title="Collapse the sidebar">${ic("collapse")}<span>Collapse</span></button></div>
     </aside>
     <div class="main">
@@ -218,7 +249,7 @@ function renderShell() {
           <button class="iconbtn" id="refresh" title="Refresh this page" aria-label="Refresh">${ic("refresh")}</button>
           <div style="position:relative"><button class="iconbtn" id="bell" aria-label="Notifications" aria-expanded="false">${ic("bell")}<b class="dot" id="bell-n" hidden></b></button></div>
           <span class="env ${esc(env)}" title="Which site this console is connected to">${esc(env === "production" ? "Production" : env === "unset" ? "Environment not set" : env)}</span>
-          <div style="position:relative"><button class="who" id="who" aria-expanded="false" aria-label="Your account"><span class="avatar">${esc((A.me.email || "?").slice(0, 1))}</span><span class="meta"><b>${esc(A.me.email || "")}</b><small>${esc(A.me.role)}</small></span></button></div>
+          <div style="position:relative"><button class="who" id="who" aria-expanded="false" aria-label="Your account"><span class="avatar">${esc((A.me.email || "?").slice(0, 1))}</span><span class="meta"><b>${esc(A.me.email || "")}</b>${titleBadge(A.me.role, A.me.title)}</span></button></div>
         </div>
         <div class="sub-row" id="filters"></div>
       </header>
@@ -228,7 +259,7 @@ function renderShell() {
   $("#side").addEventListener("click", (e) => { if (e.target.closest("a")) { $("#side").classList.remove("open"); $("#menu").setAttribute("aria-expanded", "false"); } });
   $("#collapse").onclick = () => { const m = $("#shell").classList.toggle("mini"); ls.set("mini", m); };
   $("#refresh").onclick = async () => { const b = $("#refresh"); b.classList.add("spin"); await route(); b.classList.remove("spin"); toast("Refreshed."); refreshBadges(); };
-  $("#who").onclick = (e) => popover(e.currentTarget, `<div style="padding:8px 8px 10px"><b>${esc(A.me.email)}</b><div class="muted" style="text-transform:capitalize">${esc(A.me.role)} · ${A.me.aal === "aal2" ? "two-step sign-in used" : "password only"}</div></div>
+  $("#who").onclick = (e) => popover(e.currentTarget, `<div style="padding:8px 8px 10px"><b>${esc(A.me.email)}</b><div style="margin-top:6px">${titleBadge(A.me.role, A.me.title)}</div><div class="muted" style="margin-top:4px">${A.me.aal === "aal2" ? "Two-step sign-in used" : "Password only"}</div></div>
     <a href="#/settings">${ic("settings")} Admin settings</a><button class="item" id="pop-out">${ic("out")} Sign out</button>`, (p) => { $("#pop-out", p).onclick = signOut; });
   $("#bell").onclick = (e) => openNotifications(e.currentTarget);
   setupSearch();
@@ -238,7 +269,7 @@ function renderShell() {
   refreshBadges();
   setInterval(refreshBadges, 120000);
 }
-async function signOut() { await A.sb.auth.signOut({ scope: "local" }); renderGate("You have signed out."); }
+async function signOut() { try { await api("session", { event: "sign_out" }); } catch {} await A.sb.auth.signOut({ scope: "local" }); renderGate("You have signed out."); }
 
 let popEl = null;
 function closePop() { if (popEl) { popEl.remove(); popEl = null; $$("[aria-expanded=true].iconbtn,[aria-expanded=true].who,[aria-expanded=true].btn").forEach((b) => b.setAttribute("aria-expanded", "false")); } }
@@ -250,16 +281,17 @@ function popover(anchor, html, init) {
   setTimeout(() => document.addEventListener("click", function off(e) { if (popEl !== mine) return document.removeEventListener("click", off); if (!mine.contains(e.target) && !anchor.contains(e.target)) { closePop(); document.removeEventListener("click", off); } }), 0);
 }
 async function refreshBadges() {
-  if (!can("health.view")) return;
   try {
+    if (!can("health.view")) throw 0;
     const a = await api("activity"); A.activity = a;
     const k = (a.alerts || []).filter((x) => x.status === "open").length, i = (a.incidents || []).length;
     const bn = $("#bell-n"); if (bn) { bn.hidden = !(k + i); bn.textContent = k + i; }
     const na = $("#nav-alerts"); if (na) { na.hidden = !k; na.textContent = k; }
   } catch {}
+  if (can("support.view")) { try { const c = (await api("support_list", { status: "new" })).counts; const ns = $("#nav-support"); if (ns) { ns.hidden = !c.new; ns.textContent = c.new; } } catch {} }
 }
 async function openNotifications(anchor) {
-  if (!can("health.view")) return popover(anchor, `<div style="padding:10px" class="muted">Your role does not receive platform notifications.</div>`);
+  if (!can("health.view")) return popover(anchor, `<div style="padding:10px" class="muted">Your permissions do not include platform notifications.</div>`);
   popover(anchor, `<div style="padding:10px" class="muted">Loading…</div>`);
   try { A.activity = await api("activity"); } catch {}
   if (!popEl) return;
@@ -317,8 +349,8 @@ function renderFilters() {
 async function route() {
   closeDrawer(); closePop();
   const k = location.hash.replace(/^#\/?/, "").split("?")[0] || "dashboard";
-  const ok = PAGES[k] && can(PAGES[k].perm);
-  A.route = ok ? k : NAV.flatMap(([, i]) => i).find(([, , p]) => can(p))[0];
+  if (PAGES[k] && !can(PAGES[k].perm)) return renderDenied(k);
+  A.route = PAGES[k] ? k : NAV.flatMap(([, i]) => i).find(([, , p]) => can(p))[0];
   $$(".nav a").forEach((a) => (a.dataset.k === A.route ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
   const pg = PAGES[A.route];
   $("#title").textContent = pg.title; $("#crumb").textContent = pg.group; document.title = "Doctine · " + pg.title;
@@ -329,6 +361,18 @@ async function route() {
   catch (e) { if (e.message !== "signed_out" && seq === A.seq) { v.innerHTML = `<div class="state err" data-state="unavailable"><b>Unavailable</b><span>${errText(e)}</span><button class="btn sm" id="retry" style="margin-top:8px">Try again</button></div>`; const rb = $("#retry"); if (rb) rb.onclick = () => route(); } }
 }
 const stale = (seq) => seq !== A.seq;
+// A page outside this person's permissions: a clear refusal (never a silent redirect), recorded on the server.
+const FOUNDER_PAGES = new Set(["team"]);
+function renderDenied(k) {
+  A.route = null; A.seq++;
+  $$(".nav a").forEach((a) => a.removeAttribute("aria-current"));
+  $("#title").textContent = "Not authorised"; $("#crumb").textContent = PAGES[k].group; document.title = "Doctine · Not authorised";
+  const f = $("#filters"); if (f) { f.innerHTML = ""; f.style.display = "none"; }
+  $("#view").innerHTML = `<div class="denied" data-state="unauthorized">${ic("lock", "i big")}<h2>You don't have access to ${esc(PAGES[k].title)}</h2>
+    <p>${FOUNDER_PAGES.has(k) && !can("team.view") ? "This page is for the Founder." : "Your permissions don't include this page."} Permissions are set individually by the Founder${isFounder() ? "" : "; ask them if you need it"}. This attempt has been recorded.</p>
+    <a class="btn primary" href="#/dashboard">Go to your dashboard</a></div>`;
+  api("page_denied", { page: k }).catch(() => {});
+}
 
 /* ───────────────────────── charts (plain SVG) ───────────────────────── */
 let chartN = 0;
@@ -431,12 +475,14 @@ const VIEWS = {};
 /* Dashboard */
 VIEWS.dashboard = async (v, seq) => {
   const p = periodRange(), pp = prevRange(p), wantSeries = can("analytics.view");
-  const [o, s, sp, act] = await Promise.all([api("overview", p), wantSeries ? api("series", p).catch(() => null) : null, wantSeries ? api("series", pp).catch(() => null) : null, api("activity").catch(() => null)]);
+  const [o, s, sp, act, po, wk] = await Promise.all([api("overview", p), wantSeries ? api("series", p).catch(() => null) : null, wantSeries ? api("series", pp).catch(() => null) : null, api("activity").catch(() => null),
+    api("product_overview", p).catch(() => null), can("bugs.view") ? api("work", { type: "bug", status: "open" }).catch(() => null) : null]);
   if (stale(seq)) return;
   if (act) A.activity = act;
   const sl = (k) => (s ? spark(s.map((d) => d[k])) : "");
   const av = o.availability, avp = o.availability_prev, storagePct = o.storage_limit ? (o.storage_bytes / o.storage_limit) * 100 : null;
-  v.innerHTML = `<p class="lead">How Doctine is doing in <b>${esc(p.label.toLowerCase())}</b>. Updated ${dt(o.generated_at)} IST. Click any card for detail.</p>
+  const hour = +new Intl.DateTimeFormat("en-IN", { timeZone: TZ, hour: "numeric", hour12: false }).format(new Date());
+  v.innerHTML = `<div class="hello">${titleBadge(A.me.role, A.me.title)}<h2>${isFounder() ? "Founder dashboard" : "Co-Founder dashboard"}</h2><span class="muted">Good ${hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening"}. How Doctine is doing in <b>${esc(p.label.toLowerCase())}</b>. Updated ${dt(o.generated_at)} IST. Click any card for detail.</span></div>
   <div class="grid kpis">
     ${kpi({ id: "accounts", label: "Registered accounts", value: o.users_total, meta: delta(o.users_total, o.users_total_prev), tip: "All accounts at the end of the period, excluding deleted and anonymous ones.", href: can("users.view") ? "#/users" : null, sparkline: sl("users_total") })}
     ${kpi({ id: "new", label: "New accounts", value: o.users_new, meta: delta(o.users_new, o.users_new_prev), tip: "Accounts created in the selected period.", href: can("analytics.view") ? "#/analytics" : null, sparkline: sl("users_new") })}
@@ -453,12 +499,28 @@ VIEWS.dashboard = async (v, seq) => {
     ${av && av.checks ? kpi({ id: "availability", label: "Platform availability", display: av.pct + "%", meta: `<span class="muted">${n(av.ok)} of ${n(av.checks)} checks passed${avp && avp.checks && avp.pct != null ? ` · previous ${avp.pct}%` : " · no checks in the previous period"}</span>`, tip: "Share of scheduled health checks of the app that passed in the period.", href: can("health.view") ? "#/health" : null })
       : kpi({ id: "availability", label: "Platform availability", state: "insufficient", meta: o.checks_since ? "No checks were recorded in this period." : "No health checks have been recorded yet.", href: can("health.view") ? "#/health" : null })}
   </div>
+  ${productSection(po, wk, p)}
   ${s ? `${section("Trends", `${esc(p.label)}, day by day (IST). The dashed line is the previous period.`)}<div class="grid cols-2" id="charts"></div>`
-      : `<div class="callout" style="margin-top:16px">${ic("info")}<span>Trend charts need the analytics permission. Your role sees the headline figures.</span></div>`}
+      : `<div class="callout" style="margin-top:16px">${ic("info")}<span>Trend charts need the analytics permission. Your permissions show the headline figures.</span></div>`}
   ${act ? `${section("Activity", "The most recent events")}<div class="grid cols-3" id="activity"></div>` : ""}`;
   if (s) renderDashCharts($("#charts"), s, sp);
   if (act) renderActivity($("#activity"), act);
 };
+// Product, support and leadership figures, each only with its permission (the server leaves out what may not be seen).
+function productSection(po, wk, p) {
+  if (!po) return "";
+  const cards = [], charts = [];
+  if (po.support) cards.push(kpi({ id: "p-support", label: "Open support requests", value: po.support.open, meta: `<span class="muted">${n(po.support.new)} new · ${n(po.support.created)} opened and ${n(po.support.resolved)} resolved in the period</span>`, href: "#/support", tip: "Requests people sent from the app that are new, open or waiting for the person." }));
+  if (po.feedback) cards.push(kpi({ id: "p-feedback", label: "New feedback", value: po.feedback.new, meta: `<span class="muted">${n(po.feedback.period)} received in the period</span>`, href: "#/feedback", tip: "Feedback not yet reviewed by the team." }));
+  if (po.bugs) cards.push(kpi({ id: "p-bugs", label: "Open bugs", value: po.bugs.open, meta: `<span class="muted">${n(po.bugs.critical)} critical · ${n(po.bugs.resolved)} resolved in the period</span>`, href: "#/work", tip: "Bugs not done or closed." }));
+  if (po.content) cards.push(kpi({ id: "p-content", label: "Content in review", value: po.content.in_review, meta: `<span class="muted">${n(po.content.published)} published in the period</span>`, href: "#/content", tip: "Drafts submitted for review." }));
+  if (po.support) charts.push(card("Support requests", `${esc(p.label)}: opened and resolved per day`, chart(po.support.daily, [{ key: "created", label: "Opened", color: S1, type: "bar" }, { key: "resolved", label: "Resolved", color: S3, type: "bar" }], { ytitle: "Requests", zeroText: "No support requests were opened or resolved in this period." })));
+  if (wk && wk.weekly) charts.push(card("Bug resolution", "Bugs opened and resolved, last 12 weeks", chart(wk.weekly, [{ key: "bugs_opened", label: "Opened", color: RED, type: "bar" }, { key: "bugs_resolved", label: "Resolved", color: S3, type: "bar" }], { xkey: "week", ytitle: "Bugs", zeroText: "No bugs were opened or resolved in the last 12 weeks." })));
+  const L = po.leadership;
+  const lead = L ? card("Leadership and governance", "", `<dl class="dl"><dt>Active Co-Founders</dt><dd>${n(L.co_founders)}</dd><dt>Pending invitations</dt><dd>${n(L.pending_invites)}</dd><dt>Suspended</dt><dd>${n(L.suspended)}</dd><dt>Without two-step sign-in</dt><dd>${L.without_mfa ? `<span class="st warn">${n(L.without_mfa)}</span>` : `<span class="st good">None</span>`}</dd><dt>Refused requests (24 h)</dt><dd>${n(L.denied_24h)}</dd></dl>`, { right: `<a href="#/team" style="font-size:12px">Leadership</a>` }) : "";
+  if (!cards.length && !lead) return "";
+  return `${section(isFounder() ? "Product, support and leadership" : "Product and support")}${cards.length ? `<div class="grid kpis">${cards.join("")}</div>` : ""}${charts.length || lead ? `<div class="grid cols-2" style="margin-top:12px">${charts.join("")}${lead}</div>` : ""}`;
+}
 function renderDashCharts(host, s, sp) {
   const measured = s.some((d) => d.uploads_completed || d.uploads_failed || d.processing_completed || d.processing_failed);
   const prev = (key) => (sp ? [{ label: "Previous period", color: SG, dash: true, values: alignPrev(sp, key) }] : []);
@@ -492,7 +554,7 @@ function renderActivity(host, a) {
   const panel = (title, href, items, empty) => `<section class="card"><div class="card-h"><h3 style="flex:1">${title}</h3>${href ? `<a href="${href}" style="font-size:12px">View all</a>` : ""}</div><div class="list" style="margin-top:8px">${items.length ? items.join("") : `<div class="li muted">${empty}</div>`}</div></section>`;
   const parts = [];
   if (a.registrations) parts.push(panel("Recent registrations", "#/users", a.registrations.map((u) => `<button class="li" data-user="${esc(u.id)}"><span class="t"><div>${esc(u.email || "(no email)")}</div><div class="muted">${u.confirmed ? "Email confirmed" : "Email not confirmed"}</div></span><span class="r">${ago(u.at)}</span></button>`), "No accounts yet."));
-  else parts.push(panel("Recent registrations", null, [`<div class="li"><span class="t"><div><b>${n(a.registrations_7d)}</b> in the last 7 days</div><div class="muted">Your role does not see account details.</div></span></div>`], ""));
+  else parts.push(panel("Recent registrations", null, [`<div class="li"><span class="t"><div><b>${n(a.registrations_7d)}</b> in the last 7 days</div><div class="muted">Your permissions do not include account details.</div></span></div>`], ""));
   if (a.errors) parts.push(panel("Recent platform errors", "#/errors", a.errors.map((e) => `<button class="li" data-err="${esc(e.fingerprint)}"><span class="t"><div><b>${esc(e.kind)}</b> ${esc(e.message)}</div><div class="muted">${esc(e.source === "server" ? "Server" : "App")} · ${n(e.count)} times</div></span><span class="r">${ago(e.last_seen)}</span></button>`), "No open errors."));
   if (a.checks) parts.push(panel("Latest system checks", "#/health", a.checks.map((c) => `<div class="li"><span class="t"><div>${esc(SERVICE[c.target] || c.target)}</div><div class="muted">${c.ms != null ? n(c.ms) + " ms" : ""}${c.status ? " · HTTP " + esc(c.status) : ""}</div></span><span class="r">${c.ok ? `<span class="st good">Passed</span>` : `<span class="st bad">Failed</span>`} ${ago(c.at)}</span></div>`), "No checks recorded yet."));
   if (a.admin_actions) parts.push(panel("Recent admin actions", "#/audit", a.admin_actions.map((x) => `<a class="li" href="#/audit"><span class="t"><div class="mono">${esc(x.action)}</div><div class="muted">${esc(x.by || "unknown")} · ${esc(x.outcome)}</div></span><span class="r">${ago(x.at)}</span></a>`), "No admin actions yet."));
@@ -581,7 +643,7 @@ VIEWS.users = async (v, seq) => {
   const cell = { id: (u) => `<td class="mono" title="${esc(u.id)}">${esc(u.id.slice(0, 8))}</td>`, email: (u) => `<td>${esc(u.email || "(no email)")}</td>`, created_at: (u) => `<td>${dt(u.created_at, false)}</td>`,
     verified: (u) => `<td>${u.email_confirmed_at ? `<span class="st good">Verified</span>` : `<span class="st warn">Not verified</span>`}</td>`, last_sign_in_at: (u) => `<td>${u.last_sign_in_at ? ago(u.last_sign_in_at) : `<span class="muted">Never</span>`}</td>`,
     last_activity: (u) => `<td>${u.last_activity ? ago(u.last_activity) : `<span class="muted">None yet</span>`}</td>`, records: (u) => `<td class="num">${n(u.records)}</td>`, files: (u) => `<td class="num">${n(u.files)}</td>`,
-    status: (u) => `<td>${u.suspended ? `<span class="st bad">Suspended</span>` : `<span class="st good">Active</span>`}</td>`, role: (u) => `<td>${u.admin_role ? `<span class="tag role">${esc(u.admin_role)}</span>` : `<span class="muted">Member</span>`}</td>` };
+    status: (u) => `<td>${u.suspended ? `<span class="st bad">Suspended</span>` : `<span class="st good">Active</span>`}</td>`, role: (u) => `<td>${u.admin_role ? titleBadge(u.admin_role) : `<span class="muted">Member</span>`}</td>` };
   const head = { id: "<th>Account ID</th>", email: `<th>${sortBtn("Email", "email", "email")}</th>`, created_at: `<th>${sortBtn("Registered", "created_asc", "created_desc")}</th>`, verified: "<th>Email verification</th>", last_sign_in_at: "<th>Last sign-in</th>",
     last_activity: `<th>${sortBtn("Last activity", "activity_asc", "activity_desc")}</th>`, records: `<th class="num">${sortBtn("Records", "records_desc", "records_desc")}</th>`, files: '<th class="num">Files</th>', status: "<th>Status</th>", role: "<th>Role</th>" };
   const filtered = UQ.q || UQ.status || UQ.reg_from || UQ.reg_to;
@@ -635,14 +697,14 @@ async function openUser(id) {
   D.head.textContent = u.email || "(no email)";
   const g = u.usage, ad = u.adoption || {};
   const chip = (ok, label) => `<span class="chip ${ok ? "yes" : "no"}">${ok ? "✓" : "–"} ${label}</span>`;
-  D.body.innerHTML = `<div class="row" style="margin-bottom:12px">${u.suspended ? `<span class="st bad">Suspended</span>` : `<span class="st good">Active</span>`}${u.admin_role ? `<span class="tag role">${esc(u.admin_role)}</span>` : ""}<span class="mono muted">${esc(u.id)}</span></div>
+  D.body.innerHTML = `<div class="row" style="margin-bottom:12px">${u.suspended ? `<span class="st bad">Suspended</span>` : `<span class="st good">Active</span>`}${u.admin_role ? titleBadge(u.admin_role) : ""}<span class="mono muted">${esc(u.id)}</span></div>
     <h4>Account</h4><dl class="dl"><dt>Registered</dt><dd>${dt(u.created_at)}</dd><dt>Email confirmed</dt><dd>${u.email_confirmed_at ? dt(u.email_confirmed_at) : "Not yet"}</dd><dt>First meaningful activity</dt><dd>${dt(u.first_activity)}</dd><dt>Last sign-in</dt><dd>${dt(u.last_sign_in_at)}</dd><dt>Last meaningful activity</dt><dd>${dt(g.last_activity)}</dd><dt>Sign-in methods</dt><dd>${(u.sign_in_methods || []).map((m) => `<span class="tag">${esc(m)}</span>`).join(" ") || "—"}</dd><dt>Two-step sign-in</dt><dd>${u.mfa ? "On" : "Off"}</dd></dl>
     <h4>Usage summary (counts only)</h4><dl class="dl"><dt>Records</dt><dd>${n(g.records)} ${Object.keys(g.records_by_source || {}).length ? `<span class="muted">(${Object.entries(g.records_by_source).map(([k, c]) => esc(k) + " " + n(c)).join(", ")})</span>` : ""}</dd><dt>Files stored</dt><dd>${n(g.files)} · ${bytes(g.file_bytes)}</dd><dt>Medicines</dt><dd>${n(g.medicines)}</dd><dt>Doses recorded</dt><dd>${n(g.doses_recorded)}</dd><dt>Active days (30 days)</dt><dd>${n(g.active_days_30)}</dd><dt>Failed uploads (30 days)</dt><dd>${n(u.uploads.failed_30d)}</dd></dl>
     <h4>Feature adoption</h4><div class="chips">${chip(ad.profile, "Profile")}${chip(ad.record, "Records")}${chip(ad.file, "Documents")}${chip(ad.schedule, "Medicine schedules")}${chip(ad.dose, "Dose tracking")}${chip(ad.search, "Search")}${chip(ad.export, "Export")}</div><p class="hint">Search and export show only if the person switched on measurements.</p>
     <h4>Actions</h4><div class="row">
       ${can("users.reset_password") ? `<button class="btn sm" data-act="reset">Send password reset</button>` : ""}
       ${can("users.suspend") ? `<button class="btn sm" data-act="revoke">Sign out everywhere</button>${u.suspended ? `<button class="btn sm" data-act="restore">Restore account</button>` : `<button class="btn sm danger" data-act="suspend">Suspend account</button>`}` : ""}
-      ${!can("users.reset_password") && !can("users.suspend") ? `<span class="muted">Your role can view this account but not act on it.</span>` : ""}</div>
+      ${!can("users.reset_password") && !can("users.suspend") ? `<span class="muted">Your permissions show this account but do not act on it.</span>` : ""}</div>
     ${u.notes ? `<h4>Support notes</h4><form id="nf"><label class="sr" for="nt">New note</label><textarea id="nt" maxlength="1000" placeholder="A note for the team. Never write health details here."></textarea><div class="row" style="margin-top:6px"><button class="btn sm">Add note</button></div></form>
       ${u.notes.length ? u.notes.map((x) => `<div class="card" style="margin-top:8px;padding:10px 12px;box-shadow:none"><div class="muted">${dt(x.at)} · ${esc(x.author || "")}</div><div>${esc(x.body)}</div></div>`).join("") : `<p class="hint">No notes yet.</p>`}` : ""}
     <h4>Security-related account events</h4>${u.admin_actions.length ? `<ul class="timeline">${u.admin_actions.map((x) => `<li><b class="mono">${esc(x.action)}</b> · ${esc(x.outcome)}<div class="muted">${dt(x.at)} · by ${esc(x.by || "unknown")}${x.reason ? " · “" + esc(x.reason) + "”" : ""}</div></li>`).join("")}</ul>` : `<p class="hint">No administrative actions on this account.</p>`}
@@ -658,7 +720,7 @@ async function openUser(id) {
     if (r === null) return;
     try {
       const out = await api(c.a, { id: u.id, reason: r });
-      if (out && out.ok === false) toast(out.error === "admin_target_needs_owner" ? "Only the owner can act on another admin." : out.error === "not_on_yourself" ? "You cannot do this to your own account." : out.error === "email_rate_limited" ? "The email provider is limiting emails right now. Try again later." : "That did not complete (" + out.error + ").", true);
+      if (out && out.ok === false) toast(out.error === "admin_target_needs_founder" ? "Only the Founder can act on a leadership member's account, and nobody can act on the Founder's." : out.error === "not_on_yourself" ? "You cannot do this to your own account." : out.error === "email_rate_limited" ? "The email provider is limiting emails right now. Try again later." : "That did not complete (" + out.error + ").", true);
       else toast(c.ok);
       openUser(u.id);
     } catch (e) { toast(ERR[e.code] || "That did not work. Please try again.", true); }
@@ -666,13 +728,13 @@ async function openUser(id) {
   const nfm = $("#nf", D.body);
   if (nfm) nfm.onsubmit = async (e) => { e.preventDefault(); const t = $("#nt", D.body).value.trim(); if (!t) return; try { await api("user_note", { id: u.id, note: t }); toast("Note added."); openUser(u.id); } catch { toast("The note was not saved.", true); } };
 }
-function confirmBox(title, desc, { reason = false, danger = false, button = "Confirm", extra = "" } = {}) {
+function confirmBox(title, desc, { reason = false, danger = false, button = "Confirm", extra = "", reasonLabel = "Reason (recorded in the audit log)", reasonHint = "Why, in a few words. No health details." } = {}) {
   return new Promise((res) => {
     const d = document.createElement("dialog");
     d.innerHTML = `<form method="dialog"><h3>${esc(title)}</h3><p style="color:var(--ink-2);margin:0 0 6px">${desc}</p>${extra}
-      ${reason ? `<label class="f" for="cr">Reason (recorded in the audit log)</label><textarea id="cr" maxlength="500" placeholder="Why, in a few words. No health details."></textarea>` : ""}
+      ${reason ? `<label class="f" for="cr">${esc(reasonLabel)}</label><textarea id="cr" maxlength="500" placeholder="${esc(reasonHint)}"></textarea>` : ""}
       <p class="err" id="cerr" role="alert"></p>
-      <p class="hint">Acting as ${esc(A.me.email)} (${esc(A.me.role)}).</p>
+      <p class="hint">Acting as ${esc(A.me.email)} (${esc(A.me.title || A.me.role)}).</p>
       <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" value="cancel" type="button" id="cc">Cancel</button><button class="btn ${danger ? "danger solid" : "primary"}" value="ok" id="co">${esc(button)}</button></div></form>`;
     document.body.appendChild(d); d.showModal();
     const done = (val) => { d.close(); d.remove(); res(val); };
@@ -888,9 +950,10 @@ VIEWS.flags = async (v, seq) => {
   v.innerHTML = `<p class="lead">Each switch changes what Doctine actually does, at the layer shown. Every change needs a reason, is recorded in the audit log, and is confirmed against the live app.</p>
   <div class="grid cols-2">${flags.map((f) => { const i = FLAG_INFO[f.key] || { label: f.key, on: "", off: "", deps: "", layer: "" };
     return `<section class="card flag" data-flag="${esc(f.key)}"><div><h3>${esc(i.label)} ${i.sensitive ? `<span class="st warn">Sensitive</span>` : ""}</h3><div class="row" style="margin-top:4px">${f.enabled ? `<span class="st good">On</span>` : `<span class="st none">Off</span>`}<span class="muted" style="font-size:12px">${f.updated_by ? `changed by ${esc(f.updated_by)} ` : ""}${f.updated_at ? ago(f.updated_at) : "never changed"}</span></div><div id="prop-${esc(f.key)}" style="margin-top:6px"></div></div>
-      <button class="switch" role="switch" aria-checked="${f.enabled}" aria-label="${esc(i.label)}" data-k="${esc(f.key)}" ${can("flags.manage") ? "" : "disabled"}></button>
+      <button class="switch" role="switch" aria-checked="${f.enabled}" aria-label="${esc(i.label)}" data-k="${esc(f.key)}" ${can(f.key === "ai_assistant" ? "ai.manage" : "flags.manage") ? "" : "disabled"}></button>
+      ${f.key === "ai_assistant" ? `<p class="hint" style="grid-column:1/-1;margin:0">Founder only. Never switched on automatically.</p>` : ""}
       <div class="grid2"><div><b>When on</b>${esc(i.on)}</div><div><b>When off</b>${esc(i.off)}</div><div><b>Depends on</b>${esc(i.deps)}</div><div><b>Enforced by</b>${esc(i.layer)}</div></div></section>`; }).join("")}</div>
-  ${can("flags.manage") ? "" : `<p class="hint" style="margin-top:10px">Your role can see switches but not change them.</p>`}`;
+  ${can("flags.manage") ? "" : `<p class="hint" style="margin-top:10px">Your permissions show switches but do not change them.</p>`}`;
   $$(".switch[data-k]", v).forEach((b) => b.onclick = async () => {
     const k = b.dataset.k, on = b.getAttribute("aria-checked") !== "true", i = FLAG_INFO[k] || { label: k };
     const warn = k === "ai_assistant" && on ? `<div class="callout bad" style="margin:8px 0">${ic("info")}<span>Turn this on only when the provider agreement, consent wording, legal review and safety review are all in place. Health information will be sent to the AI provider for people who consent.</span></div>` : "";
@@ -911,7 +974,7 @@ VIEWS.maintenance = async (v, seq) => {
       <p class="muted" style="margin-top:0">While on: the app shows your message to everyone; new document files are refused by the database (records still save); the AI assistant is refused by the server; new sign-ups are refused once the Auth hook is enabled. People can still sign in, read and edit their records.</p>
       <label class="f" for="mm">Message shown in the app</label><textarea id="mm" maxlength="300" ${manage ? "" : "disabled"} placeholder="For example: Doctine is being updated. File uploads pause until 10:00 IST.">${esc(val.message || "")}</textarea>
       <div class="callout warn" style="margin-top:8px"><span><b>Preview:</b> <span id="mprev">${esc(val.message || "Doctine is being updated.")}</span> Your records are safe and you can keep using Doctine; new file uploads and the assistant are paused for now.</span></div>
-      ${manage ? `<div class="row" style="margin-top:12px">${m.enabled ? `<button class="btn" id="msave">Update message</button><button class="btn primary" id="moff">Turn off now</button>` : `<button class="btn danger solid" id="mon">Turn on now</button>`}</div>` : `<p class="hint">Only the owner and admins can change maintenance mode.</p>`}`, { foot: `Last changed ${m.updated_by ? "by " + esc(m.updated_by) + " " : ""}${m.updated_at ? ago(m.updated_at) : "never"}` })}
+      ${manage ? `<div class="row" style="margin-top:12px">${m.enabled ? `<button class="btn" id="msave">Update message</button><button class="btn primary" id="moff">Turn off now</button>` : `<button class="btn danger solid" id="mon">Turn on now</button>`}</div>` : `<p class="hint">Only the Founder, or a Co-Founder given the maintenance permission, can change this.</p>`}`, { foot: `Last changed ${m.updated_by ? "by " + esc(m.updated_by) + " " : ""}${m.updated_at ? ago(m.updated_at) : "never"}` })}
     ${card("Schedule a maintenance window", "Turns on and off by itself between these times. It is checked each time the app loads, so no background job is needed.", `
       <div class="row"><div><label class="f" for="ms">Starts (IST)</label><input id="ms" type="datetime-local" value="${toLocal(val.starts_at)}" ${manage ? "" : "disabled"}></div><div><label class="f" for="me">Ends (IST)</label><input id="me" type="datetime-local" value="${toLocal(val.ends_at)}" ${manage ? "" : "disabled"}></div></div>
       ${manage ? `<div class="row" style="margin-top:12px"><button class="btn primary" id="mwin">Save window</button>${win ? `<button class="btn ghost" id="mclr">Clear window</button>` : ""}</div>` : ""}
@@ -935,8 +998,8 @@ VIEWS.maintenance = async (v, seq) => {
 VIEWS.announcements = async (v, seq) => {
   const list = await api("announcements"); if (stale(seq)) return;
   const stl = (a) => (a.live ? `<span class="st good">Showing now</span>` : a.status === "published" ? (a.ends_at && Date.parse(a.ends_at) < Date.now() ? `<span class="st none">Expired</span>` : `<span class="st info">Scheduled</span>`) : a.status === "archived" ? `<span class="st none">Unpublished</span>` : `<span class="st none">Draft</span>`);
-  v.innerHTML = `<div class="row" style="margin-bottom:12px"><p class="lead" style="margin:0">Published announcements show as a banner in the app between their dates (checked each time the app loads). People can dismiss them.</p><span class="spacer"></span>${can("announcements.manage") ? `<button class="btn primary" id="na">New announcement</button>` : ""}</div>
-    <div class="card">${list.length ? `<div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Title</th><th>Type</th><th>Audience</th><th>Status</th><th>Shows</th><th>Updated</th><th></th></tr></thead><tbody>${list.map((a) => `<tr><td><b>${esc(a.title)}</b><div class="muted trunc">${esc(a.body)}</div></td><td>${esc(a.kind)}</td><td>${a.audience === "all" ? "Everyone" : "Signed-in people"}</td><td>${stl(a)}</td><td class="muted">${a.starts_at ? dt(a.starts_at) : "Now"} → ${a.ends_at ? dt(a.ends_at) : "until unpublished"}</td><td>${ago(a.updated_at)}</td><td>${can("announcements.manage") ? `<button class="btn sm" data-id="${esc(a.id)}">Edit</button>` : ""}</td></tr>`).join("")}</tbody></table></div>` : `<div class="card-b">${none("No announcements yet.", "None yet")}</div>`}</div>`;
+  v.innerHTML = `<div class="row" style="margin-bottom:12px"><p class="lead" style="margin:0">Published announcements show as a banner in the app between their dates (checked each time the app loads). People can dismiss them.</p><span class="spacer"></span>${can("content.edit") ? `<button class="btn primary" id="na">New announcement</button>` : ""}</div>
+    <div class="card">${list.length ? `<div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Title</th><th>Type</th><th>Audience</th><th>Status</th><th>Shows</th><th>Updated</th><th></th></tr></thead><tbody>${list.map((a) => `<tr><td><b>${esc(a.title)}</b><div class="muted trunc">${esc(a.body)}</div></td><td>${esc(a.kind)}</td><td>${a.audience === "all" ? "Everyone" : "Signed-in people"}</td><td>${stl(a)}</td><td class="muted">${a.starts_at ? dt(a.starts_at) : "Now"} → ${a.ends_at ? dt(a.ends_at) : "until unpublished"}</td><td>${ago(a.updated_at)}</td><td>${can("content.edit") && (a.status !== "published" || can("content.publish")) ? `<button class="btn sm" data-id="${esc(a.id)}">Edit</button>` : ""}</td></tr>`).join("")}</tbody></table></div>` : `<div class="card-b">${none("No announcements yet.", "None yet")}</div>`}</div>`;
   const toLocal = (s) => (s ? new Date(Date.parse(s) + IST).toISOString().slice(0, 16) : ""), fromLocal = (s) => (s ? new Date(s + ":00+05:30").toISOString() : "");
   const edit = (a = { kind: "product", status: "draft", audience: "signed_in" }) => {
     const d = document.createElement("dialog"); d.style.width = "min(600px,calc(100% - 32px))";
@@ -948,7 +1011,8 @@ VIEWS.announcements = async (v, seq) => {
       <div class="row"><div><label class="f" for="as">Show from (IST, optional)</label><input id="as" type="datetime-local" value="${toLocal(a.starts_at)}"></div><div><label class="f" for="ae">Until (IST, optional)</label><input id="ae" type="datetime-local" value="${toLocal(a.ends_at)}"></div></div>
       <label class="f">Preview</label><div id="apv"></div>
       <p class="err" id="aerr" role="alert"></p>
-      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" type="button" id="ac">Cancel</button>${a.id && a.status === "published" ? `<button class="btn" type="button" data-s="archived">Unpublish</button>` : ""}<button class="btn" type="button" data-s="draft">Save draft</button><button class="btn primary" type="button" data-s="published">Publish</button></div></form>`;
+      ${can("content.publish") ? "" : `<p class="hint">You can save drafts. Publishing needs the publish permission from the Founder.</p>`}
+      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" type="button" id="ac">Cancel</button>${a.id && a.status === "published" && can("content.publish") ? `<button class="btn" type="button" data-s="archived">Unpublish</button>` : ""}${a.status !== "published" ? `<button class="btn" type="button" data-s="draft">Save draft</button>` : ""}${can("content.publish") ? `<button class="btn primary" type="button" data-s="published">Publish</button>` : ""}</div></form>`;
     document.body.appendChild(d); d.showModal();
     const pv = () => { $("#apv", d).innerHTML = `<div class="callout ${$("#ak", d).value === "maintenance" ? "warn" : ""}"><span><b>${esc($("#at", d).value || "Title")}</b>${$("#ab", d).value ? " " + esc($("#ab", d).value) : ""}</span></div>`; };
     pv(); d.addEventListener("input", pv); d.addEventListener("change", pv);
@@ -964,43 +1028,263 @@ VIEWS.announcements = async (v, seq) => {
   $$("[data-id]", v).forEach((b) => b.onclick = () => edit(list.find((x) => x.id === b.dataset.id)));
 };
 
-/* Admin team */
-const ROLE_INFO = { owner: "Full administrative authority, including appointing and removing admins.", admin: "Approved operational controls: accounts, switches, maintenance, incidents, alerts, announcements; reads the audit log.", analyst: "Read-only analytics, reports, document operations and platform health. No account details.", support: "Limited account metadata, password resets and support notes.", auditor: "Read-only audit log, security events and the team list." };
+/* Leadership: the Founder and Co-Founders */
+const PRESETS = [["standard", "Standard (least privilege)"], ["product", "Product"], ["support", "Support lead"], ["analyst", "Analytics only"], ["auditor", "Auditor"], ["operations", "Operations (every grantable permission)"]];
+function permEditor(cat, selected) {
+  const groups = {}; for (const p of cat.permissions) (groups[p.group] = groups[p.group] || []).push(p);
+  return `<div class="perm-ed">${Object.entries(groups).map(([g, ps]) => `<fieldset class="perm-g"><legend>${esc(g)}</legend>${ps.map((p) => `<label class="perm${p.founder_only ? " locked" : ""}"><input type="checkbox" data-perm="${esc(p.key)}" ${!p.founder_only && selected.includes(p.key) ? "checked" : ""} ${p.founder_only ? "disabled" : ""}><span>${esc(p.label)}<small class="mono">${esc(p.key)}</small></span>${p.founder_only ? `<span class="tag">Founder only</span>` : ""}</label>`).join("")}</fieldset>`).join("")}</div>`;
+}
+const readPerms = (root) => $$("[data-perm]", root).filter((x) => x.checked && !x.disabled).map((x) => x.dataset.perm);
+function bindPresets(root, cat) {
+  const sel = $("[data-preset]", root); if (!sel) return;
+  sel.onchange = () => { const list = cat.presets[sel.value]; if (!list) return; $$("[data-perm]", root).forEach((x) => { if (!x.disabled) x.checked = list.includes(x.dataset.perm); }); };
+}
+const presetSelect = () => `<label class="f" for="pps">Start from a preset</label><select id="pps" data-preset><option value="">Choose…</option>${PRESETS.map(([k, t]) => `<option value="${k}">${esc(t)}</option>`).join("")}</select>`;
+const INVITE_ST = { pending: ["Pending", "info"], accepted: ["Accepted", "good"], revoked: ["Revoked", "none"], expired: ["Expired", "warn"] };
+const DELIVERY = { email_sent: "Invitation email sent", email_failed: "Email not sent", existing_account: "Has an account: signs in at /admin" };
 VIEWS.team = async (v, seq) => {
-  const t = await api("team"); if (stale(seq)) return;
-  const meId = A.session && A.session.user.id;
-  v.innerHTML = `<div class="row" style="margin-bottom:12px"><p class="lead" style="margin:0">${can("team.manage") ? "Admins are existing Doctine accounts. No account is created here and nobody can sign up as an admin." : "Only the owner can add, change or remove admins."}</p><span class="spacer"></span>${can("team.manage") ? `<button class="btn primary" id="tinv">Add team member</button>` : ""}</div>
-  <div class="card"><div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Member</th><th>Role</th><th>Access</th><th>Two-step sign-in</th><th>Last sign-in</th><th>Last admin action</th><th>Added</th>${can("team.manage") ? "<th></th>" : ""}</tr></thead><tbody>
-    ${t.map((m) => `<tr><td>${esc(m.email)}${m.user_id === meId ? ` <span class="muted">(you)</span>` : ""}</td><td><span class="tag role">${esc(m.role)}</span></td><td>${m.status === "active" ? `<span class="st good">Active</span>` : `<span class="st bad">Suspended</span>`}</td><td>${m.mfa ? `<span class="st good">On</span>` : `<span class="st warn">Off</span>`}</td><td>${ago(m.last_sign_in_at)}</td><td>${ago(m.last_admin_action)}</td><td>${dt(m.added_at, false)}${m.added_by ? `<div class="muted">by ${esc(m.added_by)}</div>` : ""}</td>${can("team.manage") ? `<td>${m.user_id === meId ? "" : `<button class="btn sm" data-e="${esc(m.email)}" data-r="${esc(m.role)}" data-s="${esc(m.status)}">Manage</button>`}</td>` : ""}</tr>`).join("")}
+  const manage = can("team.manage");
+  const [t, cat] = await Promise.all([api("team"), manage ? api("perm_catalog") : null]); if (stale(seq)) return;
+  const meId = A.session && A.session.user.id, ms = t.members || [];
+  v.innerHTML = `<div class="row" style="margin-bottom:12px"><p class="lead" style="margin:0">${manage ? "One Founder and any number of Co-Founders, each with their own permissions. Access is by invitation only, and two-step sign-in is required for everyone." : "Doctine's leadership. Only the Founder invites Co-Founders and sets their permissions."}</p><span class="spacer"></span>${manage ? `<button class="btn primary" id="tinv">Invite a Co-Founder</button>` : ""}</div>
+  <div class="card"><div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Member</th><th>Title</th><th>Access</th><th>Two-step sign-in</th><th>Permissions</th><th>Last sign-in</th><th>Last admin action</th><th>Added</th>${manage ? "<th></th>" : ""}</tr></thead><tbody>
+    ${ms.map((m) => `<tr data-member="${esc(m.user_id)}"><td>${esc(m.email)}${m.user_id === meId ? ` <span class="muted">(you)</span>` : ""}</td><td>${titleBadge(m.role, m.title)}</td><td>${m.status === "active" ? `<span class="st good">Active</span>` : `<span class="st bad">Suspended</span>`}</td><td>${m.mfa ? `<span class="st good">On</span>` : `<span class="st warn">Not set up</span>`}</td>
+      <td>${m.role === "founder" ? "All, including governance" : m.permissions ? `${n(m.permissions.length)} permission${m.permissions.length === 1 ? "" : "s"}` : `<span class="muted">Visible to the Founder</span>`}</td><td>${ago(m.last_sign_in_at)}</td><td>${ago(m.last_admin_action)}</td><td>${dt(m.added_at, false)}${m.added_by ? `<div class="muted">by ${esc(m.added_by)}</div>` : ""}</td>
+      ${manage ? `<td>${m.role === "founder" ? `<span class="muted" title="The Founder cannot be changed from the console">Protected</span>` : `<button class="btn sm" data-manage="${esc(m.user_id)}">Manage</button>`}</td>` : ""}</tr>`).join("")}
   </tbody></table></div></div>
-  ${section("Roles", "Least privilege. Checked by the database on every request.")}
-  <div class="card"><div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Role</th><th>What it can do</th></tr></thead><tbody>${Object.entries(ROLE_INFO).map(([r, d]) => `<tr><td><span class="tag role">${r}</span></td><td>${esc(d)}</td></tr>`).join("")}</tbody></table></div></div>
-  ${can("audit.view") ? `<p class="hint" style="margin-top:10px">Permission changes are recorded in the <a href="#/audit">audit log</a> (filter by “Team and permissions”). Refused requests are under <a href="#/security">Security events</a>.</p>` : ""}`;
-  const set = async (email, role, status, title, danger) => {
-    const r = await confirmBox(title, `${esc(email)}${role && status !== "removed" ? " → " + esc(role) : ""}`, { reason: true, danger, button: "Confirm" });
-    if (r === null) return;
-    try { const out = await api("team_set", { email, role, status, reason: r }); if (out && out.ok === false) toast(out.error === "no_account" ? "There is no Doctine account with that email. They need to sign up in the app first." : out.error === "not_on_yourself" ? "You cannot change your own membership." : "Not changed.", true); else { toast("Team updated."); VIEWS.team(v, A.seq); } }
-    catch (e) { toast(e.code === "forbidden" ? "Only the owner can do this, and there must always be an active owner." : ERR[e.code] || "Not changed.", true); }
+  ${manage ? `${section("Invitations", "Invitations expire after 7 days. Only the invited email, once verified, can accept.")}<div class="card">${(t.invites || []).length ? `<div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Email</th><th>Status</th><th>Delivery</th><th>Permissions</th><th>Invited</th><th>Expires / accepted</th><th></th></tr></thead><tbody>${t.invites.map((i) => { const st = INVITE_ST[i.state] || [i.state, "none"]; return `<tr><td>${esc(i.email)}</td><td><span class="st ${st[1]}">${st[0]}</span></td><td class="muted">${esc(DELIVERY[i.delivery] || "—")}</td><td>${n((i.permissions || []).length)}</td><td>${dt(i.created_at)}<div class="muted">by ${esc(i.invited_by || "—")}</div></td><td>${i.accepted_at ? dt(i.accepted_at) : i.revoked_at ? "revoked " + dt(i.revoked_at) : dt(i.expires_at)}</td><td>${i.state === "pending" ? `<button class="btn sm ghost" data-revoke="${esc(i.id)}">Revoke</button>` : ""}</td></tr>`; }).join("")}</tbody></table></div>` : `<div class="card-b">${none("No invitations yet.", "None yet")}</div>`}</div>` : ""}
+  ${section("How leadership access works")}
+  <div class="grid cols-2">
+    ${card("Founder", "", `<ul class="plain"><li>Holds every permission, including governance: inviting and removing Co-Founders, setting their permissions, security policy and the AI switch.</li><li>There is exactly one Founder. No Co-Founder can change, suspend or remove the Founder, or take ownership, from the console or by calling the server directly.</li><li>Patient medical data stays out of reach for the Founder too.</li></ul>`)}
+    ${card("Co-Founders", "", `<ul class="plain"><li>Each has an individual login and individual permissions, chosen by the Founder (read-only or manage, section by section).</li><li>Changes apply on their very next request. Suspension removes access at once and ends their sessions.</li><li>Never available to a Co-Founder: managing leadership, security settings, the AI switch, secrets, database or storage settings.</li></ul>`)}
+  </div>
+  ${can("audit.view") ? `<p class="hint" style="margin-top:10px">Invitations, permission changes and sign-ins are recorded in the <a href="#/audit">audit log</a>.</p>` : ""}`;
+  if (!manage) return;
+  const reload = () => VIEWS.team(v, A.seq);
+  $("#tinv").onclick = () => {
+    const d = document.createElement("dialog"); d.className = "wide";
+    d.innerHTML = `<form><h3>Invite a Co-Founder</h3><p class="muted" style="margin-top:0">They get the title ${titleBadge("co_founder")} and only the permissions you choose. Someone without a Doctine account gets an invitation email; someone with one signs in at app.doctine.com/admin to accept.</p>
+      <label class="f" for="te">Email</label><input id="te" type="email" style="width:100%" required autocomplete="off">
+      ${presetSelect()}${permEditor(cat, cat.presets.standard)}
+      <label class="f" for="tir">Reason (recorded in the audit log)</label><textarea id="tir" maxlength="500" placeholder="For example: joining as product lead"></textarea>
+      <p class="err" id="terr" role="alert"></p>
+      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" type="button" id="x2">Cancel</button><button class="btn primary">Send invitation</button></div></form>`;
+    document.body.appendChild(d); d.showModal(); bindPresets(d, cat); $("#x2", d).onclick = () => { d.close(); d.remove(); };
+    $("form", d).onsubmit = async (e) => {
+      e.preventDefault(); const email = $("#te", d).value.trim(), reason = $("#tir", d).value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $("#terr", d).textContent = "Enter an email address."; return; }
+      if (!reason) { $("#terr", d).textContent = "Please give a reason."; return; }
+      try {
+        const out = await api("invite", { email, permissions: readPerms(d), reason });
+        if (out && out.ok === false) { $("#terr", d).textContent = out.error === "already_member" ? "That account is already in the leadership team." : "Not sent."; return; }
+        d.close(); d.remove();
+        toast(out.delivery === "email_sent" ? `Invitation emailed to ${email}. It expires in 7 days.` : out.delivery === "existing_account" ? `${email} already has a Doctine account: ask them to sign in at app.doctine.com/admin to accept.` : `Invitation recorded, but the email could not be sent (Supabase may be limiting emails). Ask ${email} to create a Doctine account and sign in at /admin, or revoke and try later.`, out.delivery === "email_failed");
+        reload();
+      } catch (er) { $("#terr", d).innerHTML = errText(er); }
+    };
   };
-  const inv = $("#tinv"); if (inv) inv.onclick = () => {
-    const d = document.createElement("dialog");
-    d.innerHTML = `<form><h3>Add team member</h3><p class="muted" style="margin-top:0">They must already have a Doctine account (they sign up in the app first).</p>
-      <label class="f" for="te">Their Doctine account email</label><input id="te" type="email" style="width:100%" required>
-      <label class="f" for="tr">Role</label><select id="tr" style="width:100%">${Object.keys(ROLE_INFO).map((r) => `<option value="${r}" ${r === "analyst" ? "selected" : ""}>${r}</option>`).join("")}</select><p class="hint" id="trd">${esc(ROLE_INFO.analyst)}</p>
-      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" type="button" id="x2">Cancel</button><button class="btn primary">Continue</button></div></form>`;
-    document.body.appendChild(d); d.showModal(); $("#x2", d).onclick = () => { d.close(); d.remove(); };
-    $("#tr", d).onchange = (e) => { $("#trd", d).textContent = ROLE_INFO[e.target.value]; };
-    $("form", d).onsubmit = (e) => { e.preventDefault(); const em = $("#te", d).value.trim(), r = $("#tr", d).value; d.close(); d.remove(); set(em, r, "active", `Give ${r} access to ${em}?`, r === "owner" || r === "admin"); };
-  };
-  $$("[data-e]", v).forEach((b) => b.onclick = () => {
-    const d = document.createElement("dialog");
-    d.innerHTML = `<form><h3>Manage ${esc(b.dataset.e)}</h3><label class="f" for="cr2">Role</label><select id="cr2" style="width:100%">${Object.keys(ROLE_INFO).map((r) => `<option value="${r}" ${r === b.dataset.r ? "selected" : ""}>${r}</option>`).join("")}</select>
-      <label class="f" for="cs2">Access</label><select id="cs2" style="width:100%"><option value="active" ${b.dataset.s === "active" ? "selected" : ""}>Active</option><option value="suspended" ${b.dataset.s === "suspended" ? "selected" : ""}>Suspend access (kept on the list, no access)</option><option value="removed">Revoke access (remove from the team)</option></select>
-      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" type="button" id="x2">Cancel</button><button class="btn primary">Continue</button></div></form>`;
-    document.body.appendChild(d); d.showModal(); $("#x2", d).onclick = () => { d.close(); d.remove(); };
-    $("form", d).onsubmit = (e) => { e.preventDefault(); const r = $("#cr2", d).value, s = $("#cs2", d).value; d.close(); d.remove(); set(b.dataset.e, r, s, s === "removed" ? "Revoke this person's admin access?" : s === "suspended" ? "Suspend this person's admin access?" : "Change this person's role?", s !== "active" || r === "owner"); };
+  $$("[data-revoke]", v).forEach((b) => b.onclick = async () => {
+    const r = await confirmBox("Revoke this invitation?", "The link stops working. No account is deleted.", { reason: true, button: "Revoke" }); if (r === null) return;
+    try { await api("invite_revoke", { id: b.dataset.revoke, reason: r }); toast("Invitation revoked."); reload(); } catch (e) { toast(ERR[e.code] || "Not changed.", true); }
+  });
+  $$("[data-manage]", v).forEach((b) => b.onclick = () => {
+    const m = ms.find((x) => x.user_id === b.dataset.manage), D = drawer(m.email, `${m.status === "active" ? "Active" : "Suspended"} · ${m.mfa ? "two-step sign-in on" : "two-step sign-in not set up"}`);
+    D.body.innerHTML = `<div class="row" style="margin-bottom:10px">${titleBadge(m.role, m.title)}${m.status === "active" ? `<span class="st good">Active</span>` : `<span class="st bad">Suspended</span>`}</div>
+      <h4>Permissions</h4><p class="hint" style="margin-top:0">Read-only and manage permissions are separate. Founder-only permissions can never be granted.</p>
+      ${presetSelect()}${permEditor(cat, m.permissions || [])}
+      <div class="row" style="margin-top:14px"><button class="btn primary" id="msave">Save permissions</button>${m.status === "active" ? `<button class="btn danger" id="msus">Suspend access</button>` : `<button class="btn" id="mre">Reactivate</button>`}<button class="btn ghost" id="mrm">Remove from leadership</button></div>
+      <p class="hint">Removing ends their leadership access and sessions; their Doctine account and records are not touched.</p>`;
+    bindPresets(D.body, cat);
+    const set = async (status, title, danger, permissions) => {
+      const r = await confirmBox(title, esc(m.email), { reason: true, danger, button: "Confirm" }); if (r === null) return;
+      try { const out = await api("member_set", { id: m.user_id, status, permissions, reason: r });
+        if (out && out.ok === false) return toast(out.error === "founder_protected" ? "The Founder cannot be changed." : out.error === "not_on_yourself" ? "You cannot change your own membership." : "Not changed.", true);
+        toast("Saved. It applies on their next request."); closeDrawer(); reload(); } catch (e) { toast(ERR[e.code] || "Not changed.", true); }
+    };
+    $("#msave", D.body).onclick = () => set(m.status, "Save these permissions?", false, readPerms(D.body));
+    const su = $("#msus", D.body); if (su) su.onclick = () => set("suspended", "Suspend this Co-Founder's access?", true, null);
+    const re = $("#mre", D.body); if (re) re.onclick = () => set("active", "Reactivate this Co-Founder?", false, null);
+    $("#mrm", D.body).onclick = () => set("removed", "Remove this person from leadership?", true, null);
   });
 };
+
+/* Support requests (people write in from the app's Settings → Help and feedback) */
+const SUP_ST = { new: ["New", "info"], open: ["Open", "warn"], waiting: ["Waiting for the person", "none"], resolved: ["Resolved", "good"], closed: ["Closed", "none"] };
+const SUP_CAT = { account: "Account", sign_in: "Signing in", records: "Records", documents: "Documents", medicines: "Medicines", privacy: "Privacy", bug: "Something broken", other: "Other" };
+const SQ = { status: "", mine: false, page: 1 };
+const hrs = (h) => (h == null ? null : h < 1 ? Math.round(h * 60) + " min" : h < 48 ? (Math.round(h * 10) / 10) + " h" : (Math.round(h / 2.4) / 10) + " days");
+VIEWS.support = async (v, seq) => {
+  const p = periodRange();
+  const [d, po] = await Promise.all([api("support_list", SQ), api("product_overview", p).catch(() => null)]); if (stale(seq)) return;
+  const c = d.counts, s = po && po.support, pages = Math.max(1, Math.ceil((d.total || 0) / 25));
+  v.innerHTML = `<div class="callout" style="margin-bottom:12px">${ic("info")}<span>People write in from the app (Settings → Help and feedback). Never ask them to send medical records, results or prescriptions here: support can help without them. Opening a request is recorded in the audit log.</span></div>
+  <div class="grid kpis">
+    ${kpi({ id: "s-new", label: "New requests", value: c.new, meta: `<span class="muted">not yet opened by the team</span>` })}
+    ${kpi({ id: "s-open", label: "Open", value: c.open, meta: `<span class="muted">${n(c.unassigned)} unassigned</span>` })}
+    ${kpi({ id: "s-wait", label: "Waiting for the person", value: c.waiting })}
+    ${kpi({ id: "s-first", label: "First response (30 days)", ...(c.first_response_hours == null ? { state: "insufficient", meta: "No replies sent in the last 30 days." } : { display: hrs(+c.first_response_hours), meta: `<span class="muted">average; ${n(c.resolved_30d)} resolved, typically in ${hrs(+c.resolution_hours) || "—"}</span>` }) })}
+  </div>
+  ${s ? card("Support requests over time", `${esc(p.label)}: opened and resolved per day (IST)`, chart(s.daily, [{ key: "created", label: "Opened", color: S1, type: "bar" }, { key: "resolved", label: "Resolved", color: S3, type: "bar" }], { ytitle: "Requests", zeroText: "No support requests were opened or resolved in this period." }), { style: "margin-top:12px" }) : ""}
+  <div class="card" style="margin-top:12px"><div class="toolbar"><div class="seg" role="group" aria-label="Status">${[["", "All"], ["new", "New"], ["open", "Open"], ["waiting", "Waiting"], ["resolved", "Resolved"], ["closed", "Closed"]].map(([k, t]) => `<button data-ss="${k}" aria-pressed="${SQ.status === k}">${t}</button>`).join("")}</div>
+    <label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="smine" ${SQ.mine ? "checked" : ""}> Assigned to me</label><span class="spacer"></span><span class="muted" style="font-size:12px">${n(d.total)} request${d.total === 1 ? "" : "s"}</span></div>
+  ${d.rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Ref</th><th>Subject</th><th>Topic</th><th>Status</th><th>Priority</th><th>Assigned</th><th>Updated</th></tr></thead><tbody>${d.rows.map((r) => `<tr class="click" data-sup="${esc(r.id)}" tabindex="0"><td class="mono">${esc(r.ref)}</td><td><b>${esc(r.subject)}</b>${r.awaiting_staff && ["new", "open"].includes(r.status) ? ` <span class="st warn">Needs a reply</span>` : ""}<div class="muted">${n(r.messages)} message${r.messages === 1 ? "" : "s"}</div></td><td>${esc(SUP_CAT[r.category] || r.category)}</td><td><span class="st ${(SUP_ST[r.status] || [0, "none"])[1]}">${esc((SUP_ST[r.status] || [r.status])[0])}</span></td><td><span class="sev ${r.priority === "urgent" ? "critical" : r.priority === "high" ? "major" : "minor"}">${esc(r.priority)}</span></td><td>${esc(r.assigned_email || "Unassigned")}</td><td>${ago(r.updated_at)}</td></tr>`).join("")}</tbody></table></div>
+    <div class="pager"><button class="btn sm" id="sp" ${SQ.page <= 1 ? "disabled" : ""}>Previous</button><span>Page ${SQ.page} of ${pages}</span><button class="btn sm" id="sn" ${SQ.page >= pages ? "disabled" : ""}>Next</button></div>`
+    : `<div class="card-b">${none(SQ.status || SQ.mine ? "No requests match these filters." : "Nobody has written in yet.", "No requests")}</div>`}</div>`;
+  const again = () => VIEWS.support(v, A.seq);
+  $$("[data-ss]", v).forEach((b) => b.onclick = () => { SQ.status = b.dataset.ss; SQ.page = 1; again(); });
+  $("#smine").onchange = (e) => { SQ.mine = e.target.checked; SQ.page = 1; again(); };
+  const pp = $("#sp"), pn = $("#sn"); if (pp) pp.onclick = () => { SQ.page--; again(); }; if (pn) pn.onclick = () => { SQ.page++; again(); };
+  $$("tr[data-sup]", v).forEach((tr) => { tr.onclick = () => openSupport(tr.dataset.sup, again); tr.onkeydown = (e) => { if (e.key === "Enter") openSupport(tr.dataset.sup, again); }; });
+};
+async function openSupport(id, after) {
+  const D = drawer("Support request");
+  let q; try { q = await api("support_item", { id }); } catch (e) { D.body.innerHTML = `<div class="callout bad">${errText(e)}</div>`; return; }
+  D.head.textContent = `${q.ref} · ${q.subject}`;
+  const st = SUP_ST[q.status] || [q.status, "none"];
+  D.body.innerHTML = `<div class="row" style="margin-bottom:10px"><span class="st ${st[1]}">${esc(st[0])}</span><span class="tag">${esc(SUP_CAT[q.category] || q.category)}</span><span class="muted">opened ${dt(q.created_at)} IST</span></div>
+    <h4>Person</h4><dl class="dl"><dt>Account</dt><dd>${esc(q.requester.email || "—")}${can("users.view") ? ` <button class="btn sm ghost" id="sacc">Account details</button>` : ""}</dd><dt>Registered</dt><dd>${dt(q.requester.created_at, false)}</dd><dt>Email confirmed</dt><dd>${q.requester.email_confirmed ? "Yes" : "No"}</dd></dl>
+    <p class="hint">Shown for support only. Their records, files and health details are never available here.</p>
+    ${can("support.respond") || can("support.assign") ? `<h4>Handling</h4><div class="row">
+      ${can("support.respond") ? `<label class="sr" for="sst">Status</label><select id="sst">${Object.entries(SUP_ST).map(([k, [t]]) => `<option value="${k}" ${q.status === k ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
+      ${can("support.assign") ? `<label class="sr" for="spr">Priority</label><select id="spr">${["urgent", "high", "normal", "low"].map((k) => `<option ${q.priority === k ? "selected" : ""}>${k}</option>`).join("")}</select><label class="sr" for="sas">Assigned to</label><input id="sas" type="email" placeholder="Assignee email" value="${esc(q.assigned_email || "")}" style="min-width:200px">` : ""}
+      <button class="btn sm primary" id="ssave">Save</button></div>` : ""}
+    <h4>Conversation</h4><div class="thread">${q.messages.map((m) => `<div class="msg ${m.internal ? "internal" : m.from_staff ? "staff" : "person"}"><div class="muted">${m.internal ? "Internal note" : m.from_staff ? "Doctine support" : "Person"}${m.by ? " · " + esc(m.by) : ""} · ${dt(m.at)}</div><div class="body">${esc(m.body)}</div></div>`).join("")}</div>
+    ${can("support.respond") ? `<form id="srep" style="margin-top:10px"><label class="f" for="sbody">Reply</label><textarea id="sbody" maxlength="2000" placeholder="Replies appear in the person's app. Never ask for medical records."></textarea>
+      <div class="row" style="margin-top:6px"><label class="row" style="gap:6px;font-size:13px"><input type="checkbox" id="sint"> Internal note (the person never sees it)</label><span class="spacer"></span><button class="btn sm primary">Send</button></div></form>` : `<p class="hint">Your permissions allow reading support requests, not replying.</p>`}
+    <p class="hint">First response ${q.first_response_at ? dt(q.first_response_at) : "not yet"}${q.resolved_at ? ` · resolved ${dt(q.resolved_at)}` : ""}.</p>`;
+  const acc = $("#sacc", D.body); if (acc) acc.onclick = () => openUser(q.requester.id);
+  const sv = $("#ssave", D.body); if (sv) sv.onclick = async () => {
+    const data = {}; const a = $("#sst", D.body), b = $("#spr", D.body), c = $("#sas", D.body);
+    if (a && a.value !== q.status) data.status = a.value; if (b && b.value !== q.priority) data.priority = b.value; if (c && c.value.trim() !== (q.assigned_email || "")) data.assigned_email = c.value.trim();
+    if (!Object.keys(data).length) return toast("Nothing changed.");
+    try { await api("support_update", { id, data }); toast("Saved."); openSupport(id, after); if (after) after(); } catch (e) { toast(e.code === "invalid" ? "Assign only to a leadership member who can reply to support." : ERR[e.code] || "Not saved.", true); }
+  };
+  const f = $("#srep", D.body); if (f) f.onsubmit = async (e) => {
+    e.preventDefault(); const body = $("#sbody", D.body).value.trim(); if (!body) return;
+    try { await api("support_message", { id, body, internal: $("#sint", D.body).checked }); toast($("#sint", D.body).checked ? "Note added." : "Reply sent. It appears in their app."); openSupport(id, after); if (after) after(); } catch (er) { toast(ERR[er.code] || "Not sent.", true); }
+  };
+}
+
+/* Product feedback (pseudonymous) */
+const FB_KIND = { idea: "Idea", problem: "Problem", praise: "Praise", other: "Other" }, FB_ST = { new: ["New", "info"], reviewed: ["Reviewed", "none"], planned: ["Planned", "warn"], done: ["Done", "good"], declined: ["Declined", "none"] };
+const FQ = { status: "", kind: "", page: 1 };
+VIEWS.feedback = async (v, seq) => {
+  const d = await api("feedback", FQ); if (stale(seq)) return;
+  const c = d.counts, manage = can("feedback.manage"), pages = Math.max(1, Math.ceil((d.total || 0) / 25));
+  v.innerHTML = `<p class="lead">Feedback people send from the app. Shown with a short code instead of who sent it.</p>
+  <div class="grid kpis">${kpi({ label: "New", value: c.new })}${kpi({ label: "Received in the last 7 days", value: c.last_7d })}${Object.entries(FB_KIND).slice(0, 2).map(([k, t]) => kpi({ label: t + "s", value: (c.by_kind || {})[k] || 0 })).join("")}</div>
+  <div class="card" style="margin-top:12px"><div class="toolbar"><label class="sr" for="fst">Status</label><select id="fst"><option value="">All statuses</option>${Object.entries(FB_ST).map(([k, [t]]) => `<option value="${k}" ${FQ.status === k ? "selected" : ""}>${t}</option>`).join("")}</select>
+    <label class="sr" for="fki">Kind</label><select id="fki"><option value="">All kinds</option>${Object.entries(FB_KIND).map(([k, t]) => `<option value="${k}" ${FQ.kind === k ? "selected" : ""}>${t}</option>`).join("")}</select><span class="spacer"></span><span class="muted" style="font-size:12px">${n(d.total)} item${d.total === 1 ? "" : "s"}</span></div>
+  ${d.rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Received</th><th>Kind</th><th>Area</th><th style="width:40%">Feedback</th><th>From</th><th>Status</th><th>Linked</th></tr></thead><tbody>${d.rows.map((f) => `<tr><td>${dt(f.created_at)}</td><td>${esc(FB_KIND[f.kind] || f.kind)}</td><td>${esc(f.area.replace("_", " "))}</td><td style="white-space:pre-wrap">${esc(f.body)}</td><td class="mono muted" title="Pseudonymous code">${esc(f.account)}</td>
+      <td>${manage ? `<label class="sr" for="fs-${esc(f.id)}">Status</label><select id="fs-${esc(f.id)}" data-fst="${esc(f.id)}">${Object.entries(FB_ST).map(([k, [t]]) => `<option value="${k}" ${f.status === k ? "selected" : ""}>${t}</option>`).join("")}</select>` : `<span class="st ${(FB_ST[f.status] || [0, "none"])[1]}">${esc((FB_ST[f.status] || [f.status])[0])}</span>`}</td>
+      <td>${f.work_ref ? `<a href="#/work" class="mono">${esc(f.work_ref)}</a>` : manage ? `<button class="btn sm" data-fwork="${esc(f.id)}">Create item</button>` : "—"}</td></tr>`).join("")}</tbody></table></div>
+    <div class="pager"><button class="btn sm" id="fp" ${FQ.page <= 1 ? "disabled" : ""}>Previous</button><span>Page ${FQ.page} of ${pages}</span><button class="btn sm" id="fn" ${FQ.page >= pages ? "disabled" : ""}>Next</button></div>`
+    : `<div class="card-b">${none(FQ.status || FQ.kind ? "No feedback matches these filters." : "No feedback has been sent yet.", "No feedback")}</div>`}</div>`;
+  const again = () => VIEWS.feedback(v, A.seq);
+  $("#fst").onchange = (e) => { FQ.status = e.target.value; FQ.page = 1; again(); }; $("#fki").onchange = (e) => { FQ.kind = e.target.value; FQ.page = 1; again(); };
+  const a = $("#fp"), b = $("#fn"); if (a) a.onclick = () => { FQ.page--; again(); }; if (b) b.onclick = () => { FQ.page++; again(); };
+  $$("[data-fst]", v).forEach((sel) => sel.onchange = async () => { try { await api("feedback_update", { id: sel.dataset.fst, status: sel.value }); toast("Status saved."); } catch (e) { toast(ERR[e.code] || "Not saved.", true); again(); } });
+  $$("[data-fwork]", v).forEach((btn) => btn.onclick = () => { const f = d.rows.find((x) => x.id === btn.dataset.fwork); editWork({ type: f.kind === "problem" && can("bugs.manage") ? "bug" : "feature", title: f.body.slice(0, 80), description: "From feedback " + f.account + ": " + f.body, source_feedback: f.id }, again); });
+};
+
+/* Bugs, feature requests and tasks */
+const W_ST = { backlog: "Backlog", todo: "To do", in_progress: "In progress", in_review: "In review", done: "Done", wont_do: "Won't do" }, W_TYPE = { bug: "Bug", feature: "Feature request", task: "Task" };
+const WQ = { type: "", status: "open" };
+VIEWS.work = async (v, seq) => {
+  const d = await api("work", WQ); if (stale(seq)) return;
+  const c = d.counts, sev = c.open_bugs_by_severity || {};
+  const types = Object.keys(W_TYPE).filter((t) => can(t === "bug" ? "bugs.view" : "feedback.view")), canNew = can("bugs.manage") || can("feedback.manage");
+  v.innerHTML = `<div class="row" style="margin-bottom:12px"><p class="lead" style="margin:0">Bugs, feature requests and internal product tasks.</p><span class="spacer"></span>${canNew ? `<button class="btn primary" id="wnew">New item</button>` : ""}</div>
+  <div class="grid kpis">
+    ${can("bugs.view") ? kpi({ label: "Open bugs", value: c.open_bugs, meta: `<span class="muted">${n(sev.critical || 0)} critical · ${n(sev.major || 0)} major · ${n(sev.minor || 0)} minor</span>` }) : ""}
+    ${can("feedback.view") ? kpi({ label: "Open feature requests", value: c.open_features }) + kpi({ label: "Open tasks", value: c.open_tasks }) : ""}
+    ${can("bugs.view") ? kpi({ label: "Bug resolution (90 days)", ...(c.bug_resolution_days == null ? { state: "insufficient", meta: "No bugs resolved in the last 90 days." } : { display: c.bug_resolution_days + " days", meta: `<span class="muted">average · ${n(c.bugs_resolved_30d)} resolved in 30 days</span>` }) }) : ""}
+  </div>
+  ${d.weekly ? card("Bugs opened and resolved", "Last 12 weeks (IST weeks starting Monday)", chart(d.weekly, [{ key: "bugs_opened", label: "Opened", color: RED, type: "bar" }, { key: "bugs_resolved", label: "Resolved", color: S3, type: "bar" }], { xkey: "week", ytitle: "Bugs", zeroText: "No bugs were opened or resolved in the last 12 weeks." }), { style: "margin-top:12px" }) : ""}
+  <div class="card" style="margin-top:12px"><div class="toolbar"><div class="seg" role="group" aria-label="Type">${[["", "All"], ...types.map((t) => [t, W_TYPE[t] + "s"])].map(([k, t]) => `<button data-wt="${k}" aria-pressed="${WQ.type === k}">${t}</button>`).join("")}</div>
+    <label class="sr" for="wst">Status</label><select id="wst">${[["open", "Open"], ["", "Everything"], ...Object.entries(W_ST)].map(([k, t]) => `<option value="${k}" ${WQ.status === k ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+  ${d.rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Ref</th><th>Title</th><th>Type</th><th>Severity</th><th>Priority</th><th>Status</th><th>Assigned</th><th>Updated</th></tr></thead><tbody>${d.rows.map((w) => `<tr class="click" data-w="${esc(w.id)}" tabindex="0"><td class="mono">${esc(w.ref)}</td><td><b>${esc(w.title)}</b>${w.category ? `<div class="muted">${esc(w.category)}</div>` : ""}</td><td>${esc(W_TYPE[w.type])}</td><td>${w.severity ? `<span class="sev ${esc(w.severity)}">${esc(w.severity)}</span>` : "—"}</td><td>${esc(w.priority)}</td><td><span class="st ${w.status === "done" ? "good" : w.status === "wont_do" ? "none" : "info"}">${esc(W_ST[w.status])}</span></td><td>${esc(w.assigned_email || "—")}</td><td>${ago(w.updated_at)}</td></tr>`).join("")}</tbody></table></div>`
+    : `<div class="card-b">${none("Nothing here with these filters.", "No items")}</div>`}</div>`;
+  const again = () => VIEWS.work(v, A.seq);
+  $$("[data-wt]", v).forEach((b) => b.onclick = () => { WQ.type = b.dataset.wt; again(); }); $("#wst").onchange = (e) => { WQ.status = e.target.value; again(); };
+  const nb = $("#wnew"); if (nb) nb.onclick = () => editWork({ type: can("bugs.manage") ? "bug" : "feature" }, again);
+  $$("tr[data-w]", v).forEach((tr) => { const open = () => editWork(d.rows.find((x) => x.id === tr.dataset.w), again); tr.onclick = open; tr.onkeydown = (e) => { if (e.key === "Enter") open(); }; });
+};
+function editWork(w, after) {
+  const manage = can(w.type === "bug" ? "bugs.manage" : "feedback.manage") || (!w.id && (can("bugs.manage") || can("feedback.manage")));
+  const types = Object.keys(W_TYPE).filter((t) => can(t === "bug" ? "bugs.manage" : "feedback.manage"));
+  const d = document.createElement("dialog"); d.className = "wide";
+  d.innerHTML = `<form><h3>${w.id ? esc(w.ref) + " · " + esc(W_TYPE[w.type]) : "New item"}</h3>
+    <div class="row"><div><label class="f" for="wty">Type</label><select id="wty" ${w.id ? "disabled" : ""}>${(w.id ? [w.type] : types).map((t) => `<option value="${t}" ${w.type === t ? "selected" : ""}>${W_TYPE[t]}</option>`).join("")}</select></div>
+      <div><label class="f" for="wss">Status</label><select id="wss">${Object.entries(W_ST).map(([k, t]) => `<option value="${k}" ${(w.status || "backlog") === k ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+      <div><label class="f" for="wpr">Priority</label><select id="wpr">${["urgent", "high", "normal", "low"].map((k) => `<option ${(w.priority || "normal") === k ? "selected" : ""}>${k}</option>`).join("")}</select></div>
+      <div id="wsevw"><label class="f" for="wsv">Severity</label><select id="wsv"><option value="">Not set</option>${["critical", "major", "minor"].map((k) => `<option ${w.severity === k ? "selected" : ""}>${k}</option>`).join("")}</select></div></div>
+    <label class="f" for="wti">Title</label><input id="wti" type="text" maxlength="160" style="width:100%" value="${esc(w.title || "")}">
+    <label class="f" for="wde">Description</label><textarea id="wde" maxlength="4000" rows="6" placeholder="Steps, expected and actual behaviour. Never paste anyone's health information.">${esc(w.description || "")}</textarea>
+    <div class="row"><div><label class="f" for="wca">Category</label><input id="wca" type="text" maxlength="40" value="${esc(w.category || "")}" placeholder="e.g. reminders"></div><div><label class="f" for="was">Assigned to</label><input id="was" type="email" value="${esc(w.assigned_email || "")}" placeholder="Leadership member's email"></div></div>
+    ${w.id ? `<p class="hint">Created by ${esc(w.created_by || "—")} ${dt(w.created_at)}${w.resolved_at ? " · resolved " + dt(w.resolved_at) : ""}.</p>` : ""}
+    <p class="err" id="werr" role="alert"></p>
+    <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" type="button" id="wx">${manage ? "Cancel" : "Close"}</button>${manage ? `<button class="btn primary">Save</button>` : ""}</div></form>`;
+  document.body.appendChild(d); d.showModal();
+  const sevShow = () => { $("#wsevw", d).style.display = $("#wty", d).value === "bug" ? "" : "none"; }; sevShow(); $("#wty", d).onchange = sevShow;
+  if (!manage) $$("input,select,textarea", d).forEach((x) => { x.disabled = true; });
+  $("#wx", d).onclick = () => { d.close(); d.remove(); };
+  $("form", d).onsubmit = async (e) => {
+    e.preventDefault(); const title = $("#wti", d).value.trim(); if (title.length < 3) { $("#werr", d).textContent = "Give it a title."; return; }
+    const data = { id: w.id, type: $("#wty", d).value, title, description: $("#wde", d).value, status: $("#wss", d).value, priority: $("#wpr", d).value, severity: $("#wty", d).value === "bug" ? $("#wsv", d).value : "", category: $("#wca", d).value, assigned_email: $("#was", d).value.trim(), source_feedback: w.source_feedback };
+    try { await api("work_save", { data }); d.close(); d.remove(); toast("Saved."); if (after) after(); } catch (er) { $("#werr", d).innerHTML = er.code === "invalid" ? "Check the details: the assignee must be an active leadership member." : errText(er); }
+  };
+}
+
+/* Content and release notes: drafting is separate from publishing; clinical content needs a recorded clinical review */
+const C_TYPE = { release_note: "Release note", help_article: "Help article", education: "Educational material", internal_doc: "Internal documentation" };
+const C_ST = { draft: ["Draft", "none"], in_review: ["In review", "info"], approved: ["Approved", "warn"], published: ["Published", "good"], archived: ["Archived", "none"] };
+let CTYPE = "";
+const pubPerm = (t) => (t === "release_note" ? "releases.manage" : "content.publish");
+VIEWS.content = async (v, seq) => {
+  const d = await api("content", { type: CTYPE }); if (stale(seq)) return;
+  const c = d.counts, types = Object.keys(C_TYPE).filter((t) => can(t === "release_note" ? "releases.view" : "content.view"));
+  v.innerHTML = `<div class="row" style="margin-bottom:12px"><p class="lead" style="margin:0">Published release notes appear in the app under Settings → What's new. Other published content is kept here for reference (the app has no help centre yet). Anything that makes a medical claim must be marked clinical and reviewed before it can be published.</p><span class="spacer"></span>${can("content.edit") ? `<button class="btn primary" id="cnew">New draft</button>` : ""}</div>
+  <div class="grid kpis">${kpi({ label: "Drafts", value: c.drafts })}${kpi({ label: "In review", value: c.in_review })}${kpi({ label: "Approved, not published", value: c.approved })}${kpi({ label: "Published (30 days)", value: c.published_30d })}</div>
+  <div class="card" style="margin-top:12px"><div class="toolbar"><div class="seg" role="group" aria-label="Type">${[["", "All"], ...types.map((t) => [t, C_TYPE[t] + "s"])].map(([k, t]) => `<button data-ct="${k}" aria-pressed="${CTYPE === k}">${t}</button>`).join("")}</div></div>
+  ${d.rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Clinical review</th><th>Updated</th></tr></thead><tbody>${d.rows.map((x) => `<tr class="click" data-c="${esc(x.id)}" tabindex="0"><td><b>${esc(x.title)}</b></td><td>${esc(C_TYPE[x.type])}</td><td><span class="st ${C_ST[x.status][1]}">${C_ST[x.status][0]}</span>${x.published_at ? `<div class="muted">${dt(x.published_at)}</div>` : ""}</td><td>${x.clinical ? (x.clinical_reviewed_at ? `<span class="st good">Reviewed</span><div class="muted">${esc(x.clinical_note || "")}</div>` : `<span class="st warn">Needs review</span>`) : `<span class="muted">Not clinical</span>`}</td><td>${ago(x.updated_at)}<div class="muted">${esc(x.updated_by || "")}</div></td></tr>`).join("")}</tbody></table></div>`
+    : `<div class="card-b">${none("No content yet.", "Nothing here")}</div>`}</div>`;
+  const again = () => VIEWS.content(v, A.seq);
+  $$("[data-ct]", v).forEach((b) => b.onclick = () => { CTYPE = b.dataset.ct; again(); });
+  const nb = $("#cnew"); if (nb) nb.onclick = () => editContent({ type: CTYPE || (can("releases.view") ? "release_note" : "help_article"), status: "draft" }, again);
+  $$("tr[data-c]", v).forEach((tr) => { const open = () => editContent(d.rows.find((x) => x.id === tr.dataset.c), again); tr.onclick = open; tr.onkeydown = (e) => { if (e.key === "Enter") open(); }; });
+};
+function editContent(x, after) {
+  const edit = can("content.edit") && x.status !== "published", pub = can(pubPerm(x.type)), clin = can("content.clinical_review");
+  const d = document.createElement("dialog"); d.className = "wide";
+  const btn = (op, label, cls = "") => `<button class="btn ${cls}" type="button" data-op="${op}">${label}</button>`;
+  d.innerHTML = `<form><h3>${x.id ? esc(x.title) : "New draft"}</h3>
+    <div class="row">${x.id ? `<span class="tag">${esc(C_TYPE[x.type])}</span><span class="st ${C_ST[x.status][1]}">${C_ST[x.status][0]}</span>` : `<div><label class="f" for="cty">Type</label><select id="cty">${Object.keys(C_TYPE).filter((t) => can(t === "release_note" ? "releases.view" : "content.view")).map((t) => `<option value="${t}" ${x.type === t ? "selected" : ""}>${C_TYPE[t]}</option>`).join("")}</select></div>`}</div>
+    <label class="f" for="cti">Title</label><input id="cti" type="text" maxlength="160" style="width:100%" value="${esc(x.title || "")}" ${edit ? "" : "disabled"}>
+    <label class="f" for="cbo">Text</label><textarea id="cbo" maxlength="20000" rows="12" ${edit ? "" : "disabled"}>${esc(x.body || "")}</textarea>
+    <label class="row" style="gap:8px;margin-top:8px"><input type="checkbox" id="ccl" ${x.clinical ? "checked" : ""} ${edit ? "" : "disabled"}> <span>Clinical content (makes a medical claim): needs a recorded clinical review before publishing</span></label>
+    ${x.clinical ? `<p class="hint">${x.clinical_reviewed_at ? `Clinically reviewed ${dt(x.clinical_reviewed_at)} by ${esc(x.clinical_reviewed_by || "—")}: ${esc(x.clinical_note || "")}` : "Not clinically reviewed yet."} Editing the text clears the review.</p>` : ""}
+    ${x.status === "published" ? `<p class="hint">Published ${dt(x.published_at)} by ${esc(x.published_by || "—")}. Unpublish to edit.</p>` : ""}
+    <p class="err" id="cerr2" role="alert"></p>
+    <div class="row" style="justify-content:flex-end;margin-top:14px;flex-wrap:wrap"><button class="btn" type="button" id="cx">Close</button>
+      ${edit ? btn("save", "Save draft") : ""}${x.id && edit && x.status === "draft" ? btn("submit", "Submit for review") : ""}
+      ${x.id && clin && x.clinical && !x.clinical_reviewed_at ? btn("clinical_review", "Record clinical review") : ""}
+      ${x.id && pub && ["draft", "in_review"].includes(x.status) ? btn("approve", "Approve") : ""}
+      ${x.id && pub && x.status !== "published" && x.status !== "archived" ? btn("publish", "Publish", "primary") : ""}
+      ${x.id && pub && x.status === "published" ? btn("unpublish", "Unpublish") : ""}
+      ${x.id && can("content.edit") && x.status !== "archived" && (x.status !== "published" || pub) ? btn("archive", "Archive", "ghost") : ""}</div></form>`;
+  document.body.appendChild(d); d.showModal();
+  $("#cx", d).onclick = () => { d.close(); d.remove(); };
+  $$("[data-op]", d).forEach((b) => b.onclick = async () => {
+    const op = b.dataset.op, data = { id: x.id };
+    if (op === "save") { Object.assign(data, { type: x.id ? x.type : $("#cty", d).value, title: $("#cti", d).value.trim(), body: $("#cbo", d).value, clinical: $("#ccl", d).checked }); if (data.title.length < 3) { $("#cerr2", d).textContent = "Give it a title."; return; } }
+    if (op === "clinical_review") { const note = await confirmBox("Record a clinical review", "Confirm that a qualified clinician has reviewed this text.", { reason: true, reasonLabel: "Reviewer's name and qualification", reasonHint: "For example: Dr A. Name, MBBS, MD (Medicine)", button: "Record review" }); if (note === null) return; data.clinical_note = note; }
+    if (["publish", "unpublish"].includes(op) && (await confirmBox(op === "publish" ? "Publish this?" : "Unpublish this?", op === "publish" && x.type === "release_note" ? "It will appear in the app under What's new." : "", { button: op === "publish" ? "Publish" : "Unpublish" })) === null) return;
+    try { const out = await api("content_save", { data, op }); if (out && out.ok === false) { $("#cerr2", d).textContent = out.error === "clinical_review_required" ? "Clinical content needs a recorded clinical review before it can be published." : "Not saved."; return; }
+      d.close(); d.remove(); toast({ save: "Draft saved.", submit: "Submitted for review.", clinical_review: "Clinical review recorded.", approve: "Approved.", publish: "Published.", unpublish: "Unpublished.", archive: "Archived." }[op]); if (after) after(); }
+    catch (er) { $("#cerr2", d).innerHTML = er.code === "forbidden" ? "Your permissions don't include this step." : errText(er); }
+  });
+}
 
 /* Audit log */
 const AQ = { admin: "", filter_action: "", target: "", page: 1 };
@@ -1009,7 +1293,7 @@ VIEWS.audit = async (v, seq) => {
   const d = await api("audit", { ...AQ, from: p.from, to: p.to, size: 50 }); if (stale(seq)) return;
   const pages = Math.max(1, Math.ceil(d.total / 50));
   v.innerHTML = `<div class="card"><form class="toolbar" id="af"><label class="sr" for="aa">Administrator</label><input id="aa" type="search" placeholder="Administrator email" value="${esc(AQ.admin)}">
-    <label class="sr" for="ac2">Action</label><select id="ac2">${[["", "All actions"], ["user.", "Accounts"], ["flag.", "Switches"], ["maintenance.", "Maintenance"], ["team.", "Team and permissions"], ["announcement.", "Announcements"], ["incident.", "Incidents"], ["alert.", "Alerts"], ["error.", "Errors"], ["report.", "Exports"], ["prefs.", "Preferences"], ["denied:", "Refused requests"]].map(([k, t]) => `<option value="${k}" ${AQ.filter_action === k ? "selected" : ""}>${t}</option>`).join("")}</select>
+    <label class="sr" for="ac2">Action</label><select id="ac2">${[["", "All actions"], ["user.", "Accounts"], ["flag.", "Switches"], ["maintenance.", "Maintenance"], ["member.", "Leadership and permissions"], ["invite.", "Invitations"], ["console.", "Console sign-in and sign-out"], ["support.", "Support"], ["feedback.", "Feedback"], ["work.", "Bugs and tasks"], ["content.", "Content and releases"], ["team.", "Team (before Founder/Co-Founder)"], ["announcement.", "Announcements"], ["incident.", "Incidents"], ["alert.", "Alerts"], ["error.", "Errors"], ["report.", "Exports"], ["prefs.", "Preferences"], ["denied:", "Refused requests"]].map(([k, t]) => `<option value="${k}" ${AQ.filter_action === k ? "selected" : ""}>${t}</option>`).join("")}</select>
     <label class="sr" for="at2">Resource</label><input id="at2" type="search" placeholder="Resource id" value="${esc(AQ.target)}"><button class="btn sm primary">Filter</button>
     <span class="spacer"></span><span class="muted" style="font-size:12px">${n(d.total)} entries in ${esc(p.label.toLowerCase())} · append-only, cannot be edited or deleted</span>
     ${can("reports.export") ? `<button class="btn sm" type="button" id="aexp">${ic("download")} Export</button>` : ""}</form>
@@ -1059,6 +1343,11 @@ VIEWS.definitions = async (v) => {
     ["Application errors", "Occurrences reported to Doctine's own error tracker by the app and the server. Repeats of the same error are grouped."],
     ["Platform availability", "Share of scheduled health checks of the app that passed. Checks run every 15 minutes when the scheduler runs, and whenever an admin opens Platform health."],
     ["Previous period", "The same length of time immediately before the selected period. “New” means there was nothing in the previous period, so no percentage is shown."],
+    ["Founder", "The single highest-authority administrator. Holds every permission, including governance (inviting and removing Co-Founders, their permissions, security policy, the AI switch). Cannot be changed by anyone from the console."],
+    ["Co-Founder", "A leadership member with an individual login and individually granted permissions. Never holds Founder-only permissions. Joins only by accepting an invitation sent to their verified email."],
+    ["Support first response", "Time from a person opening a request to the first reply they can see (internal notes don't count). Averaged over requests opened in the last 30 days."],
+    ["Support resolution", "Time from opening to being marked resolved or closed, averaged over requests resolved in the last 30 days."],
+    ["Bug resolution", "Time from a bug being created to it being marked done or won't do, averaged over the last 90 days."],
     ["Value states", "0 is an actual zero. “Not measured” means the measurement has not started. “Not configured” means the service behind it is not set up. “Insufficient data” means too little history to chart or compare. “Unavailable” means it could not be loaded."],
   ];
   v.innerHTML = `<div class="card"><div class="tbl-wrap" style="border-top:0"><table><thead><tr><th style="width:220px">Term</th><th>Definition</th></tr></thead><tbody>${D.map(([t, d]) => `<tr><td><b>${esc(t)}</b></td><td>${esc(d)}</td></tr>`).join("")}</tbody></table></div></div>
@@ -1071,15 +1360,15 @@ VIEWS.settings = async (v, seq) => {
   const c = st.config, pr = st.prefs;
   const yes = (b, on = "Configured", off = "Not configured") => (b ? `<span class="st good">${on}</span>` : `<span class="st none">${off}</span>`);
   v.innerHTML = `<div class="grid cols-2">
-    ${card("Your access", "", `<dl class="dl"><dt>Signed in as</dt><dd>${esc(A.me.email)}</dd><dt>Role</dt><dd><span class="tag role">${esc(A.me.role)}</span></dd><dt>Two-step sign-in</dt><dd>${A.me.aal === "aal2" ? `<span class="st good">Used for this session</span>` : A.me.mfa_enrolled ? `<span class="st info">Set up</span>` : `<span class="st warn">Not set up</span>`}</dd><dt>Required for admins</dt><dd>${c.admin_mfa_required ? `<span class="st good">Yes</span>` : `<span class="st warn">No</span> <span class="muted">set ADMIN_REQUIRE_MFA=true</span>`}</dd></dl>
+    ${card("Your access", "", `<dl class="dl"><dt>Signed in as</dt><dd>${esc(A.me.email)}</dd><dt>Title</dt><dd>${titleBadge(A.me.role, A.me.title)}</dd><dt>Two-step sign-in</dt><dd>${A.me.aal === "aal2" ? `<span class="st good">Used for this session</span>` : A.me.mfa_enrolled ? `<span class="st info">Set up</span>` : `<span class="st warn">Not set up</span>`}</dd><dt>Required</dt><dd><span class="st good">For everyone</span> <span class="muted">enforced by the server</span></dd></dl>
       <div class="section" style="margin:18px 0 8px"><h2 style="font-size:13px">Your permissions</h2></div><div class="chips">${(A.me.perms || []).map((p) => `<span class="chip">${esc(p)}</span>`).join("")}</div>
       <div class="row" style="margin-top:14px">${A.me.aal !== "aal2" && !A.me.mfa_enrolled ? `<button class="btn primary" id="mf">Set up two-step sign-in</button>` : ""}<button class="btn" id="so2">${ic("out")} Sign out</button></div>`)}
-    ${card("Notification preferences", "Email for new platform alerts", !can("health.view") ? `<p class="muted">Your role does not receive platform alerts.</p>` : `
+    ${card("Notification preferences", "Email for new platform alerts", !can("health.view") ? `<p class="muted">Your permissions do not include platform alerts.</p>` : `
       <div class="row"><button class="switch" role="switch" id="pe" aria-checked="${!!pr.email_alerts}" aria-label="Email me new alerts"></button><span>Email me new alerts</span></div>
       <label class="f" for="psev">Minimum severity</label><select id="psev">${[["info", "All alerts"], ["warning", "Warnings and critical"], ["critical", "Critical only"]].map(([k, t]) => `<option value="${k}" ${pr.min_severity === k ? "selected" : ""}>${t}</option>`).join("")}</select>
       <div class="callout ${c.email_provider ? "good" : "warn"}" style="margin-top:12px">${ic("info")}<span>${c.email_provider ? "Email delivery is configured on the server. New alerts are emailed once." : "<b>Email delivery is not configured</b> on the server, so no alert emails are sent, whatever you choose here. Your choice is saved and takes effect once an email provider is set up."}</span></div>
       <div class="row" style="margin-top:12px"><button class="btn primary" id="psave">Save preferences</button>${pr.updated_at ? `<span class="muted" style="font-size:12px">saved ${ago(pr.updated_at)}</span>` : ""}</div>`)}
-    ${card("Configuration status", "What the server has set up (names only, never values)", `<dl class="dl" style="grid-template-columns:1fr auto"><dt>Environment</dt><dd>${esc(c.environment)}</dd><dt>Release</dt><dd class="mono">${esc(c.release || "—")}</dd><dt>Supabase (database, auth, storage)</dt><dd>${yes(c.supabase)}</dd><dt>AI provider key</dt><dd>${yes(c.ai_key)}</dd><dt>Email provider (alerts)</dt><dd>${yes(c.email_provider)}</dd><dt>Fixed alert recipients</dt><dd>${yes(c.alert_email_to)}</dd><dt>Rate-limit secret</dt><dd>${yes(c.rate_limit_secret)}</dd><dt>Google sign-in</dt><dd>${yes(c.google_sign_in, "On", "Off")}</dd><dt>Two-step sign-in required</dt><dd>${yes(c.admin_mfa_required, "Yes", "No")}</dd></dl>`)}
+    ${card("Configuration status", "What the server has set up (names only, never values)", `<dl class="dl" style="grid-template-columns:1fr auto"><dt>Environment</dt><dd>${esc(c.environment)}</dd><dt>Release</dt><dd class="mono">${esc(c.release || "—")}</dd><dt>Supabase (database, auth, storage)</dt><dd>${yes(c.supabase)}</dd><dt>AI provider key</dt><dd>${yes(c.ai_key)}</dd><dt>Email provider (alerts)</dt><dd>${yes(c.email_provider)}</dd><dt>Fixed alert recipients</dt><dd>${yes(c.alert_email_to)}</dd><dt>Rate-limit secret</dt><dd>${yes(c.rate_limit_secret)}</dd><dt>Google sign-in</dt><dd>${yes(c.google_sign_in, "On", "Off")}</dd><dt>Two-step sign-in required</dt><dd>${yes(c.admin_mfa_required, "Yes, for everyone", "No")}</dd></dl>`)}
     ${card("Time and data", "", `<dl class="dl"><dt>Time zone</dt><dd>India Standard Time (Asia/Kolkata) for every date and day boundary</dd><dt>Data retention</dt><dd>Measurements about 13 months · errors 180 days · checks 90 days · audit log kept</dd><dt>Health data</dt><dd>Never shown or exported by the console</dd></dl>`)}
   </div>`;
   const mf = $("#mf"); if (mf) mf.onclick = () => renderMfa();

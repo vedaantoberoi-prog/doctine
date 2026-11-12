@@ -23,6 +23,7 @@ const SUITES = [
   ["workflows", "tests/browser/workflows.test.mjs", "real functions; Anthropic simulated"],
   ["isolation", "tests/browser/isolation.test.mjs", "Supabase simulated with ownership rules"],
   ["persistence", "tests/browser/persistence.test.mjs", "Supabase simulated with ownership rules"],
+  ["help", "tests/browser/help.test.mjs", "Settings → Help and feedback and What's new; Supabase simulated with ownership rules"],
   ["app", "tests/browser/app.test.mjs", "API responses simulated in the browser"],
   ["google", "tests/browser/google.test.mjs", "Google sign-in; Supabase simulated with ownership rules"],
   ["auth", "tests/browser/auth.test.mjs", "sign-in, sign-up and recovery screens and states; Supabase simulated"],

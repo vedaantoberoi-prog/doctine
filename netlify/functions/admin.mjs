@@ -3,13 +3,15 @@
  *
  * 1. Who is asking comes from their own Supabase sign-in token, checked with Supabase on every request (never from the
  *    request body, user metadata or anything the browser can edit).
- * 2. Whether they may do it is decided in the database: every admin function (migration 20261112000000_admin_console.sql)
- *    checks the person's role in private.admin_members and writes the audit log in the same transaction. This file
- *    only routes; it cannot grant anything the database would refuse.
- * 3. If the person has two-step sign-in set up (or ADMIN_REQUIRE_MFA=true), the token must be a two-step (aal2) one.
+ * 2. Whether they may do it is decided in the database: every admin function checks the person's leadership role
+ *    (Founder or Co-Founder) and their individual permissions in private.admin_members (migration
+ *    20261112040000_leadership.sql) and writes the audit log in the same transaction. This file only routes; it cannot
+ *    grant anything the database would refuse.
+ * 3. Two-step sign-in (aal2) is required for every admin action, for everyone. Before that, a signed-in person can only
+ *    ask who they are, set up two-step sign-in in the browser, and accept an invitation addressed to their verified email.
  * Needs SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY. The service key never leaves the server.
  */
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { serviceHeaders } from "../lib/supabase-keys.mjs";
 import { json, readJson } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
@@ -49,7 +51,7 @@ async function rpc(fn, args) {
   if (r.ok) return body;
   const code = body && body.code;
   if (code === "42501") throw httpError(403, "forbidden");
-  if (code === "22023" || code === "22P02" || code === "22007" || code === "23514") throw httpError(400, "invalid");
+  if (code === "22023" || code === "22P02" || code === "22007" || code === "23514" || code === "23505" || code === "23502") throw httpError(400, "invalid");
   if (code === "P0002") throw httpError(404, "not_found");
   if (code === "PGRST202" || code === "42883") throw httpError(503, "not_installed");
   console.error("[admin] rpc", fn, r.status, code || "");
@@ -71,7 +73,7 @@ export function configStatus() {
     ai_key: Boolean(e.ANTHROPIC_API_KEY),
     email_provider: Boolean(e.RESEND_API_KEY && e.ALERT_EMAIL_FROM),
     alert_email_to: Boolean(e.ALERT_EMAIL_TO),
-    admin_mfa_required: /^true$/i.test(e.ADMIN_REQUIRE_MFA || ""),
+    admin_mfa_required: true, // enforced for every admin by this server (no setting can turn it off)
     rate_limit_secret: Boolean(e.RATE_LIMIT_SECRET),
     google_sign_in: /^true$/i.test(e.AUTH_GOOGLE || ""),
     release: (e.CF_PAGES_COMMIT_SHA || "").slice(0, 12) || null,
@@ -104,6 +106,7 @@ async function runReport(uid, b, rid) {
 /* ─────────────── actions ─────────────── */
 const ACTIONS = {
   me: async () => null, // handled below
+  accept_invite: async () => null, // handled below (only for people who are not yet members)
   overview: (uid, b) => rpc("admin_overview", { p_actor: uid, ...period(b) }),
   series: (uid, b) => rpc("admin_series", { p_actor: uid, ...period(b) }),
   retention: (uid, b) => rpc("admin_retention", { p_actor: uid, p_weeks: Math.min(Math.max(int(b.weeks, 8), 1), 26) }),
@@ -154,7 +157,43 @@ const ACTIONS = {
   alerts: (uid, b) => rpc("admin_alerts", { p_actor: uid, p_evaluate: b.evaluate !== false }),
   alert_update: (uid, b, rid) => rpc("admin_alert_update", { p_actor: uid, p_id: uuid(b.id), p_status: s(b.status, 20), p_request: rid }),
   team: (uid) => rpc("admin_team", { p_actor: uid }),
-  team_set: (uid, b, rid) => rpc("admin_team_set", { p_actor: uid, p_email: s(b.email, 254), p_role: s(b.role, 20) || null, p_status: s(b.status, 20) || "active", p_reason: s(b.reason, 500), p_request: rid }),
+  perm_catalog: (uid) => rpc("admin_perm_catalog", { p_actor: uid }),
+  invite: (uid, b, rid, req) => invite(uid, b, rid, req),
+  invite_revoke: (uid, b, rid) => rpc("admin_invite_revoke", { p_actor: uid, p_id: uuid(b.id), p_reason: s(b.reason, 500), p_request: rid }),
+  member_set: (uid, b, rid) => rpc("admin_member_set", { p_actor: uid, p_user: uuid(b.id), p_status: s(b.status, 20), p_permissions: b.permissions === undefined || b.permissions === null ? null : perms(b.permissions),
+    p_reason: s(b.reason, 500), p_request: rid }),
+  session: (uid, b, rid, req, token) => {
+    const sid = String(claims(token).session_id || ""); if (!sid) throw httpError(400, "invalid");
+    return rpc("admin_log_session", { p_actor: uid, p_event: b.event === "sign_out" ? "sign_out" : "sign_in", p_session: createHash("sha256").update(sid).digest("hex").slice(0, 16), p_request: rid });
+  },
+  page_denied: async (uid, b, rid) => { await rpc("admin_log_denied", { p_actor: uid, p_action: "page:" + s(b.page, 30).replace(/[^a-z_]/g, ""), p_request: rid }); return { ok: true }; },
+  product_overview: (uid, b) => rpc("admin_product_overview", { p_actor: uid, ...period(b) }),
+  support_list: (uid, b) => rpc("admin_support", { p_actor: uid, p_status: s(b.status, 20) || null, p_mine: b.mine === true, p_page: int(b.page, 1) }),
+  support_item: (uid, b, rid) => rpc("admin_support_item", { p_actor: uid, p_id: uuid(b.id), p_request: rid }),
+  support_update: (uid, b, rid) => {
+    const d = b.data || {}, out = {};
+    for (const [k, n] of [["status", 20], ["priority", 20], ["assigned_email", 254]]) if (typeof d[k] === "string") out[k] = d[k].slice(0, n);
+    return rpc("admin_support_update", { p_actor: uid, p_id: uuid(b.id), p_data: out, p_request: rid });
+  },
+  support_message: (uid, b, rid) => rpc("admin_support_message", { p_actor: uid, p_id: uuid(b.id), p_body: s(b.body, 2000), p_internal: b.internal === true, p_request: rid }),
+  feedback: (uid, b) => rpc("admin_feedback", { p_actor: uid, p_status: s(b.status, 20) || null, p_kind: s(b.kind, 20) || null, p_page: int(b.page, 1) }),
+  feedback_update: (uid, b, rid) => rpc("admin_feedback_update", { p_actor: uid, p_id: uuid(b.id), p_status: s(b.status, 20), p_request: rid }),
+  work: (uid, b) => rpc("admin_work", { p_actor: uid, p_type: s(b.type, 20) || null, p_status: s(b.status, 20) || null, p_page: int(b.page, 1) }),
+  work_save: (uid, b, rid) => {
+    const d = b.data || {}, out = {};
+    if (d.id) out.id = uuid(d.id);
+    if (d.source_feedback) out.source_feedback = uuid(d.source_feedback);
+    for (const [k, n] of [["type", 20], ["title", 160], ["description", 4000], ["status", 20], ["priority", 20], ["severity", 20], ["category", 40], ["assigned_email", 254]]) if (typeof d[k] === "string") out[k] = d[k].slice(0, n);
+    return rpc("admin_work_save", { p_actor: uid, p_data: out, p_request: rid });
+  },
+  content: (uid, b) => rpc("admin_content", { p_actor: uid, p_type: s(b.type, 20) || null }),
+  content_save: (uid, b, rid) => {
+    const d = b.data || {}, out = {};
+    if (d.id) out.id = uuid(d.id);
+    for (const [k, n] of [["type", 20], ["title", 160], ["body", 20000], ["clinical_note", 500]]) if (typeof d[k] === "string") out[k] = d[k].slice(0, n);
+    if (typeof d.clinical === "boolean") out.clinical = d.clinical;
+    return rpc("admin_content_save", { p_actor: uid, p_data: out, p_action: s(b.op, 20), p_request: rid });
+  },
   audit: (uid, b) => rpc("admin_audit", { p_actor: uid, p_admin: s(b.admin, 120) || null, p_action: s(b.filter_action, 64) || null, p_target: s(b.target, 80) || null, p_from: iso(b.from), p_to: iso(b.to), p_page: int(b.page, 1), p_size: int(b.size, 50) }),
   security: (uid) => rpc("admin_security", { p_actor: uid }),
   health: async (uid, b, rid, req) => { await rpc("admin_incidents", { p_actor: uid }); return healthChecks(uid, new URL(req.url).origin); }, // the incidents call checks health.view
@@ -171,6 +210,26 @@ const ACTIONS = {
   pdf: (uid, b, rid) => runReport(uid, { ...b, report: b.report || "growth", format: "pdf" }, rid),
   export: (uid, b, rid) => runReport(uid, { ...b, report: ({ summary: "growth", daily: "engagement", audit: "admin_activity" })[b.report] || b.report, format: "csv" }, rid),
 };
+
+const perms = (v) => { if (!Array.isArray(v) || v.length > 60 || v.some((x) => typeof x !== "string" || !/^[a-z_]+\.[a-z_]+$/.test(x))) throw httpError(400, "invalid"); return v; };
+
+/* Founder only (checked by the database first): record the invitation, then send Supabase's invitation email to an email
+   with no account yet. Someone who already has a Doctine account is told to sign in at /admin, where they accept. */
+async function invite(uid, b, rid, req) {
+  const email = s(b.email, 254).toLowerCase();
+  const r = await rpc("admin_invite_create", { p_actor: uid, p_email: email, p_permissions: perms(b.permissions || []), p_reason: s(b.reason, 500), p_request: rid });
+  if (!r || !r.ok) return r;
+  let delivery = "existing_account";
+  if (!r.existing_account) {
+    const { base, service } = env();
+    const to = new URL("/admin/", new URL(req.url).origin).toString();
+    const res = await call(`${base}/auth/v1/invite?redirect_to=${encodeURIComponent(to)}`, { method: "POST", headers: serviceHeaders(service, { "content-type": "application/json" }), body: JSON.stringify({ email, data: {} }) });
+    delivery = res.ok ? "email_sent" : "email_failed";
+    if (!res.ok) console.error("[admin] invite email", res.status);
+  }
+  await rpc("admin_invite_delivery", { p_actor: uid, p_id: r.id, p_delivery: delivery, p_request: rid });
+  return { ok: true, id: r.id, delivery };
+}
 
 async function setSuspended(uid, b, rid, on) {
   const id = uuid(b.id), { base, service } = env();
@@ -206,22 +265,27 @@ export default async (req, context) => {
     const uid = user && UUID.test(user.id || "") ? user.id : null;
     if (!uid) return json({ error: "unauthorized" }, 401);
 
-    // 2. Are they on the admin team? (The database decides; nothing from the browser is trusted.)
+    // 2. Are they in the leadership team? (The database decides; nothing from the browser is trusted.)
     const me = await rpc("admin_me", { p_actor: uid });
     if (!me || !me.role) {
+      // Not a member. The only thing they can do is see, and accept, an invitation to their own verified email.
+      if (me && me.invite && action === "me") return json({ role: null, invite: me.invite, request_id: rid });
+      if (me && me.invite && action === "accept_invite") {
+        const out = await rpc("admin_invite_accept", { p_actor: uid, p_id: uuid(b.id), p_request: rid });
+        return json({ data: out, request_id: rid }, out && out.ok ? 200 : 403);
+      }
       await rpc("admin_log_denied", { p_actor: uid, p_action: action, p_request: rid }).catch(() => {});
-      return json({ error: "forbidden", request_id: rid }, 403);
+      return json({ error: "forbidden", suspended: !!(me && me.suspended), request_id: rid }, 403);
     }
-    // 3. Two-step sign-in, where the person has set it up (always, with ADMIN_REQUIRE_MFA=true).
+    // 3. Two-step sign-in, always.
     const aal = claims(token).aal;
-    const mustMfa = me.mfa_enrolled || /^true$/i.test(process.env.ADMIN_REQUIRE_MFA || "");
-    if (mustMfa && aal !== "aal2") {
+    if (aal !== "aal2") {
       if (action !== "me") return json({ error: "mfa_required", request_id: rid }, 403);
       return json({ ...me, mfa_required: true, mfa_enrolled: !!me.mfa_enrolled, request_id: rid });
     }
     if (action === "me") return json({ ...me, aal, request_id: rid });
 
-    const out = await ACTIONS[action](uid, b, rid, req);
+    const out = await ACTIONS[action](uid, b, rid, req, token);
     if (out && out.content_type) return new Response(out.body, { status: 200, headers: { "content-type": out.content_type + (out.content_type.startsWith("text/") ? "; charset=utf-8" : ""), "content-disposition": `attachment; filename="${out.filename}"`, "cache-control": "no-store", "x-request-id": rid } });
     return json({ data: out, request_id: rid });
   } catch (e) {

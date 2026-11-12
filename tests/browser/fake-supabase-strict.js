@@ -50,7 +50,24 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
     };
     return api;
   }
+  // The people-facing support and feedback functions (migration 20261112040000_leadership.sql), bound to the session
+  // like a real request: each person reaches only their own requests; staff replies are added by tests via __sbdb.
+  async function rpc(fn, args = {}) {
+    const u = session && session.user.id; if (!u) return { data: null, error: { message: "sign in first", code: "42501" } };
+    window.__writes.push({ table: "rpc:" + fn, op: "rpc", session: u, rows: [JSON.parse(JSON.stringify(args))] });
+    const S = T("support_requests"), M = T("support_messages"), now = new Date().toISOString();
+    if (fn === "support_submit") {
+      if (S.filter((r) => r.user_id === u).length >= 5) return { data: { ok: false, error: "too_many" }, error: null };
+      const id = uuid(), ref = "S-" + (S.length + 1); S.push({ id, ref, user_id: u, category: args.p_category, subject: args.p_subject, status: "open", created_at: now, updated_at: now });
+      M.push({ request_id: id, at: now, from_staff: false, internal: false, body: args.p_body }); save(); return { data: { ok: true, id, ref }, error: null };
+    }
+    if (fn === "support_mine") return { data: S.filter((r) => r.user_id === u).map((r) => ({ ...r, messages: M.filter((m) => m.request_id === r.id && !m.internal).map((m) => ({ at: m.at, from: m.from_staff ? "Doctine support" : "You", body: m.body })) })), error: null };
+    if (fn === "support_reply") { const r = S.find((x) => x.id === args.p_id && x.user_id === u); if (!r) return { data: null, error: { message: "not found", code: "P0002" } }; M.push({ request_id: r.id, at: now, from_staff: false, internal: false, body: args.p_body }); r.status = "open"; save(); return { data: { ok: true }, error: null }; }
+    if (fn === "feedback_submit") { T("feedback").push({ user_id: u, kind: args.p_kind, area: args.p_area, body: args.p_body, at: now }); save(); return { data: { ok: true }, error: null }; }
+    return { data: null, error: { message: "function not found", code: "PGRST202" } };
+  }
   window.supabase = { createClient: () => ({
+    rpc,
     auth: {
       async getSession() { return { data: { session } }; },
       async getUser() { return { data: { user: session ? session.user : null } }; },

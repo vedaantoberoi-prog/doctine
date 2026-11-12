@@ -33,7 +33,7 @@ export default async () => {
   const st = await getSettings();
   const aiAvailable = Boolean(process.env.ANTHROPIC_API_KEY) && st.flags.ai_assistant === true;
   return json({ supabaseUrl: url.replace(/\/$/, ""), supabaseAnonKey: anon, accounts: "supabase", environment: env, googleSignIn, aiAvailable,
-    features: st.flags, maintenance: st.maintenance, announcements: st.announcements, settingsSource: st.source });
+    features: st.flags, maintenance: st.maintenance, announcements: st.announcements, whatsNew: st.whatsNew || [], settingsSource: st.source });
 };
 
 export const config = { path: "/api/config" };

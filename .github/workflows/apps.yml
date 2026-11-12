@@ -12,6 +12,11 @@ on:
     branches: [bolt-3d-hero, main]
     paths: ["public/**", "apps/**", "tools/build-app-web.mjs", ".github/workflows/apps.yml"]
   workflow_dispatch:
+    inputs:
+      share_apk:
+        description: "Publish the Android test APK as a GitHub pre-release with a download link"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,6 +29,8 @@ jobs:
   android:
     name: Android build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # only used by the optional "share the test APK" step below
     timeout-minutes: 40
     defaults: { run: { working-directory: apps/android } }
     steps:
@@ -55,6 +62,15 @@ jobs:
           find android/app/build/outputs -name "*.apk" -o -name "*.aab" | xargs ls -la
           "$ANDROID_HOME"/build-tools/$(ls "$ANDROID_HOME"/build-tools | sort -V | tail -1)/apksigner verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | head -3
           rm -f "$RUNNER_TEMP/doctine.jks"
+      - name: Share the test APK (only when run by hand with share_apk)
+        if: github.event_name == 'workflow_dispatch' && inputs.share_apk
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          SHORT=$(git rev-parse --short HEAD); TAG="android-test-$SHORT-${{ github.run_number }}"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "Doctine-test-$SHORT.apk"
+          gh release create "$TAG" "Doctine-test-$SHORT.apk" --prerelease --target "$GITHUB_SHA" --title "Doctine for Android — test build $SHORT" \
+            --notes "Test build of the Doctine Android app (commit $SHORT). For testers: open this file on an Android phone, allow installs from this source, install, then sign in with your Doctine account. Not a store release: unsigned test build; to update, uninstall the previous test build first. Doctine is not a doctor or an emergency service; in an emergency in India call 112."
+          echo "DOWNLOAD: https://github.com/${{ github.repository }}/releases/download/$TAG/Doctine-test-$SHORT.apk" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: doctine-android

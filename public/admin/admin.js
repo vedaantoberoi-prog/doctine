@@ -1123,7 +1123,7 @@ VIEWS.data = async (v, seq) => {
     ${kpi({ id: "d-acc", label: "Accounts", value: d.accounts, meta: `<span class="muted">${n(d.accounts_new)} new in ${esc(p.label.toLowerCase())}</span>`, href: can("users.view") ? "#/users" : undefined })}
     ${kpi({ id: "d-size", label: "Database size", display: bytes(d.database_bytes), meta: `<span class="muted">${n(tables.length)} tables</span>` })}
     ${kpi({ id: "d-files", label: "Files in storage", value: sFiles, meta: `<span class="muted">${bytes(sBytes)} in ${n(buckets.length)} bucket${buckets.length === 1 ? "" : "s"}</span>` })}
-    ${kpi({ id: "d-rls", label: "Tables without row-level security", value: rlsOff.length, meta: rlsOff.length ? `<span class="st bad">Needs attention</span>` : `<span class="st good">Every table protected</span>` })}
+    ${kpi({ id: "d-rls", label: "Tables without row-level security", value: rlsOff.length, meta: rlsOff.length ? `<span class="st bad">Needs attention</span>` : `<span class="st good">All protected</span>` })}
   </div>
   <div class="grid cols-2" style="margin-top:12px">
     ${card("Where health data is", "Rows per health table", hbars(health.filter((t) => +t.rows > 0).sort((a, b) => b.rows - a.rows).map((t) => ({ label: t.purpose, value: +t.rows })), {}), {})}

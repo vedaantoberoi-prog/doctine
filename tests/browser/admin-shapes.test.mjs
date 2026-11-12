@@ -27,7 +27,10 @@ const STR = (k, path) => {
   if (k === "state") return "pending";
   if (k === "key" && path.includes("perm_catalog")) return PERMS[ctr % PERMS.length];
   if (k === "group") return ["Overview", "Product", "Founder only"][ctr % 3];
-  if (k === "area") return "medicines";
+  if (k === "area") return path.includes("data_overview") ? ["Health data", "Administration", "Operations"][ctr % 3] : "medicines";
+  if (k === "schema") return "public";
+  if (k === "table") return "table_" + ctr;
+  if (k === "purpose") return "Fictional table purpose " + ctr;
   if (k === "priority") return "normal";
   if (k === "type") return path.includes("content") ? "release_note" : "bug";
   if (k === "account") return "9f3a1c2b";
@@ -111,7 +114,7 @@ for (const mode of ["empty", "busy"]) {
       const o = await pg.evaluate(() => document.documentElement.scrollWidth - innerWidth); if (o > 1) bad.push(`${tag} ${where}: horizontal overflow ${o}px`);
       { const u = await pg.$("[data-state=unavailable]"); if (u) bad.push(`${tag} ${where}: shows unavailable: ${await u.innerText()}`); }
     };
-    const pages = ["dashboard", "analytics", "reports", "users", "documents", "health", "errors", "incidents", "alerts", "support", "feedback", "work", "content", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"];
+    const pages = ["dashboard", "analytics", "reports", "users", "documents", "data", "health", "errors", "incidents", "alerts", "support", "feedback", "work", "content", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"];
     const closeDialogs = () => pg.evaluate(() => document.querySelectorAll("dialog").forEach((d) => { d.close?.(); d.remove(); }));
     for (const p of pages) {
       await pg.evaluate((h) => { location.hash = "#/" + h; }, p); await pg.waitForTimeout(700);
@@ -141,5 +144,5 @@ for (const mode of ["empty", "busy"]) for (const w of [1440, 390, 320]) {
   const tag = `${mode}@${w}`, mine = problems.filter((x) => x.startsWith(tag + " "));
   console.log(`${mine.length ? "FAIL" : "PASS"} ${mode} data at ${w}px: every page, drawer, dialog, date range and the search and notification menus render without errors, placeholders or sideways scrolling${mine.length ? "  — " + mine.slice(0, 3).join(" | ") : ""}`);
 }
-console.log(problems.length ? `${problems.length} problems FAILED` : "all admin console real-shape checks passed (2 data sets × 3 widths × 21 pages, drawers and dialogs)");
+console.log(problems.length ? `${problems.length} problems FAILED` : "all admin console real-shape checks passed (2 data sets × 3 widths × 22 pages, drawers and dialogs)");
 process.exit(problems.length ? 1 : 0);

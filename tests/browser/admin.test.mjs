@@ -300,7 +300,7 @@ await pg.click("#pe"); await pg.click("#psave"); await settle(pg);
 check("notification preferences are saved on the server", log.calls.some((c) => c.action === "set_prefs" && c.email_alerts === true));
 // database overview
 await go(pg, "#/data", '[data-table="public.health_profiles"]');
-check("database: accounts, size, storage and tables without row-level security, then each table's purpose, rows, growth, size and security", (await text(pg, '[data-kpi="d-acc"]')).includes("14") && (await text(pg, '[data-kpi="d-rls"]')).includes("Every table protected") && (await text(pg, '[data-table="public.health_profiles"]')).includes("11") && (await text(pg, "#view")).includes("never the contents"));
+check("database: accounts, size, storage and tables without row-level security, then each table's purpose, rows, growth, size and security", (await text(pg, '[data-kpi="d-acc"]')).includes("14") && (await text(pg, '[data-kpi="d-rls"]')).includes("All protected") && (await text(pg, '[data-table="public.health_profiles"]')).includes("11") && (await text(pg, "#view")).includes("never the contents"));
 check("database: no row contents, only counts (no names, values or file links)", !/@example\.test|Sample|https?:\/\//.test(await text(pg, "#view")));
 // leadership
 await go(pg, "#/team", "[data-member]");

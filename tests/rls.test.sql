@@ -90,6 +90,18 @@ do $$ declare a_doc uuid; begin
   exception when foreign_key_violation then raise notice 'ok: B cannot attach data to A''s document, even knowing its id'; end;
 end $$;
 select pg_temp.expect((select count(*) from documents) = 1, 'B sees only their own document');
+-- Even with RLS bypassed (superuser), a child row whose owner differs from its parent's owner is rejected by the (id, user_id) keys.
+reset role;
+do $$ declare a_doc uuid; a_rx uuid; b uuid := 'bbbbbbbb-0000-0000-0000-000000000002'; begin
+  select id into a_doc from documents where user_id = 'aaaaaaaa-0000-0000-0000-000000000001' limit 1;
+  begin insert into lab_results (user_id, document_id, test, value) values (b, a_doc, 'Planted', '1'); raise exception 'FAILED: mismatched lab result accepted';
+  exception when foreign_key_violation then raise notice 'ok: a lab result cannot belong to someone other than its document''s owner'; end;
+  select id into a_rx from prescriptions where user_id = 'aaaaaaaa-0000-0000-0000-000000000001' limit 1;
+  if a_rx is not null then
+    begin insert into prescription_items (user_id, prescription_id, name) values (b, a_rx, 'Planted'); raise exception 'FAILED: mismatched prescription item accepted';
+    exception when foreign_key_violation then raise notice 'ok: a prescription item cannot belong to someone other than its prescription''s owner'; end;
+  end if;
+end $$;
 reset role;
 -- A cannot move their own file into B's folder either
 select pg_temp.as_user('aaaaaaaa-0000-0000-0000-000000000001');

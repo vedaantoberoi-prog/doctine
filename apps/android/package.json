@@ -1,0 +1,27 @@
+{
+  "name": "doctine-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Doctine for Android: the Doctine app packaged with Capacitor. Same account, same records as app.doctine.com.",
+  "scripts": {
+    "web": "node ../../tools/build-app-web.mjs www --vendor",
+    "prepare:android": "npm run web && (test -d android || npx cap add android) && node scripts/customize.mjs && npx capacitor-assets generate --android --assetPath ../assets && npx cap sync android",
+    "build:debug": "cd android && ./gradlew --no-daemon assembleDebug",
+    "build:release": "cd android && ./gradlew --no-daemon bundleRelease assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/share": "8.0.3",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "4.0.0",
+    "@capacitor/cli": "8.6.0"
+  }
+}

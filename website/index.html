@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Doctine · Your health information, brought together</title>
-<meta name="description" content="Doctine keeps your prescriptions, lab reports, medicines and health profile together in one private account, built in India.">
+<title>Doctine — Your Personal Health Record</title>
+<meta name="description" content="Bring your health records, reports, prescriptions and medicine schedules together in one private place.">
 <meta name="theme-color" content="#101C2B">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/fonts/fonts.css">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/fonts/fonts.css?v=41d2c6e670">
+<link rel="stylesheet" href="/assets/site.css?v=08522cc764">
 <link rel="canonical" href="https://doctine.com/">
 <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
 <meta property="og:site_name" content="Doctine">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://doctine.com/">
-<meta property="og:title" content="Doctine · Your health information, brought together">
-<meta property="og:description" content="Doctine keeps your prescriptions, lab reports, medicines and health profile together in one private account, built in India.">
+<meta property="og:title" content="Doctine — Your Personal Health Record">
+<meta property="og:description" content="Bring your health records, reports, prescriptions and medicine schedules together in one private place.">
 <meta property="og:image" content="https://doctine.com/assets/brand/og-image.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Doctine: your health information, brought together.">
+<meta property="og:image:alt" content="Doctine: your health has a history.">
 <meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
@@ -52,46 +52,43 @@
 
 <main id="main">
 
-  <!-- 1 · Hero -->
-  <section class="hero" aria-labelledby="hero-title">
-    <div class="wrap split">
-      <div>
-        <p class="eyebrow">Personal health, connected</p>
-        <h1 id="hero-title">Your health information, brought together.</h1>
-        <p class="lede">Doctine keeps your prescriptions, lab reports, medicines and health profile in one private account, so your history is in front of you when you, or your doctor, need it.</p>
+  <!-- The 3D world: one fixed scene behind the page. Dark "window" sections show it; the reading sections cover it.
+       Without WebGL it is a still deep-blue sky, and every word on the page is still here. -->
+  <div class="world" data-world aria-hidden="true"></div>
+
+  <!-- A · Hero -->
+  <section class="window hero" data-scene="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div class="window-copy">
+        <p class="eyebrow">Your personal health record</p>
+        <h1 id="hero-title">Your health has a history.</h1>
+        <p class="lede">Prescriptions, reports, medicines and the details that matter. They deserve a place where everything comes together.</p>
         <div class="actions">
-          <a class="btn" href="https://app.doctine.com/">Create your free account</a>
-          <a class="btn ghost" href="/app-preview/">Explore with sample records</a>
+          <a class="btn on-dark" href="https://app.doctine.com/">Create your free account</a>
+          <a class="btn ghost on-dark-ghost" href="#platform">Explore the platform</a>
+          <a class="btn text on-dark-text" href="/app-preview/">Explore with sample records <span aria-hidden="true">→</span></a>
         </div>
-        <p class="fine">Sign up with your email address or Google. The sample preview uses made-up records and saves nothing.</p>
+        <p class="fine">Sign up with your email address or Google. The sample records are fictional, and nothing you do there is saved.</p>
       </div>
-      <figure style="margin:0">
-        <div class="record" role="img" aria-label="Illustration of a Doctine record with made-up examples: a timeline of a blood count, a prescription and a diabetes panel, with two medicines below.">
-          <div class="record-top"><b>Health timeline</b><small>Example</small></div>
-          <ol class="tl" aria-hidden="true">
-            <li><i></i><div><b>Complete blood count</b><span>Lab report · City Diagnostics</span></div><time>2 Sep 2026</time></li>
-            <li><i></i><div><b>Prescription, Dr. A. Sharma</b><span>2 medicines, added by hand</span></div><time>28 Aug 2026</time></li>
-            <li><i></i><div><b>HbA1c and lipid panel</b><span>Lab report · values confirmed</span></div><time>18 Jul 2026</time></li>
-          </ol>
-          <div class="record-meds" aria-hidden="true">
-            <p class="mh">Medicines</p>
-            <div class="med"><b>Metformin 500 mg</b><span>1 tablet · 08:00, 20:00</span></div>
-            <div class="med"><b>Vitamin D3</b><span>Weekly · Sunday</span></div>
-          </div>
-        </div>
-        <figcaption class="caption">Made-up example. Your account starts empty.</figcaption>
-      </figure>
     </div>
+    <script type="module">
+      // The 3D world (about 1 MB) loads after the page has settled, and only where it will run well. Data saver, 2G
+      // connections and low-memory phones keep the still picture of the same scene instead (CSS: .world).
+      const c = document.createElement('canvas'), net = navigator.connection || {};
+      const light = net.saveData || /(^|-)2g$/.test(net.effectiveType || '') || (navigator.deviceMemory && navigator.deviceMemory < 3);
+      if (!light && (c.getContext('webgl2') || c.getContext('webgl'))) {
+        const go = () => import('/assets/hero3d/hero3d.js?v=fafb2bb9d0').catch(() => {});
+        'requestIdleCallback' in window ? requestIdleCallback(go, { timeout: 1500 }) : setTimeout(go, 300);
+      }
+    </script>
   </section>
 
   <!-- 2 · The problem -->
-  <section class="section" aria-labelledby="problem-title">
-    <div class="wrap split">
-      <div>
+  <section class="window" data-scene="gather" aria-labelledby="problem-title">
+    <div class="wrap">
+      <div class="window-copy">
         <p class="eyebrow">The problem</p>
         <h2 id="problem-title">Health information rarely lives in one place.</h2>
-      </div>
-      <div>
         <p class="lede" style="margin-bottom:var(--s5)">Over the years, the details that matter end up scattered. When a doctor asks what you took last time, or when a value started to change, the answer is often somewhere you can't easily reach.</p>
         <ul class="scatter">
           <li><b>Prescriptions</b><span>on paper, in a drawer or a phone gallery</span></li>
@@ -99,26 +96,72 @@
           <li><b>Medicines</b><span>remembered from the strip, not the prescription</span></li>
           <li><b>Your history</b><span>split between hospitals, clinics and family members' memories</span></li>
         </ul>
+        <p class="window-next">Doctine brings them into one place, in order.</p>
       </div>
     </div>
   </section>
 
-  <!-- 3 · Personal health records -->
+  <!-- 4 · Personal health profile -->
   <section class="section" id="platform" aria-labelledby="records-title">
     <div class="wrap split">
       <div>
-        <p class="eyebrow">Your health record <span class="status now" style="margin-left:.5rem;vertical-align:middle">Available now</span></p>
-        <h2 id="records-title">One private record of your health, in date order.</h2>
+        <p class="eyebrow">Personal health profile <span class="status now" style="margin-left:.5rem;vertical-align:middle">Available now</span></p>
+        <h2 id="records-title">One private record of your health.</h2>
+        <p class="lede" style="margin-top:var(--s5)">Start with the basics about you. You enter them, and you can edit or remove them whenever you like.</p>
+        <ul class="ticks" style="margin-top:var(--s5)">
+          <li>Date of birth, blood group, height, weight and allergies, entered by you.</li>
+          <li>Your profile, reports, prescriptions and medicines live together in one account.</li>
+        </ul>
       </div>
       <div>
-        <p class="lede" style="margin-bottom:var(--s5)">Your profile, reports, prescriptions and medicines live together in one account, so the history a doctor asks about is in one place.</p>
+        <div class="demo">
+          <div class="demo-top"><b>Health profile</b><span>Made-up example</span></div>
+          <div class="demo-body">
+            <dl class="facts">
+              <div><dt>Date of birth</dt><dd>14 Mar 1988</dd></div>
+              <div><dt>Blood group</dt><dd>B+</dd></div>
+              <div><dt>Height</dt><dd>168 cm</dd></div>
+              <div><dt>Weight</dt><dd>64 kg</dd></div>
+              <div class="wide"><dt>Allergies</dt><dd>Penicillin</dd></div>
+            </dl>
+            <p class="tl-note">A made-up person. Entered by you in the real app, and yours to edit or remove.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · The health timeline -->
+  <section class="section" aria-labelledby="timeline-title">
+    <div class="wrap split">
+      <div>
+        <figure class="records-figure" style="margin-top:0">
+          <div class="record" role="img" aria-label="Illustration of a Doctine record with made-up examples: a timeline of a blood count, a prescription and a diabetes panel, with two medicines below.">
+            <div class="record-top"><b>Health timeline</b><small>Example</small></div>
+            <ol class="tl" aria-hidden="true">
+              <li><i></i><div><b>Complete blood count</b><span>Lab report · City Diagnostics</span></div><time>2 Sep 2026</time></li>
+              <li><i></i><div><b>Prescription, Dr. A. Sharma</b><span>2 medicines, added by hand</span></div><time>28 Aug 2026</time></li>
+              <li><i></i><div><b>HbA1c and lipid panel</b><span>Lab report · values confirmed</span></div><time>18 Jul 2026</time></li>
+            </ol>
+            <div class="record-meds" aria-hidden="true">
+              <p class="mh">Medicines</p>
+              <div class="med"><b>Metformin 500 mg</b><span>1 tablet · 08:00, 20:00</span></div>
+              <div class="med"><b>Vitamin D3</b><span>Weekly · Sunday</span></div>
+            </div>
+          </div>
+          <figcaption class="caption">Made-up example. Your account starts empty.</figcaption>
+          </figure>
+      </div>
+      <div>
+        <p class="eyebrow">The health timeline <span class="status now" style="margin-left:.5rem;vertical-align:middle">Available now</span></p>
+        <h2 id="timeline-title">Your health, in context.</h2>
+        <p class="lede" style="margin:var(--s5) 0">Reports, prescriptions and medicines sit together in date order, so the history a doctor asks about is in one place.</p>
         <ul class="ticks">
-          <li><strong>A health profile</strong> with date of birth, height, weight, blood group and allergies, entered by you.</li>
-          <li><strong>A timeline</strong> that places each report by the date of the test, not the day you uploaded it.</li>
+          <li><strong>By the date of the test,</strong> not the day you uploaded it.</li>
           <li><strong>Search</strong> by title, type, lab or test name, on your phone or computer.</li>
-          <li><strong>Export or delete</strong> everything in your account, at any time, from Settings.</li>
+          <li><strong>You stay in control:</strong> edit or remove any record, and export or delete everything in your account from Settings.</li>
         </ul>
-        <p class="muted small" style="margin-top:var(--s5)">Doctine organises what you add. It doesn't interpret trends, predict conditions or give medical advice.</p>
+        <p class="note-line">Doctine organises what you add. It does not interpret trends, predict conditions or give medical advice.</p>
       </div>
     </div>
   </section>
@@ -127,18 +170,33 @@
   <section class="section" aria-labelledby="docs-title">
     <div class="wrap split">
       <div>
-        <p class="eyebrow">Documents and prescriptions</p>
-        <h2 id="docs-title">Every record shows where its details came from.</h2>
-        <p style="margin-top:var(--s5)" class="muted">A lab value you typed and a value software read from a photo shouldn't look the same. In Doctine, they don't.</p>
+        <p class="eyebrow">Medical reports and documents</p>
+        <h2 id="docs-title">Every record, organised and accessible.</h2>
+        <p style="margin-top:var(--s5)" class="muted">Reports, prescriptions and scans, each kept with its original and marked with where its details came from. A lab value you typed and a value software read from a photo shouldn't look the same. In Doctine, they don't.</p>
       </div>
       <div>
-        <div class="record" role="img" aria-label="Three ways a record can be labelled: original only; read automatically, not yet checked; checked by you.">
-          <div class="record-top"><b>How records are labelled</b><small>In the app</small></div>
-          <ul class="prov" aria-hidden="true">
-            <li><span class="pchip">Original only</span><p>The photo or PDF is kept exactly as you added it. Add details by hand whenever you like.</p></li>
-            <li><span class="pchip warn">Read automatically · not yet checked</span><p>Once automatic reading is switched on, details read by software stay marked until you compare them with the original and confirm. An uncertain medicine name can't be saved until you've checked it.</p></li>
-            <li><span class="pchip ok">Checked by you</span><p>Values you've confirmed, from a PDF report or after checking a scan. The original stays attached.</p></li>
-          </ul>
+        <div class="demo" id="doc-demo" data-state="read">
+          <div class="demo-top"><b>Complete blood count</b><span>Made-up example</span></div>
+          <div class="demo-body">
+            <div class="seg" role="group" aria-label="Show this report as">
+              <button type="button" data-state="original" aria-pressed="false">Original</button>
+              <button type="button" data-state="read" aria-pressed="true">Read by software</button>
+              <button type="button" data-state="checked" aria-pressed="false">Checked by you</button>
+            </div>
+            <pre class="paper" aria-label="The original document, kept exactly as added">CITY DIAGNOSTICS            2 Sep 2026
+Complete Blood Count
+
+Haemoglobin      13.1 g/dL    12.0 - 15.5
+Total WBC        7,800 /cumm  4000 - 11000
+Platelets        2.4 lakh     1.5 - 4.5</pre>
+            <ul class="vals">
+              <li><b>Haemoglobin</b><span class="v">13.1 g/dL</span><span class="tag"></span></li>
+              <li><b>Total WBC</b><span class="v">7800 /cumm</span><span class="tag"></span></li>
+              <li><b>Platelets</b><span class="v">2.4 lakh</span><span class="tag"></span></li>
+            </ul>
+            <p class="state-say" aria-live="polite">Values found in a text-based PDF are shown to you first. Nothing is saved until you compare them with the original and confirm.</p>
+          </div>
+          <p class="demo-note">A demonstration with made-up values. Nothing here is sent or saved.</p>
         </div>
         <ul class="ticks" style="margin-top:var(--s5)">
           <li>Upload a PDF or photo, or photograph a page with your phone camera. <span class="status now">Available now</span></li>
@@ -153,13 +211,21 @@
   <section class="section" aria-labelledby="understand-title">
     <div class="wrap split center">
       <div>
-        <p class="eyebrow">Understanding your information</p>
-        <h2 id="understand-title">Plain-language explanations, introduced carefully.</h2>
+        <p class="eyebrow">Medical intelligence</p>
+        <h2 id="understand-title">Making medical information easier to understand.</h2>
       </div>
       <div>
         <p><span class="status dev">In development · not yet available</span></p>
         <p>We're building an assistant that explains medical terms and the values in your own reports in plain language, points back to the report it used, and suggests questions worth taking to your doctor.</p>
         <p>It will only be switched on after its answers have passed our safety evaluation and been reviewed by doctors. When it is, it will use your records only in the chats where you choose to share them, and it will never be a diagnosis or a substitute for medical care.</p>
+        <div class="demo planned" style="margin:var(--s5) 0">
+          <div class="demo-top"><b>In development — not yet available</b><span>Illustration</span></div>
+          <div class="demo-body chat" role="img" aria-label="Illustration, not a working feature: a person asks what a high TSH means; the planned assistant gives a general plain-language explanation, names the report it used, and suggests questions for a doctor.">
+            <div class="q" aria-hidden="true">What does a high TSH mean? Use my July report.</div>
+            <div class="a" aria-hidden="true"><p>TSH is a hormone that tells the thyroid how hard to work. A value above the lab's range can have several causes, and only your doctor can say what it means for you.</p><p><strong>Questions you could ask your doctor:</strong></p><ul><li>Should this test be repeated?</li><li>Do any of my medicines affect it?</li></ul><span class="src">Source: Thyroid panel, 18 Jul 2026 (shared by you in this chat)</span></div>
+          </div>
+          <p class="demo-note">Illustration of a planned experience. Fictional content. The assistant is currently switched off.</p>
+        </div>
         <p class="muted small" style="margin:0">Automatic reading of scanned photos depends on the same review. Until then, scans are saved as photos and you add the details by hand.</p>
       </div>
     </div>
@@ -170,7 +236,7 @@
     <div class="wrap split">
       <div>
         <p class="eyebrow">Medicines <span class="status now" style="margin-left:.5rem;vertical-align:middle">Available now</span></p>
-        <h2 id="meds-title">Your medicines, exactly as prescribed.</h2>
+        <h2 id="meds-title">Your medicines, in one organised schedule.</h2>
       </div>
       <div>
         <p class="lede" style="margin-bottom:var(--s5)">Keep a list of what you take and when, with today's doses in front of you.</p>
@@ -180,6 +246,17 @@
           <li>Mark each dose taken or skipped, undo a mistake, and keep a history.</li>
           <li>Pause a medicine without losing its record.</li>
         </ul>
+        <div class="demo" id="med-demo" style="margin-top:var(--s6)">
+          <div class="demo-top"><b>Today</b><span>Made-up example</span></div>
+          <div class="demo-body">
+            <ul class="doses">
+              <li data-s="taken"><time>08:00</time><div><b>Metformin 500 mg</b><span>1 tablet, as typed by you</span></div><div class="acts"><button type="button" data-a="taken" aria-pressed="true">Taken</button><button type="button" data-a="skipped" aria-pressed="false">Skipped</button></div></li>
+              <li data-s=""><time>14:00</time><div><b>Vitamin D3</b><span>Weekly, Sunday</span></div><div class="acts"><button type="button" data-a="taken" aria-pressed="false">Taken</button><button type="button" data-a="skipped" aria-pressed="false">Skipped</button></div></li>
+              <li data-s=""><time>20:00</time><div><b>Metformin 500 mg</b><span>1 tablet, as typed by you</span></div><div class="acts"><button type="button" data-a="taken" aria-pressed="false">Taken</button><button type="button" data-a="skipped" aria-pressed="false">Skipped</button></div></li>
+            </ul>
+          </div>
+          <p class="demo-note">Try the buttons. Doctine records what you mark; it never calculates, changes or suggests a dose.</p>
+        </div>
         <p class="muted small" style="margin-top:var(--s5)">Reminders appear while Doctine is open in your browser; phone notifications aren't available yet. A reminder is a schedule you set, not medical advice.</p>
       </div>
     </div>
@@ -210,8 +287,8 @@
   <section class="band section" aria-labelledby="privacy-title">
     <div class="wrap split">
       <div>
-        <p class="eyebrow">Privacy and responsibility</p>
-        <h2 id="privacy-title">Your records are yours.</h2>
+        <p class="eyebrow">Privacy and control</p>
+        <h2 id="privacy-title">Your health records remain yours.</h2>
         <p style="margin-top:var(--s5)">Health information is personal. These are the practices behind Doctine today. <a href="/privacy/">Read the privacy policy</a>.</p>
       </div>
       <ul class="ticks">
@@ -224,43 +301,94 @@
     </div>
   </section>
 
-  <!-- 9 · Vision -->
-  <section class="section" aria-labelledby="vision-title">
+  <!-- H · Future -->
+  <section class="window right" data-scene="future" aria-labelledby="vision-title">
     <div class="wrap">
-      <div class="section-head">
+      <div class="window-copy">
         <p class="eyebrow">Where Doctine is going</p>
         <h2 id="vision-title">Building a more connected future for personal health information.</h2>
-        <p>A personal record is the foundation. Over time, we want to connect it carefully with reliable medical knowledge and, with your permission, the places your care happens.</p>
+        <p class="lede">A personal record is the foundation. Over time, we want to connect it carefully with reliable medical knowledge and, with your permission, the places your care happens.</p>
+        <ol class="stages">
+          <li><span class="stage-n">Stage 1</span><div><h3>Personal health records</h3><p>Profile, reports, prescriptions, medicines and history in one private account.</p></div><span class="status now">Available now</span></li>
+          <li><span class="stage-n">Stage 2</span><div><h3>AI-assisted understanding</h3><p>Plain-language explanations that point back to your own records, released after clinical review.</p></div><span class="status dev">In development</span></li>
+          <li><span class="stage-n">Stage 3</span><div><h3>Reliable medical knowledge</h3><p>Curated, source-linked medical information behind every explanation.</p></div><span class="status later">Planned</span></li>
+          <li><span class="stage-n">Stage 4</span><div><h3>Connected healthcare records</h3><p>Receiving records from labs, clinics and hospitals, only with your consent.</p></div><span class="status later">Planned</span></li>
+        </ol>
+        <p style="margin-top:var(--s5)"><a href="/about/">Read more about our approach</a></p>
       </div>
-      <div class="layers light-layers">
-        <div class="layer"><h3>Your records</h3><p>Profile, reports, prescriptions, medicines and history in one private account.</p><span class="status now">Available now</span></div>
-        <div class="layer"><h3>Understanding</h3><p>Plain-language explanations that point back to your own records, released after clinical review.</p><span class="status dev">In development</span></div>
-        <div class="layer"><h3>Reliable knowledge</h3><p>Curated, source-linked medical information behind every explanation.</p><span class="status later">Planned</span></div>
-        <div class="layer"><h3>Connected care</h3><p>Receiving records from labs, clinics and hospitals, only with your consent.</p><span class="status later">Planned</span></div>
-      </div>
-      <p style="margin-top:var(--s5)"><a href="/about/">Read more about our approach</a></p>
     </div>
   </section>
 
-  <!-- 10 · Final call to action -->
-  <section class="section" aria-labelledby="start-title">
-    <div class="wrap">
-      <div class="callout split center">
-        <div>
-          <h2 id="start-title">Start your record today.</h2>
+  <!-- I · Medical safety -->
+  <section class="section" aria-labelledby="safety-title">
+    <div class="wrap split">
+      <div>
+        <p class="eyebrow">Medical safety</p>
+        <h2 id="safety-title">A record keeper, not a doctor.</h2>
+        <p style="margin-top:var(--s5)" class="muted">Doctine supports your medical care; it doesn't replace it. <a href="/medical-safety/">Read the full medical safety page</a>.</p>
+      </div>
+      <div>
+        <div class="doesnt">
+          <div><h3>What Doctine does</h3>
+            <ul class="ticks">
+              <li>Stores and organises the health information you add.</li>
+              <li>Keeps your profile, reports, prescriptions and medicine schedule.</li>
+              <li>Shows the values it finds in a text-based PDF report, and saves nothing until you've checked and confirmed them.</li>
+              <li>Shows fixed guidance to call 112 if a message describes a possible emergency.</li>
+            </ul></div>
+          <div><h3>What it doesn't do</h3>
+            <ul class="ticks no">
+              <li>Diagnose diseases or treat medical conditions.</li>
+              <li>Prescribe medicines or recommend changing a dose.</li>
+              <li>Interpret trends in your results or predict conditions.</li>
+              <li>Replace a doctor. It hasn't been clinically validated and isn't monitored by medical staff.</li>
+            </ul></div>
         </div>
-        <div>
-          <p>Create an account and add your first report or prescription. It takes a couple of minutes, and you can export or delete everything at any time.</p>
-          <div class="actions">
-            <a class="btn" href="https://app.doctine.com/">Create your free account</a>
-            <a class="btn ghost" href="/app-preview/">Explore with sample records</a>
-          </div>
+        <p class="muted small" style="margin-top:var(--s5)">Software can misread a document, and AI-generated health information can be wrong or incomplete. That is why the assistant stays switched off until its answers pass our safety evaluation and a qualified doctor signs them off. Always follow your doctor's advice, and check anything important against your original documents.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- J · Final call to action -->
+  <section class="window center" data-scene="close" aria-labelledby="start-title">
+    <div class="wrap">
+      <div class="window-copy">
+        <h2 id="start-title">Start your health record today.</h2>
+        <p class="lede">Bring your prescriptions, reports and health information together in one private place. You can export or delete everything at any time.</p>
+        <div class="actions">
+          <a class="btn on-dark" href="https://app.doctine.com/">Create your free account</a>
+          <a class="btn ghost on-dark-ghost" href="/app-preview/">Explore with sample records</a>
         </div>
       </div>
     </div>
   </section>
 
 </main>
+<script>
+  // Product demonstrations: made-up data, nothing leaves the page.
+  (() => {
+    const doc = document.getElementById('doc-demo');
+    const say = { original: 'The photo or PDF is kept exactly as you added it, and stays attached to the record. You can add its details by hand whenever you like.', read: 'Values found in a text-based PDF are shown to you first. Nothing is saved until you compare them with the original and confirm.', checked: 'Once you confirm, the values are saved as checked by you. The original stays attached.' };
+    doc?.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
+      doc.dataset.state = b.dataset.state;
+      doc.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      doc.querySelector('.state-say').textContent = say[b.dataset.state];
+    }));
+    document.querySelectorAll('#med-demo .doses button').forEach((b) => b.addEventListener('click', () => {
+      const li = b.closest('li'); const on = li.dataset.s === b.dataset.a;
+      li.dataset.s = on ? '' : b.dataset.a;
+      li.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(!on && x === b)));
+    }));
+  })();
+</script>
+<script>
+  // Sections rise in once as they are first seen. Without this script nothing is hidden.
+  if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.classList.add('rv');
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' });
+    document.querySelectorAll('main > section:not(.hero) > .wrap').forEach((el) => io.observe(el));
+  }
+</script>
 
 <footer class="site-foot">
   <div class="wrap">
@@ -284,9 +412,16 @@
     </div>
     <div class="foot-safety">
       <span><strong>In a medical emergency, call 112.</strong> Mental-health support: Tele-MANAS, <strong>14416</strong>.</span>
-      <span>© 2026 Doctine Private Limited</span>
+      <span>© 2026 Doctine</span>
     </div>
   </div>
 </footer>
+<script>
+  // Menu: Escape closes it and returns focus to the button; choosing a link closes it.
+  document.querySelectorAll('details.menu').forEach((m) => {
+    m.addEventListener('keydown', (e) => { if (e.key === 'Escape' && m.open) { m.open = false; m.querySelector('summary').focus(); } });
+    m.querySelectorAll('.panel a').forEach((a) => a.addEventListener('click', () => { m.open = false; }));
+  });
+</script>
 </body>
 </html>

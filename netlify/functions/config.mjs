@@ -4,6 +4,7 @@
  * Never put SUPABASE_SERVICE_ROLE_KEY here.
  */
 import { json } from "../lib/ai.mjs";
+import { getSettings } from "../lib/settings.mjs";
 
 /* Which kind of site this is, so smoke checks and the live evaluation can confirm they are pointed at staging.
    Only known names are reported; anything else (including unset) reads as "unset". */
@@ -28,8 +29,11 @@ export default async () => {
   // otherwise the button would send people to an error page.
   const googleSignIn = String(process.env.AUTH_GOOGLE || "").toLowerCase() === "true";
   // Only whether an AI model is switched on, so the app can say so up front. Never the key itself.
-  const aiAvailable = Boolean(process.env.ANTHROPIC_API_KEY);
-  return json({ supabaseUrl: url.replace(/\/$/, ""), supabaseAnonKey: anon, accounts: "supabase", environment: env, googleSignIn, aiAvailable });
+  // Platform switches, maintenance and live announcements set in the admin console (safe defaults if unavailable).
+  const st = await getSettings();
+  const aiAvailable = Boolean(process.env.ANTHROPIC_API_KEY) && st.flags.ai_assistant === true;
+  return json({ supabaseUrl: url.replace(/\/$/, ""), supabaseAnonKey: anon, accounts: "supabase", environment: env, googleSignIn, aiAvailable,
+    features: st.flags, maintenance: st.maintenance, announcements: st.announcements, whatsNew: st.whatsNew || [], settingsSource: st.source });
 };
 
 export const config = { path: "/api/config" };

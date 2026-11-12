@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 PGBIN="${PGBIN:-$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1)}"
 [ -x "$PGBIN/initdb" ] || { echo "PostgreSQL server binaries not found (set PGBIN)"; exit 1; }
 WORK="$(mktemp -d)"; PORT="${PORT:-55432}"
-cp tests/supabase-stubs.sql tests/rls.test.sql tests/conversations.test.sql tests/ratelimit.test.sql supabase/migrations/*.sql "$WORK/" 2>/dev/null || true
+cp tests/supabase-stubs.sql tests/rls.test.sql tests/conversations.test.sql tests/ratelimit.test.sql tests/admin.test.sql supabase/migrations/*.sql "$WORK/" 2>/dev/null || true
 chmod 755 "$WORK"; chmod 644 "$WORK"/*.sql
 RUN=""; if [ "$(id -u)" = "0" ]; then id pgtest >/dev/null 2>&1 || useradd -m pgtest; chown -R pgtest "$WORK"; RUN="su pgtest -c"; fi
 q() { if [ -n "$RUN" ]; then $RUN "$1"; else bash -c "$1"; fi; }
@@ -19,7 +19,7 @@ $P -c "create database doctine_test" >/dev/null
 $P -d doctine_test -f "$WORK/supabase-stubs.sql" >/dev/null
 for m in $(ls "$WORK"/2*.sql | sort); do $P -d doctine_test -f "$m" >/dev/null; echo "migration applied: $(basename "$m")"; done
 fail=0; json_items=""
-for t in rls.test.sql conversations.test.sql ratelimit.test.sql; do
+for t in rls.test.sql conversations.test.sql ratelimit.test.sql admin.test.sql; do
   [ -f "$WORK/$t" ] || { echo "missing test file $t"; fail=1; continue; }
   if out="$($P -d doctine_test -f "$WORK/$t" 2>&1)"; then status=passed; else status=failed; fail=1; fi
   oks="$(echo "$out" | grep -o "ok: .*" || true)"

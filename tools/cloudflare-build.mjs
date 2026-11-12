@@ -12,15 +12,23 @@ if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error("no commit id to stamp (CF_PAGE
 writeFileSync("public/version.json", JSON.stringify({ commit: sha }) + "\n");
 // Scripts only from this site and the two libraries' CDNs. This also keeps out anything a host injects into pages, such
 // as an analytics beacon: the privacy policy says Doctine collects no analytics.
-const CSP = "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+const CSP = "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src 'self' blob: data: https://ggqctflfwpfkemgehizq.supabase.co https://hmlxqmhqfaxfgbizcjyg.supabase.co https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self'; frame-src 'none'; form-action 'self'";
+// The admin console is stricter still (Cloudflare sends both policies; browsers enforce both): only its own script and
+// the pinned Supabase library, no inline or evaluated script, and nothing that can frame it.
+const ADMIN_CSP = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://ggqctflfwpfkemgehizq.supabase.co https://hmlxqmhqfaxfgbizcjyg.supabase.co; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
 writeFileSync("public/_headers", `/*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=()
   X-Frame-Options: DENY
+  Cross-Origin-Opener-Policy: same-origin
+  ! Access-Control-Allow-Origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Content-Security-Policy: ${CSP}
   X-Robots-Tag: noindex, nofollow
+/admin/*
+  Cache-Control: no-store
+  Content-Security-Policy: ${ADMIN_CSP}
 /api/*
   Cache-Control: no-store
 /version.json
@@ -28,6 +36,8 @@ writeFileSync("public/_headers", `/*
 /vendor/*
   Cache-Control: public, max-age=31536000, immutable
 /fonts/*
+  Cache-Control: public, max-age=2592000
+/img/*
   Cache-Control: public, max-age=2592000
 `);
 console.log("cloudflare-build: stamped " + sha.slice(0, 12) + " and wrote _headers");

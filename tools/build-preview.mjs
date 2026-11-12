@@ -76,7 +76,7 @@ for (const [why, find, repl] of edits) {
 }
 for (const k of ["['reminders','Reminders'", "['family','Family'", '<h2 class="text-xl">Alarms</h2>', '<h2 class="text-xl">Reminder notifications</h2>']) if (html.includes(k)) { console.error("build-preview: " + k + " is still in the preview"); process.exit(1); }
 
-const COPIED = ["vendor", "fonts"]; // folders of public/ the app loads by relative path, copied into website/app-preview/
+const COPIED = ["vendor", "fonts", "img"]; // folders of public/ the app loads by relative path, copied into website/app-preview/
 const listFiles = (dir) => { try { return readdirSync(dir, { recursive: true, withFileTypes: true }).filter((e) => e.isFile()).map((e) => (e.parentPath || e.path).slice(dir.length) + "/" + e.name).sort(); } catch { return []; } };
 if (process.argv.includes("--check")) {
   let cur = ""; try { cur = readFileSync(outPath, "utf8"); } catch {}

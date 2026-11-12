@@ -1,0 +1,67 @@
+name: Website 3D hero (build)
+
+# Builds bolt-3d/ (the 3D scene designed in Bolt) into website/assets/hero3d/hero3d.js and commits the result, with
+# any non-breaking security fixes to bolt-3d/package-lock.json, back to the same branch for review. Never on main,
+# and it never deploys. A second run that produces the same files commits nothing, so it doesn't loop.
+on:
+  push:
+    branches-ignore: [main]
+    paths: ["bolt-3d/**", ".github/workflows/hero3d.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hero3d-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Install (updates the lockfile when package.json has new entries)
+        working-directory: bolt-3d
+        run: |
+          npm install --no-audit --no-fund
+          npm audit fix --package-lock-only --no-fund || true
+          npm ci --no-audit --no-fund
+      - name: Type check and lint
+        working-directory: bolt-3d
+        run: npm run typecheck && npm run lint
+      - name: Dependency audit of the Bolt project's runtime packages (fails on moderate or worse)
+        working-directory: bolt-3d
+        run: npm audit --audit-level=moderate --omit=dev
+      - name: Build the embed bundle
+        working-directory: bolt-3d
+        run: npm run build:embed
+      - name: The bundle contains only the 3D scene (no router, no database client, no websockets)
+        working-directory: bolt-3d
+        run: |
+          for s in react-router supabase realtime-js "new WebSocket" GoTrue; do # gsap is expected
+            if grep -q "$s" dist-embed/hero3d.js; then echo "::error::hero3d.js contains $s"; exit 1; fi
+          done
+          grep -oE "https?://[a-zA-Z0-9./_-]+" dist-embed/hero3d.js | sort | uniq -c | sort -rn || true
+          ls -la dist-embed
+      - name: Commit the bundle and lockfile to this branch
+        run: |
+          mkdir -p website/assets/hero3d
+          cp bolt-3d/dist-embed/hero3d.js website/assets/hero3d/hero3d.js
+          # Website typefaces (SIL OFL 1.1), from the @fontsource-variable packages in the lockfile
+          for f in newsreader manrope; do
+            for sub in latin latin-ext; do
+              cp "bolt-3d/node_modules/@fontsource-variable/$f/files/$f-$sub-wght-normal.woff2" "website/assets/fonts/$f-$sub.woff2"
+            done
+            cp "bolt-3d/node_modules/@fontsource-variable/$f/LICENSE" "website/assets/fonts/$f-LICENSE.txt"
+          done
+          ls -la website/assets/fonts
+          node tools/build-website.mjs   # re-stamps the pages with the new bundle's fingerprint
+          git add website/assets/hero3d/hero3d.js website/assets/fonts bolt-3d/package-lock.json website/index.html website/404.html website/*/index.html
+          if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "Build website/assets/hero3d/hero3d.js from bolt-3d (${GITHUB_SHA::7})"
+          git push

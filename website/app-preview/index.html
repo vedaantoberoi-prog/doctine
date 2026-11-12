@@ -3,6 +3,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Doctine app preview</title><meta name="robots" content="noindex"><meta name="description" content="Sign in to Doctine, your private record of health reports, prescriptions and medicines.">
 <meta name="theme-color" content="#101C2B"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Doctine"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>/* Inside the Doctine Android app (Capacitor) or Mac app (Tauri), which inject these before the page runs: use the
+   real server, and load the native bridge (native.js). On the website DOCTINE_NATIVE is '' and nothing changes. */
+window.DOCTINE_NATIVE=(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())?'android':(window.__TAURI_INTERNALS__?'macos':'');
+if(window.DOCTINE_NATIVE&&!window.DOCTINE_API)window.DOCTINE_API='https://app.doctine.com';</script>
+<script src="native.js"></script>
 <script>(function(){try{var t=localStorage.getItem('doctine:theme')||localStorage.getItem('sanora:theme')||'auto';var d=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){}})()</script><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=%220 0 32 32%22 width=%2232%22 height=%2232%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%229%22 fill=%22%23101C2B%22/%3E%3Cpath d=%22M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z%22 fill=%22none%22 stroke=%22%23F3F1EB%22 stroke-width=%222.3%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3Ccircle cx=%2224%22 cy=%227.6%22 r=%222.3%22 fill=%22%238DB5AE%22/%3E%3C/svg%3E">
 <script>/* Doctine website preview: the preview has no server. Answer /api/* here so nothing leaves the browser. */
 (function(){var f=window.fetch.bind(window);window.fetch=function(u,o){var s=String(u&&u.url||u);if(/(^|\/)api\//.test(s)){
@@ -11,20 +16,21 @@ return Promise.resolve(new Response(JSON.stringify(body),{status:/api\/config/.t
 </script><script src="vendor/pdfjs-3.11.174/pdf.js"></script>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
-:root{--navy:#101C2B;--text:#202A35;--card:#fff;--hover:#EEF1EC;--tealtx:#3F6660;--teal:#527D76;--tealbg:#E3EBE8;--bg:#F3F1EB;--line:#D8DEE6;--mute:#5B6673;--warnbg:#fff6e5;--warnbd:#f1ddb0;--warntx:#6d4a05;--errbg:#fdeeee;--errbd:#f0c4c4;--errtx:#8a2020;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-html,body{height:100%;margin:0}body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',system-ui,sans-serif}
-h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px}
-.btn{border-radius:12px;padding:.55rem .9rem;font-weight:500;font-size:.875rem;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
-.btn:hover{background:var(--hover)}.btn.pri{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.pri:hover{background:#1F3147}.btn.tl{background:var(--tealbg);color:var(--tealtx);border-color:var(--line)}.btn.dg{color:#c0392b}:root[data-theme=dark] .btn.dg{color:#f08a8a}
-.inp{width:100%;border:1px solid var(--line);border-radius:12px;padding:.55rem .75rem;background:var(--card);color:var(--text);font-size:.9rem}
+/* Design tokens: the same system as doctine.com (website/assets/site.css): ivory pages, midnight navy, sage accents, champagne detail, Newsreader and Manrope. */
+:root{--serif:'Newsreader',Georgia,'Times New Roman',serif;--sans:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--champagne:#C89A57;--ink-strong:#101C2B;--shadow:0 1px 2px rgba(16,28,43,.05),0 12px 32px -18px rgba(16,28,43,.28);--navy:#101C2B;--text:#202A35;--card:#fff;--hover:#EEF1EC;--tealtx:#3F6660;--teal:#527D76;--tealbg:#E3EBE8;--bg:#F3F1EB;--line:#D8DEE6;--mute:#5B6673;--warnbg:#F6EEDC;--warnbd:#EAD9B4;--warntx:#6B4A0C;--errbg:#fdeeee;--errbd:#f0c4c4;--errtx:#8a2020;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0}body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+h1,h2,h3,.serif{font-family:var(--serif);font-weight:500;letter-spacing:-.012em;color:var(--ink-strong)}h1{letter-spacing:-.02em;line-height:1.08}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+.btn{border-radius:999px;padding:.6rem 1.15rem;font-weight:600;font-size:.875rem;letter-spacing:.005em;transition:background-color .15s,border-color .15s,box-shadow .15s;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
+.btn:hover{background:var(--hover)}.btn.pri{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.pri:hover{background:#1F3147;box-shadow:0 6px 18px -8px rgba(16,28,43,.55)}:root[data-theme=dark] .btn.pri{background:#F3F1EB;color:#101C2B;border-color:#F3F1EB}:root[data-theme=dark] .btn.pri:hover{background:#FFFFFF}.btn.tl{background:var(--tealbg);color:var(--tealtx);border-color:var(--line)}.btn.dg{color:#c0392b}:root[data-theme=dark] .btn.dg{color:#f08a8a}
+.inp{width:100%;border:1px solid var(--line);border-radius:14px;padding:.62rem .85rem;background:var(--card);color:var(--text);font-size:.9rem}
 .inp::placeholder{color:var(--mute);opacity:.8}
 .inp:focus,.btn:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
-.nav{display:flex;align-items:center;gap:.7rem;width:100%;padding:.6rem .8rem;border-radius:12px;color:var(--mute);font-size:.92rem;text-align:left;border:0;background:none;cursor:pointer}
+.nav{display:flex;align-items:center;gap:.7rem;width:100%;padding:.6rem .9rem;border-radius:999px;font-weight:500;color:var(--mute);font-size:.92rem;text-align:left;border:0;background:none;cursor:pointer}
 .nav:hover{background:var(--hover)}#banner{max-height:45vh;overflow-y:auto}@media (max-width:767px){#banner{max-height:34vh}#banner .dnote{display:none}}:root[data-theme=dark] svg rect[fill="#101C2B"]{stroke:#3A4C63;stroke-width:1.5}@media (max-width:767px),(pointer:coarse){.inp,input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px}.chip{min-height:44px;display:inline-flex;align-items:center}button.underline{min-height:44px;padding:.25rem 0}}.navi{flex:none;display:grid;place-items:center;width:20px}.meter{height:6px;border-radius:999px;background:var(--tealbg);overflow:hidden}.meter>div{height:100%;background:var(--teal);border-radius:999px}.nav.on{background:var(--tealbg);color:var(--tealtx);font-weight:600}
 .chip{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:.4rem .8rem;font-size:.82rem;cursor:pointer}.chip:hover{border-color:var(--teal);background:var(--tealbg)}
-.tag{font-size:.72rem;border-radius:999px;padding:.12rem .55rem;background:var(--tealbg);color:var(--tealtx)}.tag.prov-auto{background:var(--warnbg);color:var(--warntx)}.tag.prov-photo{background:var(--hover);color:var(--mute)}
-.warn{background:var(--warnbg);border:1px solid var(--warnbd);color:var(--warntx);border-radius:12px;padding:.55rem .75rem;font-size:.82rem}
+.tag{font-size:.75rem;font-weight:600;border-radius:999px;padding:.12rem .55rem;background:var(--tealbg);color:var(--tealtx)}.tag.prov-auto{background:var(--warnbg);color:var(--warntx)}.tag.prov-photo{background:var(--hover);color:var(--mute)}
+.warn{background:var(--warnbg);border:1px solid var(--warnbd);color:var(--warntx);border-radius:14px;padding:.6rem .85rem;font-size:.82rem}
 .err{background:var(--errbg);border:1px solid var(--errbd);color:var(--errtx);border-radius:12px;padding:.55rem .75rem;font-size:.85rem}
 .dot{animation:b 1s infinite}@keyframes b{50%{opacity:.25}}
 @media(prefers-reduced-motion:reduce){.dot{animation:none}}
@@ -40,7 +46,8 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 .attmenu{position:absolute;bottom:calc(100% + .4rem);left:0;z-index:20;min-width:14rem;padding:.35rem}
 .attmenu button{display:block;width:100%;text-align:left;padding:.6rem .75rem;border-radius:10px;font-size:.9rem;color:var(--text)}.attmenu button:hover{background:var(--hover)}
 .scanthumb{width:4.5rem;height:4.5rem;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--hover)}
-:root[data-theme=dark]{--navy:#2E4A66;--text:#DCE2E9;--card:#142131;--hover:#1A2A3D;--tealtx:#8DB5AE;--teal:#7FA9A1;--tealbg:#16302F;--bg:#0C1520;--line:#26364A;--mute:#A9B4C2;--warnbg:#3a2e12;--warnbd:#5b4a1d;--warntx:#f0d9a0;--errbg:#3a1a1a;--errbd:#6a2c2c;--errtx:#f3b4b4;color-scheme:dark}
+/* Dark: the website's dark tokens; primary actions turn ivory on navy, as on doctine.com. */
+:root[data-theme=dark]{--ink-strong:#F3F1EB;--shadow:0 1px 2px rgba(0,0,0,.3),0 14px 34px -20px rgba(0,0,0,.7);--navy:#2E4A66;--text:#DCE2E9;--card:#142131;--hover:#1A2A3D;--tealtx:#8DB5AE;--teal:#7FA9A1;--tealbg:#16302F;--bg:#0C1520;--line:#26364A;--mute:#A9B4C2;--warnbg:#3a2e12;--warnbd:#5b4a1d;--warntx:#f0d9a0;--errbg:#3a1a1a;--errbd:#6a2c2c;--errtx:#f3b4b4;color-scheme:dark}
 
 /* About page. Editorial layout on the Doctine tokens: Fraunces display, Instrument Sans text, navy and teal. */
 :root{--ab-band:#0f2038;--ab-band-tx:#e8eef5;--ab-band-mute:#a9bccf;--ab-band-line:rgba(127,214,210,.28);--ab-glow:#7FA9A1;--ab-dotc:#8aa0b6}
@@ -49,13 +56,13 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 .ab-wrap{max-width:68rem;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
 .ab-narrow{max-width:46rem}
 .ab-eyebrow{font-size:.72rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--tealtx);margin:0 0 1.1rem}
-.ab-h1{font-family:Fraunces,Georgia,serif;font-weight:500;font-size:clamp(2.35rem,5.4vw,4.4rem);line-height:1.04;letter-spacing:-.022em;text-wrap:balance;margin:0}
-.ab-h1b{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:500;font-size:clamp(1.35rem,2.6vw,2.05rem);line-height:1.25;color:var(--tealtx);text-wrap:balance;margin:1.1rem 0 0;max-width:30ch}
+.ab-h1{font-family:var(--serif);font-weight:500;font-size:clamp(2.35rem,5.4vw,4.4rem);line-height:1.04;letter-spacing:-.022em;text-wrap:balance;margin:0}
+.ab-h1b{font-family:var(--serif);font-style:italic;font-weight:500;font-size:clamp(1.35rem,2.6vw,2.05rem);line-height:1.25;color:var(--tealtx);text-wrap:balance;margin:1.1rem 0 0;max-width:30ch}
 .ab-lead{font-size:1.08rem;line-height:1.7;color:var(--mute);max-width:36rem;margin:1.6rem 0 0}
-.ab-h2{font-family:Fraunces,Georgia,serif;font-weight:500;font-size:clamp(1.85rem,3.6vw,2.9rem);line-height:1.1;letter-spacing:-.015em;text-wrap:balance;margin:0}
+.ab-h2{font-family:var(--serif);font-weight:500;font-size:clamp(1.85rem,3.6vw,2.9rem);line-height:1.1;letter-spacing:-.015em;text-wrap:balance;margin:0}
 .ab-prose{display:flex;flex-direction:column;gap:1.1rem;font-size:1.04rem;line-height:1.75;color:var(--mute);max-width:38rem}
 .ab-prose p{margin:0}
-.ab-pull{font-family:Fraunces,Georgia,serif;font-size:clamp(1.2rem,2vw,1.45rem);line-height:1.45;color:var(--text)}
+.ab-pull{font-family:var(--serif);font-size:clamp(1.2rem,2vw,1.45rem);line-height:1.45;color:var(--text)}
 .ab-turn{color:var(--text);font-weight:500}
 
 .ab-hero{padding-block:clamp(3rem,8vw,6.5rem) clamp(2.5rem,6vw,5rem)}
@@ -79,8 +86,8 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 .ab-core{fill:var(--teal)}
 .ab-core-halo{fill:none;stroke:var(--teal);stroke-width:1;opacity:.45}
 .ab-flow{fill:none;stroke:var(--teal);stroke-width:1.3;opacity:.6}
-.ab-svg-label{font:500 15px 'Instrument Sans',system-ui,sans-serif;fill:var(--text)}
-.ab-strong{font-family:Fraunces,Georgia,serif;font-size:17px;fill:var(--tealtx)}
+.ab-svg-label{font:500 15px var(--sans);fill:var(--text)}
+.ab-strong{font-family:var(--serif);font-size:17px;fill:var(--tealtx)}
 
 /* where we are going: the one dark band on the page */
 .ab-vision{background:var(--ab-band);color:var(--ab-band-tx);padding-block:clamp(4rem,9vw,7.5rem)}
@@ -96,7 +103,7 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 .ab-vlink{stroke:#7FA9A1;stroke-width:.8;opacity:.42}
 .ab-vnode{fill:#7fd6d2}
 .ab-vfar{opacity:.55}
-.ab-vlabel{font:500 13px 'Instrument Sans',system-ui,sans-serif;letter-spacing:.06em;fill:var(--ab-band-mute)}
+.ab-vlabel{font:500 13px var(--sans);letter-spacing:.06em;fill:var(--ab-band-mute)}
 .ab-vlabel.ab-now{fill:#7fd6d2}
 .ab-vision .ab-core{fill:#7FA9A1}.ab-vision .ab-core-halo{stroke:#7FA9A1}
 .ab-pulse{transform-origin:center;transform-box:fill-box;animation:abpulse 3.6s ease-out infinite}
@@ -107,11 +114,11 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 .ab-principle{text-align:left}
 .ab-principle .ab-prose{margin-top:1.6rem}
 .ab-tenets{list-style:none;padding:0;margin:2.2rem 0 0;display:flex;flex-wrap:wrap;border-top:1px solid var(--line)}
-.ab-tenets li{flex:1 1 10rem;padding:1rem 1rem 0 0;font-family:Fraunces,Georgia,serif;font-size:1.15rem;color:var(--text)}
+.ab-tenets li{flex:1 1 10rem;padding:1rem 1rem 0 0;font-family:var(--serif);font-size:1.15rem;color:var(--text)}
 .ab-tenets li::before{content:"";display:block;width:.5rem;height:.5rem;border-radius:50%;background:var(--teal);margin-bottom:.7rem}
 
 .ab-close{padding-block:clamp(4rem,9vw,7rem);border-top:1px solid var(--line);text-align:center}
-.ab-close-h{font-family:Fraunces,Georgia,serif;font-weight:500;font-size:clamp(1.9rem,4.2vw,3.3rem);line-height:1.12;letter-spacing:-.018em;text-wrap:balance;margin:0 auto;max-width:20ch}
+.ab-close-h{font-family:var(--serif);font-weight:500;font-size:clamp(1.9rem,4.2vw,3.3rem);line-height:1.12;letter-spacing:-.018em;text-wrap:balance;margin:0 auto;max-width:20ch}
 .ab-sign{display:inline-flex;align-items:center;gap:.6rem;margin:2rem 0 0;font-size:1.05rem;color:var(--mute)}
 .ab-sign b{color:var(--text);font-weight:600}
 .ab-mark svg{width:28px;height:28px}
@@ -124,6 +131,85 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
  .ab-vision-grid figure{order:-1}
 }
 @media (prefers-reduced-motion:reduce){.ab-tw,.ab-pulse,.ab-draw .ab-vlink{animation:none}}
+/* Sign-in, account creation and recovery (cloudAuthView/authView). Calm and form-first: on desktop a static still-life of
+   fictional records (public/img/auth-still-*.webp, made by tools/art/) beside an ivory form; on phones the form alone. */
+.au{--au-ink:#14243A;--au-text:#2A3440;--au-soft:#5B6673;--au-line:#8A95A1;--au-field:#FFFFFF;--au-bg:#F3F1EB;--au-focus:#1F4E8C;--au-ring:rgba(31,78,140,.22);--au-err:#9B2C2C;--au-errbg:#FBEDEC;--au-ok:#2F5E57;--au-okbg:#E6EFEC;
+ min-height:100%;display:grid;grid-template-columns:1fr;background:var(--au-bg);color:var(--au-text)}
+:root[data-theme=dark] .au{--au-ink:#F3F1EB;--au-text:#DCE2E9;--au-soft:#A9B4C2;--au-line:#5E7088;--au-field:#101B29;--au-bg:#0C1520;--au-focus:#9DB9E3;--au-ring:rgba(157,185,227,.25);--au-err:#F3B4B4;--au-errbg:#3A1A1A;--au-ok:#9CC6BE;--au-okbg:#16302F}
+.au-art{display:none}
+.au-side{display:flex;flex-direction:column;min-height:100dvh;padding:max(1rem,env(safe-area-inset-top)) max(1.25rem,env(safe-area-inset-right)) max(1rem,env(safe-area-inset-bottom)) max(1.25rem,env(safe-area-inset-left))}
+.au-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:44px}
+.au-brand{display:inline-flex;align-items:center;gap:.55rem;color:var(--au-ink);text-decoration:none;font:500 1.35rem/1 var(--serif)}
+.au-brand svg{width:30px;height:30px}
+.au-tag{font:600 .6875rem/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--au-soft)}
+.au-main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:1.75rem 0 2rem}
+.au-card{width:100%;max-width:26rem}
+.au-card>h1{font:500 2rem/1.1 var(--serif);letter-spacing:-.02em;color:var(--au-ink);margin:0;outline:none}
+.au-sub{margin:.6rem 0 0;font-size:.9375rem;line-height:1.55;color:var(--au-soft)}
+.au-form{margin-top:1.75rem;display:grid;gap:1.15rem}
+.au-field{display:grid;gap:.4rem}
+.au-field label,.au-row label{font:600 .875rem/1.3 var(--sans);color:var(--au-ink)}
+.au-row{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}
+.au-inp{width:100%;height:3rem;padding:0 .9rem;border:1px solid var(--au-line);border-radius:10px;background:var(--au-field);color:var(--au-text);font:500 1rem/1 var(--sans);transition:border-color .12s,box-shadow .12s}
+.au-inp:hover{border-color:var(--au-soft)}
+.au-inp:focus{outline:none;border-color:var(--au-focus);box-shadow:0 0 0 3px var(--au-ring)}
+.au-inp[aria-invalid=true]{border-color:var(--au-err);box-shadow:0 0 0 3px color-mix(in srgb,var(--au-err) 16%,transparent)}
+.au-pw{position:relative}.au-pw .au-inp{padding-right:4.75rem}
+.au-eye{position:absolute;right:.3rem;top:50%;transform:translateY(-50%);min-width:44px;height:2.375rem;padding:0 .7rem;border:0;border-radius:8px;background:transparent;color:var(--au-ink);font:600 .8125rem/1 var(--sans);cursor:pointer}
+.au-eye:hover{background:color-mix(in srgb,var(--au-ink) 7%,transparent)}
+.au-eye:focus-visible,.au-link:focus-visible,.au-btn:focus-visible,.au-brand:focus-visible,.au-foot a:focus-visible,.au-foot button:focus-visible,.au-check input:focus-visible{outline:2px solid var(--au-focus);outline-offset:2px}
+.au-hint{margin:0;font-size:.8125rem;color:var(--au-soft)}
+.au-strength{display:flex;align-items:center;gap:.625rem;margin:-.25rem 0 .25rem;font-size:.8125rem;color:var(--au-soft)}.au-sbar{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:9rem;flex:none}.au-sbar i{height:4px;border-radius:2px;background:color-mix(in srgb,var(--au-line) 35%,transparent)}.au-strength[data-s='1'] .au-sbar i:nth-child(-n+1){background:var(--au-err)}.au-strength[data-s='2'] .au-sbar i:nth-child(-n+2){background:var(--au-soft)}.au-strength[data-s='3'] .au-sbar i:nth-child(-n+3){background:var(--au-focus)}.au-strength[data-s='4'] .au-sbar i{background:var(--au-ok)}
+.au-check{display:flex;gap:.65rem;align-items:flex-start;font-size:.875rem;line-height:1.5;color:var(--au-text);cursor:pointer}
+.au-check input{width:1.125rem;height:1.125rem;margin-top:.15rem;flex:none;accent-color:#101C2B}
+:root[data-theme=dark] .au-check input{accent-color:#F3F1EB}
+.au-fine{margin:-.4rem 0 0 1.78rem;font-size:.8125rem;color:var(--au-soft)}.au-fine a{color:inherit;text-underline-offset:.2em;display:inline-block;min-height:24px;line-height:24px}
+.au-btn{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;width:100%;min-height:3rem;padding:.7rem 1.2rem;border-radius:999px;border:1px solid var(--au-line);background:transparent;color:var(--au-ink);font:600 .9375rem/1.2 var(--sans);cursor:pointer;transition:background-color .12s,box-shadow .12s}
+.au-btn:hover{background:color-mix(in srgb,var(--au-ink) 5%,transparent)}
+.au-btn.pri{background:#101C2B;border-color:#101C2B;color:#fff}.au-btn.pri:hover{background:#1C2E45;box-shadow:0 6px 16px -8px rgba(16,28,43,.6)}
+:root[data-theme=dark] .au-btn.pri{background:#F3F1EB;border-color:#F3F1EB;color:#101C2B}:root[data-theme=dark] .au-btn.pri:hover{background:#fff}
+.au-btn[disabled]{cursor:progress;opacity:.85}
+.au-btn-2{margin-top:.25rem}
+.au-btn-danger{color:var(--au-err);border-color:color-mix(in srgb,var(--au-err) 55%,transparent)}
+.au-spin{width:1rem;height:1rem;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:au-r .7s linear infinite;flex:none}
+@keyframes au-r{to{transform:rotate(1turn)}}
+.au-link{display:inline-flex;align-items:center;min-height:24px;vertical-align:baseline;background:none;border:0;padding:0;color:var(--au-ink);font:600 .875rem/1.4 var(--sans);text-decoration:underline;text-underline-offset:.22em;text-decoration-thickness:1px;cursor:pointer}
+.au-link:hover{text-decoration-thickness:2px}
+.au-alt{margin:1.5rem 0 0;font-size:.875rem;color:var(--au-soft);text-align:center}
+.au-or{display:flex;align-items:center;gap:.9rem;margin:1.6rem 0 1.1rem;color:var(--au-soft);font-size:.8125rem}.au-or::before,.au-or::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--au-line) 55%,transparent)}
+.au-or+.au-check{margin-bottom:.9rem}.au-or~.au-fine{margin-bottom:.75rem}
+.au-err,.au #aerr .err{margin:0;padding:.7rem .85rem;border-radius:10px;background:var(--au-errbg);color:var(--au-err);font-size:.875rem;line-height:1.45;border:0}
+.au-ok{padding:.7rem .85rem;border-radius:10px;background:var(--au-okbg);color:var(--au-ok);font-size:.875rem;margin-top:.75rem}
+#aerr:empty{display:none}
+.au-note{display:flex;gap:.85rem;align-items:flex-start;margin:1.5rem 0;padding:1rem;border-radius:12px;background:color-mix(in srgb,var(--au-ink) 5%,transparent)}
+.au-note svg{width:1.5rem;height:1.5rem;flex:none;color:var(--au-ink);margin-top:.05rem}.au-note p{margin:0;font-size:.9375rem;line-height:1.55}
+.au-status{display:flex;align-items:center;gap:.7rem;margin-top:1.25rem;color:var(--au-soft)}
+.au-sample{margin:2rem 0 0;padding-top:1.25rem;border-top:1px solid color-mix(in srgb,var(--au-line) 40%,transparent);display:flex;flex-wrap:wrap;gap:.25rem .6rem;justify-content:center;align-items:baseline;font-size:.8125rem;color:var(--au-soft)}
+.au-demo{margin:1.25rem 0 0;padding:.8rem .9rem;border-radius:10px;background:var(--warnbg);color:var(--warntx);font-size:.8125rem;line-height:1.5}
+.au-pair{display:grid;gap:.6rem;margin-top:1.25rem}.au-demo-alt{margin-top:1.75rem}
+.au-foot{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem 1.1rem;justify-content:center;font-size:.8125rem;color:var(--au-soft);padding-top:.5rem}
+.au-foot a,.au-foot button{color:inherit;background:none;border:0;padding:0;font:inherit;text-decoration:none;cursor:pointer;min-height:24px}
+.au-foot a:hover,.au-foot button:hover{color:var(--au-ink);text-decoration:underline}
+.au-foot span{flex-basis:100%;text-align:center}
+@media (min-width:960px){
+ .au{grid-template-columns:min(42%,75dvh) minmax(0,1fr);height:100dvh} /* the picture is 3:4; on very wide, short screens the panel narrows instead of cropping it */
+ .au-art{display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;padding:3rem clamp(2rem,3.4vw,3.5rem);color:#F3F1EB;
+  background:#101C2B url(img/auth-still-2x.webp) 76% 0%/cover no-repeat;background-image:-webkit-image-set(url(img/auth-still-1x.webp) 1x,url(img/auth-still-2x.webp) 2x);background-image:image-set(url(img/auth-still-1x.webp) 1x,url(img/auth-still-2x.webp) 2x)}
+ .au-art::before{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(11,20,34,.72) 0%,rgba(11,20,34,.2) 32%,rgba(11,20,34,0) 50%);pointer-events:none}
+ .au-art>*{position:relative}
+ .au-eyebrow{margin:0;font:600 .6875rem/1.2 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:rgba(243,241,235,.78)}
+ .au-art-h{margin:.8rem 0 0;font:500 clamp(1.75rem,2.3vw,2.35rem)/1.12 var(--serif);letter-spacing:-.018em;color:#F3F1EB;max-width:20ch}
+ .au-art-sub{margin:.75rem 0 0;font-size:.9375rem;line-height:1.55;color:rgba(243,241,235,.8);max-width:32ch}
+ .au-art-note{margin:0;font-size:.75rem;color:rgba(243,241,235,.62)}
+ .au-side{min-height:0;overflow-y:auto;padding:2rem clamp(2rem,5vw,4.5rem) 1.5rem}
+ .au-tag{display:none}
+ .au-main{align-items:center;padding:2rem 0}
+ .au-foot{justify-content:flex-start}.au-foot span{flex-basis:auto;text-align:left;margin-left:auto}
+}
+@media (min-width:600px) and (max-width:959px){.au-top,.au-foot{width:100%;max-width:26rem;margin-inline:auto}.au-main{padding-top:3.5rem}}
+:root[data-theme=dark] .au-side{border-left:1px solid #1E2C3E}
+@media (max-width:380px){.au-card>h1{font-size:1.75rem}.au-tag{display:none}}
+@media (prefers-reduced-motion:reduce){.au-spin{animation-duration:2s}.au-inp,.au-btn{transition:none}}
 </style><style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);white-space:nowrap;border-width:0}.fixed{position:fixed}.inset-0{inset:0px}.inset-y-0{top:0px;bottom:0px}.bottom-6{bottom:1.5rem}.left-0{left:0px}.left-1\/2{left:50%}.z-30{z-index:30}.z-40{z-index:40}.z-50{z-index:50}.m-1{margin:0.25rem}.m-3{margin:0.75rem}.mx-auto{margin-left:auto;margin-right:auto}.mt-3{margin-top:0.75rem}.mb-6{margin-bottom:1.5rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.mt-4{margin-top:1rem}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-4{margin-bottom:1rem}.ml-2{margin-left:0.5rem}.ml-auto{margin-left:auto}.mr-1{margin-right:0.25rem}.mt-0\.5{margin-top:0.125rem}.mt-1\.5{margin-top:0.375rem}.mt-6{margin-top:1.5rem}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.hidden{display:none}.h-full{height:100%}.h-24{height:6rem}.h-3{height:0.75rem}.h-48{height:12rem}.h-5{height:1.25rem}.h-fit{height:-moz-fit-content;height:fit-content}.min-h-full{min-height:100%}.min-h-\[3rem\]{min-height:3rem}.w-72{width:18rem}.w-full{width:100%}.w-16{width:4rem}.w-24{width:6rem}.w-3{width:0.75rem}.w-5{width:1.25rem}.w-px{width:1px}.min-w-0{min-width:0px}.max-w-\[90vw\]{max-width:90vw}.max-w-md{max-width:28rem}.max-w-3xl{max-width:48rem}.max-w-4xl{max-width:56rem}.max-w-\[85\%\]{max-width:85%}.max-w-\[94\%\]{max-width:94%}.max-w-sm{max-width:24rem}.flex-1{flex:1 1 0%}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-x-full{--tw-translate-x:-100%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-pointer{cursor:pointer}.list-decimal{list-style-type:decimal}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.grid-cols-\[1fr_1\.4fr_auto\]{grid-template-columns:1fr 1.4fr auto}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.place-items-center{place-items:center}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-1{gap:0.25rem}.gap-4{gap:1rem}.gap-x-6{column-gap:1.5rem}.gap-y-1{row-gap:0.25rem}.space-y-1 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.25rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.25rem * var(--tw-space-y-reverse))}.space-y-6 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem * var(--tw-space-y-reverse))}.divide-y > :not([hidden]) ~ :not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px * calc(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px * var(--tw-divide-y-reverse))}.divide-\[var\(--line\)\] > :not([hidden]) ~ :not([hidden]){border-color:var(--line)}.self-center{align-self:center}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.whitespace-pre-wrap{white-space:pre-wrap}.break-words{overflow-wrap:break-word}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-xl{border-radius:0.75rem}.rounded-br-md{border-bottom-right-radius:0.375rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-r{border-right-width:1px}.border-dashed{border-style:dashed}.border-\[var\(--line\)\]{border-color:var(--line)}.border-amber-400{--tw-border-opacity:1;border-color:rgb(251 191 36 / var(--tw-border-opacity, 1))}.bg-\[var\(--card\)\]{background-color:var(--card)}.bg-black\/30{background-color:rgb(0 0 0 / 0.3)}.bg-\[var\(--line\)\]{background-color:var(--line)}.bg-\[var\(--tealbg\)\]{background-color:var(--tealbg)}.bg-transparent{background-color:transparent}.object-cover{object-fit:cover}.p-4{padding:1rem}.p-6{padding:1.5rem}.p-2{padding:0.5rem}.p-3{padding:0.75rem}.p-5{padding:1.25rem}.p-8{padding:2rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-4{padding-left:1rem;padding-right:1rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pb-2{padding-bottom:0.5rem}.pb-4{padding-bottom:1rem}.pb-5{padding-bottom:1.25rem}.pl-5{padding-left:1.25rem}.pt-2{padding-top:0.5rem}.pt-3{padding-top:0.75rem}.pt-8{padding-top:2rem}.text-center{text-align:center}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-medium{font-weight:500}.font-semibold{font-weight:600}.leading-relaxed{line-height:1.625}.text-\[var\(--mute\)\]{color:var(--mute)}.text-\[var\(--tealtx\)\]{color:var(--tealtx)}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.underline{-webkit-text-decoration-line:underline;text-decoration-line:underline}.accent-teal-700{accent-color:#0f766e}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.outline-none{outline:2px solid transparent;outline-offset:2px}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.hover\:bg-\[var\(--hover\)\]:hover{background-color:var(--hover)}@media (min-width: 640px){.sm\:col-span-2{grid-column:span 2 / span 2}.sm\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}}@media (min-width: 768px){.md\:static{position:static}.md\:hidden{display:none}.md\:translate-x-0{--tw-translate-x:0px;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}.md\:px-8{padding-left:2rem;padding-right:2rem}.md\:text-4xl{font-size:2.25rem;line-height:2.5rem}}</style>
 </head>
 <body>
@@ -144,7 +230,7 @@ h1,h2,h3,.serif{font-family:Fraunces,Georgia,serif;font-weight:500}
 </div>
 <div id="toast" role="status" aria-live="polite" class="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 hidden card px-4 py-3 shadow-lg text-sm max-w-[90vw]"></div>
 <script>/* Website: leave empty. The phone-app build script writes the site address here, because inside the app the page is not served from your website. */
-window.DOCTINE_API = '';
+window.DOCTINE_API = window.DOCTINE_API || ''; // set at the top of the page inside the Doctine apps
 </script>
 <script>/* Doctine alarms. Two jobs:
    1) plan(): list the next doses that should alarm (pure function);
@@ -187,6 +273,7 @@ window.DOCTINE_API = '';
 
   /* ---------- native scheduling (Capacitor Local Notifications) ---------- */
   function plugin() {
+    if (root.DoctineNative && root.DoctineNative.localNotifications) return root.DoctineNative.localNotifications; // Mac app
     var C = root.Capacitor; if (!C || !C.isNativePlatform || !C.isNativePlatform()) return null;
     return (C.Plugins && C.Plugins.LocalNotifications) || null;
   }
@@ -195,7 +282,7 @@ window.DOCTINE_API = '';
     var LN = plugin(); if (!LN) return { state: 'web' };
     var p = await LN.checkPermissions(); if (p.display === 'prompt' || p.display === 'prompt-with-rationale') p = await LN.requestPermissions();
     if (p.display !== 'granted') return { state: 'permission_denied' };
-    try { await LN.createChannel({ id: CHANNEL, name: 'Medicine reminders', description: 'Alarms for scheduled doses', importance: 5, visibility: 1, vibration: true }); } catch (e) { /* iOS has no channels */ }
+    try { await LN.createChannel({ id: CHANNEL, name: 'Medicine reminders', description: 'Alarms for scheduled doses', importance: 5, visibility: 0, vibration: true }); } catch (e) { /* iOS has no channels */ }
     try { await LN.registerActionTypes({ types: [{ id: 'DOSE', actions: [{ id: 'taken', title: 'Taken' }, { id: 'snooze', title: 'Snooze 10 min' }] }] }); } catch (e) { }
     try { var ex = await LN.checkExactNotificationSetting(); if (ex && ex.exact_alarm === 'denied') return { state: 'exact_alarm_needed' }; } catch (e) { /* not Android 12+ */ }
     return { state: 'ready' };
@@ -243,6 +330,14 @@ window.DOCTINE_API = '';
 </script>
 <script>
 const API=(window.DOCTINE_API||'').replace(/\/$/,''); // empty on the website; the full site address inside the phone apps
+/* Error reports for Doctine's own error tracker: the error type, a short message and where in the code it happened.
+   The server removes quoted text, numbers and email addresses before storing; no account, page content or record is sent.
+   At most 5 different errors per page load, and only on the real site (not the website's preview or local files). */
+(()=>{const seen=new Set();const send=(kind,msg,where,stack)=>{try{if(!/^https:$/.test(location.protocol)||/app-preview/.test(location.pathname))return;const k=kind+'|'+msg+'|'+where;if(seen.has(k)||seen.size>=5)return;seen.add(k);
+ fetch(API+'/api/errors',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({kind:String(kind).slice(0,60),message:String(msg).slice(0,300),location:String(where).slice(0,160),stack:String(stack||'').slice(0,1500),route:/^#[\w/-]{0,40}$/.test(location.hash)?location.hash:''})}).catch(()=>{})}catch{}};
+ const here=f=>{try{const u=new URL(f,location.href);return u.origin===location.origin?u.pathname:'(external script)'}catch{return''}};
+ addEventListener('error',e=>{if(!e.error&&!e.message)return;send(e.error&&e.error.name||'Error',e.message||'',here(e.filename||'')+':'+(e.lineno||0)+':'+(e.colno||0),e.error&&e.error.stack)});
+ addEventListener('unhandledrejection',e=>{const r=e.reason;if(r&&r.name==='AbortError')return;const st=r&&r.stack&&String(r.stack).split('\n').find(l=>/https?:\/\//.test(l))||'';const m=st.match(/(https?:\/\/[^\s)]+?):(\d+):(\d+)/);send((r&&r.name)||'UnhandledRejection',(r&&r.message)||String(r||''),m?here(m[1])+':'+m[2]+':'+m[3]:'(promise)',r&&r.stack)})})();
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const isOn=(m,d)=>(m.status||'active')==='active'&&d>=m.start&&(!m.end||d<=m.end)&&((m.freq||'daily')==='daily'||(m.days||[]).includes(new Date(d+'T00:00:00').getDay()));
@@ -338,28 +433,31 @@ async function ocrPdf(f){pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs-3.
  for(let i=1;i<=n;i++){const pg=await pdf.getPage(i),vp=pg.getViewport({scale:2}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;pages.push(await ocrSource(c,'Reading page '+i+' of '+n))}
  return{pages,cut:pdf.numPages>n}}
 const OCRWARN='Text was read from an image by automatic text recognition, which makes mistakes (for example 1/l, 5/S, decimal points). Check every value against the original before confirming.';
+// Reads a file's first bytes to learn what it really is; the browser's own guess comes from the file name.
+async function sniffType(f){try{const h=new Uint8Array(await f.slice(0,12).arrayBuffer());const at=(o,str)=>[...str].every((c,i)=>h[o+i]===c.charCodeAt(0));
+ if(at(0,'%PDF-'))return'application/pdf';if(h[0]===0x89&&at(1,'PNG'))return'image/png';if(h[0]===0xff&&h[1]===0xd8&&h[2]===0xff)return'image/jpeg';if(at(0,'RIFF')&&at(8,'WEBP'))return'image/webp';}catch{}return null}
 async function startUpload(f){
  S.upload={name:f.name,status:'reading',rows:[],title:'',date:'',lab:'',cat:'Other',text:'',warns:[],img:null,file:f};render();
  try{
   if(!f.size)throw new Error('That file is empty.');
   if(f.size>15*1024*1024)throw new Error('That file is larger than 15 MB.');
   try{const hb=await crypto.subtle.digest('SHA-256',await f.arrayBuffer());const hash=[...new Uint8Array(hb)].map(x=>x.toString(16).padStart(2,'0')).join('');S.upload.hash=hash;const dup=S.reports.find(r=>r.hash===hash);S.upload.dup=dup?dup.title:''}catch{}
-  const h=new Uint8Array(await f.slice(0,8).arrayBuffer());
-  const pdf=String.fromCharCode(...h.slice(0,5))==='%PDF-',png=h[0]===0x89&&h[1]===0x50,jpg=h[0]===0xff&&h[1]===0xd8;
-  if(!pdf&&!png&&!jpg)throw new Error('Only PDF, JPG and PNG files are supported.');
+  const kind=await sniffType(f),pdf=kind==='application/pdf';
+  if(!kind||kind==='image/webp')throw new Error('Only PDF, JPG and PNG files are supported.');
   if(!pdf){const img=await new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)});
    S.upload.img=img;let txt='';try{txt=await ocrSource(img,'Reading photo')}catch(e){Object.assign(S.upload,{status:'review',title:'Medical document',warns:[(e.message||'Text recognition failed.')+' You can fill in the fields yourself.']});return render()}
    if(txt.replace(/\s/g,'').length<20){Object.assign(S.upload,{status:'review',title:'Medical document',warns:['No readable text was found in this photo. Try a sharper, well-lit photo, or fill in the fields yourself.']});return render()}
    Object.assign(S.upload,{status:'review',text:txt.slice(0,20000)},parseText([txt]));S.upload.warns.unshift(OCRWARN);return render()}
   if(!window.pdfjsLib)throw new Error('The PDF reader could not load. Check your connection and try again.');
-  const pages=await readPdf(f),text=pages.join('\n');
+  if(!feat('pdf_reading')){Object.assign(S.upload,{status:'review',title:'Medical document',warns:['Reading PDFs is paused for now. The PDF is attached; fill in the details yourself.']});return render()}
+  const t0=Date.now(),pages=await readPdf(f),text=pages.join('\n');
   if(text.replace(/\s/g,'').length<30){
    S.upload.progress='Reading the scanned PDF…';render();
    try{const imgs=await pdfImages(f,4);if(await aiReadOk(imgs.length)){const rd=await readScan(imgs);if(rd.doc){const rec=await saveScan(imgs,rd.doc);S.upload=null;toast('Saved as “'+rec.title+'”');return render()}}}catch{}
    const o=await ocrPdf(f);if(o.pages.join('').replace(/\s/g,'').length<20)throw new Error('No readable text was found, even with text recognition. Try a clearer scan.');
    Object.assign(S.upload,{status:'review',text:o.pages.join('\n').slice(0,20000)},parseText(o.pages));S.upload.warns.unshift(OCRWARN+(o.cut?' Only the first 5 pages were read.':''));return render()}
-  Object.assign(S.upload,{status:'review',text:text.slice(0,20000)},parseText(pages));
- }catch(e){S.upload.status='error';S.upload.err=e.name==='PasswordException'?'This PDF is password-protected.':(e.message||'We could not read this file.')}
+  Object.assign(S.upload,{status:'review',text:text.slice(0,20000)},parseText(pages));track('document_processing_completed',{kind:'pdf',method:'pdf_text',ms:Date.now()-t0});
+ }catch(e){track('document_processing_failed',{kind:'file',reason:e.name==='PasswordException'?'password':'unreadable',method:'local'});S.upload.status='error';S.upload.err=e.name==='PasswordException'?'This PDF is password-protected.':(e.message||'We could not read this file.')}
  render()}
 
 
@@ -428,7 +526,7 @@ function scanner(first,{action='Save'}={}){return new Promise(resolve=>{
  const close=v=>{ov.remove();resolve(v)};
  const busy=t=>{ov.innerHTML=`<div class="scanbar"><button class="btn" data-x="close">Cancel</button></div><div class="scanmid"><div class="text-sm" style="color:#e8eef5"><span class="dot">●</span> ${esc(t)}</div></div>`};
  async function add(files){busy('Finding the page…');await tick();
-  try{for(const f of files.slice(0,6-pages.length)){const px=await SC.load(f);await tick();const q=SC.detect(px);const p={px,quad:q||SC.full(px.width,px.height,.03),orig:f};await proc(p);pages.push(p)}}
+  try{for(const f of files.slice(0,6-pages.length)){if(!/^image\/(jpeg|png|webp)$/.test(await sniffType(f)||''))throw new Error('Only JPG, PNG and WebP photos can be scanned.');const px=await SC.load(f);await tick();const q=SC.detect(px);const p={px,quad:q||SC.full(px.width,px.height,.03),orig:f};await proc(p);pages.push(p)}}
   catch(e){toast(e.message||'That photo could not be used.')}
   if(!pages.length)return close(null);cur=pages.length-1;draw()}
  async function proc(p){const flat=SC.warp(p.px,p.quad,1600);p.out=SC.clean(flat);p.url&&URL.revokeObjectURL(p.url);p.blob=await SC.blob(p.out);p.url=URL.createObjectURL(p.blob)}
@@ -488,7 +586,7 @@ async function saveScan(blobs,doc,{store:keep=true}={}){
  if((d.diagnoses||[]).length)fields.Diagnosis=d.diagnoses.join(', ');
  const title=(d.title||'').trim()||(cat==='Other'?'Scanned document':cat)+' – '+niceDate(date);
  const rec={id,title:title.slice(0,120),cat,date,lab:(d.doctor||d.facility||'').slice(0,120),fields,imgs:blobs.length,scan:d.title?d:null};
- if(keep){for(let i=0;i<blobs.length;i++){try{await IMG.put(`scan:${id}:${i}`,blobs[i]);const o=blobs.originals&&blobs.originals[i];if(o&&/^image\/(jpeg|png|webp)$/.test(o.type)&&o.size<15e6)await IMG.put(`orig:${id}:${i}`,o)}catch{}}
+ if(keep){for(let i=0;i<blobs.length;i++){try{await IMG.put(`scan:${id}:${i}`,blobs[i]);const o=blobs.originals&&blobs.originals[i];if(o&&o.size<15e6&&/^image\/(jpeg|png|webp)$/.test(await sniffType(o)||''))await IMG.put(`orig:${id}:${i}`,o)}catch{}}
   S.reports.unshift(rec)}
  else{rec.imgs=0}
  return rec}
@@ -523,17 +621,64 @@ const aiOff=()=>!!(S.cloud&&CLOUD.on&&CLOUD.ai===false);
    of the sign-up agreement) don't count. Sharing saved records is a tick box in each chat; sending a photo or scanned
    page to the AI is asked each time. */
 const AI_CONSENT_FROM=Date.parse('2026-11-09T22:20:00+05:30'),AGREEMENT_V='2026-11-09';
+/* "Help improve Doctine" (product measurements) started on 12 Nov 2026. Before that the same switch said Doctine collects
+   no analytics, so a choice made before then is not consent to measurements: it counts only if made (again) since. */
+const ANALYTICS_CONSENT_FROM=Date.parse('2026-11-12T04:30:00+05:30');
+/* Password recovery. A reset email links to /?reset=password; Supabase adds a one-time recovery session to the address
+   (#access_token=…&type=recovery) or, for a used or expired link, an error. The supabase-js "implicit" flow saves that
+   session and only announces PASSWORD_RECOVERY a moment later, so the app must recognise the link itself, before it
+   would open whichever account is signed in: otherwise the recovery session simply opened the account and the
+   new-password screen never stayed up. While recovering, no account is opened and nothing of any account is loaded. */
+/* Strength guidance only (Supabase enforces the 8-character minimum and its own checks): length counts most. */
+function pwStrength(v){const b=$('#pwstr'),l=$('#pwstrl');if(!b||!l)return;const kinds=[/[a-z]/,/[A-Z]/,/\d/,/[^A-Za-z0-9]/].filter(r=>r.test(v)).length;
+ const s=!v?0:v.length<8?1:v.length>=14&&kinds>=2||v.length>=12&&kinds>=3?4:v.length>=10&&kinds>=2?3:2;
+ b.dataset.s=String(s);l.textContent=['Password strength','Too short: use at least 8 characters','Fair: a longer password would be stronger','Good','Strong'][s]}
+const NATIVE=window.DOCTINE_NATIVE||'',AUTH_CB='doctine://auth/callback';
+const RESET_URL=()=>NATIVE?AUTH_CB+'?next=reset':location.origin+'/?reset=password';
+const RETURN_URL=()=>NATIVE?AUTH_CB:location.origin+location.pathname;
+const RECOVERY=(()=>{try{const h=new URLSearchParams(location.hash.slice(1)),q=new URLSearchParams(location.search);return{link:h.get('type')==='recovery'&&!!h.get('access_token'),path:q.get('reset')==='password'}}catch{return{link:false,path:false}}})();
+function cleanRecoveryUrl(){try{const q=new URLSearchParams(location.search);q.delete('reset');const r=q.toString();history.replaceState(null,'',location.pathname+(r?'?'+r:''))}catch{}}
+function enterRecovery(session){
+ if(!session||!session.user){CLOUD.recovering=false;cleanRecoveryUrl();S.auth='expired';S.authTitle='';S.authMsg='';if(S.email)leaveCloud('expired');else render();return}
+ CLOUD.recovering=true;CLOUD.recoverEmail=session.user.email||'';cleanRecoveryUrl();
+ if(S.email||S.cloud)leaveCloud('newpw');else{S.auth='newpw';S.loadingCloud=false;render()}}
+/* Apps only: the result of an email link or Google sign-in, delivered by the system as doctine://auth/callback. With PKCE
+   the one-time code is useless without the verifier kept in this device's secure storage, so another app that grabbed
+   the link couldn't use it. next=reset marks a password reset: the new-password screen, never the account. */
+async function doctineAuthCallback(raw){
+ if(typeof raw!=='string'||!/^doctine:\/\/auth\/callback(?:[?#]|$)/.test(raw)||raw.length>4096)return;
+ const qi=raw.indexOf('?'),hi=raw.indexOf('#'),q=new URLSearchParams(qi<0?'':raw.slice(qi+1,hi>qi?hi:undefined)),h=new URLSearchParams(hi<0?'':raw.slice(hi+1)),reset=q.get('next')==='reset';
+ if(window.DoctineNative)DoctineNative.closeAuthBrowser();
+ const e=q.get('error')||h.get('error');
+ if(e){CLOUD.recovering=false;S.oauthErr='';const em=/otp_expired|expired|email|link/i.test((q.get('error_code')||'')+' '+(q.get('error_description')||h.get('error_description')||''));
+  if(reset||em){S.auth='expired';S.authTitle='';S.authMsg=''}else{S.auth='login';S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.'}
+  if(S.email)leaveCloud(S.auth);else render();return}
+ const code=q.get('code');if(!code)return;
+ if(reset)CLOUD.recovering=true;
+ let r;try{r=await CLOUD.sb.auth.exchangeCodeForSession(code)}catch(x){r={error:x}}
+ if(r.error||!r.data||!r.data.session){CLOUD.recovering=false;S.auth='expired';S.authTitle='That link didn’t work';S.authMsg='Open the newest email from Doctine on this device, in the app you asked from, or request a new link.';if(S.email)leaveCloud('expired');else render();return}
+ if(reset){CLOUD.recovering=false;return enterRecovery(r.data.session)}
+ if(S.email&&CLOUD.uid===r.data.session.user.id)return;
+ if(S.email)leaveCloud();S.loadingCloud=true;render();return cloudEnter(r.data.session.user)}
 async function initCloud(){
- if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.hostname))return false;
+ if(!NATIVE&&(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.hostname)))return false;
  let cfg=null;try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),4000);const r=await fetch(API+'/api/config',{signal:ac.signal}).finally(()=>clearTimeout(t));if(r.ok)cfg=await r.json()}catch{}
  if(!cfg||!cfg.supabaseUrl||!cfg.supabaseAnonKey)return false;
  if(!window.supabase)await pinnedScript(PIN.supabase,'load').catch(()=>null);
  if(!window.supabase){toast('Doctine couldn’t load its sign-in service. Check your connection and refresh.');return false}
- CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
- CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;CLOUD.ai=cfg.aiAvailable!==false;
- {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1)),e=q.get('error')||h.get('error');if(e){S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}for(const k of['error','error_code','error_description'])q.delete(k);const rest=q.toString();history.replaceState(null,'',location.pathname+(rest?'?'+rest:''))}}
- CLOUD.sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){S.auth='newpw';S.email=null;render()}if(ev==='SIGNED_OUT'&&S.cloud){leaveCloud()}if(ev==='SIGNED_IN'&&session&&S.cloud&&CLOUD.uid&&session.user.id!==CLOUD.uid){leaveCloud();cloudEnter(session.user)}});
+ {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1)),e=q.get('error')||h.get('error');if(e){const code=q.get('error_code')||h.get('error_code')||'',desc=q.get('error_description')||h.get('error_description')||'';let viaGoogle=false;try{viaGoogle=sessionStorage.getItem('doctine:google-consent')==='1'}catch{}
+  if(!viaGoogle&&(RECOVERY.path||/otp_expired/.test(code)||/\b(email|link)\b/i.test(desc))){S.auth='expired';const exp=/otp_expired|expired/i.test(code+' '+desc);S.authTitle=exp?'':'That link didn’t work';S.authMsg=exp?'':'The link from your email couldn’t be used. Request a new one, or sign in if you’ve already confirmed your account.'}
+  else S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}for(const k of['error','error_code','error_description','reset'])q.delete(k);const rest=q.toString();history.replaceState(null,'',location.pathname+(rest?'?'+rest:''))}}
+ CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:NATIVE&&window.DoctineNative?{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,flowType:'pkce',storage:DoctineNative.authStorage}:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;CLOUD.ai=cfg.aiAvailable!==false;CLOUD.features=cfg.features||{};CLOUD.maint=cfg.maintenance||{on:false};CLOUD.notices=Array.isArray(cfg.announcements)?cfg.announcements.slice(0,5):[];CLOUD.whatsNew=Array.isArray(cfg.whatsNew)?cfg.whatsNew.slice(0,5):[];
+ CLOUD.sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){if(!CLOUD.recovering)enterRecovery(session);return}if(CLOUD.recovering)return;if(ev==='SIGNED_OUT'&&S.cloud){leaveCloud()}if(ev==='SIGNED_IN'&&session&&S.cloud&&CLOUD.uid&&session.user.id!==CLOUD.uid){leaveCloud();cloudEnter(session.user)}});
+ const launch=NATIVE&&window.DoctineNative?await DoctineNative.launchLink():null;
+ if(NATIVE&&window.DoctineNative)DoctineNative.takeLinks(doctineAuthCallback);
+ if(launch){await doctineAuthCallback(launch);return true}
  const{data}=await CLOUD.sb.auth.getSession();
+ if(RECOVERY.link){enterRecovery(data&&data.session);return true}
+ if(RECOVERY.path&&S.auth!=='expired')cleanRecoveryUrl();
+ if(S.auth==='expired'){CLOUD.keepUser=data&&data.session?data.session.user:null;render();return true}
  if(data&&data.session&&!S.email)await cloudEnter(data.session.user);else if(!S.email)render();
  return true}
 
@@ -544,9 +689,11 @@ async function googleSignIn(){
  if(!CLOUD.on||!CLOUD.google)return;if(!$('#gack')||!$('#gack').checked)return say('Please tick the box to continue.');
  S.oauthErr='';try{sessionStorage.setItem('doctine:google-consent','1')}catch{}
  const b=$('#google');if(b)b.disabled=true;
- try{const{error}=await CLOUD.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)throw error}
+ try{if(NATIVE&&window.DoctineNative){const{data,error}=await CLOUD.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:AUTH_CB,skipBrowserRedirect:true}});if(error||!data||!data.url)throw error||new Error('no url');await DoctineNative.openAuthUrl(data.url);if(b)b.disabled=false;return}
+  const{error}=await CLOUD.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)throw error}
  catch{try{sessionStorage.removeItem('doctine:google-consent')}catch{}if(b)b.disabled=false;say('Google sign-in isn’t available right now. Try again, or use email and password.')}}
 async function cloudEnter(user){
+ if(CLOUD.recovering)return;
  const sb=CLOUD.sb;CLOUD.epoch++;CLOUD.uid=user.id;CLOUD.email=user.email;resetCloudState();resetHistory();S.loadingCloud=true;const ep=CLOUD.epoch;
  try{
   let gc=false;try{gc=sessionStorage.getItem('doctine:google-consent')==='1';sessionStorage.removeItem('doctine:google-consent')}catch{}
@@ -557,7 +704,7 @@ async function cloudEnter(user){
   if(CLOUD.epoch!==ep)return;   // signed out or switched while loading: show nothing of this account
   const bad=[pr,cs,ds,fs,ms,sc,de].find(r=>r.error);if(bad)throw bad.error;
   const p=pr.data||{},meta=user.user_metadata||{};
-  const consent={ai:false,analytics:false,history:false};(cs.data||[]).forEach(c=>{if(c.kind==='ai_chat')consent.ai=!!c.granted&&Date.parse(c.updated_at)>=AI_CONSENT_FROM;if(c.kind==='analytics')consent.analytics=c.granted;if(c.kind==='chat_history')consent.history=c.granted});
+  const consent={ai:false,analytics:false,history:false};(cs.data||[]).forEach(c=>{if(c.kind==='ai_chat')consent.ai=!!c.granted&&Date.parse(c.updated_at)>=AI_CONSENT_FROM;if(c.kind==='analytics')consent.analytics=!!c.granted&&Date.parse(c.updated_at)>=ANALYTICS_CONSENT_FROM;if(c.kind==='chat_history')consent.history=c.granted});
   const docByUuid={};CLOUD.ids={docs:{},meds:{}};CLOUD.files={};
   const reports=(ds.data||[]).map(d=>{docByUuid[d.id]=d.client_id;CLOUD.ids.docs[d.client_id]=d.id;return{id:Number(d.client_id),title:d.title,cat:d.category,date:d.document_date||'',lab:d.provider||'',fields:d.fields||{},hash:d.file_hash||undefined,imgs:d.page_count||0,scan:d.extraction||null,src:d.source,checked:d.source==='manual'&&(d.page_count||0)>0}});
   (fs.data||[]).forEach(f=>{const cid=docByUuid[f.document_id];if(cid==null)return;CLOUD.files[`${f.kind==='original'?'orig':'scan'}:${cid}:${f.page}`]=f.storage_path;if(f.content_type==='application/pdf'){const r=reports.find(x=>x.id===Number(cid));if(r)r.orig='pdf'}});
@@ -577,7 +724,7 @@ function resetCloudState(){clearTimeout(CLOUD.timer);CLOUD.timer=null;CLOUD.snap
 async function clearImageCache(){for(const u of Object.values(IMG.urls))try{URL.revokeObjectURL(u)}catch{};IMG.urls={};
  try{const d=await IMG.open();await new Promise(r=>{const t=d.transaction('img','readwrite');t.objectStore('img').clear();t.oncomplete=t.onerror=r})}catch{}}
 const unsavedCount=()=>(S.cloud?(CLOUD.dirty||CLOUD.err||CLOUD.busy?1:0):0)+HIST.pending.length;
-function leaveCloud(){CLOUD.epoch++;CLOUD.uid=null;resetCloudState();resetHistory();clearImageCache();S={...S,...blank(''),email:null,cloud:false,sample:false,guest:false,auth:'login',cstate:null,cerr:'',useRecords:false};render()}
+function leaveCloud(to='login'){if(window.DoctineNative)DoctineNative.clearExports();CLOUD.epoch++;CLOUD.uid=null;S.help=null;resetCloudState();resetHistory();clearImageCache();S={...S,...blank(''),email:null,cloud:false,sample:false,guest:false,auth:to,cstate:null,cerr:'',useRecords:false};render()}
 
 /* What is saved, as comparable JSON per row, so each save sends only what changed. */
 function snapshot(d){const o={profile:JSON.stringify(d.profile),consent:JSON.stringify(d.consent),docs:{},meds:{},doses:{}};
@@ -595,8 +742,11 @@ async function cloudSync(){
  const R=S.reports.slice(),M=S.meds.slice(),P={...S.profile},C={...S.consent};
  const step=async p=>{const r=await p;if(CLOUD.epoch!==ep||CLOUD.uid!==uid)throw ABORT;return r};
  try{
-  if(now.profile!==was.profile){const p=P;const{error}=await step(sb.from('health_profiles').upsert({user_id:uid,full_name:nn(p.name),date_of_birth:nn(p.dob),height_cm:nn(p.height)==null?null:+p.height,weight_kg:nn(p.weight)==null?null:+p.weight,blood_group:nn(p.blood),allergies:nn(p.allergies)}));if(error)throw error;was.profile=now.profile}
-  if(now.consent!==was.consent){const{error}=await step(sb.from('consents').upsert([{user_id:uid,kind:'ai_chat',granted:!!C.ai},{user_id:uid,kind:'analytics',granted:!!C.analytics},{user_id:uid,kind:'chat_history',granted:!!C.history}]));if(error)throw error;was.consent=now.consent}
+  if(now.profile!==was.profile){const p=P;const{error}=await step(sb.from('health_profiles').upsert({user_id:uid,full_name:nn(p.name),date_of_birth:dobOk(p.dob)?p.dob:null,height_cm:nn(p.height)==null?null:+p.height,weight_kg:nn(p.weight)==null?null:+p.weight,blood_group:nn(p.blood),allergies:nn(p.allergies)}));if(error)throw error;was.profile=now.profile}
+  if(now.consent!==was.consent){let P={};try{P=JSON.parse(was.consent)||{}}catch{}
+  // only the choices that changed: rewriting an unchanged row would refresh its date and turn an old choice into a new one
+  const rows=[['ai_chat','ai'],['analytics','analytics'],['chat_history','history']].filter(([,k])=>!!P[k]!==!!C[k]).map(([kind,k])=>({user_id:uid,kind,granted:!!C[k]}));
+  if(rows.length){const{error}=await step(sb.from('consents').upsert(rows));if(error)throw error}was.consent=now.consent}
   for(const r of R){if(was.docs[r.id]===now.docs[r.id]&&CLOUD.ids.docs[r.id])continue;
    const{data,error}=await step(sb.from('documents').upsert({user_id:uid,client_id:r.id,title:String(r.title||'Medical document').slice(0,160),category:['Lab report','Prescription','Imaging','Other'].includes(r.cat)?r.cat:'Other',document_date:nn(r.date),provider:nn(r.lab),source:r.imgs?(r.checked?'manual':'scan'):(r.src||'upload'),fields:r.fields||{},extraction:r.scan||null,page_count:r.imgs||0,file_hash:r.hash||null},{onConflict:'user_id,client_id'}).select('id').single());
    if(error)throw error;CLOUD.ids.docs[r.id]=data.id;await uploadPages(r,data.id,uid,step);was.docs[r.id]=now.docs[r.id]}
@@ -618,14 +768,15 @@ async function cloudSync(){
   CLOUD.snap=was;CLOUD.err='';CLOUD.lastOk=Date.now();CLOUD.dirty=JSON.stringify(snapshot(S))!==JSON.stringify(was);
  }catch(e){if(e===ABORT||CLOUD.epoch!==ep){CLOUD.busy=false;return}   // the person signed out or switched: touch nothing of the new sign-in
   CLOUD.snap=was;cloudFail('Saving',e);if(!cloudSync.warned){cloudSync.warned=1;toast('Your latest changes couldn’t be saved to your account. Doctine will keep trying; don’t close this page yet.')}clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(cloudSync,15000)}
- finally{if(CLOUD.epoch!==ep)return;CLOUD.busy=false;if(!CLOUD.err)cloudSync.warned=0;if(S.view==='settings'){const el=$('#syncst');if(el)el.textContent=syncText()}const bn=$('#banner');if(bn&&S.cloud){const h=bannerHTML();if(S._bh!==h){S._bh=h;bn.innerHTML=h}}if(CLOUD.again||CLOUD.dirty){CLOUD.again=false;cloudQueue()}}}
+ finally{if(CLOUD.epoch!==ep)return;CLOUD.busy=false;if(!CLOUD.err)cloudSync.warned=0;if(S.view==='settings'){const el=$('#syncst');if(el)el.textContent=syncText()}const bn=$('#banner');if(bn&&S.cloud){const h=bannerHTML();if(S._bh!==h){S._bh=h;bn.innerHTML=h}}if(CLOUD.again||(CLOUD.dirty&&!CLOUD.err)){CLOUD.again=false;cloudQueue()}}} // after a failure, wait for the retry timer (or a new change) instead of retrying at once
 async function uploadPages(r,docUuid,uid,step){const rows=[];
+ if(!uploadsOn())return; // paused by the Doctine team: the record saves now; its files stay on this device and are stored once uploads resume
  if(r.orig==='pdf'&&!CLOUD.files[`orig:${r.id}:0`]){const b=await step(IMG.get(`orig:${r.id}:0`).catch(()=>null));if(b){const path=`${uid}/${r.id}/original.pdf`;const{error}=await step(CLOUD.sb.storage.from(BUCKET).upload(path,b,{contentType:'application/pdf',upsert:true}));if(error)throw error;rows.push({user_id:uid,document_id:docUuid,kind:'original',page:0,storage_path:path,content_type:'application/pdf',size_bytes:b.size});CLOUD.files[`orig:${r.id}:0`]=path}}
  for(let i=0;i<r.imgs;i++)for(const[kind,pre]of[['cleaned','scan'],['original','orig']]){const key=`${pre}:${r.id}:${i}`;if(CLOUD.files[key])continue;
   const b=await step(IMG.get(key).catch(()=>null));if(!b)continue;const path=`${uid}/${r.id}/${kind}-${i}.jpg`;
-  const{error}=await step(CLOUD.sb.storage.from(BUCKET).upload(path,b,{contentType:b.type||'image/jpeg',upsert:true}));if(error)throw error;
+  const{error}=await step(CLOUD.sb.storage.from(BUCKET).upload(path,b,{contentType:b.type||'image/jpeg',upsert:true}));if(error){track('document_upload_failed',{kind:'image',reason:/exceed|size|large/i.test(error.message||'')?'too_large':'storage'},'upf:'+r.id+':'+new Date().toISOString().slice(0,13));throw error}
   rows.push({user_id:uid,document_id:docUuid,kind,page:i,storage_path:path,content_type:b.type||'image/jpeg',size_bytes:b.size});CLOUD.files[key]=path}
- if(rows.length){const{error}=await step(CLOUD.sb.from('document_files').upsert(rows,{onConflict:'document_id,kind,page'}));if(error)throw error}}
+ if(rows.length){const{error}=await step(CLOUD.sb.from('document_files').upsert(rows,{onConflict:'document_id,kind,page'}));if(error)throw error;track('document_upload_completed',{kind:r.orig==='pdf'?'pdf':'image',pages:rows.length,bytes:rows.reduce((a,x)=>a+(x.size_bytes||0),0)},'up:'+r.id+':'+rows.length)}}
 /* Page images not in this browser yet are downloaded from private storage (never through a public link). */
 async function cloudImage(key){const path=CLOUD.files[key],ep=CLOUD.epoch;if(!CLOUD.on||!path)return null;const{data,error}=await CLOUD.sb.storage.from(BUCKET).download(path);if(error||!data||CLOUD.epoch!==ep)return null;IMG.put(key,data).catch(()=>{});return data}
 const syncText=()=>CLOUD.err?'Not saved yet: '+CLOUD.err+'. Retrying.':CLOUD.lastOk?'Saved to your Doctine account '+new Date(CLOUD.lastOk).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'.':'Connected to your Doctine account.';
@@ -641,7 +792,7 @@ async function importLocal(email,pw){const u=DB.users[email];if(!u)return'That a
   S.reports.push({...r,id});nr++}
  for(const m of d.meds||[]){const id=free(m.id);medMap[m.id]=id;S.meds.push({...m,id,...(m.src?{src:{...m.src,doc:m.src.doc!=null?idMap[m.src.doc]??null:null}}:{})});nm++}
  for(const[k,v]of Object.entries(d.doses||{})){const[mid,t,dt]=k.split('@');if(medMap[mid]!=null)S.doses[`${medMap[mid]}@${t}@${dt}`]=v}
- const p=d.profile||{};for(const k of['dob','height','weight','blood','allergies'])if(!S.profile[k]&&p[k])S.profile[k]=p[k];
+ const p=d.profile||{};for(const k of['dob','height','weight','blood','allergies'])if(!S.profile[k]&&p[k]&&(k!=='dob'||dobOk(p[k])))S.profile[k]=p[k];
  S.reports.sort((a,b)=>(b.date||'').localeCompare(a.date||''));render();
  const ok=await cloudSyncNow();
  return ok?`Copied ${nr} record${nr===1?'':'s'} and ${nm} medicine${nm===1?'':'s'} into your account and saved. The copy in this browser is unchanged.`:`The records are on this page but haven’t been saved to your account yet (${CLOUD.err}). Doctine is retrying; keep this page open.`}
@@ -652,7 +803,7 @@ async function cloudDeleteAccount(){const{data}=await CLOUD.sb.auth.getSession()
 
 /* ---- health assistant: every reply comes from the server's AI model. This page never writes medical answers itself. ---- */
 const nz=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
-const CHAT_ERR={not_sent:'Not sent. The document stays on this device; nothing went to the AI.',capacity:'Doctine has reached its limit of AI requests for today. Please try again later. If this is urgent, call 112 or contact a doctor.',limiter_unavailable:'Doctine can’t check its usage limits right now, so the assistant is paused. Please try again in a minute. If this is urgent, call 112.',ai_not_allowed:'Claude wasn’t allowed for this page, so the assistant can’t answer. Reload the page and choose Allow when asked.',ai_image:'This view can’t send photos to Claude. Open the page on claude.ai or in the Claude app.',not_configured:'The AI assistant and the scanner are switched off in this preview. They will work in the Doctine app when it opens at app.doctine.com.',no_server:'The assistant server isn’t deployed here, so this page can’t reach an AI model. It must be deployed with its Netlify function (see DEPLOY.md).',invalid_key:'The AI provider rejected the API key. Check the key saved in Netlify is correct and still active, then redeploy.',key_forbidden:'The API key isn’t allowed to use this service or model. Check its permissions in your AI provider account.',insufficient_credits:'The AI account has no credit left. Add credits in the provider’s billing page (Anthropic Console → Billing), then try again.',model_not_found:'The model “{model}” isn’t available to this API key. Set AI_MODEL in Netlify to a model your account can use, then redeploy.',ai_rate_limited:'The AI provider is rate-limiting requests. Wait a moment, then retry.',ai_busy:'The AI service is busy right now. Try again shortly.',ai_network:'The server couldn’t reach the AI provider. Try again in a moment.',rate_limited:'You’re sending messages quickly. Please wait a minute and try again.',ai_timeout:'The AI took too long to answer. Please try again.',ai_error:'The AI service returned an error. Please try again.',bad_output:'The AI gave a reply Doctine couldn’t safely show. Please rephrase and try again.',invalid:'That message couldn’t be sent. Try a shorter message.',too_large:'That message was too large.',network:'Network problem. Check your connection and try again.',cancelled:'Cancelled.'};
+const CHAT_ERR={sign_in_required:'Your sign-in has expired. Sign out and sign in again, then try once more.',not_sent:'Not sent. The document stays on this device; nothing went to the AI.',capacity:'Doctine has reached its limit of AI requests for today. Please try again later. If this is urgent, call 112 or contact a doctor.',limiter_unavailable:'Doctine can’t check its usage limits right now, so the assistant is paused. Please try again in a minute. If this is urgent, call 112.',ai_not_allowed:'Claude wasn’t allowed for this page, so the assistant can’t answer. Reload the page and choose Allow when asked.',ai_image:'This view can’t send photos to Claude. Open the page on claude.ai or in the Claude app.',not_configured:'The AI assistant and the scanner are switched off in this preview. They will work in the Doctine app when it opens at app.doctine.com.',no_server:'The assistant server isn’t deployed here, so this page can’t reach an AI model. It must be deployed with its Netlify function (see DEPLOY.md).',invalid_key:'The AI provider rejected the API key. Check the key saved in Netlify is correct and still active, then redeploy.',key_forbidden:'The API key isn’t allowed to use this service or model. Check its permissions in your AI provider account.',insufficient_credits:'The AI account has no credit left. Add credits in the provider’s billing page (Anthropic Console → Billing), then try again.',model_not_found:'The model “{model}” isn’t available to this API key. Set AI_MODEL in Netlify to a model your account can use, then redeploy.',ai_rate_limited:'The AI provider is rate-limiting requests. Wait a moment, then retry.',ai_busy:'The AI service is busy right now. Try again shortly.',ai_network:'The server couldn’t reach the AI provider. Try again in a moment.',rate_limited:'You’re sending messages quickly. Please wait a minute and try again.',ai_timeout:'The AI took too long to answer. Please try again.',ai_error:'The AI service returned an error. Please try again.',bad_output:'The AI gave a reply Doctine couldn’t safely show. Please rephrase and try again.',invalid:'That message couldn’t be sent. Try a shorter message.',too_large:'That message was too large.',network:'Network problem. Check your connection and try again.',cancelled:'Cancelled.'};
 const errText=(c,i)=>{i=i||{};return(CHAT_ERR[c]||CHAT_ERR.network).replace('{missing}',(i.missing||[]).join(', ')||'the AI key').replace('{model}',i.model||'configured')};
 function buildCtx(){
  if(!S.useRecords)return null;
@@ -809,7 +960,7 @@ async function attachDoc(camera){
  const files=await pickFiles(camera,camera?undefined:'image/jpeg,image/png,image/webp,application/pdf');if(!files.length)return render();
  const f=files[0];let blobs=null,doc=null;
  try{
-  if(!camera&&(f.type==='application/pdf'||/\.pdf$/i.test(f.name))){
+  if(!camera&&(f.type==='application/pdf'||/\.pdf$/i.test(f.name))){if(await sniffType(f)!=='application/pdf')throw new Error('That file isn’t a real PDF.');
    S.chatReading=f.name;render();
    let text='';try{text=(await readPdf(f)).join('\n')}catch(e){if(e.name==='PasswordException')throw new Error('This PDF is password-protected.')}
    if(text.replace(/\s/g,'').length>200)doc={title:f.name.replace(/\.pdf$/i,''),type:'other',transcription:text.slice(0,12000)};
@@ -826,39 +977,58 @@ async function attachDoc(camera){
 const head=(t,s,x='')=>`<div class="flex items-start justify-between gap-3 flex-wrap"><div><h1 class="text-3xl">${t}</h1><p class="text-[var(--mute)] mt-1">${s}</p></div>${x}</div>`;
 const wrap=h=>`<div class="max-w-4xl mx-auto px-5 md:px-8 py-8 space-y-6">${h}</div>`;
 const ageOf=d=>{const t=Date.parse(d);return t?Math.floor((Date.now()-t)/31557600000):null};
+/* Sign-in, account creation and recovery. Desktop: a still-life of (fictional) records beside the form; phones: the form
+   alone under a compact header. Every screen drives the existing Supabase calls in the submit handler below. */
+const AU_LEGAL=`Read the <a href="https://doctine.com/privacy/" target="_blank" rel="noopener">privacy policy</a> and <a href="https://doctine.com/terms/" target="_blank" rel="noopener">terms</a>.`;
+const AU_ICON={check:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m8 12.5 2.6 2.6L16 9.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',mail:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ clock:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'};
+function authShell(inner){
+ const tint=document.documentElement.dataset.theme==='dark'?' au-dark':'';
+ return`<div class="au${tint}"><aside class="au-art" aria-label="Doctine"><div class="au-art-copy"><p class="au-eyebrow">Your personal health record</p><p class="au-art-h">Your health has a history.</p><p class="au-art-sub">Your prescriptions, reports and health information, organised in one private place.</p></div><p class="au-art-note">Illustration with fictional records.</p></aside>
+ <div class="au-side"><header class="au-top"><a class="au-brand" href="https://doctine.com/" aria-label="Doctine website">${LOGO}<span>Doctine</span></a><span class="au-tag">Your personal health record</span></header>
+ <main class="au-main" id="au-main">${inner}</main>
+ <footer class="au-foot"><a href="https://doctine.com/privacy/" target="_blank" rel="noopener">Privacy</a><a href="https://doctine.com/terms/" target="_blank" rel="noopener">Terms</a><button type="button" data-auth="about">About Doctine</button><span>In an emergency, call 112.</span></footer></div></div>`}
+// One field: a visible label, optional hint and the input; the password field gets a Show/Hide control.
+function auField(n,l,t='text',x='',hint=''){
+ const id='au-'+n,hid=hint?id+'-hint':'';
+ const input=`<input class="au-inp" id="${id}" name="${n}" type="${t}" ${x} required${hid?` aria-describedby="${hid}"`:''}>`;
+ return`<div class="au-field"><label for="${id}">${l}</label>${t==='password'?`<div class="au-pw">${input}<button type="button" class="au-eye" id="${n==='pw'?'pwtoggle':'pwtoggle-'+n}" aria-controls="${id}" aria-pressed="false" aria-label="Show password">Show</button></div>`:input}${hint?`<p class="au-hint" id="${hid}">${hint}</p>`:''}</div>`}
+function auGoogle(){if(!CLOUD.google)return'';
+ return`<div class="au-or" role="separator"><span>or</span></div><label class="au-check"><input type="checkbox" id="gack"><span>To continue with Google, I confirm I’m 18 or older and agree that Doctine stores my health records in my account and is not medical advice.</span></label><p class="au-fine">${AU_LEGAL}</p><div id="gerr">${S.oauthErr?`<div class="au-err" role="alert">${esc(S.oauthErr)}</div>`:''}</div><button type="button" id="google" class="au-btn au-btn-2"><svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.7Z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8l4-3.1Z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9Z"/></svg>Continue with Google</button>`}
 function cloudAuthView(){
- const m=S.auth,T={login:'Welcome back',register:'Create your account',forgot:'Reset your password',newpw:'Choose a new password',check:'Check your email'}[m]||'Welcome back';
- const f=(n,l,t='text',x='')=>`<label class="block text-sm"><span class="text-[var(--mute)]">${l}</span><input class="inp mt-1" name="${n}" type="${t}" ${x} required></label>`;
- let body;
- if(S.loadingCloud)body=`<p class="mt-4 text-sm" aria-live="polite"><span class="dot">●</span> Opening your records…</p>`;
- else if(m==='check')body=`<p class="mt-4 text-sm text-[var(--mute)]">${esc(S.authMsg||'We sent you an email. Open the link in it, then come back and sign in.')}</p><button class="btn mt-4" data-auth="login">Back to sign in</button>`;
- else if(m==='forgot')body=`<form id="ff" class="mt-4 space-y-4" novalidate><p class="text-sm text-[var(--mute)]">Enter your email and we’ll send you a link to set a new password.</p>${f('email','Email','email','autocomplete="email"')}<div id="aerr"></div><button class="btn pri w-full">Send reset link</button></form><div class="mt-4 text-sm"><button data-auth="login" class="underline text-[var(--mute)]">Back to sign in</button></div>`;
- else if(m==='newpw')body=`<form id="npf" class="mt-4 space-y-4" novalidate>${f('pw','New password (8+ characters)','password','autocomplete="new-password"')}<div id="aerr"></div><button class="btn pri w-full">Save new password</button></form>`;
- else body=`<form id="${m==='register'?'rf':'lf'}" class="mt-4 space-y-4" novalidate>
-  ${m==='register'?f('name','Your name','text','autocomplete="name"'):''}${f('email','Email','email','autocomplete="email"')}${f('pw','Password'+(m==='register'?' (8+ characters)':''),'password',`autocomplete="${m==='register'?'new-password':'current-password'}"`)}
-  <label class="flex items-center gap-2 text-sm text-[var(--mute)]"><input type="checkbox" id="showpw"> Show password</label>
-  ${m==='register'?`<label class="flex gap-2 text-sm"><input type="checkbox" name="ack" class="mt-1"><span>I’m 18 or older, and I agree that Doctine stores my health records in my account and is not medical advice.</span></label><p class="text-xs text-[var(--mute)] mt-1 pl-6">Read the <a class="underline" href="https://doctine.com/privacy/" target="_blank" rel="noopener">privacy policy</a> and <a class="underline" href="https://doctine.com/terms/" target="_blank" rel="noopener">terms</a>.</p>`:''}
-  <div id="aerr"></div><button class="btn pri w-full">${m==='register'?'Create account':'Sign in'}</button></form>
-  <div class="mt-4 flex justify-between text-sm text-[var(--mute)]">${m==='register'?`<button data-auth="login" class="underline">Back to sign in</button>`:`<button data-auth="forgot" class="underline">Forgot password?</button><button data-auth="register" class="underline">Create account</button>`}</div>
-  ${CLOUD.google?`<div class="mt-5 pt-5" style="border-top:1px solid var(--line)"><label class="flex gap-2 text-sm"><input type="checkbox" id="gack" class="mt-1"><span>To continue with Google, I confirm I’m 18 or older and agree that Doctine stores my health records in my account and is not medical advice.</span></label><p class="text-xs text-[var(--mute)] mt-1 pl-6">Read the <a class="underline" href="https://doctine.com/privacy/" target="_blank" rel="noopener">privacy policy</a> and <a class="underline" href="https://doctine.com/terms/" target="_blank" rel="noopener">terms</a>.</p><div id="gerr">${S.oauthErr?`<div class="err mt-3" role="alert">${esc(S.oauthErr)}</div>`:''}</div><button type="button" id="google" class="btn w-full mt-3">Continue with Google</button></div>`:''}`;
- return `<div class="max-w-md mx-auto px-5 py-10"><div class="flex items-center gap-2 mb-6">${LOGO}<span class="serif text-2xl">Doctine</span></div><div class="card p-6"><h1 class="text-2xl">${T}</h1>
- <p class="text-sm text-[var(--mute)] mt-2">Your records are saved to your Doctine account and protected so only you can open them.</p>${body}</div>
- <button id="guest" class="btn pri w-full mt-4">Ask a health question without an account</button><button id="samp" class="btn tl w-full mt-2">Explore with sample data (nothing is saved)</button><div class="text-center mt-4"><button class="underline text-sm text-[var(--mute)]" data-auth="about">About Doctine</button></div></div>`}
+ const m=S.auth;let h='',sub='',body='';
+ if(S.loadingCloud){h='Opening your records';body=`<p class="au-status" role="status" aria-live="polite"><span class="au-spin" aria-hidden="true"></span>Signing you in…</p>`}
+ else if(m==='noserver'){h='Can’t reach Doctine';body=`<div class="au-note">${AU_ICON.clock}<p role="status">Doctine needs an internet connection to open your account. Nothing on this device has changed. Check your connection, then try again.</p></div><button type="button" class="au-btn pri" id="retrycloud">Try again</button>`}
+ else if(m==='check'){h=S.authTitle||'Check your email';body=`<div class="au-note">${AU_ICON.mail}<p role="status">${esc(S.authMsg||'We sent you an email. Open the link in it, then come back and sign in.')}</p></div>${S.resendTo?`<p class="au-fine">Didn’t get it? Check your spam folder, or <button type="button" class="au-link" id="resend">send it again</button>.</p><div id="aerr" aria-live="polite"></div>`:''}<button type="button" class="au-btn" data-auth="login">Back to sign in</button>`}
+ else if(m==='expired'){h=S.authTitle||'This link has expired';body=`<div class="au-note">${AU_ICON.clock}<p>${esc(S.authMsg||'Email links from Doctine work once and expire after an hour. Request a new one and use the latest email.')}</p></div><button type="button" class="au-btn" data-auth="forgot">Send a new reset link</button>${CLOUD.keepUser?`<button type="button" class="au-btn" id="expcont" style="margin-top:.5rem">Continue to my account</button>`:''}<p class="au-alt"><button type="button" class="au-link" data-auth="login">Back to sign in</button></p>`}
+ else if(m==='forgot'){h='Reset your password';sub='Enter the email you use for Doctine. If it matches an account, we’ll send a link to set a new password.';
+  body=`<form id="ff" class="au-form" novalidate>${auField('email','Email','email','autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"')}<div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Sending link…">Send reset link</button></form><p class="au-alt"><button type="button" class="au-link" data-auth="login">Back to sign in</button></p>`}
+ else if(m==='newpw'){h='Create a new password';sub='Choose a new password to securely access your Doctine account.';
+  body=`${CLOUD.recoverEmail?`<p class="au-hint" style="margin:0 0 1rem">For <b>${esc(CLOUD.recoverEmail)}</b></p>`:''}<form id="npf" class="au-form" novalidate>${auField('pw','New password','password','autocomplete="new-password" minlength="8" maxlength="72"','At least 8 characters. A longer phrase, or a mix of letters, numbers and symbols, is stronger.')}<div class="au-strength" id="pwstr" aria-live="polite"><div class="au-sbar" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span id="pwstrl">Password strength</span></div>${auField('pw2','Confirm new password','password','autocomplete="new-password" maxlength="72"')}<div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Saving…">Save new password</button></form><p class="au-alt"><button type="button" class="au-link" id="npcancel">Cancel</button></p>`}
+ else if(m==='pwdone'){h='Password updated';body=`<div class="au-note">${AU_ICON.check}<p role="status">Your password has been updated successfully. For your security, Doctine signed you out on every device. Sign in with your new password.</p></div><button type="button" class="au-btn pri" data-auth="login">Continue to sign in</button>`}
+ else if(m==='register'){h='Create your account';sub='Your records are kept in your own account, and only you can open them.';
+  body=`<form id="rf" class="au-form" novalidate>${auField('name','Your name','text','autocomplete="name"')}${auField('email','Email','email','autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"')}${auField('pw','Password','password','autocomplete="new-password" minlength="8"','At least 8 characters.')}
+  <label class="au-check"><input type="checkbox" name="ack"><span>I’m 18 or older, and I agree that Doctine stores my health records in my account and is not medical advice.</span></label><p class="au-fine">${AU_LEGAL}</p>
+  <div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Creating your account…">Create account</button></form>${auGoogle()}<p class="au-alt">Already have an account? <button type="button" class="au-link" data-auth="login">Sign in</button></p>`}
+ else{h='Welcome back';sub='Sign in to access your personal health records.';
+  body=`<form id="lf" class="au-form" novalidate>${auField('email','Email','email',`autocomplete="username email" inputmode="email" autocapitalize="off" spellcheck="false"${S.prefillEmail?` value="${esc(S.prefillEmail)}"`:''}`)}<div class="au-field"><div class="au-row"><label for="au-pw">Password</label><button type="button" class="au-link" data-auth="forgot">Forgot password?</button></div><div class="au-pw"><input class="au-inp" id="au-pw" name="pw" type="password" autocomplete="current-password" required><button type="button" class="au-eye" id="pwtoggle" aria-controls="au-pw" aria-pressed="false" aria-label="Show password">Show</button></div></div>
+  <div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Signing in…">Sign in</button></form>${auGoogle()}<p class="au-alt">New to Doctine? <button type="button" class="au-link" data-auth="register">Create an account</button></p>
+  ${feat('sample_data')?'<p class="au-sample"><button type="button" id="samp" class="au-link">Explore with sample data</button><span>Fictional records. Nothing is saved.</span></p>':''}`}
+ return authShell(`<div class="au-card">${authNotices()}<h1>${h}</h1>${sub?`<p class="au-sub">${sub}</p>`:''}${body}</div>`)}
 function authView(){
  if(S.auth==='about')return`<div class="ab-wrap" style="padding-block:1rem 0;display:flex;justify-content:space-between;align-items:center;gap:1rem"><span class="flex items-center gap-2">${LOGO}<span class="serif text-xl">Doctine</span></span><button class="btn" data-auth="login">Sign in</button></div>${aboutBody('public')}`;
- if(CLOUD.on)return cloudAuthView();
- const m=S.auth,T={login:'Welcome back',register:'Create your account',forgot:'Reset your password'}[m];
- const f=(n,l,t='text',x='')=>`<label class="block text-sm"><span class="text-[var(--mute)]">${l}</span><input class="inp mt-1" name="${n}" type="${t}" ${x} required></label>`;
- return `<div class="max-w-md mx-auto px-5 py-10"><div class="flex items-center gap-2 mb-6">${LOGO}<span class="serif text-2xl">Doctine</span></div><div class="card p-6"><h1 class="text-2xl">${T}</h1>
- <div class="warn mt-4"><b>This is a demo.</b> Accounts and saved reports stay in this browser and aren’t secure. If you allow the AI assistant, messages you send it are processed by an AI provider through this site’s server. Don’t enter real health information, and don’t reuse a real password.</div>
- ${m==='forgot'?`<p class="mt-4 text-sm text-[var(--mute)]">This demo can’t email reset links. If you’ve forgotten your password, you can erase this browser’s demo accounts and create a new one.</p><div class="mt-4 flex gap-2"><button class="btn dg" id="erase">Erase demo accounts here</button><button class="btn" data-auth="login">Back</button></div>`:
- `<form id="${m==='login'?'lf':'rf'}" class="mt-4 space-y-4" novalidate>
-  ${m==='register'?f('name','Your name','text','autocomplete="name"'):''}${f('email','Email','email','autocomplete="email"')}${f('pw','Password'+(m==='register'?' (8+ characters)':''),'password',`autocomplete="${m==='login'?'current-password':'new-password'}"`)}
-  <label class="flex items-center gap-2 text-sm text-[var(--mute)]"><input type="checkbox" id="showpw"> Show password</label>
-  ${m==='register'?`<label class="flex gap-2 text-sm"><input type="checkbox" name="ack" class="mt-1"><span>I understand this is a demo, saved data stays in this browser, chat messages go to an AI provider, and Doctine is not medical advice.</span></label>`:''}
-  <div id="aerr"></div><button class="btn pri w-full">${m==='login'?'Sign in':'Create account'}</button></form>
-  <div class="mt-4 flex justify-between text-sm text-[var(--mute)]">${m==='login'?`<button data-auth="forgot" class="underline">Forgot password?</button><button data-auth="register" class="underline">Create account</button>`:`<button data-auth="login" class="underline">Back to sign in</button>`}</div>`}
- </div><button id="guest" class="btn pri w-full mt-4">Ask a health question without an account</button><button id="samp" class="btn tl w-full mt-2">Explore with sample data (nothing is saved)</button><div class="text-center mt-4"><button class="underline text-sm text-[var(--mute)]" data-auth="about">About Doctine</button></div></div>`}
+ if(CLOUD.on||S.auth==='noserver')return cloudAuthView(); // the apps never show demo accounts
+ // Demo accounts (no Supabase configured): same screens, kept in this browser only.
+ const m=S.auth,T={login:'Welcome back',register:'Create your account',forgot:'Reset your password'}[m]||'Welcome back';
+ const demo=`<div class="au-demo" role="note"><b>This is a demo.</b> Accounts and saved reports stay in this browser and aren’t secure. If you allow the AI assistant, messages you send it are processed by an AI provider through this site’s server. Don’t enter real health information, and don’t reuse a real password.</div>`;
+ let body;
+ if(m==='forgot')body=`<p class="au-sub">This demo can’t email reset links. If you’ve forgotten your password, you can erase this browser’s demo accounts and create a new one.</p><div class="au-pair"><button type="button" class="au-btn au-btn-danger" id="erase">Erase demo accounts here</button><button type="button" class="au-btn" data-auth="login">Back</button></div>`;
+ else body=`<form id="${m==='login'?'lf':'rf'}" class="au-form" novalidate>${m==='register'?auField('name','Your name','text','autocomplete="name"'):''}${auField('email','Email','email','autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"')}${auField('pw','Password','password',`autocomplete="${m==='login'?'current-password':'new-password'}"`,m==='register'?'At least 8 characters.':'')}
+  ${m==='register'?`<label class="au-check"><input type="checkbox" name="ack"><span>I understand this is a demo, saved data stays in this browser, chat messages go to an AI provider, and Doctine is not medical advice.</span></label>`:''}
+  <div id="aerr" aria-live="polite"></div><button class="au-btn pri">${m==='login'?'Sign in':'Create account'}</button></form>
+  <p class="au-alt">${m==='login'?`<button type="button" class="au-link" data-auth="forgot">Forgot password?</button> · <button type="button" class="au-link" data-auth="register">Create an account</button>`:`<button type="button" class="au-link" data-auth="login">Back to sign in</button>`}</p>
+  <div class="au-pair au-demo-alt"><button type="button" id="guest" class="au-btn">Ask a health question without an account</button><button type="button" id="samp" class="au-btn">Explore with sample data</button></div>`;
+ return authShell(`<div class="au-card"><h1>${T}</h1>${demo}${body}</div>`)}
 
 
 const DAYN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -905,18 +1075,23 @@ function chatView(){
  return`<div class="h-full flex flex-col"><div class="flex justify-end gap-2 px-5 pt-3 min-h-[3rem]">${hist}${S.msgs.length?'<button class="btn" id="newchat">New chat</button>':''}</div><div class="flex-1 overflow-y-auto" id="msgs"><div class="max-w-3xl mx-auto px-5 py-2 space-y-5">${empty}${msgs}${ask}${S.typing?'<div class="card inline-flex items-center gap-2 px-4 py-3 text-sm text-[var(--mute)]" aria-live="polite"><span class="dot">●</span><span class="dot" style="animation-delay:.2s">●</span><span class="dot" style="animation-delay:.4s">●</span> Thinking <button class="underline ml-2" id="stop">Stop</button></div>':''}${err}</div></div>
  <div class="px-5 pb-4 pt-2">${rec}${S.chatReading||S.chatDoc?`<div class="max-w-3xl mx-auto mb-2">${S.chatReading?`<span class="docchip" aria-live="polite"><span><span class="dot">●</span> Reading ${esc(S.chatReading)}…</span></span>`:`<span class="docchip"><span>📄 ${esc(S.chatDoc.title)}</span><button type="button" class="btn" style="padding:.1rem .45rem;border-radius:999px" id="docx" aria-label="Remove document">✕</button></span>`}</div>`:''}<form id="cf" class="max-w-3xl mx-auto card flex gap-2 p-2 shadow-sm"><div style="position:relative"><button type="button" class="btn" id="catt" aria-label="Scan or upload a document" aria-expanded="${!!S.attMenu}" ${S.chatReading?'disabled':''}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="m20 11.5-7.8 7.8a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg></button>${S.attMenu?`<div class="attmenu card shadow-lg"><button type="button" id="attcam"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg> Scan with camera</button><button type="button" id="attfile">🖼️ Photo or PDF</button></div>`:''}</div><input id="ci" class="flex-1 px-3 outline-none bg-transparent" style="min-width:0" placeholder="${S.chatDoc?'Ask about this document, or just tap Send':'Describe how you feel or ask a question'}" aria-label="Message" maxlength="2000" autocomplete="off"><button class="btn pri" ${S.typing||S.chatReading?'disabled':''}>Send</button></form>
  <p class="max-w-3xl mx-auto text-center text-xs text-[var(--mute)] mt-2">Doctine’s assistant is an AI. It can be wrong, and it is not a doctor, a diagnosis or a prescription. For emergencies call 112. ${historyOn()?(S.histStatus==='saving'?'Saving this chat to your Doctine account…':S.histStatus==='saved'?'This chat is saved in your Doctine account.':S.histStatus==='error'?'Some messages in this chat are not saved yet.':'New messages in this chat will be saved to your Doctine account.'):S.cloud?'This chat isn’t saved (switch on “Save my chats” in Settings).':'Chats are not saved after a refresh.'}</p>${S.histErr?`<p class="max-w-3xl mx-auto err mt-2" role="alert">${esc(S.histErr)}</p>`:''}</div></div>`}
+/* The latest date of birth the account database accepts: it checks against today's date in UTC, which is a day behind
+   India between midnight and 05:30. So the limit is the earlier of the device's date and the UTC date. */
+const dobMax=()=>{const l=today(),u=new Date().toISOString().slice(0,10);return l<u?l:u};
+// A date of birth the database will accept. One it would refuse is never sent, so the rest of the profile still saves.
+const dobOk=v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'')&&v>='1900-01-01'&&v<=dobMax();
 function healthView(){
  const p=S.profile,f=(k,l,t='text',x='')=>`<label class="block text-sm"><span class="text-[var(--mute)]">${l}</span><input class="inp mt-1" type="${t}" ${x} data-p="${k}" value="${esc(p[k])}"></label>`;
  const h=+p.height,w=+p.weight,bmi=h>0&&w>0?(w/((h/100)**2)).toFixed(1):'—',age=ageOf(p.dob);
  const tl=[...S.reports].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<li class="flex gap-3"><div class="flex flex-col items-center"><span class="w-3 h-3 rounded-full mt-1.5" style="background:var(--teal)"></span><span class="flex-1 w-px bg-[var(--line)]"></span></div><div class="pb-5"><div class="text-xs text-[var(--mute)]">${esc(r.date)}</div><div class="font-medium">${esc(r.title)}</div><div class="text-sm text-[var(--mute)]">${esc(r.lab||'')}</div></div></li>`).join('');
  return wrap(head('My Health','Your profile and timeline.','<button class="btn tl" id="exp">Export my data</button>')+
  `<div class="grid grid-cols-2 md:grid-cols-4 gap-3">${[['Age',age!=null?age+' yrs':'—'],['BMI',bmi],['Blood group',esc(p.blood)||'—'],['Medicines',S.meds.length+' added']].map(([a,b])=>`<div class="card p-4"><div class="text-sm text-[var(--mute)]">${a}</div><div class="serif text-2xl mt-1">${b}</div></div>`).join('')}</div>
- <section class="card p-5"><h2 class="text-xl mb-4">Health profile</h2><div class="grid sm:grid-cols-2 gap-4">${f('name','Full name')}${f('dob','Date of birth','date',`max="${today()}"`)}${f('height','Height (cm)','number','min="30" max="275" step="0.1"')}${f('weight','Weight (kg)','number','min="1" max="500" step="0.1"')}${f('blood','Blood group')}${f('allergies','Allergies')}</div><p class="text-xs text-[var(--mute)] mt-3">Everything here is entered by you. ${S.cloud?'Saved to your account':'Saved in this browser'} when you leave a field.</p></section>
+ <section class="card p-5"><h2 class="text-xl mb-4">Health profile</h2><div class="grid sm:grid-cols-2 gap-4">${f('name','Full name')}${f('dob','Date of birth','date',`min="1900-01-01" max="${dobMax()}"`)}${f('height','Height (cm)','number','min="30" max="275" step="0.1"')}${f('weight','Weight (kg)','number','min="1" max="500" step="0.1"')}${f('blood','Blood group')}${f('allergies','Allergies')}</div><p class="text-xs text-[var(--mute)] mt-3">Everything here is entered by you. ${S.cloud?'Saved to your account':'Saved in this browser'} when you leave a field.</p></section>
  <section class="card p-5"><h2 class="text-xl mb-4">Medical timeline</h2>${tl?`<ul>${tl}</ul>`:'<p class="text-[var(--mute)]">Saved reports will appear here in date order.</p>'}</section>`)}
 
 function uploadBox(){const u=S.upload;
  if(S.scanning)return`<div class="card p-5 text-sm" aria-live="polite"><span class="dot">●</span> ${esc(S.scanning)}</div>`;
- if(!u)return`<div class="grid sm:grid-cols-2 gap-3"><button class="card p-6 text-center block hover:bg-[var(--hover)]" id="scancam"><div class="text-2xl flex justify-center" style="color:var(--tealtx)"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></div><div class="font-medium mt-1">Scan document</div><div class="text-sm text-[var(--mute)]">${aiOff()?'Saved as a photo. Automatic reading switches on soon.':'Prescription, report or bill'}</div></button><label class="card border-dashed p-6 text-center block cursor-pointer hover:bg-[var(--hover)]"><div class="text-2xl flex justify-center" style="color:var(--tealtx)"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></div><div class="font-medium mt-1">Upload a file</div><div class="text-sm text-[var(--mute)]">PDF or photo</div><input id="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" class="sr-only"></label></div>`;
+ if(!u)return(S.cloud&&!uploadsOn()?'<div class="warn">Storing original files is paused for now. Details you confirm are saved to your account; the files stay on this device and are stored when uploads resume.</div>':'')+`<div class="grid sm:grid-cols-2 gap-3"><button class="card p-6 text-center block hover:bg-[var(--hover)]" id="scancam"><div class="text-2xl flex justify-center" style="color:var(--tealtx)"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></div><div class="font-medium mt-1">Scan document</div><div class="text-sm text-[var(--mute)]">${aiOff()?'Saved as a photo. Automatic reading switches on soon.':'Prescription, report or bill'}</div></button><label class="card border-dashed p-6 text-center block cursor-pointer hover:bg-[var(--hover)]"><div class="text-2xl flex justify-center" style="color:var(--tealtx)"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></div><div class="font-medium mt-1">Upload a file</div><div class="text-sm text-[var(--mute)]">PDF or photo</div><input id="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" class="sr-only"></label></div>`;
  if(u.status==='reading')return`<div class="card p-5"><div class="font-medium">${esc(u.name)}</div><div class="text-sm text-[var(--mute)] mt-1" aria-live="polite"><span id="ocrp">${esc(u.progress||'Reading the document…')}</span></div></div>`;
  if(u.status==='error')return`<div class="card p-5 space-y-3"><div class="err">${esc(u.err)}</div><button class="btn" id="ucx">Try another file</button></div>`;
  const i=(k,l,t='text')=>`<label class="text-sm"><span class="text-[var(--mute)]">${l}</span><input class="inp mt-1 ${u[k]?'':'border-amber-400'}" type="${t}" data-uf="${k}" value="${esc(u[k])}"></label>`;
@@ -1042,7 +1217,7 @@ function abObserve(){const v=document.getElementById('ab-vision');if(!v||v.datas
  const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){v.dataset.seen='1';v.classList.add('ab-draw');io.disconnect()}},{threshold:.25});io.observe(v)}
 const soon=()=>wrap(head('Family','Coming soon')+`<div class="card p-8 text-center"><div class="text-3xl">👪</div><p class="mt-3 max-w-sm mx-auto text-[var(--mute)]">Later you’ll be able to keep separate profiles for family members, with sharing you control. Nothing is shared today.</p></div>`);
 const setView=()=>wrap(head('Settings','Permissions and your data.')+(S.cloud?'':`<div class="warn">${S.sample?'Sample data. Nothing you change is saved.':'Demo account: everything is saved only in this browser, on this device. Nothing is uploaded to a Doctine account.'}</div>`)+
- `<section class="card p-5 space-y-4">${[['ai','Use the AI assistant','Off unless you switch it on. When on, what you type in chat is sent through this site’s server to Doctine’s AI provider (Anthropic, United States). Saved reports and profile details go only if you tick the box in that chat, and then only matching values, your age and allergies. Photos and scanned pages are sent only when you choose “Send to AI” each time. Emergency guidance works either way.'],['analytics','Optional analytics','Doctine doesn’t collect analytics.'],...(S.cloud?[['history','Save my chats to my account','Off unless you switch it on. When on, your messages and Doctine’s replies are stored in your account so you can reopen them under Chat → Saved chats. Switching it off stops saving; chats already saved stay until you delete them.']]:[])].map(([k,l,d])=>`<label class="flex items-center justify-between gap-4"><span>${l}<span class="block text-sm text-[var(--mute)]">${d}</span></span><input type="checkbox" data-c="${k}" class="w-5 h-5 accent-teal-700" ${S.consent[k]?'checked':''}></label>`).join('')}</section>
+ `<section class="card p-5 space-y-4">${[['ai','Use the AI assistant','Off unless you switch it on. When on, what you type in chat is sent through this site’s server to Doctine’s AI provider (Anthropic, United States). Saved reports and profile details go only if you tick the box in that chat, and then only matching values, your age and allergies. Photos and scanned pages are sent only when you choose “Send to AI” each time. Emergency guidance works either way.'],['analytics','Help improve Doctine','Off unless you switch it on. When on, Doctine counts how features are used (for example “a PDF was read” or “records were exported”) and when uploads fail, against your account. It never records what your documents, values, searches or messages say.'],...(S.cloud?[['history','Save my chats to my account','Off unless you switch it on. When on, your messages and Doctine’s replies are stored in your account so you can reopen them under Chat → Saved chats. Switching it off stops saving; chats already saved stay until you delete them.']]:[])].map(([k,l,d])=>`<label class="flex items-center justify-between gap-4"><span>${l}<span class="block text-sm text-[var(--mute)]">${d}</span></span><input type="checkbox" data-c="${k}" class="w-5 h-5 accent-teal-700" ${S.consent[k]?'checked':''}></label>`).join('')}</section>
  <section class="card p-5 space-y-3"><h2 class="text-xl">Appearance</h2><div class="flex gap-2 flex-wrap">${[['auto','Match my device'],['light','Light'],['dark','Dark']].map(([v,l])=>`<button class="btn ${themePref()===v?'tl':''}" data-theme="${v}" aria-pressed="${themePref()===v}">${l}</button>`).join('')}</div></section>
  <section class="card p-5 space-y-3"><h2 class="text-xl">Your data</h2><p class="text-sm text-[var(--mute)]">${S.sample?'You are viewing sample data. Nothing is saved.':S.cloud?'Saved to your Doctine account, which only you can open.':'Saved only in this browser on this device.'} Export shows everything as text you can copy. The .zip download also includes your original PDFs and photos.</p>${S.zipNote?`<p class="text-sm" role="status">${esc(S.zipNote)}</p>`:''}<p class="text-sm"><a class="underline" href="https://doctine.com/privacy/" target="_blank" rel="noopener">Privacy policy</a> · <a class="underline" href="https://doctine.com/terms/" target="_blank" rel="noopener">Terms</a> · Questions or a complaint: <a class="underline" href="mailto:support@doctine.com">support@doctine.com</a></p>${S.cloud?`<p class="text-sm" id="syncst" role="status">${esc(syncText())}</p>`:''}
  ${S.cloud?`<p class="text-sm text-[var(--mute)]">Deleting your account permanently removes your profile, reports, original documents and photos, medicines, dose history, saved chats and your record of choices. It can't be undone, so export first if you want a copy. Copies in our providers' backups are removed on their normal schedules.</p>`:''}<div class="flex gap-2 flex-wrap"><button class="btn" id="exp2">Export my data</button><button class="btn" id="expzip" ${S.zipping?'disabled':''}>${S.zipping?'Preparing download…':'Download with original files (.zip)'}</button>${S.cloud?'<button class="btn" id="histall">Delete all saved chats</button>':''}<button class="btn dg" id="wipe">${S.sample?'Reset sample data':'Delete my account and data'}</button></div>
@@ -1050,21 +1225,79 @@ const setView=()=>wrap(head('Settings','Permissions and your data.')+(S.cloud?''
  ${S.cloud&&localAccounts().length?`<section class="card p-5 space-y-3"><h2 class="text-xl">Records saved in this browser</h2><p class="text-sm text-[var(--mute)]">This browser still has records from Doctine’s earlier demo accounts. You can copy them into your account. Nothing is copied unless you choose an account and enter its password. Sample data is never copied.</p>
  <ul class="divide-y divide-[var(--line)] text-sm">${localAccounts().map(a=>`<li class="py-2 flex justify-between items-center gap-3 flex-wrap"><span>${esc(a.email)} · ${a.n} record${a.n===1?'':'s'}, ${a.m} medicine${a.m===1?'':'s'}</span><button class="btn" data-impsel="${esc(a.email)}">Copy into my account</button></li>`).join('')}</ul>
  ${S.impSel?`<div class="flex gap-2 flex-wrap items-center"><input class="inp" style="max-width:16rem" type="password" id="imppw" placeholder="Password for ${esc(S.impSel)}" aria-label="Password used in this browser" autocomplete="off"><button class="btn pri" id="impl" data-email="${esc(S.impSel)}">Copy records</button></div>`:''}${S.impMsg?`<p class="text-sm" role="status">${esc(S.impMsg)}</p>`:''}</section>`:''}`);
+/* Help and feedback (signed-in accounts only). Requests and feedback go to the Doctine team through database functions
+   that can only read or write the signed-in person's own requests, and are rate-limited there. Text only: no files, and
+   people are asked not to include health details. Staff replies appear here; internal staff notes never do. */
+const SUPCAT=[['account','My account'],['sign_in','Signing in'],['records','Records'],['documents','Documents and files'],['medicines','Medicines and reminders'],['privacy','Privacy and my data'],['bug','Something is broken'],['other','Something else']];
+const SUPST={open:'Open',waiting:'Doctine replied',resolved:'Resolved',closed:'Closed'};
+const FBKIND=[['idea','An idea'],['problem','A problem'],['praise','Something I like'],['other','Other']];
+const FBAREA=[['records','Records'],['documents','Documents'],['medicines','Medicines'],['reminders','Reminders and alarms'],['profile','Health profile'],['assistant','AI assistant'],['sign_in','Signing in'],['other','Other']];
+async function helpLoad(){if(!S.cloud||!CLOUD.sb)return;const{data,error}=await CLOUD.sb.rpc('support_mine');if(!S.help||S.help.uid!==CLOUD.uid)return;S.help={...S.help,loading:false,loaded:true,list:error?null:(data||[]),err:error?'Your earlier requests couldn’t be loaded right now.':''};if(S.view==='settings')render()}
+function helpCard(){if(!S.cloud||S.sample)return'';if(S.help&&S.help.uid!==CLOUD.uid)S.help=null;const h=S.help||{uid:CLOUD.uid};if(!h.loaded&&!h.loading){S.help={...h,loading:true};setTimeout(helpLoad,0)}
+ const sel=(id,opts)=>`<select class="inp mt-1" id="${id}">${opts.map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select>`;
+ return `<section class="card p-5 space-y-3" id="help"><h2 class="text-xl">Help and feedback</h2>
+ <p class="text-sm text-[var(--mute)]">Write to the Doctine team. Please don’t include test results, prescriptions or other health details: we can help without them, and these messages are not part of your records.</p>
+ ${h.msg?`<p class="text-sm font-medium" role="status">${esc(h.msg)}</p>`:''}${h.err?`<div class="warn">${esc(h.err)}</div>`:''}
+ <details${h.form==='support'?' open':''}><summary class="font-medium cursor-pointer">Contact support</summary><div class="space-y-2 mt-2">
+  <label class="text-sm" for="supcat">Topic</label>${sel('supcat',SUPCAT)}
+  <label class="text-sm" for="supsub">Subject</label><input class="inp mt-1" id="supsub" maxlength="120" autocomplete="off">
+  <label class="text-sm" for="supbody">Message</label><textarea class="inp mt-1 h-24" id="supbody" maxlength="2000"></textarea>
+  <button class="btn pri" id="supsend">Send to support</button></div></details>
+ <details${h.form==='feedback'?' open':''}><summary class="font-medium cursor-pointer">Send feedback or an idea</summary><div class="space-y-2 mt-2">
+  <label class="text-sm" for="fbkind">What is it?</label>${sel('fbkind',FBKIND)}
+  <label class="text-sm" for="fbarea">Which part of Doctine?</label>${sel('fbarea',FBAREA)}
+  <label class="text-sm" for="fbbody">Your feedback</label><textarea class="inp mt-1 h-24" id="fbbody" maxlength="1000"></textarea>
+  <button class="btn" id="fbsend">Send feedback</button></div></details>
+ ${h.list&&h.list.length?`<h3 class="font-medium">Your requests</h3><ul class="divide-y divide-[var(--line)]">${h.list.map(r=>`<li class="py-2 space-y-2"><div class="flex justify-between items-center gap-2 flex-wrap"><span><b>${esc(r.subject)}</b> <span class="text-xs text-[var(--mute)]">${esc(r.ref)} · ${new Date(r.created_at).toLocaleDateString()}</span></span><span class="text-xs">${SUPST[r.status]||esc(r.status)}</span></div>
+  <details${h.openReq===r.id?' open':''}><summary class="text-sm cursor-pointer">Conversation (${r.messages.length})</summary><div class="space-y-2 mt-2">${r.messages.map(m=>`<div class="text-sm"><span class="text-xs text-[var(--mute)]">${esc(m.from)} · ${new Date(m.at).toLocaleString()}</span><div class="whitespace-pre-wrap">${esc(m.body)}</div></div>`).join('')}
+  ${r.status==='closed'?'':`<label class="text-sm" for="suprep-${esc(r.id)}">Reply</label><textarea class="inp mt-1 h-24" id="suprep-${esc(r.id)}" maxlength="2000"></textarea><button class="btn" data-supreply="${esc(r.id)}">Send reply</button>`}</div></details></li>`).join('')}</ul>`:''}
+ </section>`}
+function whatsNewCard(){const w=CLOUD.whatsNew||[];if(!w.length)return'';return `<section class="card p-5 space-y-3"><h2 class="text-xl">What’s new</h2><ul class="divide-y divide-[var(--line)]">${w.map(n=>`<li class="py-2"><b>${esc(n.title)}</b> <span class="text-xs text-[var(--mute)]">${new Date(n.published_at).toLocaleDateString()}</span><div class="text-sm whitespace-pre-wrap">${esc(n.body)}</div></li>`).join('')}</ul></section>`}
+async function helpSend(kind,t){const v=id=>($('#'+id)||{}).value||'';t.disabled=true;let r;
+ try{if(kind==='support'){const sub=v('supsub').trim(),body=v('supbody').trim();if(sub.length<3||body.length<10){t.disabled=false;return toast('Please add a subject and a few words about the problem.')}r=await CLOUD.sb.rpc('support_submit',{p_category:v('supcat'),p_subject:sub,p_body:body})}
+  else if(kind==='feedback'){const body=v('fbbody').trim();if(body.length<3){t.disabled=false;return toast('Please write a few words.')}r=await CLOUD.sb.rpc('feedback_submit',{p_kind:v('fbkind'),p_area:v('fbarea'),p_body:body})}
+  else{const body=v('suprep-'+kind).trim();if(!body){t.disabled=false;return}r=await CLOUD.sb.rpc('support_reply',{p_id:kind,p_body:body});S.help={...(S.help||{}),openReq:kind}}}
+ catch(e){r={error:e}}
+ t.disabled=false;const d=r&&r.data;
+ if(r.error||!d||d.ok===false){S.help={...(S.help||{}),msg:'',err:d&&d.error==='too_many'?'You’ve sent a lot today. Please try again tomorrow, or wait for a reply.':'That couldn’t be sent. Please check your connection and try again.'};return render()}
+ S.help={...(S.help||{}),err:'',form:null,msg:kind==='support'?`Sent. Your reference is ${d.ref}. Replies appear below.`:kind==='feedback'?'Thank you. Your feedback went to the Doctine team.':'Reply sent.'};helpLoad()}
 const nowHM=()=>{const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 function dueNow(){const d=today(),n=nowHM();
  return S.meds.filter(m=>isOn(m,d)).flatMap(m=>m.times.map(t=>({m,t,k:m.id+'@'+t+'@'+d}))).filter(x=>{const s=S.doses[x.k];if(x.t>n)return false;if(!s)return true;return s.startsWith('Snoozed until ')&&s.slice(-5)<=n}).sort((a,b)=>a.t.localeCompare(b.t))}
+/* Platform switches set by the Doctine team (admin console). Missing settings mean "on", except the assistant, which
+   /api/config already reports as aiAvailable. Uploads and the assistant are also refused by the server and database. */
+const feat=k=>!(CLOUD.features&&CLOUD.features[k]===false);
+const uploadsOn=()=>feat('document_upload')&&!(CLOUD.maint&&CLOUD.maint.on);
+/* Optional product measurements: sent only for a signed-in account that switched on "Help improve Doctine" in Settings.
+   Short codes and numbers only (the server refuses anything else): never titles, values, names, search words or messages.
+   The key makes retries count once. */
+function track(name,props={},key){try{if(!S.cloud||!S.consent||!S.consent.analytics||!CLOUD.sb)return;
+ key=key||name+':'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+ CLOUD.sb.auth.getSession().then(({data})=>{const t=data&&data.session&&data.session.access_token;if(!t)return;
+  fetch(API+'/api/events',{method:'POST',keepalive:true,headers:{'content-type':'application/json',authorization:'Bearer '+t},body:JSON.stringify({name,props,key})}).catch(()=>{})}).catch(()=>{})}catch{}}
+/* On the sign-in screen: maintenance and announcements meant for everyone (not only signed-in people). */
+function authNotices(){if(!CLOUD.on)return'';let h='';
+ if(CLOUD.maint&&CLOUD.maint.on)h+=`<div class="warn" role="status" style="margin-bottom:1rem"><b>Maintenance.</b> ${esc(CLOUD.maint.message||'Doctine is being updated.')}</div>`;
+ for(const n of CLOUD.notices||[])if(n&&n.audience==='all')h+=`<div class="card p-3" role="status" style="margin-bottom:1rem;font-size:.9rem"><b>${esc(n.title)}</b>${n.body?' '+esc(n.body):''}</div>`;
+ return h}
+function noticesHTML(){if(!CLOUD.on)return'';let h='';
+ if(CLOUD.maint&&CLOUD.maint.on)h+=`<div class="warn m-3" role="status"><b>Maintenance.</b> ${esc(CLOUD.maint.message||'Doctine is being updated.')} Your records are safe and you can keep using Doctine; new file uploads and the assistant are paused for now.</div>`;
+ let gone=[];try{gone=JSON.parse(localStorage.getItem('doctine:notices-dismissed')||'[]')}catch{}
+ for(const n of CLOUD.notices||[])if(n&&n.id&&!gone.includes(n.id))h+=`<div class="${n.kind==='maintenance'?'warn':'card'} m-3 p-3 flex items-start justify-between gap-3" role="status"><span><b>${esc(n.title)}</b>${n.body?' '+esc(n.body):''}</span><button class="btn" data-notice="${esc(n.id)}" aria-label="Dismiss this notice">Dismiss</button></div>`;
+ return h}
 function bannerHTML(){
- let h=S.cloud&&CLOUD.err?`<div class="err m-3 flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>Some changes aren’t saved to your account yet.</b> ${esc(CLOUD.err)}. Doctine keeps retrying; don’t close this page.</span><button class="btn" data-syncnow="1">Try again now</button></div>`:'';
+ let h=noticesHTML()+(S.cloud&&CLOUD.err?`<div class="err m-3 flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>Some changes aren’t saved to your account yet.</b> ${esc(CLOUD.err)}. Doctine keeps retrying; don’t close this page.</span><button class="btn" data-syncnow="1">Try again now</button></div>`:'');
  h+=S.email&&!S.cloud&&!S.sample&&!S.guest&&(S.view==='home'||S.view==='reports')?'<div class="warn m-3">Demo account: saved only in this browser on this device, not in a Doctine account.</div>':'';
  h+=S.guest?'<div class="warn m-3">You’re not signed in. Nothing here is saved. If you allow the AI assistant, your messages go to an AI provider through this site’s server.</div>':S.sample?'<div class="warn m-3">Preview with made-up sample data. Nothing you change is saved.</div>':'';
  dueNow().slice(0,2).forEach(({m,t,k})=>{h+=`<div class="m-3 card p-3 flex flex-wrap items-center justify-between gap-2" role="alert"><div><b>Time for ${esc(m.name)}</b> <span class="text-sm text-[var(--mute)]">${esc(m.dose)} · scheduled ${esc(t)}.<span class="dnote">${alarmNote()}</span></span></div><div class="flex gap-2"><button class="btn tl" data-d="${k}|Taken">Taken</button><button class="btn" data-d="${k}|Skipped">Skip</button><button class="btn" data-d="${k}|Snoozed">Snooze 10 min</button></div></div>`});
  if(DoctineAlarms.ringing())h+='<div class="m-3 err flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>🔔 Alarm ringing.</b> It stops when you respond, or after 2 minutes.</span><button class="btn dg" data-stopalarm="1">Stop alarm</button></div>';
  return h}
 const alarmCard=()=>{const a=S.alarmStatus||{},nat=DoctineAlarms.isNative();let st='';
- if(nat){st=a.state==='scheduled'?`<p class="text-sm"><b>${a.count}</b> upcoming dose alarm${a.count===1?'':'s'} set on this phone${a.next?`, the next at ${esc(new Date(a.next).toLocaleString([],{weekday:'short',hour:'2-digit',minute:'2-digit'}))}`:''}. They are re-planned whenever you change a medicine or log a dose.</p>`:a.state==='permission_denied'?'<p class="err">Notifications are blocked for Doctine, so no alarms can ring. Turn them on in your phone’s Settings, then tap the button below.</p>':a.state==='exact_alarm_needed'?'<p class="warn">Android needs the “Alarms &amp; reminders” permission so alarms ring on time. <button class="underline" id="alarmexact">Open that setting</button></p>':'<p class="text-sm text-[var(--mute)]">Alarms are not set yet. Sign in with an account and add a medicine.</p>'}
- return `<p class="text-sm text-[var(--mute)]">${nat?'This is the phone app. Dose alarms are handed to your phone’s own alarm system, so they can ring when Doctine is closed. Whether they sound still depends on your phone: notification permission, silent mode or Focus, and battery-saver settings. Doctine cannot see whether an alarm was delivered, and it does not know if you took the dose.':'In a browser, the alarm rings (sound and vibration) only while this page is open, and the sound needs you to have tapped something on the page first. For alarms that work with the app closed, use the phone app (iPhone or Android).'}</p>${st}<div class="flex items-center gap-3 flex-wrap"><button class="btn" id="alarmtest">Test alarm (5 seconds)</button>${nat?'<button class="btn" id="alarmenable">Check and allow alarms</button>':''}</div>${S.alarmTest?`<p class="text-sm" role="status">${esc(S.alarmTest)}</p>`:''}`};
+ if(nat){st=a.state==='scheduled'?`<p class="text-sm"><b>${a.count}</b> upcoming dose alarm${a.count===1?'':'s'} set on this ${NATIVE==='macos'?'Mac':'phone'}${a.next?`, the next at ${esc(new Date(a.next).toLocaleString([],{weekday:'short',hour:'2-digit',minute:'2-digit'}))}`:''}. They are re-planned whenever you change a medicine or log a dose.</p>`:a.state==='not_enabled'?'<p class="text-sm">Alarms are off on this device. Turn them on to be reminded of scheduled doses.</p>':a.state==='permission_denied'?`<p class="err">Notifications are blocked for Doctine, so no alarms can ring. Turn them on in ${NATIVE==='macos'?'System Settings → Notifications → Doctine':'your phone’s Settings'}, then tap the button below.</p>`:a.state==='exact_alarm_needed'?'<p class="warn">Android needs the “Alarms &amp; reminders” permission so alarms ring on time. <button class="underline" id="alarmexact">Open that setting</button></p>':'<p class="text-sm text-[var(--mute)]">Alarms are not set yet. Sign in with an account and add a medicine.</p>'}
+ return `<p class="text-sm text-[var(--mute)]">${nat?(NATIVE==='macos'?'Dose alarms appear as Mac notifications while Doctine is running (closing the window keeps it running; quitting stops alarms). Whether they show also depends on System Settings → Notifications and Focus. Reminders help you stay organised; they are not medical advice, Doctine cannot see whether a notification was seen, and it does not know if you took the dose.':'This is the phone app. Dose alarms are handed to your phone’s own alarm system, so they can ring when Doctine is closed. Whether they sound still depends on your phone: notification permission, silent mode or Focus, and battery-saver settings. Reminders help you stay organised; they are not medical advice. Doctine cannot see whether an alarm was delivered, and it does not know if you took the dose.'):'In a browser, the alarm rings (sound and vibration) only while this page is open, and the sound needs you to have tapped something on the page first. For alarms that work with the app closed, use the phone app (iPhone or Android).'}</p>${st}<div class="flex items-center gap-3 flex-wrap"><button class="btn" id="alarmtest">Test alarm (5 seconds)</button>${nat?(alarmsOn()?'<button class="btn" id="alarmenable">Check alarms</button><button class="btn" id="alarmoff">Turn off alarms</button>':'<button class="btn pri" id="alarmenable">Turn on alarms</button>'):''}</div>${S.alarmTest?`<p class="text-sm" role="status">${esc(S.alarmTest)}</p>`:''}`};
 let _asig='',_at=0;
-function alarmSync(){if(!DoctineAlarms.isNative())return;clearTimeout(_at);_at=setTimeout(async()=>{try{const live=S.email&&!S.sample&&!S.guest;const sig=live?JSON.stringify([DoctineAlarms.plan(S.meds,S.doses,new Date()).map(n=>n.id)]):'off';if(sig===_asig)return;_asig=sig;if(!live){await DoctineAlarms.clearNative();S.alarmStatus={state:'off',count:0};return}S.alarmStatus=await DoctineAlarms.syncNative(S.meds,S.doses,new Date());if(S.view==='settings')render()}catch(e){S.alarmStatus={state:'error',count:0}}},500)}
+const alarmsOn=()=>{try{return localStorage.getItem('doctine:alarms-on')==='1'}catch{return false}};
+function alarmSync(){if(!DoctineAlarms.isNative())return;clearTimeout(_at);_at=setTimeout(async()=>{try{const live=S.email&&!S.sample&&!S.guest&&alarmsOn();const sig=live?JSON.stringify([DoctineAlarms.plan(S.meds,S.doses,new Date()).map(n=>n.id)]):'off';if(sig===_asig)return;_asig=sig;if(!live){await DoctineAlarms.clearNative();S.alarmStatus={state:alarmsOn()?'off':'not_enabled',count:0};return}S.alarmStatus=await DoctineAlarms.syncNative(S.meds,S.doses,new Date());if(S.view==='settings')render()}catch(e){S.alarmStatus={state:'error',count:0}}},500)}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){_asig='';alarmSync()}});
 document.addEventListener('pointerdown',()=>DoctineAlarms.unlock(),{once:true,capture:true});
 const alarmNote=()=>{const a=S.alarmStatus;return a&&a.state==='scheduled'?' An alarm is also set on this phone.':' This reminder only shows while Doctine is open.'};
@@ -1103,12 +1336,17 @@ async function exportZip(){if(S.zipping)return;S.zipping=true;render();
     files.push({name:`${dir}/${nm}.${ext[b.type]||'jpg'}`,data:new Uint8Array(await b.arrayBuffer())})}}
   const n=files.length-1;
   files.push({name:'README.txt',data:enc.encode(`Doctine export, ${new Date().toISOString()}\n\ndoctine-data.json: your profile, records, medicines, dose history, chat and choices.\nfiles/: ${n} original document${n===1?'':'s'} and photo${n===1?'':'s'}, one folder per record.\n`+(miss.length?`\nThese files couldn't be fetched (check your connection and export again):\n${miss.map(m=>'- '+m).join('\n')}\n`:''))});
-  const url=URL.createObjectURL(ZIP.make(files)),a=document.createElement('a');a.href=url;a.download=`doctine-export-${today()}.zip`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  if(NATIVE&&window.DoctineNative){const ok=await DoctineNative.saveFile(`doctine-export-${today()}.zip`,ZIP.make(files));if(!ok){S.zipNote='The export wasn’t saved.';return}track('record_exported',{format:'zip'})}else{const url=URL.createObjectURL(ZIP.make(files)),a=document.createElement('a');a.href=url;a.download=`doctine-export-${today()}.zip`;document.body.appendChild(a);a.click();a.remove();track('record_exported',{format:'zip'});setTimeout(()=>URL.revokeObjectURL(url),60000)}
   S.zipNote=miss.length?`Downloaded, but ${miss.length} file${miss.length===1?'':'s'} couldn't be fetched. README.txt in the download lists them.`:`Downloaded doctine-export-${today()}.zip with your data and ${n} file${n===1?'':'s'}.`}
  catch(e){S.zipNote='The download couldn’t be made. Please try again.'}
  finally{S.zipping=false;render()}}
 document.addEventListener('click',async e=>{const t=e.target.closest('button');if(S.attMenu&&(!t||!['catt','attcam','attfile'].includes(t.id))){S.attMenu=false;render();if(!t)return}if(!t)return;
- if(t.dataset.auth){S.auth=t.dataset.auth;setHash(S.auth==='about');render();const a=$('#auth');if(a)a.scrollTop=0;return}
+ if(t.dataset.auth){S.auth=t.dataset.auth;S.resendTo=null;S.authTitle='';S.authMsg='';setHash(S.auth==='about');render();const a=$('#auth');if(a)a.scrollTop=0;const h=document.querySelector('.au-card h1');if(h){h.tabIndex=-1;h.focus({preventScroll:true})}return}
+ if(t.id==='retrycloud'){location.reload();return}
+ if(t.id==='npcancel'){CLOUD.recovering=false;CLOUD.recoverEmail='';try{await CLOUD.sb.auth.signOut({scope:'local'})}catch{}S.auth='login';render();return}
+ if(t.id==='expcont'&&CLOUD.keepUser){const u=CLOUD.keepUser;CLOUD.keepUser=null;S.auth='login';S.loadingCloud=true;render();return cloudEnter(u)}
+ if(t.id==='pwtoggle'||t.id.startsWith('pwtoggle-')){const i=document.getElementById(t.getAttribute('aria-controls'));if(i){const show=i.type==='password';i.type=show?'text':'password';t.setAttribute('aria-pressed',String(show));t.textContent=show?'Hide':'Show';t.setAttribute('aria-label',show?'Hide password':'Show password');i.focus()}return}
+ if(t.id==='resend'&&CLOUD.on&&S.resendTo){t.disabled=true;const say=m=>{const a=$('#aerr');if(a)a.innerHTML=`<div class="au-ok" role="status">${esc(m)}</div>`};try{const{error}=await CLOUD.sb.auth.resend({type:'signup',email:S.resendTo,options:{emailRedirectTo:RETURN_URL()}});say(error?(/rate|seconds|too many/i.test(error.message)?'Please wait a minute before asking for another email.':'The email couldn’t be sent. Please try again shortly.'):'Sent. Check your inbox for the newest email from Doctine.')}catch{say('Network problem. Check your connection and try again.')}t.disabled=false;return}
  if(t.id==='google')return googleSignIn();if(t.id==='guest')return enter(null,blank('Guest'),false,true);
  if(t.id==='samp')return enter(null,sampleData(),true);
  if(t.id==='erase'){if(confirm('Erase all demo accounts stored in this browser?')){DB={users:{}};store.set(DB);toast('Demo accounts erased.');S.auth='register';render()}return}
@@ -1143,7 +1381,10 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='medscan')return quickScan(true,(rec,doc)=>{S.medScan={rid:rec.id,title:rec.title,meds:(doc&&doc.medicines||[]).filter(m=>m.name),added:{}}});
  if(t.id==='msdone'){S.medScan=null;return render()}
  if(t.dataset.msadd!==undefined){const m=S.medScan.meds[+t.dataset.msadd];S.medEdit=null;S.medDraft={name:m.name,dose:[m.strength,m.form,m.timing].filter(Boolean).join(', ')||m.raw||'',freq:'daily',days:[],start:today(),end:durEnd(m.duration),times:freqTimes(m.frequency),src:{doc:S.medScan.rid,raw:m.raw||'',conf:m.confidence||'low',alts:m.alternatives||[]}};S.medScan.pending=+t.dataset.msadd;render();const f=$('#mf');if(f)f.scrollIntoView({behavior:'smooth'});return}
- if(t.id==='pwmail'&&S.cloud){t.disabled=true;const{error}=await CLOUD.sb.auth.resetPasswordForEmail(CLOUD.email||S.email,{redirectTo:location.origin+location.pathname});S.acctMsg=error?'The email couldn’t be sent: '+error.message:'We sent a link to '+(CLOUD.email||S.email)+'. Open it on this device to set a new password.';return render()}
+ if(t.id==='supsend'&&S.cloud)return helpSend('support',t);
+ if(t.id==='fbsend'&&S.cloud)return helpSend('feedback',t);
+ if(t.dataset.supreply&&S.cloud)return helpSend(t.dataset.supreply,t);
+ if(t.id==='pwmail'&&S.cloud){t.disabled=true;const{error}=await CLOUD.sb.auth.resetPasswordForEmail(CLOUD.email||S.email,{redirectTo:RESET_URL()});S.acctMsg=error?'The email couldn’t be sent: '+error.message:'We sent a link to '+(CLOUD.email||S.email)+'. Open it on this device to set a new password.';return render()}
  if(t.id==='outall'&&S.cloud){const n=unsavedCount();if(!confirm(n?'Some changes haven’t been saved yet and will be lost. Sign out on all devices anyway?':'Sign out of Doctine on every device, including this one?'))return;closeNav();leaveCloud();await CLOUD.sb.auth.signOut({scope:'global'}).catch(()=>{});return}
  if(t.dataset.opdf){const id=t.dataset.opdf;(async()=>{const b=await IMG.get(`orig:${id}:0`).catch(()=>null)||await cloudImage(`orig:${id}:0`);if(!b)return toast('The original PDF isn’t available on this device right now. Check your connection and try again.');const u=URL.createObjectURL(new Blob([b],{type:'application/pdf'}));const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)})();return}
  if(t.dataset.vs){const[id,i]=t.dataset.vs.split('|'),r=S.reports.find(x=>x.id==id);if(!r)return;const ov=document.createElement('div');ov.className='scanov';const show=k=>{ov.innerHTML=`<div class="scanbar"><span class="text-sm" style="color:#cdd8e4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title)}</span><span style="display:flex;gap:.5rem"><button class="btn" data-k="${k==='scan'?'orig':'scan'}">${k==='scan'?'Original photo':'Cleaned page'}</button><button class="btn" data-k="x">Close</button></span></div><div class="scanmid"><img class="scanimg" data-scanimg="${k}:${r.id}:${i}" alt="${esc(r.title)}"></div>`;hydrateImgs()};show('scan');
@@ -1158,10 +1399,12 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
   catch{S.chk=errText('network')}render();return}
  if(t.dataset.theme){try{localStorage.setItem('doctine:theme',t.dataset.theme)}catch{}applyTheme();return render()}
  if(t.id==='notif'){if(!('Notification' in window))return;try{const r=await Notification.requestPermission();toast(r==='granted'?'Notifications allowed.':'Notifications were not allowed.')}catch{toast('This browser could not ask for permission.')}return render()}
+ if(t.dataset.notice){try{const g=JSON.parse(localStorage.getItem('doctine:notices-dismissed')||'[]');g.push(t.dataset.notice);localStorage.setItem('doctine:notices-dismissed',JSON.stringify(g.slice(-50)))}catch{}return render()}
  if(t.dataset.syncnow){t.disabled=true;await cloudSyncNow();toast(CLOUD.err?'Still not saved. Check your connection.':'Saved to your account.');return render()}
  if(t.dataset.stopalarm){DoctineAlarms.stop();return render()}
  if(t.id==='alarmtest'){DoctineAlarms.start(5000);S.alarmTest=DoctineAlarms.audioReady()?'Ringing now. You should hear it and feel a vibration if your device supports it. If you hear nothing, check the volume and silent switch.':'Started, but this browser has not allowed sound yet. Tap anywhere on the page, then press the button again. Vibration works on most Android phones, not on iPhone browsers.';return render()}
- if(t.id==='alarmenable'){S.alarmStatus=await DoctineAlarms.syncNative(S.meds,S.doses);return render()}
+ if(t.id==='alarmenable'){try{localStorage.setItem('doctine:alarms-on','1')}catch{}_asig='';S.alarmStatus=await DoctineAlarms.syncNative(S.meds,S.doses);return render()}
+ if(t.id==='alarmoff'){try{localStorage.removeItem('doctine:alarms-on')}catch{}_asig='';await DoctineAlarms.clearNative();S.alarmStatus={state:'not_enabled',count:0};toast('Alarms turned off on this device.');return render()}
  if(t.id==='alarmexact'){await DoctineAlarms.openExactAlarmSettings();return}
  if(t.id==='notiftest'){notify('Doctine test','If you can see this, notifications work while Doctine is open.');return}
  if(t.id==='exp'||t.id==='exp2')return exportJson();
@@ -1181,7 +1424,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
   const rec={title:u.title.trim(),cat:u.cat,date:u.date,lab:u.lab.trim(),fields,hash:u.hash};const ed=S.reports.find(x=>x.id===u.editId);if(ed){Object.assign(ed,rec);if(ed.scan&&!ed.checked)ed.checked=true;toast(ed.scan?'Details checked and saved':'Report updated')}else{const id=Date.now(),pdf=u.file&&(u.file.type==='application/pdf'||/\.pdf$/i.test(u.file.name))?u.file:null;if(pdf){try{await IMG.put(`orig:${id}:0`,new Blob([pdf],{type:'application/pdf'}));rec.orig='pdf'}catch{toast('The original PDF couldn’t be kept in this browser; the values you confirmed are saved.')}}S.reports.unshift({id,...rec});toast('Report saved')}S.upload=null;S.q='';render()}
 });
 document.addEventListener('submit',async e=>{e.preventDefault();const id=e.target.id,F=new FormData(e.target);
- if(id==='hs'){S.q=String(F.get('hq')).trim();return go('reports')}
+ if(id==='hs'){S.q=String(F.get('hq')).trim();if(S.q)track('search_performed',{scope:'home'},'search:'+today());return go('reports')}
  if(id==='cf'){const i=$('#ci'),v=i.value;i.value='';send(v)}
  if(id==='mf'){captureMed();const d=S.medDraft,times=[...new Set(d.times.filter(Boolean))].sort(),st=d.start,en=d.end,err=m=>$('#merr').innerHTML=`<div class="err" role="alert">${esc(m)}</div>`;
   if(!d.name.trim()||!d.dose.trim())return err('Enter the medicine name and the dose exactly as prescribed.');
@@ -1192,21 +1435,31 @@ document.addEventListener('submit',async e=>{e.preventDefault();const id=e.targe
   if(d.src&&d.src.conf!=='high'&&!F.get('srcok'))return err('Tick the box once you’ve checked this medicine against the prescription.');
   const rec={name:d.name.trim(),dose:d.dose.trim(),times,start:st,end:en,freq,days:freq==='weekly'?days:[],...(d.src?{src:{doc:d.src.doc,raw:d.src.raw,conf:d.src.conf}}:{})};
   const ed=S.meds.find(x=>x.id==S.medEdit);if(ed){Object.assign(ed,rec);toast('Medicine updated')}else{S.meds.push({id:Date.now(),status:'active',...rec});toast('Medicine added')}if(S.medScan&&S.medScan.pending!=null){S.medScan.added[S.medScan.pending]=1;S.medScan.pending=null}S.medEdit=null;S.medDraft=null;render()}
- if(CLOUD.on&&['rf','lf','ff','npf'].includes(id)){const err=m=>{const a=$('#aerr');if(a)a.innerHTML=`<div class="err" role="alert">${esc(m)}</div>`},email=String(F.get('email')||'').trim().toLowerCase(),pw=String(F.get('pw')||''),btn=e.target.querySelector('button.pri');
+ if(CLOUD.on&&['rf','lf','ff','npf'].includes(id)){e.target.querySelectorAll('[aria-invalid]').forEach(x=>{x.removeAttribute('aria-invalid');x.removeAttribute('aria-errormessage')});const err=(m,field,extra='')=>{const a=$('#aerr');if(a)a.innerHTML=`<div class="au-err" role="alert" id="au-err">${esc(m)}${extra}</div>`;const f=field&&e.target.querySelector(`[name=${field}]`);if(f){f.setAttribute('aria-invalid','true');f.setAttribute('aria-errormessage','au-err');f.focus()}},email=String(F.get('email')||'').trim().toLowerCase(),pw=String(F.get('pw')||''),btn=e.target.querySelector('button.pri');
   const nice=x=>/invalid login/i.test(x)?'Email or password is incorrect.':/already registered|already exists/i.test(x)?'An account with that email already exists. Try signing in.':/confirm/i.test(x)?'Please confirm your email first, using the link we sent you.':/rate|too many/i.test(x)?'Too many attempts. Please wait a minute and try again.':x;
-  if(id!=='npf'&&!/^\S+@\S+\.\S+$/.test(email))return err('Enter a valid email address.');
-  if((id==='rf'||id==='npf')&&pw.length<8)return err('Use at least 8 characters.');
-  if(btn)btn.disabled=true;
+  if(id!=='npf'&&!/^\S+@\S+\.\S+$/.test(email))return err(email?'Enter a valid email address, like name@example.com.':'Enter your email address.','email');
+  if(id==='lf'&&!pw)return err('Enter your password.','pw');
+  if((id==='rf'||id==='npf')&&pw.length<8)return err('Use at least 8 characters.','pw');
+  const label=btn&&btn.textContent;if(btn){btn.disabled=true;btn.setAttribute('aria-busy','true');btn.innerHTML=`<span class="au-spin" aria-hidden="true"></span>${esc(btn.dataset.busy||'Working…')}`}
   try{
-   if(id==='lf'){const{data,error}=await CLOUD.sb.auth.signInWithPassword({email,password:pw});if(error)return err(nice(error.message));S.loadingCloud=true;render();return cloudEnter(data.user)}
-   if(id==='rf'){const name=String(F.get('name')||'').trim();if(!name)return err('Please enter your name.');if(!F.get('ack'))return err('Please tick the box to continue.');
-    const{data,error}=await CLOUD.sb.auth.signUp({email,password:pw,options:{data:{full_name:name,agreed_at:new Date().toISOString(),agreement:AGREEMENT_V},emailRedirectTo:location.origin+location.pathname}});if(error)return err(nice(error.message));
-    if(!data.session){S.auth='check';S.authMsg='We sent a confirmation link to '+email+'. Open it, then sign in here.';return render()}
+   if(id==='lf'){const{data,error}=await CLOUD.sb.auth.signInWithPassword({email,password:pw});if(error){if(/not confirmed|confirm/i.test(error.message)){S.resendTo=email;return err('Please confirm your email first, using the link we sent you.',null,' <button type="button" class="au-link" id="resend">Send the link again</button>')}return err(nice(error.message))}S.loadingCloud=true;render();return cloudEnter(data.user)}
+   if(id==='rf'){const name=String(F.get('name')||'').trim();if(!name)return err('Please enter your name.','name');if(!F.get('ack'))return err('Please tick the box to continue.','ack');
+    const{data,error}=await CLOUD.sb.auth.signUp({email,password:pw,options:{data:{full_name:name,agreed_at:new Date().toISOString(),agreement:AGREEMENT_V},emailRedirectTo:RETURN_URL()}});if(error)return err(nice(error.message));
+    if(!data.session){S.auth='check';S.authTitle='Confirm your email';S.resendTo=email;S.authMsg='We sent a confirmation link to '+email+'. Open it on this device, then sign in here.';return render()}
     await CLOUD.sb.from('consents').upsert([{user_id:data.user.id,kind:'cloud_storage',granted:true}],{onConflict:'user_id,kind',ignoreDuplicates:true});
     S.loadingCloud=true;render();return cloudEnter(data.user)}
-   if(id==='ff'){const{error}=await CLOUD.sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)return err(nice(error.message));S.auth='check';S.authMsg='If an account exists for '+email+', we sent a link to set a new password.';return render()}
-   if(id==='npf'){const{data,error}=await CLOUD.sb.auth.updateUser({password:pw});if(error)return err(nice(error.message));toast('Password updated');S.loadingCloud=true;render();return cloudEnter(data.user)}
-  }catch{err('Network problem. Check your connection and try again.')}finally{if(btn)btn.disabled=false}
+   if(id==='ff'){const{error}=await CLOUD.sb.auth.resetPasswordForEmail(email,{redirectTo:RESET_URL()});if(error)return err(nice(error.message));S.auth='check';S.authTitle='Check your email';S.resendTo=null;S.authMsg='If an account exists for '+email+', we’ve sent a link to set a new password. It works once and expires after an hour.';return render()}
+   if(id==='npf'){
+    if(String(F.get('pw2')||'')!==pw)return err('The two passwords don’t match. Type the same new password in both boxes.','pw2');
+    if(!CLOUD.recovering)return(S.auth='expired',render());
+    const{data:sd}=await CLOUD.sb.auth.getSession();if(!sd||!sd.session){CLOUD.recovering=false;S.auth='expired';S.authTitle='Your reset link has timed out';S.authMsg='For your security, a reset link works for a short time only. Request a new one.';return render()}
+    const email=sd.session.user.email||CLOUD.recoverEmail||'';
+    const{error}=await CLOUD.sb.auth.updateUser({password:pw});
+    if(error){const m=error.message||'';if(/different from the old|same.?password/i.test(m))return err('That’s your current password. Choose a new one.','pw');if(/weak|pwned|leak|breach|easy to guess/i.test(m))return err('That password is too easy to guess or has appeared in a data breach elsewhere. Choose a different one.','pw');if(/aal2|insufficient_aal|assurance level|mfa/i.test(m)||error.code==='insufficient_aal')return err('This account uses two-step sign-in, so its password can’t be changed from a reset link alone. Sign in with your current password and code, or contact Doctine support from Settings → Help and feedback.');if(/session|jwt|expired|not authenticated|missing/i.test(m)){CLOUD.recovering=false;S.auth='expired';return render()}return err(nice(m))}
+    CLOUD.recovering=false;CLOUD.recoverEmail='';
+    try{await CLOUD.sb.auth.signOut({scope:'global'})}catch{try{await CLOUD.sb.auth.signOut({scope:'local'})}catch{}}
+    S.prefillEmail=email;S.auth='pwdone';S.authTitle='';S.authMsg='';return render()}
+  }catch{err('Network problem. Check your connection and try again.')}finally{if(btn&&btn.isConnected){btn.disabled=false;btn.removeAttribute('aria-busy');btn.textContent=label}}
   return}
  if(id==='rf'||id==='lf'){const email=String(F.get('email')).trim().toLowerCase(),pw=String(F.get('pw')),err=m=>$('#aerr').innerHTML=`<div class="err">${esc(m)}</div>`;
   if(!/^\S+@\S+\.\S+$/.test(email))return err('Enter a valid email address.');
@@ -1216,12 +1469,13 @@ document.addEventListener('submit',async e=>{e.preventDefault();const id=e.targe
    const salt=crypto.randomUUID();DB.users[email]={salt,hash:await hashPw(pw,salt),data:blank(name)};enter(email,DB.users[email].data,false)}
   else{const u=DB.users[email];if(!u||await hashPw(pw,u.salt)!==u.hash)return err('Email or password is incorrect.');enter(email,u.data,false)}}
 });
-document.addEventListener('input',e=>{const t=e.target;
+document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='au-pw'&&t.form&&t.form.id==='npf')pwStrength(t.value)
+ ;
  if(t.dataset.mt!==undefined){S.medDraft.times[+t.dataset.mt]=t.value;return}
  if(t.form&&t.form.id==='mf'){captureMed();return}
  if(t.dataset.uf)S.upload[t.dataset.uf]=t.value;
  if(t.dataset.ur){const[n,k]=t.dataset.ur.split('|');S.upload.rows[+n][k]=t.value}
- if(t.id==='sq'){S.q=t.value;const p=t.selectionStart;render();const n=$('#sq');n.focus();n.setSelectionRange(p,p)}});
+ if(t.id==='sq'){S.q=t.value;if(S.q.trim().length>1)track('search_performed',{scope:'records'},'search:'+today());const p=t.selectionStart;render();const n=$('#sq');n.focus();n.setSelectionRange(p,p)}});
 document.addEventListener('change',e=>{const t=e.target;
  if(t.id==='showpw'){const i=document.querySelector('input[name=pw]');if(i)i.type=t.checked?'text':'password';return}
  if(t.id==='usrec'){S.useRecords=t.checked;return}
@@ -1229,7 +1483,7 @@ document.addEventListener('change',e=>{const t=e.target;
  if(t.id==='file'&&t.files[0]){const f=t.files[0];t.value='';return /^image\//.test(f.type)?quickScan(false,null,[f]):startUpload(f)}
  if(t.dataset.c){S.consent[t.dataset.c]=t.checked;if(t.dataset.c==='history'){const n=HIST.pending.length;if(!t.checked)resetHistory();toast(t.checked?'New chats will be saved to your account.':'Saving stopped.'+(n?` ${n} unsaved message${n===1?' was':'s were'} discarded.`:'')+' Chats already saved stay until you delete them.');render()}return persist()}
  if(t.dataset.p){const k=t.dataset.p,v=t.value.trim(),n=+v;
-  const bad=(k==='height'&&v!==''&&!(n>=30&&n<=275))||(k==='weight'&&v!==''&&!(n>=1&&n<=500))||(k==='dob'&&v!==''&&(v>today()||v<'1900-01-01'))||(k==='name'&&!v);
+  const bad=(k==='height'&&v!==''&&!(n>=30&&n<=275))||(k==='weight'&&v!==''&&!(n>=1&&n<=500))||(k==='dob'&&v!==''&&(v>dobMax()||v<'1900-01-01'))||(k==='name'&&!v);
   if(bad){t.value=S.profile[k];return toast(k==='name'?'Name can’t be empty.':'That value doesn’t look right, so it wasn’t saved.')}
   S.profile[k]=v;persist();setTimeout(render,0)}});
 if(false&&location.protocol==='https:'&&!/claude\.ai|claudeusercontent/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});
@@ -1238,6 +1492,6 @@ applyTheme();
 if(DB.session&&DB.users[DB.session])enter(DB.session,DB.users[DB.session].data,false);else render();
 const openAboutFromHash=()=>{if(location.hash!=='#about')return;if(S.email||S.sample||S.guest){if(S.view!=='about')go('about')}else if(S.auth!=='about'){S.auth='about';render()}};
 openAboutFromHash();addEventListener('hashchange',openAboutFromHash);
-enter(null,sampleData(),true);initCloud().then(on=>{if(on&&S.email&&!S.cloud&&!S.sample&&!S.guest){DB.session=null;store.set(DB);S={...S,...blank(''),email:null,auth:'login'};render()}});
+enter(null,sampleData(),true);initCloud().then(on=>{if(!on&&NATIVE){S.email=null;S.sample=false;S.guest=false;S.auth='noserver';return render()}if(on&&S.email&&!S.cloud&&!S.sample&&!S.guest){DB.session=null;store.set(DB);S={...S,...blank(''),email:null,auth:'login'};render()}});
 DoctineAlarms.onAction((k,a)=>{if(!S.email||S.sample||S.guest)return;if(a==='taken')S.doses[k]='Taken';else if(a==='snooze'){const x=new Date(Date.now()+6e5);S.doses[k]='Snoozed until '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')}else return;_asig='';render()});
 </script></body></html>

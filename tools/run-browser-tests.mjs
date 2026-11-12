@@ -23,10 +23,17 @@ const SUITES = [
   ["workflows", "tests/browser/workflows.test.mjs", "real functions; Anthropic simulated"],
   ["isolation", "tests/browser/isolation.test.mjs", "Supabase simulated with ownership rules"],
   ["persistence", "tests/browser/persistence.test.mjs", "Supabase simulated with ownership rules"],
+  ["profile-save", "tests/browser/profile-save.test.mjs", "saving the health profile: date of birth near midnight IST, and waiting after a failed save"],
+  ["reset-password", "tests/browser/reset-password.test.mjs", "forgotten password end to end: the link opens the new-password screen even when signed in; Supabase simulated like supabase-js 2.45.4"],
+  ["native-bridge", "tests/browser/native-bridge.test.mjs", "the packaged app as the Android app runs it: Capacitor plugins simulated; PKCE, secure session, deep links, back button, alarms opt-in, exports"],
+  ["help", "tests/browser/help.test.mjs", "Settings → Help and feedback and What's new; Supabase simulated with ownership rules"],
   ["app", "tests/browser/app.test.mjs", "API responses simulated in the browser"],
   ["google", "tests/browser/google.test.mjs", "Google sign-in; Supabase simulated with ownership rules"],
+  ["auth", "tests/browser/auth.test.mjs", "sign-in, sign-up and recovery screens and states; Supabase simulated"],
   ["preview", "tests/browser/preview.test.mjs", "the website's app preview, served as static files"],
   ["csp", "tests/browser/csp.test.mjs", "the app under its Content-Security-Policy; an injected host script is refused"],
+  ["admin", "tests/browser/admin.test.mjs", "the internal admin console page; /api/admin simulated with the database's role table"],
+  ["admin-shapes", "tests/browser/admin-shapes.test.mjs", "every admin page, drawer and dialog with data shaped like the real database output, empty and busy, 320-1440 px"],
   ["website", "tests/browser/website.test.mjs", "the doctine.com website: shared layout, links, honest labels, 320px to desktop"],
 ];
 const results = [];

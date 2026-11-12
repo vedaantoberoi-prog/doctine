@@ -116,6 +116,13 @@ await pg.reload(); await W(1500);
 check("a reset link that starts the app opens 'Create a new password', not the saved session", (await h1()) === "Create a new password" && !(await appOpen()));
 const ov = await pg.evaluate(() => document.documentElement.scrollWidth - innerWidth);
 check("390 px: no sideways scrolling", ov <= 1, "overflow " + ov);
+// if the server can't be reached, the app never falls back to the website's in-browser demo accounts
+await pg.unroute("**/*"); await pg.route("**/*", async (r) => { const u = r.request().url();
+  if (u === "https://app.doctine.com/api/config") return r.abort();
+  if (u.startsWith(BASE)) { const p = new URL(u).pathname, f = join(WWW, p === "/" ? "index.html" : decodeURIComponent(p.slice(1))); return existsSync(f) ? r.fulfill({ status: 200, contentType: TYPES[extname(f)] || "application/octet-stream", body: readFileSync(f) }) : r.fulfill({ status: 404, body: "" }); }
+  return r.abort(); });
+await pg.evaluate(() => sessionStorage.removeItem("__launch")); await pg.reload(); await W(5500);
+check("no connection to Doctine: 'Can’t reach Doctine' with Try again, never the in-browser demo accounts", (await h1()) === "Can’t reach Doctine" && !!(await pg.$("#retrycloud")) && !(await pg.$("#rf")) && !(await appOpen()));
 check("no page errors", errs.length === 0, errs.slice(0, 3).join(" | "));
 await b.close();
 const failed = out.filter((l) => l.startsWith("FAIL")).length;

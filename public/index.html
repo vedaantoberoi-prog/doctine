@@ -994,6 +994,7 @@ function auGoogle(){if(!CLOUD.google)return'';
 function cloudAuthView(){
  const m=S.auth;let h='',sub='',body='';
  if(S.loadingCloud){h='Opening your records';body=`<p class="au-status" role="status" aria-live="polite"><span class="au-spin" aria-hidden="true"></span>Signing you in…</p>`}
+ else if(m==='noserver'){h='Can’t reach Doctine';body=`<div class="au-note">${AU_ICON.clock}<p role="status">Doctine needs an internet connection to open your account. Nothing on this device has changed. Check your connection, then try again.</p></div><button type="button" class="au-btn pri" id="retrycloud">Try again</button>`}
  else if(m==='check'){h=S.authTitle||'Check your email';body=`<div class="au-note">${AU_ICON.mail}<p role="status">${esc(S.authMsg||'We sent you an email. Open the link in it, then come back and sign in.')}</p></div>${S.resendTo?`<p class="au-fine">Didn’t get it? Check your spam folder, or <button type="button" class="au-link" id="resend">send it again</button>.</p><div id="aerr" aria-live="polite"></div>`:''}<button type="button" class="au-btn" data-auth="login">Back to sign in</button>`}
  else if(m==='expired'){h=S.authTitle||'This link has expired';body=`<div class="au-note">${AU_ICON.clock}<p>${esc(S.authMsg||'Email links from Doctine work once and expire after an hour. Request a new one and use the latest email.')}</p></div><button type="button" class="au-btn" data-auth="forgot">Send a new reset link</button>${CLOUD.keepUser?`<button type="button" class="au-btn" id="expcont" style="margin-top:.5rem">Continue to my account</button>`:''}<p class="au-alt"><button type="button" class="au-link" data-auth="login">Back to sign in</button></p>`}
  else if(m==='forgot'){h='Reset your password';sub='Enter the email you use for Doctine. If it matches an account, we’ll send a link to set a new password.';
@@ -1012,7 +1013,7 @@ function cloudAuthView(){
  return authShell(`<div class="au-card">${authNotices()}<h1>${h}</h1>${sub?`<p class="au-sub">${sub}</p>`:''}${body}</div>`)}
 function authView(){
  if(S.auth==='about')return`<div class="ab-wrap" style="padding-block:1rem 0;display:flex;justify-content:space-between;align-items:center;gap:1rem"><span class="flex items-center gap-2">${LOGO}<span class="serif text-xl">Doctine</span></span><button class="btn" data-auth="login">Sign in</button></div>${aboutBody('public')}`;
- if(CLOUD.on)return cloudAuthView();
+ if(CLOUD.on||S.auth==='noserver')return cloudAuthView(); // the apps never show demo accounts
  // Demo accounts (no Supabase configured): same screens, kept in this browser only.
  const m=S.auth,T={login:'Welcome back',register:'Create your account',forgot:'Reset your password'}[m]||'Welcome back';
  const demo=`<div class="au-demo" role="note"><b>This is a demo.</b> Accounts and saved reports stay in this browser and aren’t secure. If you allow the AI assistant, messages you send it are processed by an AI provider through this site’s server. Don’t enter real health information, and don’t reuse a real password.</div>`;
@@ -1343,6 +1344,7 @@ async function exportZip(){if(S.zipping)return;S.zipping=true;render();
  finally{S.zipping=false;render()}}
 document.addEventListener('click',async e=>{const t=e.target.closest('button');if(S.attMenu&&(!t||!['catt','attcam','attfile'].includes(t.id))){S.attMenu=false;render();if(!t)return}if(!t)return;
  if(t.dataset.auth){S.auth=t.dataset.auth;S.resendTo=null;S.authTitle='';S.authMsg='';setHash(S.auth==='about');render();const a=$('#auth');if(a)a.scrollTop=0;const h=document.querySelector('.au-card h1');if(h){h.tabIndex=-1;h.focus({preventScroll:true})}return}
+ if(t.id==='retrycloud'){location.reload();return}
  if(t.id==='npcancel'){CLOUD.recovering=false;CLOUD.recoverEmail='';try{await CLOUD.sb.auth.signOut({scope:'local'})}catch{}S.auth='login';render();return}
  if(t.id==='expcont'&&CLOUD.keepUser){const u=CLOUD.keepUser;CLOUD.keepUser=null;S.auth='login';S.loadingCloud=true;render();return cloudEnter(u)}
  if(t.id==='pwtoggle'||t.id.startsWith('pwtoggle-')){const i=document.getElementById(t.getAttribute('aria-controls'));if(i){const show=i.type==='password';i.type=show?'text':'password';t.setAttribute('aria-pressed',String(show));t.textContent=show?'Hide':'Show';t.setAttribute('aria-label',show?'Hide password':'Show password');i.focus()}return}
@@ -1492,6 +1494,6 @@ applyTheme();
 if(DB.session&&DB.users[DB.session])enter(DB.session,DB.users[DB.session].data,false);else render();
 const openAboutFromHash=()=>{if(location.hash!=='#about')return;if(S.email||S.sample||S.guest){if(S.view!=='about')go('about')}else if(S.auth!=='about'){S.auth='about';render()}};
 openAboutFromHash();addEventListener('hashchange',openAboutFromHash);
-initCloud().then(on=>{if(on&&S.email&&!S.cloud&&!S.sample&&!S.guest){DB.session=null;store.set(DB);S={...S,...blank(''),email:null,auth:'login'};render()}});
+initCloud().then(on=>{if(!on&&NATIVE){S.email=null;S.sample=false;S.guest=false;S.auth='noserver';return render()}if(on&&S.email&&!S.cloud&&!S.sample&&!S.guest){DB.session=null;store.set(DB);S={...S,...blank(''),email:null,auth:'login'};render()}});
 DoctineAlarms.onAction((k,a)=>{if(!S.email||S.sample||S.guest)return;if(a==='taken')S.doses[k]='Taken';else if(a==='snooze'){const x=new Date(Date.now()+6e5);S.doses[k]='Snoozed until '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')}else return;_asig='';render()});
 </script></body></html>

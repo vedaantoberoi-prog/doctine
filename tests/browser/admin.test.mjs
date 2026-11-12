@@ -150,6 +150,8 @@ async function open(email, { width = 1440, hash = "" } = {}) {
   }
   return { ctx, pg, log };
 }
+// After an action: a short pause, then until no request is in flight (robust on slow CI machines).
+const settle = async (pg) => { await pg.waitForTimeout(250); await pg.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {}); };
 const text = (pg, s) => pg.evaluate((q) => document.querySelector(q)?.innerText || "", s);
 const navKeys = (pg) => pg.evaluate(() => [...document.querySelectorAll(".nav a")].map((a) => a.dataset.k));
 const go = async (pg, hash, sel) => { await pg.evaluate((h) => { location.hash = h; }, hash); await pg.waitForSelector(sel, { timeout: 8000 }); await pg.waitForTimeout(250); };
@@ -184,7 +186,7 @@ await pg.hover("#ch-growth svg", { position: { x: 300, y: 100 } }); await pg.wai
 check("charts show values on hover", await pg.evaluate(() => [...document.querySelectorAll(".chart .tip")].some((t) => t.style.display === "block" && /\d/.test(t.textContent))));
 check("activity section: registrations, errors, checks, admin actions, incidents, alerts", (await pg.$$eval("#activity .card", (e) => e.length)) === 6);
 const ov1 = log.calls.filter((c) => c.action === "overview").pop();
-await pg.click('[data-p="7d"]'); await pg.waitForSelector("[data-kpi=accounts]"); await pg.waitForTimeout(300);
+await pg.click('[data-p="7d"]'); await pg.waitForSelector("[data-kpi=accounts]"); await settle(pg);
 const ov2 = log.calls.filter((c) => c.action === "overview").pop(), se2 = log.calls.filter((c) => c.action === "series").slice(-2);
 const istToday = (() => { const d = new Date(Date.now() + 330 * 6e4); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - 330 * 6e4; })();
 check("6 · the date filter reloads KPIs and graphs for 7 IST days, and the previous 7 days for comparison", ov1.from !== ov2.from && Date.parse(ov2.from) === istToday - 6 * 864e5 && new Date(Date.parse(ov2.from) + 330 * 6e4).toISOString().endsWith("T00:00:00.000Z") && se2.length === 2 && se2.some((s) => s.to === ov2.from), JSON.stringify({ ov2, se2 }));
@@ -192,7 +194,7 @@ await pg.click("#refresh"); await pg.waitForTimeout(500);
 check("refresh reloads the page's data", log.calls.filter((c) => c.action === "overview").length >= 3);
 await pg.fill("#q", "asha"); await pg.waitForSelector(".pop [data-user]", { timeout: 4000 }).catch(() => {});
 check("7 · global search finds people on the server", !!(await pg.$(".pop [data-user]")) && log.calls.some((c) => c.action === "search" && c.q === "asha"));
-await pg.click(".pop [data-user]"); await pg.waitForSelector(".drawer h3");
+await pg.click(".pop [data-user]"); await pg.waitForFunction(() => (document.querySelector(".drawer h3")?.textContent || "").includes("@"), null, { timeout: 8000 }).catch(() => {});
 check("search result opens the account drawer", (await text(pg, ".drawer h3")).includes("person1.sample@example.test"));
 await pg.keyboard.press("Escape");
 await pg.click("#bell"); await pg.waitForSelector(".pop h4", { timeout: 4000 }).catch(async () => console.log("DEBUG", await pg.evaluate(() => ({ pops: [...document.querySelectorAll(".pop")].map((p) => p.parentElement.id + ":" + p.innerText.slice(0, 80)), drawer: !!document.querySelector(".drawer"), dlg: !!document.querySelector("dialog[open]") }))));
@@ -208,16 +210,16 @@ check("the funnel shows conversion and drop-off between steps", (await text(pg, 
 // users
 await go(pg, "#/users", "tr.click");
 check("users: the default columns include account ID, verification, last activity, records, files and status", ["Account ID", "Email verification", "Last activity", "Records", "Files", "Status"].every((h) => (log, true)) && await pg.evaluate(() => ["Account ID", "Email verification", "Last activity", "Records", "Files", "Status"].every((h) => document.querySelector("thead").innerText.includes(h))));
-await pg.click("#pn"); await pg.waitForTimeout(300);
+await pg.click("#pn"); await settle(pg);
 check("8 · pagination asks the server for page 2", log.calls.filter((c) => c.action === "users").pop().page === 2);
-await pg.selectOption("#usz", "50"); await pg.waitForTimeout(300);
+await pg.selectOption("#usz", "50"); await settle(pg);
 check("page size can be changed", log.calls.filter((c) => c.action === "users").pop().size === 50);
-await pg.fill("#urf", "2026-11-01"); await pg.fill("#urt", "2026-11-10"); await pg.selectOption("#us", "unverified"); await pg.click("#uf button.primary"); await pg.waitForTimeout(300);
+await pg.fill("#urf", "2026-11-01"); await pg.fill("#urt", "2026-11-10"); await pg.selectOption("#us", "unverified"); await pg.click("#uf button.primary"); await settle(pg);
 const uq = log.calls.filter((c) => c.action === "users").pop();
 check("filters: registration dates (IST) and verification status reach the server", uq.status === "unverified" && uq.reg_from === "2026-10-31T18:30:00.000Z" && uq.reg_to === "2026-11-10T18:30:00.000Z");
-await pg.click('[data-sort="created_asc"]'); await pg.waitForTimeout(300);
+await pg.click('[data-sort="created_asc"]'); await settle(pg);
 check("sorting by registration date", log.calls.filter((c) => c.action === "users").pop().sort === "created_asc");
-await pg.click("#ucols"); await pg.click('[data-col="files"]'); await pg.waitForTimeout(300);
+await pg.click("#ucols"); await pg.click('[data-col="files"]'); await settle(pg);
 check("column visibility controls hide a column", !(await pg.evaluate(() => document.querySelector("thead").innerText.includes("Files"))));
 const [csvDl] = await Promise.all([pg.waitForEvent("download"), pg.click("#ucsv")]);
 check("9 · CSV export of the account list downloads a file and goes through the logged report endpoint", csvDl.suggestedFilename().endsWith(".csv") && log.calls.some((c) => c.action === "report" && c.report === "users" && c.format === "csv"));
@@ -227,7 +229,7 @@ const drw = await text(pg, ".drawer");
 check("account drawer: metadata, sign-in methods, usage counts, feature adoption; no record contents", /feature adoption/i.test(drw) && /sign-in method/i.test(drw) && !drw.includes(SECRET_MARK), drw.slice(0, 200).replace(/\n/g, " / "));
 await pg.click('[data-act="suspend"]'); await pg.waitForSelector("dialog[open]"); await pg.click("dialog #co"); await pg.waitForTimeout(150);
 check("suspending needs a reason before anything is sent", (await text(pg, "dialog #cerr")) === "Please give a reason." && !log.calls.some((c) => c.action === "user_suspend"));
-await pg.fill("dialog #cr", "Fictional abuse report"); await pg.click("dialog #co"); await pg.waitForTimeout(400);
+await pg.fill("dialog #cr", "Fictional abuse report"); await pg.click("dialog #co"); await settle(pg);
 check("…then sends the suspension with its reason", log.calls.some((c) => c.action === "user_suspend" && c.reason === "Fictional abuse report"));
 await pg.keyboard.press("Escape");
 
@@ -258,7 +260,7 @@ check("11 · a switch change is sent with its reason and confirmed against the l
 await go(pg, "#/maintenance", "#mm");
 await pg.fill("#mm", "Back at 10:00 IST (fictional)");
 check("maintenance: the message preview updates as you type", (await text(pg, "#mprev")).includes("Back at 10:00"));
-await pg.fill("#ms", "2026-12-01T09:00"); await pg.fill("#me", "2026-12-01T10:00"); await pg.click("#mwin"); await pg.waitForSelector("dialog[open]"); await pg.fill("dialog #cr", "fictional window"); await pg.click("dialog #co"); await pg.waitForTimeout(400);
+await pg.fill("#ms", "2026-12-01T09:00"); await pg.fill("#me", "2026-12-01T10:00"); await pg.click("#mwin"); await pg.waitForSelector("dialog[open]"); await pg.fill("dialog #cr", "fictional window"); await pg.click("dialog #co"); await settle(pg);
 const mw = log.calls.find((c) => c.action === "set_maintenance");
 check("12 · scheduling a maintenance window sends the IST times, the message and a reason", mw && mw.starts_at === "2026-12-01T03:30:00.000Z" && mw.ends_at === "2026-12-01T04:30:00.000Z" && mw.message.includes("Back at 10:00") && mw.reason === "fictional window");
 
@@ -266,21 +268,21 @@ check("12 · scheduling a maintenance window sends the IST times, the message an
 await go(pg, "#/errors", "tr.click");
 await pg.click("tr.click"); await pg.waitForSelector(".drawer pre.stack");
 check("error drawer: route, environment, release, correlation ID and a cleaned stack", ["#reports", "production", "abc1234", "req-1"].every((x) => pg && true) && (await text(pg, ".drawer")).includes("req-1") && (await text(pg, ".drawer")).includes("#reports"));
-await pg.click('.drawer [data-s="resolved"]'); await pg.waitForTimeout(300);
+await pg.click('.drawer [data-s="resolved"]'); await settle(pg);
 check("13 · resolving an error sends it to the server", log.calls.some((c) => c.action === "error_update" && c.status === "resolved"));
 await pg.keyboard.press("Escape");
 
 // alerts
 await go(pg, "#/alerts", "[data-a]");
 check("alerts: severity, time, affected service, recommended action, status; email marked not configured", (await text(pg, "#view")).includes("Scheduled monitoring") && (await text(pg, "#view")).includes("Check the scheduler") && (await text(pg, "#view")).includes("not configured"));
-await pg.click('[data-a="muted"]'); await pg.waitForTimeout(300);
+await pg.click('[data-a="muted"]'); await settle(pg);
 check("14 · alerts can be acknowledged, muted for 24 h or resolved", log.calls.some((c) => c.action === "alert_update" && c.status === "muted"));
 
 // health
 await go(pg, "#/health", "[data-service=auth]");
 check("16 · health: a service that did not answer is Down, a slow one Degraded, an unconfigured AI says so", /down/i.test(await text(pg, "[data-service=auth] .st")) && /degraded/i.test(await text(pg, "[data-service=storage] .st")) && /not configured/i.test(await text(pg, "[data-service=ai] .st")), [await text(pg, "[data-service=auth] .st"), await text(pg, "[data-service=storage] .st"), await text(pg, "[data-service=ai] .st")].join("|"));
 check("health: uptime history, response time, failed checks and recent checks", (await text(pg, "#uh")).includes("Uptime history") && (await text(pg, "#uh")).includes("Response time") && (await text(pg, "#uh")).includes("Recent health checks"));
-const hc = log.calls.filter((c) => c.action === "health").length; await pg.click("#rc"); await pg.waitForTimeout(400);
+const hc = log.calls.filter((c) => c.action === "health").length; await pg.click("#rc"); await settle(pg);
 check("the Re-check button runs the checks again", log.calls.filter((c) => c.action === "health").length === hc + 1);
 
 // audit, settings
@@ -288,7 +290,7 @@ await go(pg, "#/audit", "#af");
 check("15 · audit log: who, what, when, resource, previous and new state, reason, outcome, correlation; no edit controls", (await text(pg, "thead")).includes("Previous → new") && (await text(pg, "#view")).includes("cannot be edited or deleted") && !(await pg.$('#view button:text-matches("delete|edit", "i")')));
 await go(pg, "#/settings", "#pe");
 check("admin settings: email preference saved but clearly marked as not delivering while no email provider is configured", (await text(pg, "#view")).includes("Email delivery is not configured"));
-await pg.click("#pe"); await pg.click("#psave"); await pg.waitForTimeout(300);
+await pg.click("#pe"); await pg.click("#psave"); await settle(pg);
 check("notification preferences are saved on the server", log.calls.some((c) => c.action === "set_prefs" && c.email_alerts === true));
 // leadership
 await go(pg, "#/team", "[data-member]");
@@ -297,15 +299,15 @@ check("the Founder's own row cannot be managed", !(await pg.$('[data-manage="a00
 await pg.click("#tinv"); await pg.waitForSelector("dialog[open] .perm-ed");
 check("the invitation form lists every permission, with Founder-only ones locked", (await pg.$$eval("dialog[open] [data-perm]", (e) => e.length)) === CATALOG.length && (await pg.$$eval("dialog[open] [data-perm]:disabled", (e) => e.map((x) => x.dataset.perm).sort().join())) === CATALOG.filter((c) => c.founder_only).map((c) => c.key).sort().join());
 await pg.selectOption("dialog[open] [data-preset]", "support");
-await pg.fill("dialog[open] #te", "new.cofounder@example.test"); await pg.fill("dialog[open] #tir", "fictional: support lead"); await pg.click("dialog[open] button.primary"); await pg.waitForTimeout(400);
+await pg.fill("dialog[open] #te", "new.cofounder@example.test"); await pg.fill("dialog[open] #tir", "fictional: support lead"); await pg.click("dialog[open] button.primary"); await settle(pg);
 const invCall = log.calls.find((c) => c.action === "invite");
 check("9 · inviting a Co-Founder sends their email, the chosen permission preset and a reason", invCall && invCall.email === "new.cofounder@example.test" && JSON.stringify(invCall.permissions.sort()) === JSON.stringify([...PRESET.support].sort()) && invCall.reason === "fictional: support lead");
 await go(pg, "#/team", "[data-manage]");
 await pg.click('[data-manage="a0000000-0000-0000-0000-000000000002"]'); await pg.waitForSelector(".drawer .perm-ed");
-await pg.uncheck('.drawer [data-perm="flags.manage"]'); await pg.click(".drawer #msave"); await pg.waitForSelector("dialog[open]"); await pg.fill("dialog[open] #cr", "fictional narrowing"); await pg.click("dialog[open] #co"); await pg.waitForTimeout(400);
+await pg.uncheck('.drawer [data-perm="flags.manage"]'); await pg.click(".drawer #msave"); await pg.waitForSelector("dialog[open]"); await pg.fill("dialog[open] #cr", "fictional narrowing"); await pg.click("dialog[open] #co"); await settle(pg);
 const ms = log.calls.find((c) => c.action === "member_set");
 check("18 · the Founder edits a Co-Founder's permissions individually (sent with a reason)", ms && ms.status === "active" && !ms.permissions.includes("flags.manage") && ms.permissions.includes("audit.view") && ms.reason === "fictional narrowing");
-await pg.click('[data-manage="a0000000-0000-0000-0000-000000000002"]'); await pg.waitForSelector(".drawer #msus"); await pg.click(".drawer #msus"); await pg.waitForSelector("dialog[open]"); await pg.fill("dialog[open] #cr", "fictional suspension"); await pg.click("dialog[open] #co"); await pg.waitForTimeout(400);
+await pg.click('[data-manage="a0000000-0000-0000-0000-000000000002"]'); await pg.waitForSelector(".drawer #msus"); await pg.click(".drawer #msus"); await pg.waitForSelector("dialog[open]"); await pg.fill("dialog[open] #cr", "fictional suspension"); await pg.click("dialog[open] #co"); await settle(pg);
 check("19 · …and suspends a Co-Founder's access", log.calls.some((c) => c.action === "member_set" && c.status === "suspended" && c.permissions == null));
 await pg.keyboard.press("Escape");
 // support, feedback, bugs, content
@@ -313,19 +315,19 @@ await go(pg, "#/support", "tr[data-sup]");
 check("support: queue figures, trend, privacy reminder, and requests needing a reply", (await text(pg, "#view")).includes("Never ask them to send medical records") && (await text(pg, "#view")).includes("Needs a reply") && !!(await pg.$("#view .chart svg")));
 await pg.click("tr[data-sup]"); await pg.waitForSelector(".drawer .thread");
 check("a support request shows the person's account email (support only) and the thread, internal notes marked", (await text(pg, ".drawer")).includes("asha.sample@example.test") && !!(await pg.$(".drawer .msg.internal")) && (await text(pg, ".drawer")).includes("never available here"));
-await pg.fill(".drawer #sbody", "Please try the email link instead."); await pg.click(".drawer #srep button.primary"); await pg.waitForTimeout(400);
+await pg.fill(".drawer #sbody", "Please try the email link instead."); await pg.click(".drawer #srep button.primary"); await settle(pg);
 check("replying sends the message (not an internal note)", log.calls.some((c) => c.action === "support_message" && c.internal === false && c.body.startsWith("Please try")));
 await pg.keyboard.press("Escape");
 await go(pg, "#/feedback", "[data-fwork]");
 check("feedback: pseudonymous code instead of the sender, with status and create-item controls", (await text(pg, "#view")).includes("9f3a1c2b") && !(await text(pg, "#view")).includes("@example.test"));
-await pg.click("[data-fwork]"); await pg.waitForSelector("dialog[open] #wti"); await pg.click("dialog[open] button.primary"); await pg.waitForTimeout(400);
+await pg.click("[data-fwork]"); await pg.waitForSelector("dialog[open] #wti"); await pg.click("dialog[open] button.primary"); await settle(pg);
 check("feedback can become a feature request, linked to its source", log.calls.some((c) => c.action === "work_save" && c.data.source_feedback === "a1000000-0000-0000-0000-000000000001"));
 await go(pg, "#/work", "tr[data-w]");
 check("bugs and tasks: open bugs by severity, a 12-week opened/resolved chart, and the list", (await text(pg, "#view")).includes("1 major") && !!(await pg.$("#view .chart svg")) && (await text(pg, "#view")).includes("B-3"));
 await go(pg, "#/content", "tr[data-c]");
 await pg.click('tr[data-c="a3000000-0000-0000-0000-000000000002"]'); await pg.waitForSelector("dialog[open]");
 check("clinical content shows that it needs a clinical review, with a button to record one", (await text(pg, "dialog[open]")).includes("Not clinically reviewed yet") && !!(await pg.$('dialog[open] [data-op="clinical_review"]')));
-await pg.click('dialog[open] [data-op="publish"]'); await pg.waitForTimeout(200); await pg.click("dialog[open] #co").catch(() => {}); await pg.waitForTimeout(300);
+await pg.click('dialog[open] [data-op="publish"]'); await pg.waitForTimeout(200); await pg.click("dialog[open] #co").catch(() => {}); await settle(pg);
 check("publishing content goes to the server with the publish step", log.calls.some((c) => c.action === "content_save" && c.op === "publish"));
 await pg.evaluate(() => document.querySelectorAll("dialog").forEach((d) => { d.close?.(); d.remove(); }));
 check("18 · the console never calls the database or storage directly", log.direct.every((u) => u.includes("jsdelivr")));
@@ -348,7 +350,7 @@ const r403 = await pg.evaluate(async () => { const { data } = await window.supab
 check("a hand-made suspend request from an analyst is refused (403)", r403 === 403);
 await ctx.close();
 ({ ctx, pg, log } = await open("support@example.test", { hash: "#/users" }));
-await pg.waitForSelector("tr.click"); await pg.click("tr.click"); await pg.waitForSelector(".drawer h3");
+await pg.waitForSelector("tr.click"); await pg.click("tr.click"); await pg.waitForSelector(".drawer h4", { timeout: 8000 }).catch(() => {});
 check("support: password reset and notes, no suspend; no analytics in the menu", !!(await pg.$('[data-act="reset"]')) && !!(await pg.$("#nf")) && !(await pg.$('[data-act="suspend"]')) && !(await navKeys(pg)).includes("analytics"));
 await ctx.close();
 ({ ctx, pg, log } = await open("auditor@example.test"));
@@ -380,13 +382,13 @@ for (const w of [320, 390, 768, 1024, 1440]) {
   const o = await pg.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   let navOk = true;
   if (process.env.SHOTS && (w === 390 || w === 1440)) await pg.screenshot({ path: `${process.env.SHOTS}/admin-${w}.png`, fullPage: w === 390 });
-  if (w < 980) { navOk = !(await pg.isVisible(".nav a[data-k=users]")); await pg.click("#menu"); await pg.waitForTimeout(300); navOk = navOk && (await pg.isVisible(".nav a[data-k=users]")); }
+  if (w < 980) { navOk = !(await pg.isVisible(".nav a[data-k=users]")); await pg.click("#menu"); await settle(pg); navOk = navOk && (await pg.isVisible(".nav a[data-k=users]")); }
   if (process.env.SHOTS && w === 390) await pg.screenshot({ path: `${process.env.SHOTS}/admin-390-menu.png` });
   check(`17 · ${w}px: no sideways scrolling${w < 980 ? "; the menu button opens the navigation drawer" : ""}`, o <= 1 && navOk, "overflow " + o);
   await ctx.close();
 }
 ({ ctx, pg } = await open("owner@example.test", { width: 1440 }));
-await pg.click("#collapse"); await pg.waitForTimeout(300);
+await pg.click("#collapse"); await settle(pg);
 check("the sidebar collapses to icons on desktop", (await pg.evaluate(() => document.querySelector(".side").getBoundingClientRect().width)) <= 70);
 if (process.env.SHOTS) { for (const [h, sel] of [["#/analytics", ".funnel"], ["#/health", "#uh .card"], ["#/flags", ".flag"], ["#/users", "tr.click"], ["#/team", "[data-member]"], ["#/support", "tr[data-sup]"], ["#/work", "tr[data-w]"]]) { await pg.click("#collapse"); await go(pg, h, sel); await pg.screenshot({ path: `${process.env.SHOTS}/admin-${h.slice(2)}.png`, fullPage: true }); await pg.click("#collapse"); } }
 await ctx.close();

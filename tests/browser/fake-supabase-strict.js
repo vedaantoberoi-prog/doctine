@@ -84,18 +84,27 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
     const ev = h.get("type") === "recovery" ? "PASSWORD_RECOVERY" : "SIGNED_IN";
     setTimeout(() => listeners.forEach((f) => f(ev, session)), 0);
   })();
-  window.supabase = { createClient: (url, key, opts) => { const ready = startUp(opts); return {
+  window.supabase = { createClient: (url, key, opts) => { window.__sbOpts = { flowType: opts && opts.auth && opts.auth.flowType, detectSessionInUrl: opts && opts.auth && opts.auth.detectSessionInUrl, customStorage: !!(opts && opts.auth && opts.auth.storage) };
+    const store = opts && opts.auth && opts.auth.storage; const SK = "sb-fakeprojectref-auth-token"; if (store) Promise.resolve(store.getItem(SK)).then((v) => { if (v && !session) { session = JSON.parse(v); } });
+    const persist = () => { if (store) { if (session) store.setItem(SK, JSON.stringify(session)); else store.removeItem(SK); } };
+    const ready = startUp(opts); return {
     rpc,
     auth: {
       async getSession() { await ready; return { data: { session } }; },
+      async exchangeCodeForSession(code) { const C = JSON.parse(localStorage.getItem("__sbcodes") || "{}"), c = C[code];
+        if (!c || c.used) return { data: { session: null }, error: { message: "invalid flow state, no valid flow state found" } };
+        c.used = true; localStorage.setItem("__sbcodes", JSON.stringify(C)); const u = DBS.users[c.email];
+        session = { user: u.user, access_token: "tok-" + u.user.id }; localStorage.setItem("__sbsession", JSON.stringify(session)); persist();
+        const ev = c.recovery ? "PASSWORD_RECOVERY" : "SIGNED_IN"; listeners.forEach((f) => f(ev, session)); return { data: { session, user: u.user }, error: null }; },
       async getUser() { return { data: { user: session ? session.user : null } }; },
       onAuthStateChange(fn) { listeners.push(fn); },
-      async signUp({ email, password, options }) { if (DBS.users[email]) return { data: {}, error: { message: "User already registered" } }; const user = { id: uuid(), email, user_metadata: options.data }; DBS.users[email] = { user, password }; session = { user, access_token: "tok-" + user.id }; localStorage.setItem("__sbsession", JSON.stringify(session)); save(); return { data: { user, session }, error: null }; },
-      async signInWithPassword({ email, password }) { const u = DBS.users[email]; if (!u || u.password !== password) return { data: {}, error: { message: "Invalid login credentials" } }; session = { user: u.user, access_token: "tok-" + u.user.id }; localStorage.setItem("__sbsession", JSON.stringify(session)); return { data: { user: u.user, session }, error: null }; },
+      async signUp({ email, password, options }) { if (DBS.users[email]) return { data: {}, error: { message: "User already registered" } }; const user = { id: uuid(), email, user_metadata: options.data }; DBS.users[email] = { user, password }; session = { user, access_token: "tok-" + user.id }; localStorage.setItem("__sbsession", JSON.stringify(session)); persist(); save(); return { data: { user, session }, error: null }; },
+      async signInWithPassword({ email, password }) { const u = DBS.users[email]; if (!u || u.password !== password) return { data: {}, error: { message: "Invalid login credentials" } }; session = { user: u.user, access_token: "tok-" + u.user.id }; localStorage.setItem("__sbsession", JSON.stringify(session)); persist(); return { data: { user: u.user, session }, error: null }; },
       // Google: records the call, then behaves like the round trip through Google: the page is reloaded at redirectTo
       // with a session for the Google account (created on first use). window.__googleEmail picks the account.
       async signInWithOAuth({ provider, options }) {
-        const calls = JSON.parse(localStorage.getItem("__oauthCalls") || "[]"); calls.push({ provider, redirectTo: options && options.redirectTo }); localStorage.setItem("__oauthCalls", JSON.stringify(calls));
+        const calls = JSON.parse(localStorage.getItem("__oauthCalls") || "[]"); calls.push({ provider, redirectTo: options && options.redirectTo, skip: !!(options && options.skipBrowserRedirect) }); localStorage.setItem("__oauthCalls", JSON.stringify(calls));
+        if (options && options.skipBrowserRedirect) return { data: { provider, url: "https://x.supabase.co/auth/v1/authorize?provider=google&redirect_to=" + encodeURIComponent(options.redirectTo) }, error: null };
         if (window.__oauthFail) return { data: {}, error: { message: "Unsupported provider: provider is not enabled" } };
         const email = window.__googleEmail || "priya.google@example.com";
         if (!DBS.users[email]) DBS.users[email] = { user: { id: uuid(), email, app_metadata: { provider: "google" }, user_metadata: { full_name: "Priya (Google)" } }, password: null };
@@ -103,7 +112,7 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
         setTimeout(() => location.assign(options.redirectTo), 50); return { data: { provider, url: "https://accounts.google.com/o/oauth2/v2/auth" }, error: null };
       },
       async signOut(o) { const L = JSON.parse(localStorage.getItem("__signOuts") || "[]"); L.push((o && o.scope) || "global"); localStorage.setItem("__signOuts", JSON.stringify(L));
-        session = null; localStorage.removeItem("__sbsession"); listeners.forEach((f) => f("SIGNED_OUT", null)); return {}; },
+        session = null; localStorage.removeItem("__sbsession"); persist(); listeners.forEach((f) => f("SIGNED_OUT", null)); return {}; },
       // Records the request; for an existing account, issues a one-time recovery token, as Supabase emails one.
       async resetPasswordForEmail(email, o) {
         const calls = JSON.parse(localStorage.getItem("__resetCalls") || "[]"); calls.push({ email, redirectTo: o && o.redirectTo }); localStorage.setItem("__resetCalls", JSON.stringify(calls));

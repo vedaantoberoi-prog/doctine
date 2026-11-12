@@ -1,0 +1,12 @@
+{
+  "appId": "com.doctine.app",
+  "appName": "Doctine",
+  "webDir": "www",
+  "server": { "androidScheme": "https", "hostname": "localhost" },
+  "android": { "allowMixedContent": false, "captureInput": true, "backgroundColor": "#F3F1EB" },
+  "plugins": {
+    "SplashScreen": { "launchAutoHide": false, "backgroundColor": "#F3F1EB", "androidScaleType": "CENTER_CROP", "showSpinner": false },
+    "LocalNotifications": { "smallIcon": "ic_stat_doctine", "iconColor": "#14243A" },
+    "StatusBar": { "overlaysWebView": false, "backgroundColor": "#F3F1EB", "style": "LIGHT" }
+  }
+}

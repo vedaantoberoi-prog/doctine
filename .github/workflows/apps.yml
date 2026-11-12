@@ -1,0 +1,159 @@
+# Doctine · the Android and Mac apps. Builds them from the same app the website serves (public/), tests them on an
+# Android emulator and a macOS runner, and keeps the results as downloadable artifacts. It never publishes anything,
+# never deploys, and has no production secrets: release signing happens only if the signing secrets below exist.
+#   Android release signing (optional): DOCTINE_ANDROID_KEYSTORE_B64, DOCTINE_ANDROID_KEYSTORE_PASSWORD,
+#                                       DOCTINE_ANDROID_KEY_ALIAS, DOCTINE_ANDROID_KEY_PASSWORD
+#   Mac signing/notarisation (optional, later): APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+#                                       APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID (read by the Tauri bundler)
+name: Apps
+
+on:
+  push:
+    branches: [bolt-3d-hero, main]
+    paths: ["public/**", "apps/**", "tools/build-app-web.mjs", ".github/workflows/apps.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apps-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults: { run: { working-directory: apps/android } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+      - name: Install (exact versions from the lockfile once it exists)
+        run: if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+      - name: Versions
+        run: npm ls --depth=0 | tee versions.txt
+      - name: Prepare the Android project (web files, Capacitor project, Doctine settings, icons)
+        run: npm run prepare:android
+      - name: Show the customised manifest
+        run: cat android/app/src/main/AndroidManifest.xml
+      - name: Release signing key (only when the secrets exist)
+        env: { KS: "${{ secrets.DOCTINE_ANDROID_KEYSTORE_B64 }}" }
+        run: if [ -n "$KS" ]; then echo "$KS" | base64 -d > "$RUNNER_TEMP/doctine.jks"; echo "DOCTINE_KEYSTORE=$RUNNER_TEMP/doctine.jks" >> "$GITHUB_ENV"; fi
+      - name: Build (debug APK, release AAB and APK)
+        env:
+          DOCTINE_VERSION_CODE: ${{ github.run_number }}
+          DOCTINE_KEYSTORE_PASSWORD: ${{ secrets.DOCTINE_ANDROID_KEYSTORE_PASSWORD }}
+          DOCTINE_KEY_ALIAS: ${{ secrets.DOCTINE_ANDROID_KEY_ALIAS }}
+          DOCTINE_KEY_PASSWORD: ${{ secrets.DOCTINE_ANDROID_KEY_PASSWORD }}
+        run: cd android && ./gradlew --no-daemon assembleDebug bundleRelease assembleRelease
+      - name: What was built (and whether it is signed)
+        run: |
+          find android/app/build/outputs -name "*.apk" -o -name "*.aab" | xargs ls -la
+          "$ANDROID_HOME"/build-tools/$(ls "$ANDROID_HOME"/build-tools | sort -V | tail -1)/apksigner verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | head -3
+          rm -f "$RUNNER_TEMP/doctine.jks"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: doctine-android
+          path: |
+            apps/android/android/app/build/outputs/apk/debug/app-debug.apk
+            apps/android/android/app/build/outputs/apk/release/*.apk
+            apps/android/android/app/build/outputs/bundle/release/*.aab
+            apps/android/package-lock.json
+            apps/android/versions.txt
+          retention-days: 14
+
+  android-emulator:
+    name: Android emulator test
+    needs: android
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: doctine-android, path: out }
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: |
+            set -x; APK=$(find out -name app-debug.apk | head -1); adb install -r "$APK"
+            adb shell monkey -p com.doctine.app -c android.intent.category.LAUNCHER 1; sleep 25
+            adb shell pidof com.doctine.app || { echo "FAIL: Doctine is not running after launch"; adb logcat -d | tail -200; exit 1; }
+            adb exec-out screencap -p > out/1-launch.png
+            adb shell uiautomator dump /sdcard/ui.xml >/dev/null; adb pull /sdcard/ui.xml out/1-launch.xml >/dev/null
+            adb shell am start -a android.intent.action.VIEW -d "'doctine://auth/callback?next=reset&error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired'" com.doctine.app; sleep 8
+            adb exec-out screencap -p > out/2-expired-link.png
+            adb shell uiautomator dump /sdcard/ui.xml >/dev/null; adb pull /sdcard/ui.xml out/2-expired-link.xml >/dev/null
+            grep -q "This link has expired" out/2-expired-link.xml && echo "PASS: an expired reset link opens the app's expired-link screen" || { echo "FAIL: expired-link screen not shown"; exit 1; }
+            adb shell input keyevent KEYCODE_BACK; sleep 3; adb exec-out screencap -p > out/3-after-back.png
+            adb shell pidof com.doctine.app && echo "PASS: back from a sub-screen keeps Doctine open"
+            adb logcat -d | grep -iE "AndroidRuntime|FATAL" | tail -20 || true
+            adb logcat -d | grep -iE "access_token|refresh_token|sb-.*-auth-token" && { echo "FAIL: a token appeared in the device log"; exit 1; } || echo "PASS: no tokens in the device log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: doctine-android-emulator, path: "out/*.png\nout/*.xml", retention-days: 14 }
+
+  macos:
+    name: Mac build and launch test
+    runs-on: macos-latest
+    timeout-minutes: 60
+    defaults: { run: { working-directory: apps/macos } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Rust targets for a universal (Apple Silicon + Intel) app
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      - name: Install
+        run: if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+      - name: Web files and icons
+        run: npm run web && npm run icons
+      - name: Unit tests (session keys, link checks)
+        run: cd src-tauri && cargo test --locked 2>/dev/null || cargo test
+      - name: Build Doctine.app and the DMG (universal)
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npx tauri build --target universal-apple-darwin --bundles app,dmg
+      - name: What was built (architectures, signature, Gatekeeper)
+        run: |
+          B=src-tauri/target/universal-apple-darwin/release/bundle
+          ls -la $B/dmg $B/macos
+          APP=$(ls -d $B/macos/*.app | head -1); BIN=$(ls "$APP/Contents/MacOS/" | head -1)
+          lipo -archs "$APP/Contents/MacOS/$BIN"
+          codesign -dv "$APP" 2>&1 | head -5 || true
+          spctl -a -vv "$APP" 2>&1 | head -3 || echo "Gatekeeper: not accepted (expected until the app is signed and notarised)"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" -c "Print :CFBundleShortVersionString" -c "Print :LSMinimumSystemVersion" "$APP/Contents/Info.plist"
+      - name: Launch test (opens, stays up, handles a doctine:// link, quits)
+        run: |
+          B=src-tauri/target/universal-apple-darwin/release/bundle; APP=$(ls -d $B/macos/*.app | head -1)
+          cp -R "$APP" /Applications/ && open /Applications/Doctine.app; sleep 20
+          pgrep -f "Doctine.app/Contents/MacOS" >/dev/null && echo "PASS: Doctine is running" || { echo "FAIL: Doctine did not stay open"; exit 1; }
+          screencapture -x "$RUNNER_TEMP/1-launch.png" || true
+          open "doctine://auth/callback?next=reset&error=access_denied&error_code=otp_expired"; sleep 6
+          pgrep -f "Doctine.app/Contents/MacOS" >/dev/null && echo "PASS: a doctine:// link is delivered without crashing" || { echo "FAIL: crashed on a link"; exit 1; }
+          screencapture -x "$RUNNER_TEMP/2-link.png" || true
+          osascript -e 'quit app "Doctine"'; sleep 4
+          pgrep -f "Doctine.app/Contents/MacOS" >/dev/null && { echo "FAIL: Doctine did not quit"; exit 1; } || echo "PASS: Doctine quits cleanly"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: doctine-macos
+          path: |
+            apps/macos/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            apps/macos/src-tauri/Cargo.lock
+            apps/macos/package-lock.json
+            ${{ runner.temp }}/*.png
+          retention-days: 14

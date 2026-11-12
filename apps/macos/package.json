@@ -1,0 +1,15 @@
+{
+  "name": "doctine-macos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Doctine for Mac: the Doctine app packaged with Tauri. Same account, same records as app.doctine.com.",
+  "scripts": {
+    "web": "node ../../tools/build-app-web.mjs www --vendor --tauri",
+    "icons": "tauri icon ../assets/icon-macos.png",
+    "build": "npm run web && tauri build --target universal-apple-darwin --bundles app,dmg",
+    "dev": "npm run web && tauri dev"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

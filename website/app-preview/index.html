@@ -3,6 +3,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Doctine app preview</title><meta name="robots" content="noindex"><meta name="description" content="Sign in to Doctine, your private record of health reports, prescriptions and medicines.">
 <meta name="theme-color" content="#101C2B"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Doctine"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>/* Inside the Doctine Android app (Capacitor) or Mac app (Tauri), which inject these before the page runs: use the
+   real server, and load the native bridge (native.js). On the website DOCTINE_NATIVE is '' and nothing changes. */
+window.DOCTINE_NATIVE=(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())?'android':(window.__TAURI_INTERNALS__?'macos':'');
+if(window.DOCTINE_NATIVE&&!window.DOCTINE_API)window.DOCTINE_API='https://app.doctine.com';</script>
+<script src="native.js"></script>
 <script>(function(){try{var t=localStorage.getItem('doctine:theme')||localStorage.getItem('sanora:theme')||'auto';var d=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){}})()</script><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox=%220 0 32 32%22 width=%2232%22 height=%2232%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%229%22 fill=%22%23101C2B%22/%3E%3Cpath d=%22M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z%22 fill=%22none%22 stroke=%22%23F3F1EB%22 stroke-width=%222.3%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3Ccircle cx=%2224%22 cy=%227.6%22 r=%222.3%22 fill=%22%238DB5AE%22/%3E%3C/svg%3E">
 <script>/* Doctine website preview: the preview has no server. Answer /api/* here so nothing leaves the browser. */
 (function(){var f=window.fetch.bind(window);window.fetch=function(u,o){var s=String(u&&u.url||u);if(/(^|\/)api\//.test(s)){
@@ -225,7 +230,7 @@ h1,h2,h3,.serif{font-family:var(--serif);font-weight:500;letter-spacing:-.012em;
 </div>
 <div id="toast" role="status" aria-live="polite" class="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 hidden card px-4 py-3 shadow-lg text-sm max-w-[90vw]"></div>
 <script>/* Website: leave empty. The phone-app build script writes the site address here, because inside the app the page is not served from your website. */
-window.DOCTINE_API = '';
+window.DOCTINE_API = window.DOCTINE_API || ''; // set at the top of the page inside the Doctine apps
 </script>
 <script>/* Doctine alarms. Two jobs:
    1) plan(): list the next doses that should alarm (pure function);
@@ -268,6 +273,7 @@ window.DOCTINE_API = '';
 
   /* ---------- native scheduling (Capacitor Local Notifications) ---------- */
   function plugin() {
+    if (root.DoctineNative && root.DoctineNative.localNotifications) return root.DoctineNative.localNotifications; // Mac app
     var C = root.Capacitor; if (!C || !C.isNativePlatform || !C.isNativePlatform()) return null;
     return (C.Plugins && C.Plugins.LocalNotifications) || null;
   }
@@ -276,7 +282,7 @@ window.DOCTINE_API = '';
     var LN = plugin(); if (!LN) return { state: 'web' };
     var p = await LN.checkPermissions(); if (p.display === 'prompt' || p.display === 'prompt-with-rationale') p = await LN.requestPermissions();
     if (p.display !== 'granted') return { state: 'permission_denied' };
-    try { await LN.createChannel({ id: CHANNEL, name: 'Medicine reminders', description: 'Alarms for scheduled doses', importance: 5, visibility: 1, vibration: true }); } catch (e) { /* iOS has no channels */ }
+    try { await LN.createChannel({ id: CHANNEL, name: 'Medicine reminders', description: 'Alarms for scheduled doses', importance: 5, visibility: 0, vibration: true }); } catch (e) { /* iOS has no channels */ }
     try { await LN.registerActionTypes({ types: [{ id: 'DOSE', actions: [{ id: 'taken', title: 'Taken' }, { id: 'snooze', title: 'Snooze 10 min' }] }] }); } catch (e) { }
     try { var ex = await LN.checkExactNotificationSetting(); if (ex && ex.exact_alarm === 'denied') return { state: 'exact_alarm_needed' }; } catch (e) { /* not Android 12+ */ }
     return { state: 'ready' };
@@ -627,15 +633,35 @@ const ANALYTICS_CONSENT_FROM=Date.parse('2026-11-12T04:30:00+05:30');
 function pwStrength(v){const b=$('#pwstr'),l=$('#pwstrl');if(!b||!l)return;const kinds=[/[a-z]/,/[A-Z]/,/\d/,/[^A-Za-z0-9]/].filter(r=>r.test(v)).length;
  const s=!v?0:v.length<8?1:v.length>=14&&kinds>=2||v.length>=12&&kinds>=3?4:v.length>=10&&kinds>=2?3:2;
  b.dataset.s=String(s);l.textContent=['Password strength','Too short: use at least 8 characters','Fair: a longer password would be stronger','Good','Strong'][s]}
-const RESET_URL=()=>location.origin+'/?reset=password';
+const NATIVE=window.DOCTINE_NATIVE||'',AUTH_CB='doctine://auth/callback';
+const RESET_URL=()=>NATIVE?AUTH_CB+'?next=reset':location.origin+'/?reset=password';
+const RETURN_URL=()=>NATIVE?AUTH_CB:location.origin+location.pathname;
 const RECOVERY=(()=>{try{const h=new URLSearchParams(location.hash.slice(1)),q=new URLSearchParams(location.search);return{link:h.get('type')==='recovery'&&!!h.get('access_token'),path:q.get('reset')==='password'}}catch{return{link:false,path:false}}})();
 function cleanRecoveryUrl(){try{const q=new URLSearchParams(location.search);q.delete('reset');const r=q.toString();history.replaceState(null,'',location.pathname+(r?'?'+r:''))}catch{}}
 function enterRecovery(session){
  if(!session||!session.user){CLOUD.recovering=false;cleanRecoveryUrl();S.auth='expired';S.authTitle='';S.authMsg='';if(S.email)leaveCloud('expired');else render();return}
  CLOUD.recovering=true;CLOUD.recoverEmail=session.user.email||'';cleanRecoveryUrl();
  if(S.email||S.cloud)leaveCloud('newpw');else{S.auth='newpw';S.loadingCloud=false;render()}}
+/* Apps only: the result of an email link or Google sign-in, delivered by the system as doctine://auth/callback. With PKCE
+   the one-time code is useless without the verifier kept in this device's secure storage, so another app that grabbed
+   the link couldn't use it. next=reset marks a password reset: the new-password screen, never the account. */
+async function doctineAuthCallback(raw){
+ if(typeof raw!=='string'||!/^doctine:\/\/auth\/callback(?:[?#]|$)/.test(raw)||raw.length>4096)return;
+ const qi=raw.indexOf('?'),hi=raw.indexOf('#'),q=new URLSearchParams(qi<0?'':raw.slice(qi+1,hi>qi?hi:undefined)),h=new URLSearchParams(hi<0?'':raw.slice(hi+1)),reset=q.get('next')==='reset';
+ if(window.DoctineNative)DoctineNative.closeAuthBrowser();
+ const e=q.get('error')||h.get('error');
+ if(e){CLOUD.recovering=false;S.oauthErr='';const em=/otp_expired|expired|email|link/i.test((q.get('error_code')||'')+' '+(q.get('error_description')||h.get('error_description')||''));
+  if(reset||em){S.auth='expired';S.authTitle='';S.authMsg=''}else{S.auth='login';S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.'}
+  if(S.email)leaveCloud(S.auth);else render();return}
+ const code=q.get('code');if(!code)return;
+ if(reset)CLOUD.recovering=true;
+ let r;try{r=await CLOUD.sb.auth.exchangeCodeForSession(code)}catch(x){r={error:x}}
+ if(r.error||!r.data||!r.data.session){CLOUD.recovering=false;S.auth='expired';S.authTitle='That link didn’t work';S.authMsg='Open the newest email from Doctine on this device, in the app you asked from, or request a new link.';if(S.email)leaveCloud('expired');else render();return}
+ if(reset){CLOUD.recovering=false;return enterRecovery(r.data.session)}
+ if(S.email&&CLOUD.uid===r.data.session.user.id)return;
+ if(S.email)leaveCloud();S.loadingCloud=true;render();return cloudEnter(r.data.session.user)}
 async function initCloud(){
- if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.hostname))return false;
+ if(!NATIVE&&(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.hostname)))return false;
  let cfg=null;try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),4000);const r=await fetch(API+'/api/config',{signal:ac.signal}).finally(()=>clearTimeout(t));if(r.ok)cfg=await r.json()}catch{}
  if(!cfg||!cfg.supabaseUrl||!cfg.supabaseAnonKey)return false;
  if(!window.supabase)await pinnedScript(PIN.supabase,'load').catch(()=>null);
@@ -643,9 +669,12 @@ async function initCloud(){
  {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1)),e=q.get('error')||h.get('error');if(e){const code=q.get('error_code')||h.get('error_code')||'',desc=q.get('error_description')||h.get('error_description')||'';let viaGoogle=false;try{viaGoogle=sessionStorage.getItem('doctine:google-consent')==='1'}catch{}
   if(!viaGoogle&&(RECOVERY.path||/otp_expired/.test(code)||/\b(email|link)\b/i.test(desc))){S.auth='expired';const exp=/otp_expired|expired/i.test(code+' '+desc);S.authTitle=exp?'':'That link didn’t work';S.authMsg=exp?'':'The link from your email couldn’t be used. Request a new one, or sign in if you’ve already confirmed your account.'}
   else S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}for(const k of['error','error_code','error_description','reset'])q.delete(k);const rest=q.toString();history.replaceState(null,'',location.pathname+(rest?'?'+rest:''))}}
- CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:NATIVE&&window.DoctineNative?{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,flowType:'pkce',storage:DoctineNative.authStorage}:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;CLOUD.ai=cfg.aiAvailable!==false;CLOUD.features=cfg.features||{};CLOUD.maint=cfg.maintenance||{on:false};CLOUD.notices=Array.isArray(cfg.announcements)?cfg.announcements.slice(0,5):[];CLOUD.whatsNew=Array.isArray(cfg.whatsNew)?cfg.whatsNew.slice(0,5):[];
  CLOUD.sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){if(!CLOUD.recovering)enterRecovery(session);return}if(CLOUD.recovering)return;if(ev==='SIGNED_OUT'&&S.cloud){leaveCloud()}if(ev==='SIGNED_IN'&&session&&S.cloud&&CLOUD.uid&&session.user.id!==CLOUD.uid){leaveCloud();cloudEnter(session.user)}});
+ const launch=NATIVE&&window.DoctineNative?await DoctineNative.launchLink():null;
+ if(NATIVE&&window.DoctineNative)DoctineNative.takeLinks(doctineAuthCallback);
+ if(launch){await doctineAuthCallback(launch);return true}
  const{data}=await CLOUD.sb.auth.getSession();
  if(RECOVERY.link){enterRecovery(data&&data.session);return true}
  if(RECOVERY.path&&S.auth!=='expired')cleanRecoveryUrl();
@@ -660,7 +689,8 @@ async function googleSignIn(){
  if(!CLOUD.on||!CLOUD.google)return;if(!$('#gack')||!$('#gack').checked)return say('Please tick the box to continue.');
  S.oauthErr='';try{sessionStorage.setItem('doctine:google-consent','1')}catch{}
  const b=$('#google');if(b)b.disabled=true;
- try{const{error}=await CLOUD.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)throw error}
+ try{if(NATIVE&&window.DoctineNative){const{data,error}=await CLOUD.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:AUTH_CB,skipBrowserRedirect:true}});if(error||!data||!data.url)throw error||new Error('no url');await DoctineNative.openAuthUrl(data.url);if(b)b.disabled=false;return}
+  const{error}=await CLOUD.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)throw error}
  catch{try{sessionStorage.removeItem('doctine:google-consent')}catch{}if(b)b.disabled=false;say('Google sign-in isn’t available right now. Try again, or use email and password.')}}
 async function cloudEnter(user){
  if(CLOUD.recovering)return;
@@ -694,7 +724,7 @@ function resetCloudState(){clearTimeout(CLOUD.timer);CLOUD.timer=null;CLOUD.snap
 async function clearImageCache(){for(const u of Object.values(IMG.urls))try{URL.revokeObjectURL(u)}catch{};IMG.urls={};
  try{const d=await IMG.open();await new Promise(r=>{const t=d.transaction('img','readwrite');t.objectStore('img').clear();t.oncomplete=t.onerror=r})}catch{}}
 const unsavedCount=()=>(S.cloud?(CLOUD.dirty||CLOUD.err||CLOUD.busy?1:0):0)+HIST.pending.length;
-function leaveCloud(to='login'){CLOUD.epoch++;CLOUD.uid=null;S.help=null;resetCloudState();resetHistory();clearImageCache();S={...S,...blank(''),email:null,cloud:false,sample:false,guest:false,auth:to,cstate:null,cerr:'',useRecords:false};render()}
+function leaveCloud(to='login'){if(window.DoctineNative)DoctineNative.clearExports();CLOUD.epoch++;CLOUD.uid=null;S.help=null;resetCloudState();resetHistory();clearImageCache();S={...S,...blank(''),email:null,cloud:false,sample:false,guest:false,auth:to,cstate:null,cerr:'',useRecords:false};render()}
 
 /* What is saved, as comparable JSON per row, so each save sends only what changed. */
 function snapshot(d){const o={profile:JSON.stringify(d.profile),consent:JSON.stringify(d.consent),docs:{},meds:{},doses:{}};
@@ -1262,10 +1292,11 @@ function bannerHTML(){
  if(DoctineAlarms.ringing())h+='<div class="m-3 err flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>🔔 Alarm ringing.</b> It stops when you respond, or after 2 minutes.</span><button class="btn dg" data-stopalarm="1">Stop alarm</button></div>';
  return h}
 const alarmCard=()=>{const a=S.alarmStatus||{},nat=DoctineAlarms.isNative();let st='';
- if(nat){st=a.state==='scheduled'?`<p class="text-sm"><b>${a.count}</b> upcoming dose alarm${a.count===1?'':'s'} set on this phone${a.next?`, the next at ${esc(new Date(a.next).toLocaleString([],{weekday:'short',hour:'2-digit',minute:'2-digit'}))}`:''}. They are re-planned whenever you change a medicine or log a dose.</p>`:a.state==='permission_denied'?'<p class="err">Notifications are blocked for Doctine, so no alarms can ring. Turn them on in your phone’s Settings, then tap the button below.</p>':a.state==='exact_alarm_needed'?'<p class="warn">Android needs the “Alarms &amp; reminders” permission so alarms ring on time. <button class="underline" id="alarmexact">Open that setting</button></p>':'<p class="text-sm text-[var(--mute)]">Alarms are not set yet. Sign in with an account and add a medicine.</p>'}
- return `<p class="text-sm text-[var(--mute)]">${nat?'This is the phone app. Dose alarms are handed to your phone’s own alarm system, so they can ring when Doctine is closed. Whether they sound still depends on your phone: notification permission, silent mode or Focus, and battery-saver settings. Doctine cannot see whether an alarm was delivered, and it does not know if you took the dose.':'In a browser, the alarm rings (sound and vibration) only while this page is open, and the sound needs you to have tapped something on the page first. For alarms that work with the app closed, use the phone app (iPhone or Android).'}</p>${st}<div class="flex items-center gap-3 flex-wrap"><button class="btn" id="alarmtest">Test alarm (5 seconds)</button>${nat?'<button class="btn" id="alarmenable">Check and allow alarms</button>':''}</div>${S.alarmTest?`<p class="text-sm" role="status">${esc(S.alarmTest)}</p>`:''}`};
+ if(nat){st=a.state==='scheduled'?`<p class="text-sm"><b>${a.count}</b> upcoming dose alarm${a.count===1?'':'s'} set on this ${NATIVE==='macos'?'Mac':'phone'}${a.next?`, the next at ${esc(new Date(a.next).toLocaleString([],{weekday:'short',hour:'2-digit',minute:'2-digit'}))}`:''}. They are re-planned whenever you change a medicine or log a dose.</p>`:a.state==='not_enabled'?'<p class="text-sm">Alarms are off on this device. Turn them on to be reminded of scheduled doses.</p>':a.state==='permission_denied'?`<p class="err">Notifications are blocked for Doctine, so no alarms can ring. Turn them on in ${NATIVE==='macos'?'System Settings → Notifications → Doctine':'your phone’s Settings'}, then tap the button below.</p>`:a.state==='exact_alarm_needed'?'<p class="warn">Android needs the “Alarms &amp; reminders” permission so alarms ring on time. <button class="underline" id="alarmexact">Open that setting</button></p>':'<p class="text-sm text-[var(--mute)]">Alarms are not set yet. Sign in with an account and add a medicine.</p>'}
+ return `<p class="text-sm text-[var(--mute)]">${nat?(NATIVE==='macos'?'Dose alarms appear as Mac notifications while Doctine is running (closing the window keeps it running; quitting stops alarms). Whether they show also depends on System Settings → Notifications and Focus. Reminders help you stay organised; they are not medical advice, Doctine cannot see whether a notification was seen, and it does not know if you took the dose.':'This is the phone app. Dose alarms are handed to your phone’s own alarm system, so they can ring when Doctine is closed. Whether they sound still depends on your phone: notification permission, silent mode or Focus, and battery-saver settings. Reminders help you stay organised; they are not medical advice. Doctine cannot see whether an alarm was delivered, and it does not know if you took the dose.'):'In a browser, the alarm rings (sound and vibration) only while this page is open, and the sound needs you to have tapped something on the page first. For alarms that work with the app closed, use the phone app (iPhone or Android).'}</p>${st}<div class="flex items-center gap-3 flex-wrap"><button class="btn" id="alarmtest">Test alarm (5 seconds)</button>${nat?(alarmsOn()?'<button class="btn" id="alarmenable">Check alarms</button><button class="btn" id="alarmoff">Turn off alarms</button>':'<button class="btn pri" id="alarmenable">Turn on alarms</button>'):''}</div>${S.alarmTest?`<p class="text-sm" role="status">${esc(S.alarmTest)}</p>`:''}`};
 let _asig='',_at=0;
-function alarmSync(){if(!DoctineAlarms.isNative())return;clearTimeout(_at);_at=setTimeout(async()=>{try{const live=S.email&&!S.sample&&!S.guest;const sig=live?JSON.stringify([DoctineAlarms.plan(S.meds,S.doses,new Date()).map(n=>n.id)]):'off';if(sig===_asig)return;_asig=sig;if(!live){await DoctineAlarms.clearNative();S.alarmStatus={state:'off',count:0};return}S.alarmStatus=await DoctineAlarms.syncNative(S.meds,S.doses,new Date());if(S.view==='settings')render()}catch(e){S.alarmStatus={state:'error',count:0}}},500)}
+const alarmsOn=()=>{try{return localStorage.getItem('doctine:alarms-on')==='1'}catch{return false}};
+function alarmSync(){if(!DoctineAlarms.isNative())return;clearTimeout(_at);_at=setTimeout(async()=>{try{const live=S.email&&!S.sample&&!S.guest&&alarmsOn();const sig=live?JSON.stringify([DoctineAlarms.plan(S.meds,S.doses,new Date()).map(n=>n.id)]):'off';if(sig===_asig)return;_asig=sig;if(!live){await DoctineAlarms.clearNative();S.alarmStatus={state:alarmsOn()?'off':'not_enabled',count:0};return}S.alarmStatus=await DoctineAlarms.syncNative(S.meds,S.doses,new Date());if(S.view==='settings')render()}catch(e){S.alarmStatus={state:'error',count:0}}},500)}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){_asig='';alarmSync()}});
 document.addEventListener('pointerdown',()=>DoctineAlarms.unlock(),{once:true,capture:true});
 const alarmNote=()=>{const a=S.alarmStatus;return a&&a.state==='scheduled'?' An alarm is also set on this phone.':' This reminder only shows while Doctine is open.'};
@@ -1304,7 +1335,7 @@ async function exportZip(){if(S.zipping)return;S.zipping=true;render();
     files.push({name:`${dir}/${nm}.${ext[b.type]||'jpg'}`,data:new Uint8Array(await b.arrayBuffer())})}}
   const n=files.length-1;
   files.push({name:'README.txt',data:enc.encode(`Doctine export, ${new Date().toISOString()}\n\ndoctine-data.json: your profile, records, medicines, dose history, chat and choices.\nfiles/: ${n} original document${n===1?'':'s'} and photo${n===1?'':'s'}, one folder per record.\n`+(miss.length?`\nThese files couldn't be fetched (check your connection and export again):\n${miss.map(m=>'- '+m).join('\n')}\n`:''))});
-  const url=URL.createObjectURL(ZIP.make(files)),a=document.createElement('a');a.href=url;a.download=`doctine-export-${today()}.zip`;document.body.appendChild(a);a.click();a.remove();track('record_exported',{format:'zip'});setTimeout(()=>URL.revokeObjectURL(url),60000);
+  if(NATIVE&&window.DoctineNative){const ok=await DoctineNative.saveFile(`doctine-export-${today()}.zip`,ZIP.make(files));if(!ok){S.zipNote='The export wasn’t saved.';return}track('record_exported',{format:'zip'})}else{const url=URL.createObjectURL(ZIP.make(files)),a=document.createElement('a');a.href=url;a.download=`doctine-export-${today()}.zip`;document.body.appendChild(a);a.click();a.remove();track('record_exported',{format:'zip'});setTimeout(()=>URL.revokeObjectURL(url),60000)}
   S.zipNote=miss.length?`Downloaded, but ${miss.length} file${miss.length===1?'':'s'} couldn't be fetched. README.txt in the download lists them.`:`Downloaded doctine-export-${today()}.zip with your data and ${n} file${n===1?'':'s'}.`}
  catch(e){S.zipNote='The download couldn’t be made. Please try again.'}
  finally{S.zipping=false;render()}}
@@ -1313,7 +1344,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='npcancel'){CLOUD.recovering=false;CLOUD.recoverEmail='';try{await CLOUD.sb.auth.signOut({scope:'local'})}catch{}S.auth='login';render();return}
  if(t.id==='expcont'&&CLOUD.keepUser){const u=CLOUD.keepUser;CLOUD.keepUser=null;S.auth='login';S.loadingCloud=true;render();return cloudEnter(u)}
  if(t.id==='pwtoggle'||t.id.startsWith('pwtoggle-')){const i=document.getElementById(t.getAttribute('aria-controls'));if(i){const show=i.type==='password';i.type=show?'text':'password';t.setAttribute('aria-pressed',String(show));t.textContent=show?'Hide':'Show';t.setAttribute('aria-label',show?'Hide password':'Show password');i.focus()}return}
- if(t.id==='resend'&&CLOUD.on&&S.resendTo){t.disabled=true;const say=m=>{const a=$('#aerr');if(a)a.innerHTML=`<div class="au-ok" role="status">${esc(m)}</div>`};try{const{error}=await CLOUD.sb.auth.resend({type:'signup',email:S.resendTo,options:{emailRedirectTo:location.origin+location.pathname}});say(error?(/rate|seconds|too many/i.test(error.message)?'Please wait a minute before asking for another email.':'The email couldn’t be sent. Please try again shortly.'):'Sent. Check your inbox for the newest email from Doctine.')}catch{say('Network problem. Check your connection and try again.')}t.disabled=false;return}
+ if(t.id==='resend'&&CLOUD.on&&S.resendTo){t.disabled=true;const say=m=>{const a=$('#aerr');if(a)a.innerHTML=`<div class="au-ok" role="status">${esc(m)}</div>`};try{const{error}=await CLOUD.sb.auth.resend({type:'signup',email:S.resendTo,options:{emailRedirectTo:RETURN_URL()}});say(error?(/rate|seconds|too many/i.test(error.message)?'Please wait a minute before asking for another email.':'The email couldn’t be sent. Please try again shortly.'):'Sent. Check your inbox for the newest email from Doctine.')}catch{say('Network problem. Check your connection and try again.')}t.disabled=false;return}
  if(t.id==='google')return googleSignIn();if(t.id==='guest')return enter(null,blank('Guest'),false,true);
  if(t.id==='samp')return enter(null,sampleData(),true);
  if(t.id==='erase'){if(confirm('Erase all demo accounts stored in this browser?')){DB={users:{}};store.set(DB);toast('Demo accounts erased.');S.auth='register';render()}return}
@@ -1370,7 +1401,8 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.dataset.syncnow){t.disabled=true;await cloudSyncNow();toast(CLOUD.err?'Still not saved. Check your connection.':'Saved to your account.');return render()}
  if(t.dataset.stopalarm){DoctineAlarms.stop();return render()}
  if(t.id==='alarmtest'){DoctineAlarms.start(5000);S.alarmTest=DoctineAlarms.audioReady()?'Ringing now. You should hear it and feel a vibration if your device supports it. If you hear nothing, check the volume and silent switch.':'Started, but this browser has not allowed sound yet. Tap anywhere on the page, then press the button again. Vibration works on most Android phones, not on iPhone browsers.';return render()}
- if(t.id==='alarmenable'){S.alarmStatus=await DoctineAlarms.syncNative(S.meds,S.doses);return render()}
+ if(t.id==='alarmenable'){try{localStorage.setItem('doctine:alarms-on','1')}catch{}_asig='';S.alarmStatus=await DoctineAlarms.syncNative(S.meds,S.doses);return render()}
+ if(t.id==='alarmoff'){try{localStorage.removeItem('doctine:alarms-on')}catch{}_asig='';await DoctineAlarms.clearNative();S.alarmStatus={state:'not_enabled',count:0};toast('Alarms turned off on this device.');return render()}
  if(t.id==='alarmexact'){await DoctineAlarms.openExactAlarmSettings();return}
  if(t.id==='notiftest'){notify('Doctine test','If you can see this, notifications work while Doctine is open.');return}
  if(t.id==='exp'||t.id==='exp2')return exportJson();
@@ -1410,7 +1442,7 @@ document.addEventListener('submit',async e=>{e.preventDefault();const id=e.targe
   try{
    if(id==='lf'){const{data,error}=await CLOUD.sb.auth.signInWithPassword({email,password:pw});if(error){if(/not confirmed|confirm/i.test(error.message)){S.resendTo=email;return err('Please confirm your email first, using the link we sent you.',null,' <button type="button" class="au-link" id="resend">Send the link again</button>')}return err(nice(error.message))}S.loadingCloud=true;render();return cloudEnter(data.user)}
    if(id==='rf'){const name=String(F.get('name')||'').trim();if(!name)return err('Please enter your name.','name');if(!F.get('ack'))return err('Please tick the box to continue.','ack');
-    const{data,error}=await CLOUD.sb.auth.signUp({email,password:pw,options:{data:{full_name:name,agreed_at:new Date().toISOString(),agreement:AGREEMENT_V},emailRedirectTo:location.origin+location.pathname}});if(error)return err(nice(error.message));
+    const{data,error}=await CLOUD.sb.auth.signUp({email,password:pw,options:{data:{full_name:name,agreed_at:new Date().toISOString(),agreement:AGREEMENT_V},emailRedirectTo:RETURN_URL()}});if(error)return err(nice(error.message));
     if(!data.session){S.auth='check';S.authTitle='Confirm your email';S.resendTo=email;S.authMsg='We sent a confirmation link to '+email+'. Open it on this device, then sign in here.';return render()}
     await CLOUD.sb.from('consents').upsert([{user_id:data.user.id,kind:'cloud_storage',granted:true}],{onConflict:'user_id,kind',ignoreDuplicates:true});
     S.loadingCloud=true;render();return cloudEnter(data.user)}

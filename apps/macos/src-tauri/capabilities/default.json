@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The Doctine window: events (links, menu commands) only. Doctine's own commands are listed in lib.rs; no file-system, shell or HTTP plugin is exposed to the page.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

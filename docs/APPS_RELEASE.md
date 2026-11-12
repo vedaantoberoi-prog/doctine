@@ -105,3 +105,21 @@ updates); it is not set up here.
   pulled back; publish a fixed version.
 * Mac: replace the DMG on the download page with the previous version (keep old DMGs).
 * Server: the CORS change is additive; removing it only stops the apps from reaching `/api/*`.
+
+## 9. Verified so far (13 Nov 2026, commit 0b5f390, Apps run 3 green)
+
+| Check | Result | Where |
+|---|---|---|
+| Android debug APK, release AAB and APK build (Capacitor 8.6, `com.doctine.app`) | Pass | GitHub Actions, ubuntu |
+| Android emulator (API 34): installs, opens, expired reset link → "This link has expired", Back keeps the app open | Pass | emulator, against live app.doctine.com |
+| No sign-in tokens or session keys in the Android system log | Pass (after turning Capacitor logging off) | emulator |
+| Mac universal app (x86_64 + arm64) and DMG (4.8 MB) build; Rust unit tests | Pass | macOS runner (Intel) |
+| Mac: launches, takes a `doctine://` link, quits cleanly | Pass | macOS runner |
+| Mac Gatekeeper | Rejected (expected: unsigned) | macOS runner |
+| Packaged app with Capacitor simulated: PKCE, encrypted session, links, back, alarms opt-in, export, offline, no demo accounts | 28/28 | `tests/browser/native-bridge.test.mjs` |
+| Server: CORS only for `https://localhost` and `tauri://localhost`, never admin/monitor | Pass | `tests/cloudflare-adapter.test.mjs`, live preflight |
+| Supabase redirect allow list includes `doctine://auth/callback` | Done | production |
+
+**Not yet verified (needs a person and real devices):** signing in, signing up with email confirmation, password reset
+and Google sign-in with a real account inside each app; camera capture and file upload on a real phone; dose
+notifications on a real phone and Mac; record sync between web, phone and Mac on the same account.

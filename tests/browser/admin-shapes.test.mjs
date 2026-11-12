@@ -11,7 +11,9 @@ import { readFileSync } from "node:fs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8888";
 const fakeSrc = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
 const SH = JSON.parse(readFileSync(new URL("./fixtures/admin-shapes.json", import.meta.url), "utf8"));
-const PERMS = ["dashboard.view","analytics.view","reports.export","users.view","users.suspend","users.reset_password","users.notes","documents.view","health.view","incidents.manage","alerts.manage","flags.view","flags.manage","maintenance.manage","announcements.manage","team.view","team.manage","audit.view","security.view"];
+// The Founder's permissions: every key in the catalogue, read from the migration that defines it.
+const MIG = readFileSync(new URL("../../supabase/migrations/20261112040000_leadership.sql", import.meta.url), "utf8");
+const PERMS = [...MIG.slice(MIG.indexOf("function private.perm_catalog"), MIG.indexOf("function private.grantable")).matchAll(/\('([a-z_.]+)', '[^']+', '[^']+', (?:true|false), (?:true|false)\)/g)].map((m) => m[1]);
 const now = Date.now();
 let ctr = 0;
 const STR = (k, path) => {
@@ -20,14 +22,24 @@ const STR = (k, path) => {
   if (k === "id" || k === "user_id" || k === "assigned_to") return "b0000000-0000-0000-0000-0000000000" + String(10 + (ctr % 80)).padStart(2, "0");
   if (k === "fingerprint") return "0123456789abcdef0123456789abcd" + String(ctr % 90 + 10);
   if (/email|^by$/.test(k)) return `person${ctr % 7}.sample@example.test`;
-  if (k === "role" || k === "actor_role" || k === "admin_role") return "admin";
-  if (k === "status") return path.includes("alerts") ? "open" : path.includes("incidents") || path.includes("after") ? "investigating" : path.includes("team") ? "active" : path.includes("error") ? "open" : path.includes("announcements") ? "published" : "ok";
-  if (k === "severity") return path.includes("incidents") ? "major" : "warning";
+  if (k === "role" || k === "actor_role" || k === "admin_role") return "co_founder";
+  if (k === "title") return "Co-Founder";
+  if (k === "state") return "pending";
+  if (k === "key" && path.includes("perm_catalog")) return PERMS[ctr % PERMS.length];
+  if (k === "group") return ["Overview", "Product", "Founder only"][ctr % 3];
+  if (k === "area") return "medicines";
+  if (k === "priority") return "normal";
+  if (k === "type") return path.includes("content") ? "release_note" : "bug";
+  if (k === "account") return "9f3a1c2b";
+  if (k === "ref") return path.includes("support") ? "S-" + ctr : "B-" + ctr;
+  if (k === "status") return path.includes("alerts") ? "open" : path.includes("incidents") || path.includes("after") ? "investigating" : path.includes("team") ? "active" : path.includes("error") ? "open" : path.includes("announcements") ? "published"
+    : path.includes("support") ? "new" : path.includes("work") ? "todo" : path.includes("content") ? "draft" : path.includes("feedback") ? "new" : "ok";
+  if (k === "severity") return path.includes("incidents") || path.includes("work") ? "major" : "warning";
   if (k === "target" || k === "service") return ["app", "database", "auth", "storage"][ctr % 4];
   if (k === "source") return path.includes("adoption") ? "table" : "client";
-  if (k === "kind") return path.includes("announcements") ? "product" : "TypeError";
+  if (k === "kind") return path.includes("announcements") ? "product" : path.includes("feedback") ? "idea" : "TypeError";
   if (k === "audience") return "all";
-  if (k === "category") return "code";
+  if (k === "category") return path.includes("support") ? "sign_in" : path.includes("work") ? "reminders" : "code";
   if (k === "min_severity") return "warning";
   if (k === "timezone") return "Asia/Kolkata";
   if (k === "outcome") return "ok";
@@ -61,7 +73,9 @@ function make(mode) {
     D.error.history = [{ at: new Date(now).toISOString(), by: "owner@example.test", status: "resolved" }];
     D.audit.rows[0].before = { enabled: false };
   }
-  D.me = { role: "owner", perms: PERMS, email: "owner@example.test", mfa_enrolled: false, aal: "aal1" };
+  D.me = { role: "founder", title: "Founder", perms: PERMS, email: "owner@example.test", mfa_enrolled: true, aal: "aal2" };
+  D.perm_catalog.permissions = PERMS.map((key, i) => ({ key, group: ["Overview", "Product", "Governance"][i % 3], label: "Fictional permission " + key, standard: i % 2 === 0, founder_only: ["team.manage", "security.manage", "ai.manage"].includes(key) }));
+  if (mode === "busy") { D.team.members[0] = { ...D.team.members[0], role: "founder", title: "Founder", permissions: ["*"] }; D.content.rows[1] = { ...D.content.rows[1], type: "education", clinical: true, status: "approved" }; D.work.rows[1] = { ...D.work.rows[1], type: "feature", severity: null }; }
   D.health = { checks: ["app", "database", "auth", "storage"].map((t, i) => ({ target: t, name: t, ok: mode !== "busy" || i !== 2, status: 200, ms: 100, checked_at: new Date(now).toISOString(), error: i === 2 && mode === "busy" ? "timeout" : undefined })), ai_state: mode === "busy" ? "disabled_responding" : "not_configured",
     config: { environment: "production", supabase: true, ai_key: mode === "busy", email_provider: false, alert_email_to: false, admin_mfa_required: false, rate_limit_secret: true, google_sign_in: true, release: "abc" } };
   D.settings_status = { prefs: D.prefs, config: D.health.config, reports: ["growth", "engagement", "funnel", "adoption", "documents", "storage", "availability", "errors", "admin_activity", "users"].map((k) => ({ key: k, title: k, description: "x" })) };
@@ -97,7 +111,8 @@ for (const mode of ["empty", "busy"]) {
       const o = await pg.evaluate(() => document.documentElement.scrollWidth - innerWidth); if (o > 1) bad.push(`${tag} ${where}: horizontal overflow ${o}px`);
       { const u = await pg.$("[data-state=unavailable]"); if (u) bad.push(`${tag} ${where}: shows unavailable: ${await u.innerText()}`); }
     };
-    const pages = ["dashboard", "analytics", "reports", "users", "documents", "health", "errors", "incidents", "alerts", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"];
+    const pages = ["dashboard", "analytics", "reports", "users", "documents", "health", "errors", "incidents", "alerts", "support", "feedback", "work", "content", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"];
+    const closeDialogs = () => pg.evaluate(() => document.querySelectorAll("dialog").forEach((d) => { d.close?.(); d.remove(); }));
     for (const p of pages) {
       await pg.evaluate((h) => { location.hash = "#/" + h; }, p); await pg.waitForTimeout(700);
       if (width === 1440) for (const [tab, i] of await pg.$$eval("[data-tab]", (e) => e.map((x, i) => [x.dataset.tab, i]))) { await pg.evaluate((i) => document.querySelectorAll("[data-tab]")[i].click(), i); await pg.waitForTimeout(40); }
@@ -108,7 +123,11 @@ for (const mode of ["empty", "busy"]) {
         if (await click("#ni", p)) await scan("new incident dialog"); await pg.keyboard.press("Escape"); await pg.evaluate(() => document.querySelectorAll("dialog").forEach((d) => { d.close?.(); d.remove(); })); }
       if (p === "announcements") { if (await click("#na", p)) await scan("new announcement dialog"); await pg.evaluate(() => document.querySelectorAll("dialog").forEach((d) => { d.close?.(); d.remove(); }));
         if (mode === "busy") { if (await click("#view [data-id]", p)) await scan("edit announcement"); await pg.evaluate(() => document.querySelectorAll("dialog").forEach((d) => { d.close?.(); d.remove(); })); } }
-      if (p === "team") { if (await click("#tinv", p)) await scan("invite dialog"); await pg.evaluate(() => document.querySelectorAll("dialog").forEach((d) => { d.close?.(); d.remove(); })); }
+      if (p === "team") { if (await click("#tinv", p)) await scan("invite dialog"); await closeDialogs(); if (mode === "busy") { if (await click("[data-manage]", p)) await scan("manage Co-Founder drawer"); await pg.keyboard.press("Escape"); } }
+      if (p === "support" && mode === "busy") { if (await click("tr[data-sup]", p)) await scan("support request drawer"); await pg.keyboard.press("Escape"); }
+      if (p === "feedback" && mode === "busy") { if (await click("[data-fwork]", p)) await scan("feedback to item dialog"); await closeDialogs(); }
+      if (p === "work") { if (await click("#wnew", p)) await scan("new item dialog"); await closeDialogs(); if (mode === "busy") { if (await click("tr[data-w]", p)) await scan("edit item dialog"); await closeDialogs(); } }
+      if (p === "content") { if (await click("#cnew", p)) await scan("new content dialog"); await closeDialogs(); if (mode === "busy") { for (const sel of ["tr[data-c] >> nth=0", "tr[data-c] >> nth=1"]) { if (await click(sel, p)) await scan("content editor"); await closeDialogs(); } } }
     }
     await pg.click("#bell"); await pg.waitForTimeout(400); await scan("notifications"); await pg.click("#bell").catch(() => {});
     if (width === 1440) { await pg.fill("#q", "fictional"); await pg.waitForTimeout(600); await scan("search"); }
@@ -122,5 +141,5 @@ for (const mode of ["empty", "busy"]) for (const w of [1440, 390, 320]) {
   const tag = `${mode}@${w}`, mine = problems.filter((x) => x.startsWith(tag + " "));
   console.log(`${mine.length ? "FAIL" : "PASS"} ${mode} data at ${w}px: every page, drawer, dialog, date range and the search and notification menus render without errors, placeholders or sideways scrolling${mine.length ? "  — " + mine.slice(0, 3).join(" | ") : ""}`);
 }
-console.log(problems.length ? `${problems.length} problems FAILED` : "all admin console real-shape checks passed (2 data sets × 3 widths × 17 pages, drawers and dialogs)");
+console.log(problems.length ? `${problems.length} problems FAILED` : "all admin console real-shape checks passed (2 data sets × 3 widths × 21 pages, drawers and dialogs)");
 process.exit(problems.length ? 1 : 0);

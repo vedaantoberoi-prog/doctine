@@ -1175,7 +1175,7 @@ const setView=()=>wrap(head('Settings','Permissions and your data.')+(S.cloud?''
 const SUPCAT=[['account','My account'],['sign_in','Signing in'],['records','Records'],['documents','Documents and files'],['medicines','Medicines and reminders'],['privacy','Privacy and my data'],['bug','Something is broken'],['other','Something else']];
 const SUPST={open:'Open',waiting:'Doctine replied',resolved:'Resolved',closed:'Closed'};
 const FBKIND=[['idea','An idea'],['problem','A problem'],['praise','Something I like'],['other','Other']];
-const FBAREA=[['records','Records'],['documents','Documents'],['medicines','Medicines'],['reminders','Reminders'],['profile','Health profile'],['assistant','AI assistant'],['sign_in','Signing in'],['other','Other']];
+const FBAREA=[['records','Records'],['documents','Documents'],['medicines','Medicines'],['reminders','Reminders and alarms'],['profile','Health profile'],['assistant','AI assistant'],['sign_in','Signing in'],['other','Other']];
 async function helpLoad(){if(!S.cloud||!CLOUD.sb)return;const{data,error}=await CLOUD.sb.rpc('support_mine');if(!S.help||S.help.uid!==CLOUD.uid)return;S.help={...S.help,loading:false,loaded:true,list:error?null:(data||[]),err:error?'Your earlier requests couldn’t be loaded right now.':''};if(S.view==='settings')render()}
 function helpCard(){if(!S.cloud||S.sample)return'';if(S.help&&S.help.uid!==CLOUD.uid)S.help=null;const h=S.help||{uid:CLOUD.uid};if(!h.loaded&&!h.loading){S.help={...h,loading:true};setTimeout(helpLoad,0)}
  const sel=(id,opts)=>`<select class="inp mt-1" id="${id}">${opts.map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select>`;

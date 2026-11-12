@@ -13,30 +13,73 @@ Supabase project, same sign-in) and adds no second database, no second user tabl
 
 The audit log refuses UPDATE, DELETE and TRUNCATE for everyone, including the database owner, through a trigger.
 
-### Roles
+### Leadership roles and permissions
 
-Five roles, least privilege first. Migration `20261112030000_admin_console_v2.sql` maps the earlier roles across:
-super_admin and operations → admin, developer → analyst.
+Two roles, from migration `20261112040000_leadership.sql`. There is exactly one **Founder** (a unique index enforces it),
+and any number of **Co-Founders**, each holding an individual list of permissions chosen by the Founder. Every admin
+function checks the permission in the database (`private.require`), so hiding a button is never the protection.
+Earlier roles were mapped without losing access: owner → Founder; admin, analyst, support and auditor → Co-Founders with
+presets of the same name.
 
-| Permission | owner | admin | analyst | support | auditor |
-|---|:-:|:-:|:-:|:-:|:-:|
-| Dashboard headline figures | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Analytics and trend charts | ✓ | ✓ | ✓ | | |
-| Reports (CSV, PDF) and export history | ✓ | ✓ | ✓ | | ✓ |
-| View accounts | ✓ | ✓ | | ✓ | |
-| Suspend / restore / end sessions | ✓ | ✓ | | | |
-| Send password reset email, support notes | ✓ | ✓ | | ✓ | |
-| Documents (technical metadata) | ✓ | ✓ | ✓ | | |
-| Platform health, uptime, errors, incidents, alerts (view) | ✓ | ✓ | ✓ | ✓ | |
-| Manage incidents, alerts and errors | ✓ | ✓ | | | |
-| View and change switches, maintenance, announcements | ✓ | ✓ | | | |
-| View team | ✓ | ✓ | | | ✓ |
-| Appoint / change / suspend / remove admins | ✓ | | | | |
-| Audit log, security events | ✓ | ✓ | | | ✓ |
+| Area | Permission | Key | Founder | Co-Founder |
+|---|---|---|:-:|:-:|
+| Overview | Dashboard (aggregate figures) | `dashboard.view` | ✓ | ✓ by default |
+| Overview | Analytics and charts | `analytics.view` | ✓ | ✓ by default |
+| Overview | Reports and exports (CSV, PDF) | `reports.export` | ✓ | if granted |
+| Accounts | Account list and basic account details | `users.view` | ✓ | ✓ by default |
+| Accounts | Internal notes on accounts | `users.notes` | ✓ | if granted |
+| Accounts | Send password-reset emails | `users.reset_password` | ✓ | if granted |
+| Accounts | Suspend and restore accounts | `users.suspend` | ✓ | if granted |
+| Operations | Document and storage statistics | `documents.view` | ✓ | ✓ by default |
+| Operations | Platform health, errors, incidents and alerts (view) | `health.view` | ✓ | ✓ by default |
+| Operations | Open and update incidents | `incidents.manage` | ✓ | if granted |
+| Operations | Acknowledge alerts, resolve errors | `alerts.manage` | ✓ | if granted |
+| Support | View support requests | `support.view` | ✓ | if granted |
+| Support | Assign and prioritise support requests | `support.assign` | ✓ | if granted |
+| Support | Reply, add internal notes, change status | `support.respond` | ✓ | if granted |
+| Product | View product feedback and feature requests | `feedback.view` | ✓ | ✓ by default |
+| Product | Triage feedback, manage feature requests and tasks | `feedback.manage` | ✓ | ✓ by default |
+| Product | View bugs | `bugs.view` | ✓ | ✓ by default |
+| Product | Create, categorise and update bugs | `bugs.manage` | ✓ | ✓ by default |
+| Content | View content and drafts | `content.view` | ✓ | ✓ by default |
+| Content | Draft announcements, release notes and content | `content.edit` | ✓ | ✓ by default |
+| Content | Publish announcements and content | `content.publish` | ✓ | if granted |
+| Content | Record clinical review of medical content | `content.clinical_review` | ✓ | if granted |
+| Content | View release notes | `releases.view` | ✓ | ✓ by default |
+| Content | Publish release notes | `releases.manage` | ✓ | if granted |
+| Platform control | View feature switches | `flags.view` | ✓ | if granted |
+| Platform control | Change feature switches (not the AI switch) | `flags.manage` | ✓ | if granted |
+| Platform control | Maintenance mode and windows | `maintenance.manage` | ✓ | if granted |
+| Governance | See the leadership team | `team.view` | ✓ | if granted |
+| Governance | Read the audit log | `audit.view` | ✓ | if granted |
+| Governance | Security events | `security.view` | ✓ | if granted |
+| Founder only | Invite, remove and set permissions of Co-Founders | `team.manage` | ✓ | never (Founder only) |
+| Founder only | Security policy and leadership sessions | `security.manage` | ✓ | never (Founder only) |
+| Founder only | The AI assistant switch | `ai.manage` | ✓ | never (Founder only) |
 
-The single source is `private.role_perms()` in the migration. Extra rules: nobody can suspend or change themselves;
-only an owner can suspend another admin; there must always be one active owner; admins are appointed from existing
-Doctine accounts only.
+The standard Co-Founder set (least privilege) is the "✓ by default" rows: aggregate dashboards and analytics, account
+list, document and health statistics, product feedback and bugs, content and release-note drafting. Presets in the
+Leadership page: Standard, Product, Support lead, Analytics only, Auditor, Operations (every grantable permission).
+
+Rules enforced in the database: nobody can change their own membership or permissions; nobody can change, suspend or
+remove the Founder; only the Founder can act on another leadership member's account; Founder-only permissions are
+rejected even if sent directly; a suspended member has no permissions at all. Two-step sign-in (aal2) is required by the
+server for every admin action, for everyone.
+
+### Invitations
+
+1. The Founder enters an email, a permission preset (adjustable) and a reason. The database records the invitation
+   (`private.admin_invites`, expires after 7 days).
+2. For an email with no Doctine account, the server calls Supabase's invite API (`/auth/v1/invite`, redirect back to
+   `/admin/`); Supabase emails a link that creates the account. For an existing account, no email is sent: they sign in at
+   `/admin`.
+3. Signed in with that **verified** email, the person sees "You're invited" as Co-Founder, sets a password if the account
+   is new, and accepts. Only then do they become a member. Anyone else, an expired or revoked invitation, or a suspended
+   former member is refused (and the refusal is recorded).
+4. They set up two-step sign-in, then land on their Co-Founder dashboard.
+
+Supabase's built-in email sends at most 2 emails an hour; for more, set up custom SMTP (for example Resend) in Supabase →
+Authentication → Emails. While new sign-ups are paused by the switch, a pending invitee can still create their account.
 
 ## What the console never shows
 
@@ -44,7 +87,7 @@ Record titles, providers, test values, prescriptions, diagnoses, medical history
 or file links. The document view is counts, sources, sizes, file types and failure codes. A database test
 (`tests/admin.test.sql`) plants marker strings in a fictional person's records and fails if any admin function returns them.
 
-## Setting it up (owner, once) — needs your approval at each step
+## Setting it up (Founder, once) — needs your approval at each step
 
 0. **Later migrations, in order:** `20261112010000_admin_profile_activity.sql` (applied),
    `20261112020000_private_rls.sql` and `20261112030000_admin_console_v2.sql` (the redesign). The v2 migration replaces
@@ -57,17 +100,18 @@ or file links. The document view is counts, sources, sizes, file types and failu
 2. **Apply it to staging first** (Supabase → staging project → SQL editor → paste → Run). Check: `select public.public_settings();`
    as the `postgres` user returns the switches.
 3. **Apply it to production** the same way, once you're happy with staging.
-4. **First owner.** In the SQL editor, as `postgres`, replacing the email with your own Doctine account's email (the
+4. **The Founder.** (Already done in production.) In the SQL editor, as `postgres`, replacing the email with your own Doctine account's email (the
    account must already exist — sign up in the app first):
 
    ```sql
    insert into private.admin_members (user_id, role)
-   select id, 'owner' from auth.users where lower(email) = lower('YOUR-EMAIL-HERE')
-   on conflict (user_id) do update set role = 'owner', status = 'active';
+   select id, 'founder' from auth.users where lower(email) = lower('YOUR-EMAIL-HERE')
+   on conflict (user_id) do update set role = 'founder', status = 'active';
    select m.role, u.email from private.admin_members m join auth.users u on u.id = m.user_id;  -- check
    ```
 
-   This is the only way an owner is created; it needs database access. The email is never stored in code.
+   This is the only way a Founder is created; it needs database access. The email is never stored in code. There can
+   only be one: changing the Founder means updating that row in SQL, which no console action can do.
 5. **Two-step sign-in** (recommended): Supabase → Authentication → Multi-Factor → enable TOTP. The console offers to set
    it up the first time you open it if `ADMIN_REQUIRE_MFA=true` is set in Cloudflare (Settings → Variables), or from
    "Your access".
@@ -131,6 +175,8 @@ Metric definitions are in the console under Settings → Metric definitions.
   roles refused, no health data in any output, audit log immutable, switches enforced in the storage policy, events
   validated and de-duplicated, alert rules.
 - `tests/admin-api.test.mjs`: token-only identity, refusals logged, MFA, database refusals kept, no key in replies, CSV.
+- `tests/browser/help.test.mjs`: the app's Help and feedback (support requests, replies, feedback, What's new), and that one
+  person's requests never show for the next person on the same browser.
 - `tests/browser/admin.test.mjs`: what each role sees, confirmations with reasons, honest health and measurement labels,
   layout from 320 px.
 - `tests/browser/admin-shapes.test.mjs` and `tests/admin-reports.test.mjs`: every page, drawer, dialog and report built

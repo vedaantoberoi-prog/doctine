@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { REPORTS, buildReport, toCsv, toPdf } from "../netlify/lib/reports.mjs";
 const src = readFileSync(new URL("./browser/admin-shapes.test.mjs", import.meta.url), "utf8");
 // reuse the sweep's data builder
-const m = await import("data:text/javascript," + encodeURIComponent(src.slice(src.indexOf("const SH ="), src.indexOf("const errs =")).replace('JSON.parse(readFileSync(new URL("./fixtures/admin-shapes.json", import.meta.url), "utf8"))', JSON.stringify(JSON.parse(readFileSync(new URL("./browser/fixtures/admin-shapes.json", import.meta.url), "utf8")))) + "\nexport { make };"));
+const m = await import("data:text/javascript," + encodeURIComponent(src.slice(src.indexOf("const SH ="), src.indexOf("const errs =")).replace(/readFileSync\(new URL\("\.\.\/\.\.\/supabase\/migrations\/([^"]+)", import\.meta\.url\), "utf8"\)/, (m, f) => JSON.stringify(readFileSync(new URL("../supabase/migrations/" + f, import.meta.url), "utf8"))).replace('JSON.parse(readFileSync(new URL("./fixtures/admin-shapes.json", import.meta.url), "utf8"))', JSON.stringify(JSON.parse(readFileSync(new URL("./browser/fixtures/admin-shapes.json", import.meta.url), "utf8")))) + "\nexport { make };"));
 const MAP = { admin_overview: "overview", admin_series: "series", admin_engagement: "engagement", admin_funnel: "funnel", admin_adoption: "adoption", admin_documents: "documents", admin_uptime: "uptime", admin_errors: "errors", admin_audit: "audit", admin_users: "users" };
 let problems = 0;
 for (const mode of ["empty", "busy"]) {

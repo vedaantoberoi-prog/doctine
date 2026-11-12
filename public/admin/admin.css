@@ -154,7 +154,7 @@ a.kpi:hover{border-color:#c8d1dd;box-shadow:0 4px 12px -4px rgba(16,24,40,.12);t
 .callout.warn{background:var(--warn-bg);color:#7a3e05;border-color:#fedf89} .callout.bad{background:var(--bad-bg);color:#7a1610;border-color:#fecdca} .callout.good{background:var(--good-bg);color:#0b5226;border-color:#abefc6}
 
 /* tables */
-.tbl-wrap{overflow:auto;border-top:1px solid var(--line-2)}
+.tbl-wrap{overflow:auto;border-top:1px solid var(--line-2);position:relative}
 .card > .tbl-wrap:last-child{border-radius:0 0 var(--r) var(--r)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{text-align:left;font-weight:600;font-size:12px;color:var(--ink-3);padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel-2);white-space:nowrap;position:sticky;top:0;z-index:1}

@@ -388,7 +388,7 @@ for (const w of [320, 390, 768, 1024, 1440]) {
 ({ ctx, pg } = await open("owner@example.test", { width: 1440 }));
 await pg.click("#collapse"); await pg.waitForTimeout(300);
 check("the sidebar collapses to icons on desktop", (await pg.evaluate(() => document.querySelector(".side").getBoundingClientRect().width)) <= 70);
-if (process.env.SHOTS) { for (const [h, sel] of [["#/analytics", ".funnel"], ["#/health", "#uh .card"], ["#/flags", ".flag"], ["#/users", "tr.click"]]) { await pg.click("#collapse"); await go(pg, h, sel); await pg.screenshot({ path: `${process.env.SHOTS}/admin-${h.slice(2)}.png`, fullPage: true }); await pg.click("#collapse"); } }
+if (process.env.SHOTS) { for (const [h, sel] of [["#/analytics", ".funnel"], ["#/health", "#uh .card"], ["#/flags", ".flag"], ["#/users", "tr.click"], ["#/team", "[data-member]"], ["#/support", "tr[data-sup]"], ["#/work", "tr[data-w]"]]) { await pg.click("#collapse"); await go(pg, h, sel); await pg.screenshot({ path: `${process.env.SHOTS}/admin-${h.slice(2)}.png`, fullPage: true }); await pg.click("#collapse"); } }
 await ctx.close();
 
 const html = readFileSync(new URL("../../public/admin/index.html", import.meta.url), "utf8"), js = readFileSync(new URL("../../public/admin/admin.js", import.meta.url), "utf8");

@@ -624,7 +624,7 @@ async function initCloud(){
  if(!window.supabase)await pinnedScript(PIN.supabase,'load').catch(()=>null);
  if(!window.supabase){toast('Doctine couldn’t load its sign-in service. Check your connection and refresh.');return false}
  CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
- CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;CLOUD.ai=cfg.aiAvailable!==false;CLOUD.features=cfg.features||{};CLOUD.maint=cfg.maintenance||{on:false};CLOUD.notices=Array.isArray(cfg.announcements)?cfg.announcements.slice(0,5):[];
+ CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;CLOUD.ai=cfg.aiAvailable!==false;CLOUD.features=cfg.features||{};CLOUD.maint=cfg.maintenance||{on:false};CLOUD.notices=Array.isArray(cfg.announcements)?cfg.announcements.slice(0,5):[];CLOUD.whatsNew=Array.isArray(cfg.whatsNew)?cfg.whatsNew.slice(0,5):[];
  {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1)),e=q.get('error')||h.get('error');if(e){const code=q.get('error_code')||h.get('error_code')||'',desc=q.get('error_description')||h.get('error_description')||'';let viaGoogle=false;try{viaGoogle=sessionStorage.getItem('doctine:google-consent')==='1'}catch{}
   if(!viaGoogle&&(/otp_expired/.test(code)||/\b(email|link)\b/i.test(desc))){S.auth='expired';const exp=/otp_expired|expired/i.test(code+' '+desc);S.authTitle=exp?'':'That link didn’t work';S.authMsg=exp?'':'The link from your email couldn’t be used. Request a new one, or sign in if you’ve already confirmed your account.'}
   else S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}for(const k of['error','error_code','error_description'])q.delete(k);const rest=q.toString();history.replaceState(null,'',location.pathname+(rest?'?'+rest:''))}}
@@ -673,7 +673,7 @@ function resetCloudState(){clearTimeout(CLOUD.timer);CLOUD.timer=null;CLOUD.snap
 async function clearImageCache(){for(const u of Object.values(IMG.urls))try{URL.revokeObjectURL(u)}catch{};IMG.urls={};
  try{const d=await IMG.open();await new Promise(r=>{const t=d.transaction('img','readwrite');t.objectStore('img').clear();t.oncomplete=t.onerror=r})}catch{}}
 const unsavedCount=()=>(S.cloud?(CLOUD.dirty||CLOUD.err||CLOUD.busy?1:0):0)+HIST.pending.length;
-function leaveCloud(){CLOUD.epoch++;CLOUD.uid=null;resetCloudState();resetHistory();clearImageCache();S={...S,...blank(''),email:null,cloud:false,sample:false,guest:false,auth:'login',cstate:null,cerr:'',useRecords:false};render()}
+function leaveCloud(){CLOUD.epoch++;CLOUD.uid=null;S.help=null;resetCloudState();resetHistory();clearImageCache();S={...S,...blank(''),email:null,cloud:false,sample:false,guest:false,auth:'login',cstate:null,cerr:'',useRecords:false};render()}
 
 /* What is saved, as comparable JSON per row, so each save sends only what changed. */
 function snapshot(d){const o={profile:JSON.stringify(d.profile),consent:JSON.stringify(d.consent),docs:{},meds:{},doses:{}};
@@ -1167,6 +1167,42 @@ const setView=()=>wrap(head('Settings','Permissions and your data.')+(S.cloud?''
  ${S.cloud&&localAccounts().length?`<section class="card p-5 space-y-3"><h2 class="text-xl">Records saved in this browser</h2><p class="text-sm text-[var(--mute)]">This browser still has records from Doctine’s earlier demo accounts. You can copy them into your account. Nothing is copied unless you choose an account and enter its password. Sample data is never copied.</p>
  <ul class="divide-y divide-[var(--line)] text-sm">${localAccounts().map(a=>`<li class="py-2 flex justify-between items-center gap-3 flex-wrap"><span>${esc(a.email)} · ${a.n} record${a.n===1?'':'s'}, ${a.m} medicine${a.m===1?'':'s'}</span><button class="btn" data-impsel="${esc(a.email)}">Copy into my account</button></li>`).join('')}</ul>
  ${S.impSel?`<div class="flex gap-2 flex-wrap items-center"><input class="inp" style="max-width:16rem" type="password" id="imppw" placeholder="Password for ${esc(S.impSel)}" aria-label="Password used in this browser" autocomplete="off"><button class="btn pri" id="impl" data-email="${esc(S.impSel)}">Copy records</button></div>`:''}${S.impMsg?`<p class="text-sm" role="status">${esc(S.impMsg)}</p>`:''}</section>`:''}`);
+/* Help and feedback (signed-in accounts only). Requests and feedback go to the Doctine team through database functions
+   that can only read or write the signed-in person's own requests, and are rate-limited there. Text only: no files, and
+   people are asked not to include health details. Staff replies appear here; internal staff notes never do. */
+const SUPCAT=[['account','My account'],['sign_in','Signing in'],['records','Records'],['documents','Documents and files'],['medicines','Medicines and reminders'],['privacy','Privacy and my data'],['bug','Something is broken'],['other','Something else']];
+const SUPST={open:'Open',waiting:'Doctine replied',resolved:'Resolved',closed:'Closed'};
+const FBKIND=[['idea','An idea'],['problem','A problem'],['praise','Something I like'],['other','Other']];
+const FBAREA=[['records','Records'],['documents','Documents'],['medicines','Medicines'],['reminders','Reminders and alarms'],['profile','Health profile'],['assistant','AI assistant'],['sign_in','Signing in'],['other','Other']];
+async function helpLoad(){if(!S.cloud||!CLOUD.sb)return;const{data,error}=await CLOUD.sb.rpc('support_mine');if(!S.help||S.help.uid!==CLOUD.uid)return;S.help={...S.help,loading:false,loaded:true,list:error?null:(data||[]),err:error?'Your earlier requests couldn’t be loaded right now.':''};if(S.view==='settings')render()}
+function helpCard(){if(!S.cloud||S.sample)return'';if(S.help&&S.help.uid!==CLOUD.uid)S.help=null;const h=S.help||{uid:CLOUD.uid};if(!h.loaded&&!h.loading){S.help={...h,loading:true};setTimeout(helpLoad,0)}
+ const sel=(id,opts)=>`<select class="inp mt-1" id="${id}">${opts.map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select>`;
+ return `<section class="card p-5 space-y-3" id="help"><h2 class="text-xl">Help and feedback</h2>
+ <p class="text-sm text-[var(--mute)]">Write to the Doctine team. Please don’t include test results, prescriptions or other health details: we can help without them, and these messages are not part of your records.</p>
+ ${h.msg?`<p class="text-sm font-medium" role="status">${esc(h.msg)}</p>`:''}${h.err?`<div class="warn">${esc(h.err)}</div>`:''}
+ <details${h.form==='support'?' open':''}><summary class="font-medium cursor-pointer">Contact support</summary><div class="space-y-2 mt-2">
+  <label class="text-sm" for="supcat">Topic</label>${sel('supcat',SUPCAT)}
+  <label class="text-sm" for="supsub">Subject</label><input class="inp mt-1" id="supsub" maxlength="120" autocomplete="off">
+  <label class="text-sm" for="supbody">Message</label><textarea class="inp mt-1 h-24" id="supbody" maxlength="2000"></textarea>
+  <button class="btn pri" id="supsend">Send to support</button></div></details>
+ <details${h.form==='feedback'?' open':''}><summary class="font-medium cursor-pointer">Send feedback or an idea</summary><div class="space-y-2 mt-2">
+  <label class="text-sm" for="fbkind">What is it?</label>${sel('fbkind',FBKIND)}
+  <label class="text-sm" for="fbarea">Which part of Doctine?</label>${sel('fbarea',FBAREA)}
+  <label class="text-sm" for="fbbody">Your feedback</label><textarea class="inp mt-1 h-24" id="fbbody" maxlength="1000"></textarea>
+  <button class="btn" id="fbsend">Send feedback</button></div></details>
+ ${h.list&&h.list.length?`<h3 class="font-medium">Your requests</h3><ul class="divide-y divide-[var(--line)]">${h.list.map(r=>`<li class="py-2 space-y-2"><div class="flex justify-between items-center gap-2 flex-wrap"><span><b>${esc(r.subject)}</b> <span class="text-xs text-[var(--mute)]">${esc(r.ref)} · ${new Date(r.created_at).toLocaleDateString()}</span></span><span class="text-xs">${SUPST[r.status]||esc(r.status)}</span></div>
+  <details${h.openReq===r.id?' open':''}><summary class="text-sm cursor-pointer">Conversation (${r.messages.length})</summary><div class="space-y-2 mt-2">${r.messages.map(m=>`<div class="text-sm"><span class="text-xs text-[var(--mute)]">${esc(m.from)} · ${new Date(m.at).toLocaleString()}</span><div class="whitespace-pre-wrap">${esc(m.body)}</div></div>`).join('')}
+  ${r.status==='closed'?'':`<label class="text-sm" for="suprep-${esc(r.id)}">Reply</label><textarea class="inp mt-1 h-24" id="suprep-${esc(r.id)}" maxlength="2000"></textarea><button class="btn" data-supreply="${esc(r.id)}">Send reply</button>`}</div></details></li>`).join('')}</ul>`:''}
+ </section>`}
+function whatsNewCard(){const w=CLOUD.whatsNew||[];if(!w.length)return'';return `<section class="card p-5 space-y-3"><h2 class="text-xl">What’s new</h2><ul class="divide-y divide-[var(--line)]">${w.map(n=>`<li class="py-2"><b>${esc(n.title)}</b> <span class="text-xs text-[var(--mute)]">${new Date(n.published_at).toLocaleDateString()}</span><div class="text-sm whitespace-pre-wrap">${esc(n.body)}</div></li>`).join('')}</ul></section>`}
+async function helpSend(kind,t){const v=id=>($('#'+id)||{}).value||'';t.disabled=true;let r;
+ try{if(kind==='support'){const sub=v('supsub').trim(),body=v('supbody').trim();if(sub.length<3||body.length<10){t.disabled=false;return toast('Please add a subject and a few words about the problem.')}r=await CLOUD.sb.rpc('support_submit',{p_category:v('supcat'),p_subject:sub,p_body:body})}
+  else if(kind==='feedback'){const body=v('fbbody').trim();if(body.length<3){t.disabled=false;return toast('Please write a few words.')}r=await CLOUD.sb.rpc('feedback_submit',{p_kind:v('fbkind'),p_area:v('fbarea'),p_body:body})}
+  else{const body=v('suprep-'+kind).trim();if(!body){t.disabled=false;return}r=await CLOUD.sb.rpc('support_reply',{p_id:kind,p_body:body});S.help={...(S.help||{}),openReq:kind}}}
+ catch(e){r={error:e}}
+ t.disabled=false;const d=r&&r.data;
+ if(r.error||!d||d.ok===false){S.help={...(S.help||{}),msg:'',err:d&&d.error==='too_many'?'You’ve sent a lot today. Please try again tomorrow, or wait for a reply.':'That couldn’t be sent. Please check your connection and try again.'};return render()}
+ S.help={...(S.help||{}),err:'',form:null,msg:kind==='support'?`Sent. Your reference is ${d.ref}. Replies appear below.`:kind==='feedback'?'Thank you. Your feedback went to the Doctine team.':'Reply sent.'};helpLoad()}
 const nowHM=()=>{const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 function dueNow(){const d=today(),n=nowHM();
  return S.meds.filter(m=>isOn(m,d)).flatMap(m=>m.times.map(t=>({m,t,k:m.id+'@'+t+'@'+d}))).filter(x=>{const s=S.doses[x.k];if(x.t>n)return false;if(!s)return true;return s.startsWith('Snoozed until ')&&s.slice(-5)<=n}).sort((a,b)=>a.t.localeCompare(b.t))}
@@ -1283,6 +1319,9 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='medscan')return quickScan(true,(rec,doc)=>{S.medScan={rid:rec.id,title:rec.title,meds:(doc&&doc.medicines||[]).filter(m=>m.name),added:{}}});
  if(t.id==='msdone'){S.medScan=null;return render()}
  if(t.dataset.msadd!==undefined){const m=S.medScan.meds[+t.dataset.msadd];S.medEdit=null;S.medDraft={name:m.name,dose:[m.strength,m.form,m.timing].filter(Boolean).join(', ')||m.raw||'',freq:'daily',days:[],start:today(),end:durEnd(m.duration),times:freqTimes(m.frequency),src:{doc:S.medScan.rid,raw:m.raw||'',conf:m.confidence||'low',alts:m.alternatives||[]}};S.medScan.pending=+t.dataset.msadd;render();const f=$('#mf');if(f)f.scrollIntoView({behavior:'smooth'});return}
+ if(t.id==='supsend'&&S.cloud)return helpSend('support',t);
+ if(t.id==='fbsend'&&S.cloud)return helpSend('feedback',t);
+ if(t.dataset.supreply&&S.cloud)return helpSend(t.dataset.supreply,t);
  if(t.id==='pwmail'&&S.cloud){t.disabled=true;const{error}=await CLOUD.sb.auth.resetPasswordForEmail(CLOUD.email||S.email,{redirectTo:location.origin+location.pathname});S.acctMsg=error?'The email couldn’t be sent: '+error.message:'We sent a link to '+(CLOUD.email||S.email)+'. Open it on this device to set a new password.';return render()}
  if(t.id==='outall'&&S.cloud){const n=unsavedCount();if(!confirm(n?'Some changes haven’t been saved yet and will be lost. Sign out on all devices anyway?':'Sign out of Doctine on every device, including this one?'))return;closeNav();leaveCloud();await CLOUD.sb.auth.signOut({scope:'global'}).catch(()=>{});return}
  if(t.dataset.opdf){const id=t.dataset.opdf;(async()=>{const b=await IMG.get(`orig:${id}:0`).catch(()=>null)||await cloudImage(`orig:${id}:0`);if(!b)return toast('The original PDF isn’t available on this device right now. Check your connection and try again.');const u=URL.createObjectURL(new Blob([b],{type:'application/pdf'}));const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)})();return}

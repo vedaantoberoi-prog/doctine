@@ -154,6 +154,7 @@ h1,h2,h3,.serif{font-family:var(--serif);font-weight:500;letter-spacing:-.012em;
 .au-eye:hover{background:color-mix(in srgb,var(--au-ink) 7%,transparent)}
 .au-eye:focus-visible,.au-link:focus-visible,.au-btn:focus-visible,.au-brand:focus-visible,.au-foot a:focus-visible,.au-foot button:focus-visible,.au-check input:focus-visible{outline:2px solid var(--au-focus);outline-offset:2px}
 .au-hint{margin:0;font-size:.8125rem;color:var(--au-soft)}
+.au-strength{display:flex;align-items:center;gap:.625rem;margin:-.25rem 0 .25rem;font-size:.8125rem;color:var(--au-soft)}.au-sbar{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:9rem;flex:none}.au-sbar i{height:4px;border-radius:2px;background:color-mix(in srgb,var(--au-line) 35%,transparent)}.au-strength[data-s='1'] .au-sbar i:nth-child(-n+1){background:var(--au-err)}.au-strength[data-s='2'] .au-sbar i:nth-child(-n+2){background:var(--au-soft)}.au-strength[data-s='3'] .au-sbar i:nth-child(-n+3){background:var(--au-focus)}.au-strength[data-s='4'] .au-sbar i{background:var(--au-ok)}
 .au-check{display:flex;gap:.65rem;align-items:flex-start;font-size:.875rem;line-height:1.5;color:var(--au-text);cursor:pointer}
 .au-check input{width:1.125rem;height:1.125rem;margin-top:.15rem;flex:none;accent-color:#101C2B}
 :root[data-theme=dark] .au-check input{accent-color:#F3F1EB}
@@ -327,7 +328,7 @@ const API=(window.DOCTINE_API||'').replace(/\/$/,''); // empty on the website; t
    The server removes quoted text, numbers and email addresses before storing; no account, page content or record is sent.
    At most 5 different errors per page load, and only on the real site (not the website's preview or local files). */
 (()=>{const seen=new Set();const send=(kind,msg,where,stack)=>{try{if(!/^https:$/.test(location.protocol)||/app-preview/.test(location.pathname))return;const k=kind+'|'+msg+'|'+where;if(seen.has(k)||seen.size>=5)return;seen.add(k);
- fetch(API+'/api/errors',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({kind:String(kind).slice(0,60),message:String(msg).slice(0,300),location:String(where).slice(0,160),stack:String(stack||'').slice(0,1500),route:(location.hash||'').slice(0,40)})}).catch(()=>{})}catch{}};
+ fetch(API+'/api/errors',{method:'POST',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({kind:String(kind).slice(0,60),message:String(msg).slice(0,300),location:String(where).slice(0,160),stack:String(stack||'').slice(0,1500),route:/^#[\w/-]{0,40}$/.test(location.hash)?location.hash:''})}).catch(()=>{})}catch{}};
  const here=f=>{try{const u=new URL(f,location.href);return u.origin===location.origin?u.pathname:'(external script)'}catch{return''}};
  addEventListener('error',e=>{if(!e.error&&!e.message)return;send(e.error&&e.error.name||'Error',e.message||'',here(e.filename||'')+':'+(e.lineno||0)+':'+(e.colno||0),e.error&&e.error.stack)});
  addEventListener('unhandledrejection',e=>{const r=e.reason;if(r&&r.name==='AbortError')return;const st=r&&r.stack&&String(r.stack).split('\n').find(l=>/https?:\/\//.test(l))||'';const m=st.match(/(https?:\/\/[^\s)]+?):(\d+):(\d+)/);send((r&&r.name)||'UnhandledRejection',(r&&r.message)||String(r||''),m?here(m[1])+':'+m[2]+':'+m[3]:'(promise)',r&&r.stack)})})();
@@ -617,19 +618,38 @@ const AI_CONSENT_FROM=Date.parse('2026-11-09T22:20:00+05:30'),AGREEMENT_V='2026-
 /* "Help improve Doctine" (product measurements) started on 12 Nov 2026. Before that the same switch said Doctine collects
    no analytics, so a choice made before then is not consent to measurements: it counts only if made (again) since. */
 const ANALYTICS_CONSENT_FROM=Date.parse('2026-11-12T04:30:00+05:30');
+/* Password recovery. A reset email links to /?reset=password; Supabase adds a one-time recovery session to the address
+   (#access_token=…&type=recovery) or, for a used or expired link, an error. The supabase-js "implicit" flow saves that
+   session and only announces PASSWORD_RECOVERY a moment later, so the app must recognise the link itself, before it
+   would open whichever account is signed in: otherwise the recovery session simply opened the account and the
+   new-password screen never stayed up. While recovering, no account is opened and nothing of any account is loaded. */
+/* Strength guidance only (Supabase enforces the 8-character minimum and its own checks): length counts most. */
+function pwStrength(v){const b=$('#pwstr'),l=$('#pwstrl');if(!b||!l)return;const kinds=[/[a-z]/,/[A-Z]/,/\d/,/[^A-Za-z0-9]/].filter(r=>r.test(v)).length;
+ const s=!v?0:v.length<8?1:v.length>=14&&kinds>=2||v.length>=12&&kinds>=3?4:v.length>=10&&kinds>=2?3:2;
+ b.dataset.s=String(s);l.textContent=['Password strength','Too short: use at least 8 characters','Fair: a longer password would be stronger','Good','Strong'][s]}
+const RESET_URL=()=>location.origin+'/?reset=password';
+const RECOVERY=(()=>{try{const h=new URLSearchParams(location.hash.slice(1)),q=new URLSearchParams(location.search);return{link:h.get('type')==='recovery'&&!!h.get('access_token'),path:q.get('reset')==='password'}}catch{return{link:false,path:false}}})();
+function cleanRecoveryUrl(){try{const q=new URLSearchParams(location.search);q.delete('reset');const r=q.toString();history.replaceState(null,'',location.pathname+(r?'?'+r:''))}catch{}}
+function enterRecovery(session){
+ if(!session||!session.user){CLOUD.recovering=false;cleanRecoveryUrl();S.auth='expired';S.authTitle='';S.authMsg='';if(S.email)leaveCloud('expired');else render();return}
+ CLOUD.recovering=true;CLOUD.recoverEmail=session.user.email||'';cleanRecoveryUrl();
+ if(S.email||S.cloud)leaveCloud('newpw');else{S.auth='newpw';S.loadingCloud=false;render()}}
 async function initCloud(){
  if(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.hostname))return false;
  let cfg=null;try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),4000);const r=await fetch(API+'/api/config',{signal:ac.signal}).finally(()=>clearTimeout(t));if(r.ok)cfg=await r.json()}catch{}
  if(!cfg||!cfg.supabaseUrl||!cfg.supabaseAnonKey)return false;
  if(!window.supabase)await pinnedScript(PIN.supabase,'load').catch(()=>null);
  if(!window.supabase){toast('Doctine couldn’t load its sign-in service. Check your connection and refresh.');return false}
+ {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1)),e=q.get('error')||h.get('error');if(e){const code=q.get('error_code')||h.get('error_code')||'',desc=q.get('error_description')||h.get('error_description')||'';let viaGoogle=false;try{viaGoogle=sessionStorage.getItem('doctine:google-consent')==='1'}catch{}
+  if(!viaGoogle&&(RECOVERY.path||/otp_expired/.test(code)||/\b(email|link)\b/i.test(desc))){S.auth='expired';const exp=/otp_expired|expired/i.test(code+' '+desc);S.authTitle=exp?'':'That link didn’t work';S.authMsg=exp?'':'The link from your email couldn’t be used. Request a new one, or sign in if you’ve already confirmed your account.'}
+  else S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}for(const k of['error','error_code','error_description','reset'])q.delete(k);const rest=q.toString();history.replaceState(null,'',location.pathname+(rest?'?'+rest:''))}}
  CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;CLOUD.ai=cfg.aiAvailable!==false;CLOUD.features=cfg.features||{};CLOUD.maint=cfg.maintenance||{on:false};CLOUD.notices=Array.isArray(cfg.announcements)?cfg.announcements.slice(0,5):[];CLOUD.whatsNew=Array.isArray(cfg.whatsNew)?cfg.whatsNew.slice(0,5):[];
- {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1)),e=q.get('error')||h.get('error');if(e){const code=q.get('error_code')||h.get('error_code')||'',desc=q.get('error_description')||h.get('error_description')||'';let viaGoogle=false;try{viaGoogle=sessionStorage.getItem('doctine:google-consent')==='1'}catch{}
-  if(!viaGoogle&&(/otp_expired/.test(code)||/\b(email|link)\b/i.test(desc))){S.auth='expired';const exp=/otp_expired|expired/i.test(code+' '+desc);S.authTitle=exp?'':'That link didn’t work';S.authMsg=exp?'':'The link from your email couldn’t be used. Request a new one, or sign in if you’ve already confirmed your account.'}
-  else S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}for(const k of['error','error_code','error_description'])q.delete(k);const rest=q.toString();history.replaceState(null,'',location.pathname+(rest?'?'+rest:''))}}
- CLOUD.sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){S.auth='newpw';S.email=null;render()}if(ev==='SIGNED_OUT'&&S.cloud){leaveCloud()}if(ev==='SIGNED_IN'&&session&&S.cloud&&CLOUD.uid&&session.user.id!==CLOUD.uid){leaveCloud();cloudEnter(session.user)}});
+ CLOUD.sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){if(!CLOUD.recovering)enterRecovery(session);return}if(CLOUD.recovering)return;if(ev==='SIGNED_OUT'&&S.cloud){leaveCloud()}if(ev==='SIGNED_IN'&&session&&S.cloud&&CLOUD.uid&&session.user.id!==CLOUD.uid){leaveCloud();cloudEnter(session.user)}});
  const{data}=await CLOUD.sb.auth.getSession();
+ if(RECOVERY.link){enterRecovery(data&&data.session);return true}
+ if(RECOVERY.path&&S.auth!=='expired')cleanRecoveryUrl();
+ if(S.auth==='expired'){CLOUD.keepUser=data&&data.session?data.session.user:null;render();return true}
  if(data&&data.session&&!S.email)await cloudEnter(data.session.user);else if(!S.email)render();
  return true}
 
@@ -643,6 +663,7 @@ async function googleSignIn(){
  try{const{error}=await CLOUD.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)throw error}
  catch{try{sessionStorage.removeItem('doctine:google-consent')}catch{}if(b)b.disabled=false;say('Google sign-in isn’t available right now. Try again, or use email and password.')}}
 async function cloudEnter(user){
+ if(CLOUD.recovering)return;
  const sb=CLOUD.sb;CLOUD.epoch++;CLOUD.uid=user.id;CLOUD.email=user.email;resetCloudState();resetHistory();S.loadingCloud=true;const ep=CLOUD.epoch;
  try{
   let gc=false;try{gc=sessionStorage.getItem('doctine:google-consent')==='1';sessionStorage.removeItem('doctine:google-consent')}catch{}
@@ -673,7 +694,7 @@ function resetCloudState(){clearTimeout(CLOUD.timer);CLOUD.timer=null;CLOUD.snap
 async function clearImageCache(){for(const u of Object.values(IMG.urls))try{URL.revokeObjectURL(u)}catch{};IMG.urls={};
  try{const d=await IMG.open();await new Promise(r=>{const t=d.transaction('img','readwrite');t.objectStore('img').clear();t.oncomplete=t.onerror=r})}catch{}}
 const unsavedCount=()=>(S.cloud?(CLOUD.dirty||CLOUD.err||CLOUD.busy?1:0):0)+HIST.pending.length;
-function leaveCloud(){CLOUD.epoch++;CLOUD.uid=null;S.help=null;resetCloudState();resetHistory();clearImageCache();S={...S,...blank(''),email:null,cloud:false,sample:false,guest:false,auth:'login',cstate:null,cerr:'',useRecords:false};render()}
+function leaveCloud(to='login'){CLOUD.epoch++;CLOUD.uid=null;S.help=null;resetCloudState();resetHistory();clearImageCache();S={...S,...blank(''),email:null,cloud:false,sample:false,guest:false,auth:to,cstate:null,cerr:'',useRecords:false};render()}
 
 /* What is saved, as comparable JSON per row, so each save sends only what changed. */
 function snapshot(d){const o={profile:JSON.stringify(d.profile),consent:JSON.stringify(d.consent),docs:{},meds:{},doses:{}};
@@ -929,7 +950,7 @@ const ageOf=d=>{const t=Date.parse(d);return t?Math.floor((Date.now()-t)/3155760
 /* Sign-in, account creation and recovery. Desktop: a still-life of (fictional) records beside the form; phones: the form
    alone under a compact header. Every screen drives the existing Supabase calls in the submit handler below. */
 const AU_LEGAL=`Read the <a href="https://doctine.com/privacy/" target="_blank" rel="noopener">privacy policy</a> and <a href="https://doctine.com/terms/" target="_blank" rel="noopener">terms</a>.`;
-const AU_ICON={mail:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+const AU_ICON={check:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m8 12.5 2.6 2.6L16 9.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',mail:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
  clock:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'};
 function authShell(inner){
  const tint=document.documentElement.dataset.theme==='dark'?' au-dark':'';
@@ -941,24 +962,25 @@ function authShell(inner){
 function auField(n,l,t='text',x='',hint=''){
  const id='au-'+n,hid=hint?id+'-hint':'';
  const input=`<input class="au-inp" id="${id}" name="${n}" type="${t}" ${x} required${hid?` aria-describedby="${hid}"`:''}>`;
- return`<div class="au-field"><label for="${id}">${l}</label>${t==='password'?`<div class="au-pw">${input}<button type="button" class="au-eye" id="pwtoggle" aria-controls="${id}" aria-pressed="false" aria-label="Show password">Show</button></div>`:input}${hint?`<p class="au-hint" id="${hid}">${hint}</p>`:''}</div>`}
+ return`<div class="au-field"><label for="${id}">${l}</label>${t==='password'?`<div class="au-pw">${input}<button type="button" class="au-eye" id="${n==='pw'?'pwtoggle':'pwtoggle-'+n}" aria-controls="${id}" aria-pressed="false" aria-label="Show password">Show</button></div>`:input}${hint?`<p class="au-hint" id="${hid}">${hint}</p>`:''}</div>`}
 function auGoogle(){if(!CLOUD.google)return'';
  return`<div class="au-or" role="separator"><span>or</span></div><label class="au-check"><input type="checkbox" id="gack"><span>To continue with Google, I confirm I’m 18 or older and agree that Doctine stores my health records in my account and is not medical advice.</span></label><p class="au-fine">${AU_LEGAL}</p><div id="gerr">${S.oauthErr?`<div class="au-err" role="alert">${esc(S.oauthErr)}</div>`:''}</div><button type="button" id="google" class="au-btn au-btn-2"><svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.7Z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8l4-3.1Z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9Z"/></svg>Continue with Google</button>`}
 function cloudAuthView(){
  const m=S.auth;let h='',sub='',body='';
  if(S.loadingCloud){h='Opening your records';body=`<p class="au-status" role="status" aria-live="polite"><span class="au-spin" aria-hidden="true"></span>Signing you in…</p>`}
  else if(m==='check'){h=S.authTitle||'Check your email';body=`<div class="au-note">${AU_ICON.mail}<p role="status">${esc(S.authMsg||'We sent you an email. Open the link in it, then come back and sign in.')}</p></div>${S.resendTo?`<p class="au-fine">Didn’t get it? Check your spam folder, or <button type="button" class="au-link" id="resend">send it again</button>.</p><div id="aerr" aria-live="polite"></div>`:''}<button type="button" class="au-btn" data-auth="login">Back to sign in</button>`}
- else if(m==='expired'){h=S.authTitle||'This link has expired';body=`<div class="au-note">${AU_ICON.clock}<p>${esc(S.authMsg||'Email links from Doctine work once and expire after an hour. Request a new one and use the latest email.')}</p></div><button type="button" class="au-btn" data-auth="forgot">Send a new reset link</button><p class="au-alt"><button type="button" class="au-link" data-auth="login">Back to sign in</button></p>`}
+ else if(m==='expired'){h=S.authTitle||'This link has expired';body=`<div class="au-note">${AU_ICON.clock}<p>${esc(S.authMsg||'Email links from Doctine work once and expire after an hour. Request a new one and use the latest email.')}</p></div><button type="button" class="au-btn" data-auth="forgot">Send a new reset link</button>${CLOUD.keepUser?`<button type="button" class="au-btn" id="expcont" style="margin-top:.5rem">Continue to my account</button>`:''}<p class="au-alt"><button type="button" class="au-link" data-auth="login">Back to sign in</button></p>`}
  else if(m==='forgot'){h='Reset your password';sub='Enter the email you use for Doctine. If it matches an account, we’ll send a link to set a new password.';
   body=`<form id="ff" class="au-form" novalidate>${auField('email','Email','email','autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"')}<div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Sending link…">Send reset link</button></form><p class="au-alt"><button type="button" class="au-link" data-auth="login">Back to sign in</button></p>`}
- else if(m==='newpw'){h='Choose a new password';sub='You’re signed in from your reset link. Pick a new password to finish.';
-  body=`<form id="npf" class="au-form" novalidate>${auField('pw','New password','password','autocomplete="new-password" minlength="8"','At least 8 characters.')}<div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Saving…">Save new password</button></form>`}
+ else if(m==='newpw'){h='Create a new password';sub='Choose a new password to securely access your Doctine account.';
+  body=`${CLOUD.recoverEmail?`<p class="au-hint" style="margin:0 0 1rem">For <b>${esc(CLOUD.recoverEmail)}</b></p>`:''}<form id="npf" class="au-form" novalidate>${auField('pw','New password','password','autocomplete="new-password" minlength="8" maxlength="72"','At least 8 characters. A longer phrase, or a mix of letters, numbers and symbols, is stronger.')}<div class="au-strength" id="pwstr" aria-live="polite"><div class="au-sbar" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span id="pwstrl">Password strength</span></div>${auField('pw2','Confirm new password','password','autocomplete="new-password" maxlength="72"')}<div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Saving…">Save new password</button></form><p class="au-alt"><button type="button" class="au-link" id="npcancel">Cancel</button></p>`}
+ else if(m==='pwdone'){h='Password updated';body=`<div class="au-note">${AU_ICON.check}<p role="status">Your password has been updated successfully. For your security, Doctine signed you out on every device. Sign in with your new password.</p></div><button type="button" class="au-btn pri" data-auth="login">Continue to sign in</button>`}
  else if(m==='register'){h='Create your account';sub='Your records are kept in your own account, and only you can open them.';
   body=`<form id="rf" class="au-form" novalidate>${auField('name','Your name','text','autocomplete="name"')}${auField('email','Email','email','autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"')}${auField('pw','Password','password','autocomplete="new-password" minlength="8"','At least 8 characters.')}
   <label class="au-check"><input type="checkbox" name="ack"><span>I’m 18 or older, and I agree that Doctine stores my health records in my account and is not medical advice.</span></label><p class="au-fine">${AU_LEGAL}</p>
   <div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Creating your account…">Create account</button></form>${auGoogle()}<p class="au-alt">Already have an account? <button type="button" class="au-link" data-auth="login">Sign in</button></p>`}
  else{h='Welcome back';sub='Sign in to access your personal health records.';
-  body=`<form id="lf" class="au-form" novalidate>${auField('email','Email','email','autocomplete="username email" inputmode="email" autocapitalize="off" spellcheck="false"')}<div class="au-field"><div class="au-row"><label for="au-pw">Password</label><button type="button" class="au-link" data-auth="forgot">Forgot password?</button></div><div class="au-pw"><input class="au-inp" id="au-pw" name="pw" type="password" autocomplete="current-password" required><button type="button" class="au-eye" id="pwtoggle" aria-controls="au-pw" aria-pressed="false" aria-label="Show password">Show</button></div></div>
+  body=`<form id="lf" class="au-form" novalidate>${auField('email','Email','email',`autocomplete="username email" inputmode="email" autocapitalize="off" spellcheck="false"${S.prefillEmail?` value="${esc(S.prefillEmail)}"`:''}`)}<div class="au-field"><div class="au-row"><label for="au-pw">Password</label><button type="button" class="au-link" data-auth="forgot">Forgot password?</button></div><div class="au-pw"><input class="au-inp" id="au-pw" name="pw" type="password" autocomplete="current-password" required><button type="button" class="au-eye" id="pwtoggle" aria-controls="au-pw" aria-pressed="false" aria-label="Show password">Show</button></div></div>
   <div id="aerr" aria-live="polite"></div><button class="au-btn pri" data-busy="Signing in…">Sign in</button></form>${auGoogle()}<p class="au-alt">New to Doctine? <button type="button" class="au-link" data-auth="register">Create an account</button></p>
   ${feat('sample_data')?'<p class="au-sample"><button type="button" id="samp" class="au-link">Explore with sample data</button><span>Fictional records. Nothing is saved.</span></p>':''}`}
  return authShell(`<div class="au-card">${authNotices()}<h1>${h}</h1>${sub?`<p class="au-sub">${sub}</p>`:''}${body}</div>`)}
@@ -1288,7 +1310,9 @@ async function exportZip(){if(S.zipping)return;S.zipping=true;render();
  finally{S.zipping=false;render()}}
 document.addEventListener('click',async e=>{const t=e.target.closest('button');if(S.attMenu&&(!t||!['catt','attcam','attfile'].includes(t.id))){S.attMenu=false;render();if(!t)return}if(!t)return;
  if(t.dataset.auth){S.auth=t.dataset.auth;S.resendTo=null;S.authTitle='';S.authMsg='';setHash(S.auth==='about');render();const a=$('#auth');if(a)a.scrollTop=0;const h=document.querySelector('.au-card h1');if(h){h.tabIndex=-1;h.focus({preventScroll:true})}return}
- if(t.id==='pwtoggle'){const i=document.getElementById(t.getAttribute('aria-controls'));if(i){const show=i.type==='password';i.type=show?'text':'password';t.setAttribute('aria-pressed',String(show));t.textContent=show?'Hide':'Show';t.setAttribute('aria-label',show?'Hide password':'Show password');i.focus()}return}
+ if(t.id==='npcancel'){CLOUD.recovering=false;CLOUD.recoverEmail='';try{await CLOUD.sb.auth.signOut({scope:'local'})}catch{}S.auth='login';render();return}
+ if(t.id==='expcont'&&CLOUD.keepUser){const u=CLOUD.keepUser;CLOUD.keepUser=null;S.auth='login';S.loadingCloud=true;render();return cloudEnter(u)}
+ if(t.id==='pwtoggle'||t.id.startsWith('pwtoggle-')){const i=document.getElementById(t.getAttribute('aria-controls'));if(i){const show=i.type==='password';i.type=show?'text':'password';t.setAttribute('aria-pressed',String(show));t.textContent=show?'Hide':'Show';t.setAttribute('aria-label',show?'Hide password':'Show password');i.focus()}return}
  if(t.id==='resend'&&CLOUD.on&&S.resendTo){t.disabled=true;const say=m=>{const a=$('#aerr');if(a)a.innerHTML=`<div class="au-ok" role="status">${esc(m)}</div>`};try{const{error}=await CLOUD.sb.auth.resend({type:'signup',email:S.resendTo,options:{emailRedirectTo:location.origin+location.pathname}});say(error?(/rate|seconds|too many/i.test(error.message)?'Please wait a minute before asking for another email.':'The email couldn’t be sent. Please try again shortly.'):'Sent. Check your inbox for the newest email from Doctine.')}catch{say('Network problem. Check your connection and try again.')}t.disabled=false;return}
  if(t.id==='google')return googleSignIn();if(t.id==='guest')return enter(null,blank('Guest'),false,true);
  if(t.id==='samp')return enter(null,sampleData(),true);
@@ -1327,7 +1351,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='supsend'&&S.cloud)return helpSend('support',t);
  if(t.id==='fbsend'&&S.cloud)return helpSend('feedback',t);
  if(t.dataset.supreply&&S.cloud)return helpSend(t.dataset.supreply,t);
- if(t.id==='pwmail'&&S.cloud){t.disabled=true;const{error}=await CLOUD.sb.auth.resetPasswordForEmail(CLOUD.email||S.email,{redirectTo:location.origin+location.pathname});S.acctMsg=error?'The email couldn’t be sent: '+error.message:'We sent a link to '+(CLOUD.email||S.email)+'. Open it on this device to set a new password.';return render()}
+ if(t.id==='pwmail'&&S.cloud){t.disabled=true;const{error}=await CLOUD.sb.auth.resetPasswordForEmail(CLOUD.email||S.email,{redirectTo:RESET_URL()});S.acctMsg=error?'The email couldn’t be sent: '+error.message:'We sent a link to '+(CLOUD.email||S.email)+'. Open it on this device to set a new password.';return render()}
  if(t.id==='outall'&&S.cloud){const n=unsavedCount();if(!confirm(n?'Some changes haven’t been saved yet and will be lost. Sign out on all devices anyway?':'Sign out of Doctine on every device, including this one?'))return;closeNav();leaveCloud();await CLOUD.sb.auth.signOut({scope:'global'}).catch(()=>{});return}
  if(t.dataset.opdf){const id=t.dataset.opdf;(async()=>{const b=await IMG.get(`orig:${id}:0`).catch(()=>null)||await cloudImage(`orig:${id}:0`);if(!b)return toast('The original PDF isn’t available on this device right now. Check your connection and try again.');const u=URL.createObjectURL(new Blob([b],{type:'application/pdf'}));const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)})();return}
  if(t.dataset.vs){const[id,i]=t.dataset.vs.split('|'),r=S.reports.find(x=>x.id==id);if(!r)return;const ov=document.createElement('div');ov.className='scanov';const show=k=>{ov.innerHTML=`<div class="scanbar"><span class="text-sm" style="color:#cdd8e4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title)}</span><span style="display:flex;gap:.5rem"><button class="btn" data-k="${k==='scan'?'orig':'scan'}">${k==='scan'?'Original photo':'Cleaned page'}</button><button class="btn" data-k="x">Close</button></span></div><div class="scanmid"><img class="scanimg" data-scanimg="${k}:${r.id}:${i}" alt="${esc(r.title)}"></div>`;hydrateImgs()};show('scan');
@@ -1390,8 +1414,17 @@ document.addEventListener('submit',async e=>{e.preventDefault();const id=e.targe
     if(!data.session){S.auth='check';S.authTitle='Confirm your email';S.resendTo=email;S.authMsg='We sent a confirmation link to '+email+'. Open it on this device, then sign in here.';return render()}
     await CLOUD.sb.from('consents').upsert([{user_id:data.user.id,kind:'cloud_storage',granted:true}],{onConflict:'user_id,kind',ignoreDuplicates:true});
     S.loadingCloud=true;render();return cloudEnter(data.user)}
-   if(id==='ff'){const{error}=await CLOUD.sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)return err(nice(error.message));S.auth='check';S.authTitle='Check your email';S.resendTo=null;S.authMsg='If an account exists for '+email+', we’ve sent a link to set a new password. It works once and expires after an hour.';return render()}
-   if(id==='npf'){const{data,error}=await CLOUD.sb.auth.updateUser({password:pw});if(error)return err(nice(error.message));toast('Password updated');S.loadingCloud=true;render();return cloudEnter(data.user)}
+   if(id==='ff'){const{error}=await CLOUD.sb.auth.resetPasswordForEmail(email,{redirectTo:RESET_URL()});if(error)return err(nice(error.message));S.auth='check';S.authTitle='Check your email';S.resendTo=null;S.authMsg='If an account exists for '+email+', we’ve sent a link to set a new password. It works once and expires after an hour.';return render()}
+   if(id==='npf'){
+    if(String(F.get('pw2')||'')!==pw)return err('The two passwords don’t match. Type the same new password in both boxes.','pw2');
+    if(!CLOUD.recovering)return(S.auth='expired',render());
+    const{data:sd}=await CLOUD.sb.auth.getSession();if(!sd||!sd.session){CLOUD.recovering=false;S.auth='expired';S.authTitle='Your reset link has timed out';S.authMsg='For your security, a reset link works for a short time only. Request a new one.';return render()}
+    const email=sd.session.user.email||CLOUD.recoverEmail||'';
+    const{error}=await CLOUD.sb.auth.updateUser({password:pw});
+    if(error){const m=error.message||'';if(/different from the old|same.?password/i.test(m))return err('That’s your current password. Choose a new one.','pw');if(/weak|pwned|leak|breach|easy to guess/i.test(m))return err('That password is too easy to guess or has appeared in a data breach elsewhere. Choose a different one.','pw');if(/session|jwt|expired|not authenticated|missing/i.test(m)){CLOUD.recovering=false;S.auth='expired';return render()}return err(nice(m))}
+    CLOUD.recovering=false;CLOUD.recoverEmail='';
+    try{await CLOUD.sb.auth.signOut({scope:'global'})}catch{try{await CLOUD.sb.auth.signOut({scope:'local'})}catch{}}
+    S.prefillEmail=email;S.auth='pwdone';S.authTitle='';S.authMsg='';return render()}
   }catch{err('Network problem. Check your connection and try again.')}finally{if(btn&&btn.isConnected){btn.disabled=false;btn.removeAttribute('aria-busy');btn.textContent=label}}
   return}
  if(id==='rf'||id==='lf'){const email=String(F.get('email')).trim().toLowerCase(),pw=String(F.get('pw')),err=m=>$('#aerr').innerHTML=`<div class="err">${esc(m)}</div>`;
@@ -1402,7 +1435,8 @@ document.addEventListener('submit',async e=>{e.preventDefault();const id=e.targe
    const salt=crypto.randomUUID();DB.users[email]={salt,hash:await hashPw(pw,salt),data:blank(name)};enter(email,DB.users[email].data,false)}
   else{const u=DB.users[email];if(!u||await hashPw(pw,u.salt)!==u.hash)return err('Email or password is incorrect.');enter(email,u.data,false)}}
 });
-document.addEventListener('input',e=>{const t=e.target;
+document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='au-pw'&&t.form&&t.form.id==='npf')pwStrength(t.value)
+ ;
  if(t.dataset.mt!==undefined){S.medDraft.times[+t.dataset.mt]=t.value;return}
  if(t.form&&t.form.id==='mf'){captureMed();return}
  if(t.dataset.uf)S.upload[t.dataset.uf]=t.value;

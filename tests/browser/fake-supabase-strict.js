@@ -66,10 +66,28 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
     if (fn === "feedback_submit") { T("feedback").push({ user_id: u, kind: args.p_kind, area: args.p_area, body: args.p_body, at: now }); save(); return { data: { ok: true }, error: null }; }
     return { data: null, error: { message: "function not found", code: "PGRST202" } };
   }
-  window.supabase = { createClient: () => ({
+  // Email links, as supabase-js 2.45.4 handles them (its "implicit" flow, the default): while starting, if
+  // detectSessionInUrl is on and the address holds a session (#access_token=…) or an error, it saves the session from the
+  // address (or, for an error, removes the saved session), clears the address fragment, and only on the next turn of the
+  // event loop announces PASSWORD_RECOVERY (type=recovery) or SIGNED_IN. getSession waits for that start-up.
+  // Recovery tokens live in localStorage.__sbrecovery; the test plays Supabase's /verify step (one use, then an error).
+  const startUp = (opts) => (async () => {
+    await Promise.resolve();
+    if (!(opts && opts.auth && opts.auth.detectSessionInUrl)) return;
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (!h.get("access_token") && !h.get("error_description")) return;
+    history.replaceState(null, "", location.pathname + location.search);
+    if (h.get("error_description")) { session = null; localStorage.removeItem("__sbsession"); return; }
+    const rec = JSON.parse(localStorage.getItem("__sbrecovery") || "{}")[h.get("access_token")], u = rec && DBS.users[rec.email];
+    if (!u) return;
+    session = { user: u.user, access_token: "tok-" + u.user.id, recovery: h.get("type") === "recovery" }; localStorage.setItem("__sbsession", JSON.stringify(session));
+    const ev = h.get("type") === "recovery" ? "PASSWORD_RECOVERY" : "SIGNED_IN";
+    setTimeout(() => listeners.forEach((f) => f(ev, session)), 0);
+  })();
+  window.supabase = { createClient: (url, key, opts) => { const ready = startUp(opts); return {
     rpc,
     auth: {
-      async getSession() { return { data: { session } }; },
+      async getSession() { await ready; return { data: { session } }; },
       async getUser() { return { data: { user: session ? session.user : null } }; },
       onAuthStateChange(fn) { listeners.push(fn); },
       async signUp({ email, password, options }) { if (DBS.users[email]) return { data: {}, error: { message: "User already registered" } }; const user = { id: uuid(), email, user_metadata: options.data }; DBS.users[email] = { user, password }; session = { user, access_token: "tok-" + user.id }; localStorage.setItem("__sbsession", JSON.stringify(session)); save(); return { data: { user, session }, error: null }; },
@@ -84,8 +102,22 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
         save(); localStorage.setItem("__sbsession", JSON.stringify({ user: DBS.users[email].user, access_token: "tok-" + DBS.users[email].user.id }));
         setTimeout(() => location.assign(options.redirectTo), 50); return { data: { provider, url: "https://accounts.google.com/o/oauth2/v2/auth" }, error: null };
       },
-      async signOut() { session = null; localStorage.removeItem("__sbsession"); listeners.forEach((f) => f("SIGNED_OUT", null)); return {}; },
-      async resetPasswordForEmail() { return { error: null }; }, async updateUser() { return { data: { user: session.user }, error: null }; },
+      async signOut(o) { const L = JSON.parse(localStorage.getItem("__signOuts") || "[]"); L.push((o && o.scope) || "global"); localStorage.setItem("__signOuts", JSON.stringify(L));
+        session = null; localStorage.removeItem("__sbsession"); listeners.forEach((f) => f("SIGNED_OUT", null)); return {}; },
+      // Records the request; for an existing account, issues a one-time recovery token, as Supabase emails one.
+      async resetPasswordForEmail(email, o) {
+        const calls = JSON.parse(localStorage.getItem("__resetCalls") || "[]"); calls.push({ email, redirectTo: o && o.redirectTo }); localStorage.setItem("__resetCalls", JSON.stringify(calls));
+        if (DBS.users[email]) { const tok = "rec-" + uuid(), R = JSON.parse(localStorage.getItem("__sbrecovery") || "{}"); R[tok] = { email, used: false }; localStorage.setItem("__sbrecovery", JSON.stringify(R)); localStorage.setItem("__lastRecovery", tok); }
+        return { error: null }; },
+      async updateUser(attrs) { await ready;
+        if (!session) return { data: { user: null }, error: { message: "Auth session missing!" } };
+        const u = Object.values(DBS.users).find((x) => x.user.id === session.user.id);
+        if (attrs && typeof attrs.password === "string") {
+          if (attrs.password.length < 8) return { data: { user: null }, error: { message: "Password should be at least 8 characters." } };
+          if (u && attrs.password === u.password) return { data: { user: null }, error: { message: "New password should be different from the old password." } };
+          if (u) { u.password = attrs.password; save(); }
+        }
+        return { data: { user: session.user }, error: null }; },
     },
     from: q,
     storage: { from: () => ({
@@ -93,5 +125,5 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
       async download(path) { if (!session || path.split("/")[0] !== session.user.id || !DBS.files[path]) return { data: null, error: { message: "not found" } }; return { data: await (await fetch(DBS.files[path])).blob(), error: null }; },
       async remove(paths) { paths.forEach((p) => delete DBS.files[p]); save(); return { error: null }; },
     }) },
-  }) };
+  }; } };
 })();

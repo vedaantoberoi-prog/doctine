@@ -19,7 +19,7 @@ export default async (req, context) => {
   if (parsed.error) return json({ error: parsed.error }, parsed.status);
   const b = parsed.body || {}, str = (v, n) => (typeof v === "string" ? v.slice(0, n) : "");
   const r = await rpc("report_error", { p_source: "client", p_kind: str(b.kind, 60), p_message: str(b.message, 400), p_location: str(b.location, 200), p_release: str(b.release, 40),
-    p_stack: str(b.stack, 1500), p_route: str(b.route, 80), p_env: process.env.DOCTINE_ENV || "", p_request: crypto.randomUUID() }, 3000);
+    p_stack: str(b.stack, 1500), p_route: /^#?[\w/-]{0,80}$/.test(str(b.route, 80)) ? str(b.route, 80) : "" /* a plain route only, never a fragment that could hold a sign-in token */, p_env: process.env.DOCTINE_ENV || "", p_request: crypto.randomUUID() }, 3000);
   return json({ stored: r.ok }, r.ok ? 200 : 202);
 };
 

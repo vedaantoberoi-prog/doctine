@@ -24,6 +24,7 @@ const SUITES = [
   ["isolation", "tests/browser/isolation.test.mjs", "Supabase simulated with ownership rules"],
   ["persistence", "tests/browser/persistence.test.mjs", "Supabase simulated with ownership rules"],
   ["profile-save", "tests/browser/profile-save.test.mjs", "saving the health profile: date of birth near midnight IST, and waiting after a failed save"],
+  ["reset-password", "tests/browser/reset-password.test.mjs", "forgotten password end to end: the link opens the new-password screen even when signed in; Supabase simulated like supabase-js 2.45.4"],
   ["help", "tests/browser/help.test.mjs", "Settings → Help and feedback and What's new; Supabase simulated with ownership rules"],
   ["app", "tests/browser/app.test.mjs", "API responses simulated in the browser"],
   ["google", "tests/browser/google.test.mjs", "Google sign-in; Supabase simulated with ownership rules"],

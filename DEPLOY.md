@@ -350,15 +350,16 @@ The same app and server functions also run on Cloudflare Pages (free plan, comme
 
 ## 16. Deploying the app by drag and drop (current production setup, since 9 November 2026)
 
-GitHub became unavailable on 7 November 2026, so production no longer builds from Git. app.doctine.com is served by
-the Cloudflare Pages project **`doctine-app-direct`** (Direct Upload). The Git-connected project `doctine-app` still
+GitHub was unavailable from 7 to about 11 November 2026, so production moved off Git builds. GitHub works again (CI, the
+Apps builds, nightly backup and uptime checks all run), but production deliberately stays a manual, approved upload.
+app.doctine.com is served by the Cloudflare Pages project **`doctine-app-direct`** (Direct Upload). The Git-connected project `doctine-app` still
 exists, without the domain, as a fallback.
 
 **Release:**
 1. `npm run build:direct` — runs the server tests, stamps the commit, bundles the server into `_worker.js`, runs
    `tests/worker.test.mjs` against it, and writes `dist/doctine-app.zip`.
 2. Cloudflare → Workers & Pages → `doctine-app-direct` → Create deployment → drag in **`doctine-app.zip`**
-   (16 files, including `_worker.js` and `_routes.json`) → Production → Save and deploy.
+   (29 files as of 12 Nov 2026, including `_worker.js`, `_routes.json`, `native.js` and `admin/`) → Production → Save and deploy.
 3. Check `https://app.doctine.com/version.json` shows the new commit.
 
 **Supabase keys (since 9 November 2026):** production uses Supabase's new keys — `SUPABASE_ANON_KEY` holds the
@@ -380,10 +381,11 @@ its files public at that deployment's address; delete that deployment.
 **Website:** Cloudflare Pages project `doctine-website` (Direct Upload). Zip the `website/` folder's contents (run
 `npm run build:preview` first so the app preview matches the app) and upload it the same way.
 
-**What no longer runs while GitHub is unavailable:** the workflows in `.github/workflows/` (CI, release report, staging
-smoke checks, deploy guards). Run the same checks locally before each upload (section 17).
+**CI:** the workflows in `.github/workflows/` run again on GitHub (CI on every push; `apps.yml` for Android/Mac; on `main`:
+nightly backup, uptime, staging). Staging deploys to Netlify fail since 11 Nov (Netlify credits). Still run the local
+checks in section 17 before each upload.
 
-## 17. Checks to run before an upload (while CI is unavailable)
+## 17. Checks to run before an upload
 
 ```
 npm test                                  # syntax, config, secret scan, server, grader, gates, tools

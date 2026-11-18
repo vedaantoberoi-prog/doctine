@@ -75,6 +75,11 @@ check("after turning them on: permission asked, alarms scheduled, and the channe
 // export through the share sheet
 await pg.evaluate(() => exportZip()); await W(1500);
 check("export goes to the share sheet from the app's private cache", (await nat()).some(([k, v]) => k === "fs.write" && /^exports\/doctine-export-.*\.zip\|CACHE$/.test(v)) && (await nat()).some(([k]) => k === "share"));
+// opening a record's original PDF: the share sheet (a WebView can't open blob: links in a new tab)
+await pg.evaluate(() => { S.reports.push({ id: 5150, title: "Fictional Blood Report", cat: "Lab report", date: "2026-11-01", lab: "", fields: {}, pdf: true }); IMG.get = async (k) => (k === "orig:5150:0" ? new Blob(["%PDF-1.4 fictional"], { type: "application/pdf" }) : null);
+  const b = document.createElement("button"); b.dataset.opdf = "5150"; b.id = "opdftest"; b.textContent = "pdf"; document.body.appendChild(b); });
+await pg.click("#opdftest"); await W(1200);
+check("opening an original PDF in the app hands it to the share sheet as a .pdf (no dead tap)", (await nat()).some(([k, v]) => k === "fs.write" && v === "exports/Fictional-Blood-Report.pdf|CACHE") && (await nat()).filter(([k]) => k === "share").length >= 2);
 // external links leave the app
 await pg.evaluate(() => { const a = document.createElement("a"); a.href = "https://www.doctine.com/privacy"; a.id = "ext"; a.textContent = "x"; document.body.appendChild(a); }); await pg.click("#ext"); await W(200);
 check("links to other sites open in the system browser", (await nat()).some(([k, v]) => k === "browser.open" && v === "https://www.doctine.com/privacy") && (await pg.evaluate(() => location.href)).startsWith(BASE));

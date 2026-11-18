@@ -71,8 +71,10 @@ check("viewer can switch to the original photo", await pg.evaluate("(()=>{const 
 await pg.click(".scanov [data-k=x]");
 // choosing "Don't send" keeps the photo in a record and sends nothing to the AI
 { const before = scanCalls; await pg.evaluate("go('reports')"); await pg.evaluate(`(async()=>{const f=await ${photo};quickScan(false,null,[f])})()`);
-  await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]"); await pg.click("[data-ai='0']"); await pg.waitForTimeout(600);
-  check("choosing 'Don't send' saves the photo as a record and sends nothing to the AI", scanCalls === before && /Add its details with Edit/.test(await pg.textContent("#toast")), String(scanCalls - before));
+  await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]"); await pg.click("[data-ai='0']");
+  // wait for the confirmation itself (a fixed 600 ms wait failed about 1 run in 4 when saving took longer)
+  const saidSo = await pg.waitForFunction(() => /Add its details with Edit/.test(document.getElementById("toast").textContent), null, { timeout: 5000 }).then(() => true, () => false);
+  check("choosing 'Don't send' saves the photo as a record and sends nothing to the AI", scanCalls === before && saidSo, String(scanCalls - before));
   await pg.evaluate("S.reports=S.reports.filter(r=>!/^Scan/.test(r.title)||r.scan);render()"); }
 // reading lab lines from a text PDF: Indian number formats, printed high/low marks, and lines it can't read
 { const r = await pg.evaluate(() => parseText(["Total Leucocyte Count 7,800 cells/cumm 4000 - 11000\nPlatelets 1,50,000 /cumm 1,50,000 - 4,10,000\nGlucose 210 H mg/dL 70 - 100\nTSH 0.12 mIU/L L 0.27 - 4.20\nUrine Volume 1.5 L 0.8 - 2.0\nHemoglobin 13,1 g/dL 12,0 - 15,5\nPotassium 6.1 L 3.5 - 5.1"]));

@@ -11,6 +11,7 @@
  */
 
 import { json, settings as sharedSettings, clientIp, callClaude as sharedCall, str, arr, conf as cf } from "../lib/ai.mjs";
+import { aiSwitchedOff } from "../lib/settings.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 
 const TIME_LIMIT_MS = 26000;
@@ -186,6 +187,13 @@ export default async (req, context) => {
   if (action !== "read" && action !== "explain") return json({ error: "invalid" }, 400);
   const rl = await checkRate(req, context, action === "read" ? "scan" : "explain", { ai: true });
   if (!rl.allowed) return json({ error: rl.error, retry_after: rl.retryAfter }, rl.status);
+  // Reading a document's images, or explaining a saved document, is for signed-in accounts only: it sends health
+  // documents to the AI provider and costs more than a chat message. (Evaluation runs on staging are exempt.)
+  const accountsOn = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) || /^prod/i.test(process.env.DOCTINE_ENV || "");
+  if (accountsOn && rl.who !== "user" && rl.who !== "eval") return json({ error: "sign_in_required", message: "Please sign in to read documents." }, 401);
+
+  // Switched off in the admin console (or maintenance mode): checked here, on the server, not just hidden in the app.
+  if (await aiSwitchedOff()) return json({ error: "ai_paused", message: "Reading documents is paused at the moment. You can still type the details in yourself." }, 503);
 
   if (action === "read") {
     const images = arr(body.images, MAX_IMAGES + 1);

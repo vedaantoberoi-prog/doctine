@@ -10,6 +10,7 @@ import scan from "../netlify/functions/scan.mjs";
 import { emergencyCheck } from "../netlify/lib/safety.mjs";
 import config from "../netlify/functions/config.mjs";
 import { checkRate, _resetTokenCache } from "../netlify/lib/ratelimit.mjs";
+import { _resetSettingsCache } from "../netlify/lib/settings.mjs";
 import { CASES, KNOWN_GAPS } from "./safety-cases.mjs";
 import { readFileSync } from "node:fs";
 import * as await_import_fs from "node:fs";
@@ -26,7 +27,9 @@ const test = async (name, fn) => {
 const _log = console.log.bind(console);
 console.log = (...a) => { if (typeof a[0] === "string" && !a[0].startsWith("  ") && a.length === 1 && !a[0].startsWith("\n")) section = a[0]; _log(...a); };
 const anthropic = (status, body) => { reply = { status, body }; };
+const SCAN_UID = "bbbbbbbb-0000-0000-0000-00000000000b";
 globalThis.fetch = async (url, init) => {
+  if (String(url).endsWith("/auth/v1/user")) return String(init.headers.authorization) === "Bearer signed-in-token" ? new Response(JSON.stringify({ id: SCAN_UID })) : new Response("{}", { status: 401 });
   lastReq = { url, body: JSON.parse(init.body), headers: init.headers };
   if (reply === "abort") { const e = new Error("aborted"); e.name = "AbortError"; throw e; }
   if (reply === "network") throw new TypeError("fetch failed");
@@ -34,8 +37,8 @@ globalThis.fetch = async (url, init) => {
 };
 const toolReply = (name, input) => ({ content: [{ type: "tool_use", name, input }], stop_reason: "tool_use" });
 let ipN = 0;
-const call = async (fn, path, body, { method = "POST", ip } = {}) => {
-  const res = await fn(new Request("https://doctine.test" + path, { method, body: method === "POST" ? JSON.stringify(body) : undefined }), { ip: ip || "10.0.0." + (++ipN) });
+const call = async (fn, path, body, { method = "POST", ip, token } = {}) => {
+  const res = await fn(new Request("https://doctine.test" + path, { method, headers: token ? { authorization: "Bearer " + token } : {}, body: method === "POST" ? JSON.stringify(body) : undefined }), { ip: ip || "10.0.0." + (++ipN) });
   return [res.status, await res.json()];
 };
 const user = (t) => ({ role: "user", content: t });
@@ -230,23 +233,42 @@ await test("retrieval refuses unsafe links, bad replies and an insecure service 
   r = await retrieve({ query: "dengue" }, { env: { ...env, KNOWLEDGE_TIMEOUT_MS: "50" }, fetchImpl: (u, i) => new Promise((_, rej) => i.signal.addEventListener("abort", () => rej(new Error("aborted")))) }); assert.equal(r.status, "unavailable");
 });
 
-console.log("/api/scan (unchanged behaviour on the shared helpers)");
+console.log("/api/scan (signed-in accounts only)");
+const scanEnv = { u: process.env.SUPABASE_URL, a: process.env.SUPABASE_ANON_KEY, s: process.env.SUPABASE_SERVICE_ROLE_KEY };
+process.env.SUPABASE_URL = "https://abc.supabase.co"; process.env.SUPABASE_ANON_KEY = "sb_publishable_test"; delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+await test("with accounts on, chat refuses guests but still gives emergency guidance", async () => {
+  anthropic(200, toolReply("respond", { reply: "BMI compares weight with height.", urgency: "routine" })); lastReq = null;
+  let [s, j] = await call(chat, "/api/chat", { messages: [user("What is BMI?")] });
+  assert.equal(s, 401); assert.equal(j.error, "sign_in_required"); assert.equal(lastReq, null, "no AI call for a guest");
+  [s, j] = await call(chat, "/api/chat", { messages: [user("I have crushing chest pain and my left arm is numb")] });
+  assert.equal(s, 200); assert.equal(j.ai_unavailable, "sign_in_required"); assert.equal(lastReq, null);
+  [s, j] = await call(chat, "/api/chat", { messages: [user("What is BMI?")] }, { token: "signed-in-token" });
+  assert.equal(s, 200); assert.ok(lastReq, "a signed-in account reaches the AI");
+});
+await test("scan refuses requests that are not signed in", async () => {
+  anthropic(200, toolReply("record", {})); lastReq = null;
+  let [s, j] = await call(scan, "/api/scan", { action: "read", images: [{ media_type: "image/jpeg", data: "QUJD" }] });
+  assert.equal(s, 401); assert.equal(j.error, "sign_in_required"); assert.equal(lastReq, null, "no AI call for a guest");
+  [s, j] = await call(scan, "/api/scan", { action: "explain", doc: { title: "Rx" }, messages: [user("Explain")] }, { token: "not-a-real-session" });
+  assert.equal(s, 401); assert.equal(j.error, "sign_in_required");
+});
 await test("read returns a cleaned document", async () => {
   anthropic(200, toolReply("record_document", { title: "Prescription – Dr. A. Kumar – 28 Oct 2026", type: "prescription", medicines: [{ raw: "Tab Pan-D", name: "Pan-D", confidence: "maybe" }], overall_confidence: "medium", transcription: "Rx", junk: 1 }));
-  const [s, j] = await call(scan, "/api/scan", { action: "read", images: [{ media_type: "image/jpeg", data: "QUJD" }] });
+  const [s, j] = await call(scan, "/api/scan", { action: "read", images: [{ media_type: "image/jpeg", data: "QUJD" }] }, { token: "signed-in-token" });
   assert.equal(s, 200); assert.equal(j.doc.title, "Prescription – Dr. A. Kumar – 28 Oct 2026"); assert.equal(j.doc.medicines[0].confidence, "low"); assert.ok(!("junk" in j.doc));
   assert.equal(lastReq.body.tool_choice.name, "record_document"); assert.equal(lastReq.body.messages[0].content[0].type, "image");
 });
 await test("explain answers about the document", async () => {
   anthropic(200, toolReply("explain", { reply: "This is a prescription for acidity.", urgency: "routine" }));
-  const [s, j] = await call(scan, "/api/scan", { action: "explain", doc: { title: "Rx" }, messages: [user("Explain")] });
+  const [s, j] = await call(scan, "/api/scan", { action: "explain", doc: { title: "Rx" }, messages: [user("Explain")] }, { token: "signed-in-token" });
   assert.equal(s, 200); assert.match(j.reply, /acidity/); assert.match(lastReq.body.messages[0].content, /^The document, as read/);
 });
 await test("scan rejects non-image uploads and maps provider errors", async () => {
-  let [s] = await call(scan, "/api/scan", { action: "read", images: [{ media_type: "text/html", data: "x" }] }); assert.equal(s, 400);
-  anthropic(401, ""); let [, j] = await call(scan, "/api/scan", { action: "read", images: [{ media_type: "image/jpeg", data: "QUJD" }] }); assert.equal(j.error, "invalid_key");
+  let [s] = await call(scan, "/api/scan", { action: "read", images: [{ media_type: "text/html", data: "x" }] }, { token: "signed-in-token" }); assert.equal(s, 400);
+  anthropic(401, ""); let [, j] = await call(scan, "/api/scan", { action: "read", images: [{ media_type: "image/jpeg", data: "QUJD" }] }, { token: "signed-in-token" }); assert.equal(j.error, "invalid_key");
   [, j] = await call(scan, "/api/scan", null, { method: "GET" }); assert.equal(j.ok, true);
 });
+for (const [k, v] of [["SUPABASE_URL", scanEnv.u], ["SUPABASE_ANON_KEY", scanEnv.a], ["SUPABASE_SERVICE_ROLE_KEY", scanEnv.s]]) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
 
 console.log("/api/config and /api/account");
 await test("config hands out only the public Supabase settings", async () => {
@@ -264,11 +286,43 @@ await test("config offers Google sign-in only when AUTH_GOOGLE is exactly true",
   if (saved === undefined) delete process.env.AUTH_GOOGLE; else process.env.AUTH_GOOGLE = saved;
 });
 await test("config says whether an AI model is switched on, as a yes or no only", async () => {
-  const saved = process.env.ANTHROPIC_API_KEY;
+  const saved = { k: process.env.ANTHROPIC_API_KEY, s: process.env.SUPABASE_SERVICE_ROLE_KEY };
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY; _resetSettingsCache(); // no database: no admin switches to obey
   delete process.env.ANTHROPIC_API_KEY; let j = await (await config(new Request("https://d/api/config"))).json(); assert.strictEqual(j.aiAvailable, false);
   process.env.ANTHROPIC_API_KEY = "sk-ant-test-not-real"; const raw = await (await config(new Request("https://d/api/config"))).text(); j = JSON.parse(raw);
   assert.strictEqual(j.aiAvailable, true); assert.ok(!raw.includes("sk-ant"), "the key itself is never sent");
-  if (saved === undefined) delete process.env.ANTHROPIC_API_KEY; else process.env.ANTHROPIC_API_KEY = saved;
+  if (saved.k === undefined) delete process.env.ANTHROPIC_API_KEY; else process.env.ANTHROPIC_API_KEY = saved.k;
+  if (saved.s === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = saved.s;
+});
+await test("admin switches reach the app through config, and the assistant switch is enforced on the server", async () => {
+  const saved = { ...process.env }, prev = globalThis.fetch; _resetSettingsCache(); _resetTokenCache();
+  Object.assign(process.env, { SUPABASE_URL: "https://abc.supabase.co", SUPABASE_ANON_KEY: "sb_publishable_x", SUPABASE_SERVICE_ROLE_KEY: "service-secret", ANTHROPIC_API_KEY: "sk-test" });
+  let settings = { flags: { ai_assistant: false, document_upload: false }, maintenance: { on: true, message: "Back at 10:00" }, announcements: [{ id: "1", kind: "service", title: "Notice", body: "" }] };
+  let aiCalls = 0;
+  globalThis.fetch = async (url, init = {}) => {
+    url = String(url);
+    if (url.endsWith("/rpc/public_settings")) return new Response(JSON.stringify(settings));
+    if (url.endsWith("/auth/v1/user")) return new Response(JSON.stringify({ id: "aaaaaaaa-0000-0000-0000-00000000000a" }));
+    if (url.endsWith("/rpc/rate_limit_hit")) return new Response(JSON.stringify([{ allowed: true, hits: 1, reset_at: new Date(Date.now() + 6e5).toISOString() }]));
+    if (url.includes("anthropic")) { aiCalls++; return new Response(JSON.stringify(toolReply("respond", { reply: "ok", sections: [], urgency: "routine" }))); }
+    return new Response("{}", { status: 404 });
+  };
+  try {
+    let j = await (await config(new Request("https://d/api/config"))).json();
+    assert.equal(j.aiAvailable, false); assert.equal(j.features.document_upload, false); assert.equal(j.maintenance.on, true); assert.equal(j.announcements[0].title, "Notice");
+    assert.ok(!JSON.stringify(j).includes("service-secret"));
+    const auth = { authorization: "Bearer t" };
+    let r = await chat(new Request("https://d/api/chat", { method: "POST", headers: auth, body: JSON.stringify({ messages: [user("hello")] }) }), { ip: "9.9.9.1" });
+    assert.equal(r.status, 503); assert.equal((await r.json()).error, "ai_paused");
+    r = await chat(new Request("https://d/api/chat", { method: "POST", headers: auth, body: JSON.stringify({ messages: [user("I have crushing chest pain and can't breathe")] }) }), { ip: "9.9.9.1" });
+    assert.equal(r.status, 200, "emergency guidance still works while the assistant is paused");
+    r = await scan(new Request("https://d/api/scan", { method: "POST", headers: auth, body: JSON.stringify({ action: "explain", document: { title: "x" } }) }), { ip: "9.9.9.1" });
+    assert.equal(r.status, 503); assert.equal(aiCalls, 0, "no AI call while paused");
+    settings = { flags: { ai_assistant: true }, maintenance: { on: false }, announcements: [] }; _resetSettingsCache();
+    j = await (await config(new Request("https://d/api/config"))).json(); assert.equal(j.aiAvailable, true); assert.equal(j.settingsSource, "database");
+    globalThis.fetch = async () => { throw new TypeError("fetch failed"); }; _resetSettingsCache();
+    j = await (await config(new Request("https://d/api/config"))).json(); assert.equal(j.aiAvailable, false, "database unreachable: the assistant stays off"); assert.equal(j.settingsSource, "default");
+  } finally { globalThis.fetch = prev; for (const k of Object.keys(process.env)) if (!(k in saved)) delete process.env[k]; Object.assign(process.env, saved); _resetSettingsCache(); }
 });
 await test("config publishes only a public Supabase key: publishable or legacy anon, never a secret or service-role key", async () => {
   const saved = { u: process.env.SUPABASE_URL, a: process.env.SUPABASE_ANON_KEY };
@@ -373,9 +427,11 @@ await test("a bad token removes nothing", async () => {
 
 console.log("shared rate limiting (netlify/lib/ratelimit.mjs)");
 function limiterSim({ down = false, users = { "tok-a": "aaaaaaaa-0000-0000-0000-000000000001", "tok-b": "bbbbbbbb-0000-0000-0000-000000000002" } } = {}) {
-  const counts = new Map(), bodies = []; const sim = { counts, bodies, calls: 0 };
+  const counts = new Map(), bodies = []; const sim = { counts, bodies, calls: 0, settings: { flags: { ai_assistant: true }, maintenance: { on: false }, announcements: [] } };
+  _resetSettingsCache();
   globalThis.fetch = async (url, init = {}) => {
     if (url.endsWith("/auth/v1/user")) { const t = (init.headers.authorization || "").replace("Bearer ", ""); return users[t] ? new Response(JSON.stringify({ id: users[t] })) : new Response("{}", { status: 401 }); }
+    if (url.endsWith("/rest/v1/rpc/public_settings")) return new Response(JSON.stringify(sim.settings));
     if (url.endsWith("/rest/v1/rpc/rate_limit_hit")) { sim.calls++; if (down) return new Response("{}", { status: 503 });
       const b = JSON.parse(init.body); bodies.push({ ...b, auth: init.headers.authorization }); const k = b.p_bucket + "|" + b.p_subject; const n = (counts.get(k) || 0) + 1; counts.set(k, n);
       return new Response(JSON.stringify([{ allowed: n <= b.p_limit, hits: n, reset_at: new Date(Date.now() + b.p_window_seconds * 1000).toISOString() }])); }

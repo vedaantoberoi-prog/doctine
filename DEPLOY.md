@@ -70,7 +70,10 @@ Netlify → **Site configuration → Environment variables**. Set the scope to i
 | `AI_SCAN_MODEL` (optional) | scanning model | Defaults to `AI_MODEL` if that's a Claude model. |
 | `SUPABASE_URL` | accounts and storage | Supabase → Project settings → API → Project URL |
 | `SUPABASE_ANON_KEY` | accounts and storage | Same page → `anon` `public` key. Safe in browsers; the database rules protect data. |
-| `SUPABASE_SERVICE_ROLE_KEY` | account deletion and shared rate limits | Same page → `service_role` key. **Secret: it bypasses row-level security, so it can read every person's health records.** Set it only as a Netlify environment variable. Never put it in the website or any browser code, never commit it, and never print it or include it in logs (application logs, CI logs or support messages). |
+| `SUPABASE_SERVICE_ROLE_KEY` | account deletion, shared rate limits, the admin console (/admin) and platform switches | Same page → `service_role` key. **Secret: it bypasses row-level security, so it can read every person's health records.** Set it only as a Netlify environment variable. Never put it in the website or any browser code, never commit it, and never print it or include it in logs (application logs, CI logs or support messages). |
+| `ADMIN_REQUIRE_MFA` | optional, admin console | `true` makes every admin use two-step sign-in (aal2) before the console opens. Without it, two-step sign-in is required only for admins who have set it up. See docs/ADMIN_CONSOLE.md. |
+| `RESEND_API_KEY`, `ALERT_EMAIL_TO`, `ALERT_EMAIL_FROM` | optional, alert emails | When all three are set, new admin-console alerts are emailed through Resend (`ALERT_EMAIL_TO` may list several addresses, comma-separated; `ALERT_EMAIL_FROM` must be on a domain verified in Resend). `RESEND_API_KEY` is a secret. Without them, the GitHub uptime workflow fails on new alerts, so GitHub emails the owner. |
+| `CF_PAGES_COMMIT_SHA` | set by Cloudflare | The commit being served; stamped into version.json and server error reports. Do not set it yourself. |
 | `RATE_LIMIT_SECRET` (required on staging and production) | rate limits | `openssl rand -hex 32`. Used to hash user ids and IP addresses before they're counted. If it is unset, the code falls back to the service-role key. Don't rely on that: it ties two secrets together, and rotating the service-role key would reset every counter. |
 | `AI_DAILY_REQUEST_CAP` (optional) | spending protection | Maximum AI requests per day across everyone (chat + scanning). Default 3000. |
 | `RATE_LIMIT_REQUIRE_SHARED` (optional) | spending protection | `true` refuses AI requests while the shared limiter can't be reached, instead of falling back to per-instance limits. Emergency messages still get fixed 112 guidance. |
@@ -347,15 +350,16 @@ The same app and server functions also run on Cloudflare Pages (free plan, comme
 
 ## 16. Deploying the app by drag and drop (current production setup, since 9 November 2026)
 
-GitHub became unavailable on 7 November 2026, so production no longer builds from Git. app.doctine.com is served by
-the Cloudflare Pages project **`doctine-app-direct`** (Direct Upload). The Git-connected project `doctine-app` still
+GitHub was unavailable from 7 to about 11 November 2026, so production moved off Git builds. GitHub works again (CI, the
+Apps builds, nightly backup and uptime checks all run), but production deliberately stays a manual, approved upload.
+app.doctine.com is served by the Cloudflare Pages project **`doctine-app-direct`** (Direct Upload). The Git-connected project `doctine-app` still
 exists, without the domain, as a fallback.
 
 **Release:**
 1. `npm run build:direct` — runs the server tests, stamps the commit, bundles the server into `_worker.js`, runs
    `tests/worker.test.mjs` against it, and writes `dist/doctine-app.zip`.
 2. Cloudflare → Workers & Pages → `doctine-app-direct` → Create deployment → drag in **`doctine-app.zip`**
-   (16 files, including `_worker.js` and `_routes.json`) → Production → Save and deploy.
+   (29 files as of 12 Nov 2026, including `_worker.js`, `_routes.json`, `native.js` and `admin/`) → Production → Save and deploy.
 3. Check `https://app.doctine.com/version.json` shows the new commit.
 
 **Supabase keys (since 9 November 2026):** production uses Supabase's new keys — `SUPABASE_ANON_KEY` holds the
@@ -374,20 +378,21 @@ Direct Upload deployment can't be "retried", so upload the zip again.
 **Don't** upload the complete project package by mistake: only `doctine-app.zip` belongs here. A wrong upload makes
 its files public at that deployment's address; delete that deployment.
 
-**Website:** Cloudflare Pages project `doctine-website` (Direct Upload). Zip the `website/` folder's contents (run
-`npm run build:preview` first so the app preview matches the app) and upload it the same way.
+**Website:** Cloudflare Pages project `doctine-website` (Direct Upload). `node tools/build-website.mjs` writes
+`dist/doctine-website.zip`; upload it the same way. App updates don't need a website upload: the website's sample link opens the
+real app (`app.doctine.com/?sample=1`).
 
-**What no longer runs while GitHub is unavailable:** the workflows in `.github/workflows/` (CI, release report, staging
-smoke checks, deploy guards). Run the same checks locally before each upload (section 17).
+**CI:** the workflows in `.github/workflows/` run again on GitHub (CI on every push; `apps.yml` for Android/Mac; on `main`:
+nightly backup, uptime, staging). Staging deploys to Netlify fail since 11 Nov (Netlify credits). Still run the local
+checks in section 17 before each upload.
 
-## 17. Checks to run before an upload (while CI is unavailable)
+## 17. Checks to run before an upload
 
 ```
 npm test                                  # syntax, config, secret scan, server, grader, gates, tools
 node tests/hermetic.test.mjs              # server tests with a deployed site's settings present
 node tools/run-browser-tests.mjs          # all browser suites (AI and Supabase simulated)
 bash tests/run-db-tests.sh                # migrations + RLS on a throw-away PostgreSQL 15+
-node tools/build-preview.mjs --check      # website preview matches the app
 gitleaks git --redact --no-banner --exit-code 1 .   # history scan (v8.21.2, sha256 pinned in ci.yml)
 ```
 

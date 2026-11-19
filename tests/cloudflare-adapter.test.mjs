@@ -18,6 +18,12 @@ await t("unknown and nested routes are 404, not passed to a handler", async () =
 await t("/api/account refuses a request without a sign-in token", async () => {
   const r = await call("account", { method: "DELETE" }); assert.ok([401, 403].includes(r.status), "status " + r.status);
 });
+await t("/api/admin and /api/events are routed, and refuse requests without a sign-in token", async () => {
+  const a = await call("admin", { method: "POST", headers: { "content-type": "application/json" }, body: '{"action":"overview"}' });
+  assert.ok([401, 503].includes(a.status), "admin status " + a.status);
+  const e = await call("events", { method: "POST", headers: { "content-type": "application/json" }, body: '{"name":"record_exported","props":{},"key":"k"}' });
+  assert.ok([401, 202].includes(e.status), "events status " + e.status);
+});
 await t("/api/chat without an AI key says the assistant isn't configured (no AI call)", async () => {
   const r = await call("chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: "What is HbA1c?" }] }) }, { ...env, RATE_LIMIT_REQUIRE_SHARED: "false", SUPABASE_SERVICE_ROLE_KEY: "" });
   const j = await r.json(); assert.ok(j.error === "not_configured" || j.ai_unavailable === "not_configured", JSON.stringify(j).slice(0, 160));
@@ -25,5 +31,23 @@ await t("/api/chat without an AI key says the assistant isn't configured (no AI 
 await t("an emergency message still gets fixed 112 guidance without an AI key", async () => {
   const r = await call("chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: [{ role: "user", content: "my father has crushing chest pain and cannot breathe" }] }) }, { ...env, RATE_LIMIT_REQUIRE_SHARED: "false", SUPABASE_SERVICE_ROLE_KEY: "" });
   const j = await r.json(); assert.ok(/112/.test(JSON.stringify(j)), JSON.stringify(j).slice(0, 200));
+});
+await t("the Doctine apps (https://localhost, tauri://localhost) may call the app's API; preflight answered", async () => {
+  for (const o of ["https://localhost", "tauri://localhost"]) {
+    const p = await call("config", { method: "OPTIONS", headers: { origin: o, "access-control-request-method": "GET" } });
+    assert.equal(p.status, 204); assert.equal(p.headers.get("access-control-allow-origin"), o); assert.match(p.headers.get("access-control-allow-headers"), /authorization/);
+    const r = await call("config", { headers: { origin: o } }); assert.equal(r.headers.get("access-control-allow-origin"), o); assert.equal(r.headers.get("vary"), "Origin");
+  }
+});
+await t("…but no other origin, never a wildcard, no cookies, and never the admin console or the monitor", async () => {
+  for (const o of ["https://evil.example", "http://localhost", "null", "https://localhost.evil.example"]) {
+    const p = await call("config", { method: "OPTIONS", headers: { origin: o } }); assert.equal(p.status, 403, o); assert.equal(p.headers.get("access-control-allow-origin"), null, o);
+    assert.equal((await call("config", { headers: { origin: o } })).headers.get("access-control-allow-origin"), null, o);
+  }
+  for (const route of ["admin", "monitor"]) {
+    const p = await call(route, { method: "OPTIONS", headers: { origin: "tauri://localhost" } }); assert.equal(p.status, 403, route);
+    const r = await call(route, { method: "POST", headers: { origin: "https://localhost", "content-type": "application/json" }, body: '{"action":"me"}' }); assert.equal(r.headers.get("access-control-allow-origin"), null, route);
+  }
+  const r = await call("config", { headers: { origin: "https://localhost" } }); assert.notEqual(r.headers.get("access-control-allow-origin"), "*"); assert.equal(r.headers.get("access-control-allow-credentials"), null);
 });
 console.log(`${passed} cloudflare-adapter tests passed`);

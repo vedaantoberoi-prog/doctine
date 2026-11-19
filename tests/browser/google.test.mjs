@@ -28,6 +28,8 @@ const consents = (pg) => pg.evaluate("(()=>{const u=window.__sbdb.users['priya.g
 // Google not switched on for this site: no button, so nobody is sent to an error page
 let { ctx, pg } = await device(false);
 check("no Google button when the site hasn't switched Google on", (await pg.$("#google")) === null);
+check("with real accounts, the sign-in screen offers no guest chat (the assistant answers signed-in accounts only)", (await pg.$("#guest")) === null && (await pg.$("#samp")) !== null);
+check("the sign-in screen has visible field labels, a Show/Hide password control and the brand panel copy", (await pg.$("label[for=au-email]")) !== null && (await pg.$("label[for=au-pw]")) !== null && (await pg.$("#pwtoggle[aria-pressed=false]")) !== null && (await pg.textContent(".au-art")).includes("Your health has a history."));
 await ctx.close();
 
 ({ ctx, pg } = await device(true));

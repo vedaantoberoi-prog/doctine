@@ -4,6 +4,7 @@
  * Run through tools/run-browser-tests.mjs, which starts both servers.
  */
 import { chromium } from "playwright";
+import { addMed } from "./med-helper.mjs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8888";
 const MOCK = process.env.DOCTINE_MOCK_AI || "http://127.0.0.1:8790";
 const out = [];
@@ -34,7 +35,7 @@ const reg = async (name, email, pw) => { await pg.click("[data-auth=register]");
 await pg.click("[data-auth=register]"); await pg.fill("input[name=name]", "Kavya Rao"); await pg.fill("input[name=email]", "kavya.test@example.com"); await pg.fill("input[name=pw]", "short"); await pg.check("input[name=ack]"); await pg.click("#rf button.pri"); await W(200);
 check("registration rejects a short password", (await text("#aerr")).includes("at least 8"));
 await pg.click("[data-auth=login]"); await reg("Kavya Rao", "kavya.test@example.com", "kavya-pass-123");
-check("registration signs in and opens Home", (await text("#view")).includes("Hello, Kavya"));
+check("registration signs in and opens My Health", (await text("#view")).includes(", Kavya.") && (await text("#view")).includes("overview of your health"));
 check("the account is labelled as a browser-only demo account", (await text("#who")).includes("Demo · this browser only"));
 await pg.evaluate("document.getElementById('out').click()"); await W(200);
 check("sign-out returns to the sign-in screen", (await text("#auth")).includes("Welcome back"));
@@ -44,7 +45,7 @@ await pg.fill("input[name=pw]", "kavya-pass-123"); await pg.click("#lf button.pr
 check("login works after sign-out", await pg.evaluate("S.email==='kavya.test@example.com'"));
 
 // ---------- navigation ----------
-const views = { home: "Hello", chat: "What would you like help understanding", health: "My Health", reports: "Medical records", medicines: "Medicines", reminders: "Reminders", about: "Health is more than a collection of reports.", settings: "Settings" };
+const views = { home: "overview of your health today", chat: "What would you like help understanding", health: "Health profile", vitals: "Vitals", reports: "Medical records", medicines: "Medicines", reminders: "Reminders", about: "Health is more than a collection of reports.", settings: "Settings" };
 let navOk = true, bad = [];
 for (const [v, expect] of Object.entries(views)) { await pg.click(`#nav [data-nav=${v}]`); await W(80); if (!(await text()).includes(expect)) { navOk = false; bad.push(v); } }
 check("every menu item opens its screen", navOk, bad.join(","));
@@ -92,6 +93,15 @@ await pg.check("[data-c=ai]"); await W(100);
 // ---------- document upload and report viewing (real /api/scan) ----------
 await pg.click("#nav [data-nav=reports]");
 const photo = await pg.evaluate(async () => { const c = document.createElement("canvas"); c.width = 1200; c.height = 1600; const x = c.getContext("2d"); x.fillStyle = "#5a3d28"; x.fillRect(0, 0, 1200, 1600); x.fillStyle = "#f3efe6"; x.beginPath(); x.moveTo(210, 180); x.lineTo(1010, 260); x.lineTo(1060, 1420); x.lineTo(150, 1350); x.closePath(); x.fill(); x.fillStyle = "#22336a"; x.font = "46px serif"; for (let i = 0; i < 8; i++) x.fillText("Tab Pan-D 40 1-0-0 AC x5d", 300, 420 + i * 100); return c.toDataURL("image/jpeg", 0.9).split(",")[1]; });
+// A file is judged by its first bytes, not by its name or the type the browser reports.
+await pg.setInputFiles("#file", { name: "holiday.jpg", mimeType: "image/jpeg", buffer: Buffer.from("<html><script>alert(1)</script></html>") }); await W(600);
+check("a web page renamed to .jpg is refused before the scanner uses it", /Only JPG, PNG and WebP/.test(await pg.textContent("#toast")) && !(await pg.$(".scanov img.scanimg")), (await pg.textContent("#toast")).slice(0, 80));
+if (await pg.$(".scanov [data-x=close]")) await pg.click(".scanov [data-x=close]"); await W(200);
+await pg.click("#nav [data-nav=reports]"); await W(200);
+await pg.setInputFiles("#file", { name: "report.pdf", mimeType: "application/pdf", buffer: Buffer.from("MZ this is not a pdf at all") }); await W(600);
+check("a file named .pdf that isn't a PDF is refused", /Only PDF, JPG and PNG/.test(await text()), ((await text()).match(/.{0,40}(Only|could not|isn).{0,60}/) || ["(no error shown)"])[0]);
+if (await pg.$("#ucx")) await pg.click("#ucx");
+await pg.click("#nav [data-nav=home]"); await W(100); await pg.click("#nav [data-nav=reports]"); await W(200);
 await pg.setInputFiles("#file", { name: "prescription.jpg", mimeType: "image/jpeg", buffer: Buffer.from(photo, "base64") });
 await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 });
 check("an uploaded photo opens the scanner with the page found and straightened", await pg.evaluate("!!document.querySelector('.scanov img.scanimg')"));
@@ -110,13 +120,12 @@ check("'Ask about this report' gives an explanation of that document (real /api/
 // ---------- medicines ----------
 await pg.click("#nav [data-nav=medicines]");
 const hm = await pg.evaluate("(()=>{const d=new Date(Date.now()-3600e3);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')})()");
-await pg.fill("#mf [name=name]", "Cetirizine 10 mg"); await pg.fill("#mf [name=dose]", "1 tablet at night");
-await pg.evaluate((t) => { S.medDraft.times = [t]; }, hm); await pg.click("#mf button.pri"); await W(200);
+await addMed(pg, { name: "Cetirizine 10 mg", times: [hm], wait: 200 });
 check("a medicine can be added", (await text()).includes("Cetirizine 10 mg"));
-await pg.click("[data-edit]"); await pg.fill("#mf [name=dose]", "1 tablet after dinner"); await pg.click("#mf button.pri"); await W(200);
-check("a medicine can be edited", (await text()).includes("1 tablet after dinner"));
-await pg.click("[data-st$='|paused']"); await W(100); check("a medicine can be paused", (await text()).includes("paused"));
-await pg.click("[data-st$='|active']"); await W(100); check("a paused medicine can be resumed", (await pg.$("[data-st$='|paused']")) !== null);
+await pg.click("[data-edit]"); await W(100); await pg.fill("#mf [name=note]", "After dinner"); await pg.click("#mf button.pri"); await W(150); await pg.click("#mf button.pri"); await W(200);
+check("a medicine can be edited", (await text()).includes("After dinner"));
+await pg.click(".mx-more summary"); await pg.click("[data-st$='|paused']"); await W(100); check("a medicine can be paused", (await text()).includes("Paused"));
+await pg.click(".mx-more summary"); await pg.click("[data-st$='|active']"); await W(100); check("a paused medicine can be resumed", (await pg.$("[data-st$='|paused']")) !== null);
 
 // ---------- reminders ----------
 await pg.click("#nav [data-nav=reminders]"); await W(150);
@@ -127,14 +136,14 @@ await pg.click(`#view [data-d$='|Undo']`); await W(150);
 check("a mistaken entry can be undone", (await pg.$(`#view [data-d$='|Taken']`)) !== null);
 await pg.click(`#view [data-d$='|Snoozed']`); await W(150);
 check("a dose can be snoozed for 10 minutes", (await text()).includes("Snoozed until"));
-await pg.click("#nav [data-nav=medicines]"); await pg.click("[data-del]"); await W(200);
+await pg.click("#nav [data-nav=medicines]"); await pg.click(".mx-more summary"); await pg.click("[data-del]"); await W(80); await pg.click("[data-del]"); await W(200);
 check("a medicine can be deleted", !(await text()).includes("Cetirizine 10 mg"));
 
 // ---------- account switching (demo accounts on one browser) ----------
 await pg.evaluate("document.getElementById('out').click()"); await W(200);
 await reg("Arjun Mehta", "arjun.test@example.com", "arjun-pass-123");
 await pg.click("#nav [data-nav=reports]"); await W(150);
-check("a second account on the same browser sees none of the first account's records", !(await text()).includes("Dr. Sample Physician") && (await text()).includes("No reports yet"));
+check("a second account on the same browser sees none of the first account's records", !(await text()).includes("Dr. Sample Physician") && (await text()).includes("No records yet"));
 await pg.click("#nav [data-nav=medicines]"); check("…and none of its medicines", (await text()).includes("No medicines yet"));
 
 // ---------- mobile ----------

@@ -89,9 +89,10 @@ check("pausing moves it under Paused, with reminders off", (await pg.textContent
 await pg.click(".mx-item:has-text('Fictional vitamin') .mx-more summary"); await pg.click(".mx-item:has-text('Fictional vitamin') [data-st$='|active']"); await W(100);
 await pg.click(".mx-item:has-text('Older entry') .mx-more summary"); await pg.click(".mx-item:has-text('Older entry') [data-st$='|completed']"); await W(100);
 check("a completed medicine moves under Finished and keeps its history", (await pg.textContent(".mx-fin")).includes("Older entry") && await pg.evaluate("S.meds.some(m=>m.id===4242)"));
-pg.once("dialog", (d) => d.accept());
-await pg.click(".mx-item:has-text('Older entry') .mx-more summary"); await pg.click(".mx-item:has-text('Older entry') [data-del]"); await W(120);
-check("delete asks first, naming the medicine, then removes it", !(await pg.evaluate("S.meds.some(m=>m.id===4242)")));
+await pg.click(".mx-item:has-text('Older entry') .mx-more summary"); await pg.click(".mx-item:has-text('Older entry') [data-del]"); await W(100);
+check("the first tap on Delete only asks for a second tap", await pg.evaluate("S.meds.some(m=>m.id===4242)") && (await pg.textContent(".mx-item:has-text('Older entry') [data-del]")).includes("Tap again"));
+await pg.click(".mx-item:has-text('Older entry') [data-del]"); await W(120);
+check("the second tap deletes it", !(await pg.evaluate("S.meds.some(m=>m.id===4242)")));
 
 // phone width: no sideways scrolling, controls big enough
 await pg.setViewportSize({ width: 360, height: 800 }); await pg.click("[data-medadd]"); await W(120);
@@ -103,12 +104,13 @@ await pg.click("#mcancel"); await pg.setViewportSize({ width: 1280, height: 1000
 await pg.evaluate(async () => {
   const mk = async (col) => { const c = document.createElement("canvas"); c.width = 600; c.height = 800; const x = c.getContext("2d"); x.fillStyle = col; x.fillRect(0, 0, 600, 800); return await new Promise((r) => c.toBlob(r, "image/jpeg", 0.8)); };
   for (let i = 0; i < 2; i++) { await IMG.put(`scan:777:${i}`, await mk("#fafafa")); await IMG.put(`orig:777:${i}`, await mk("#ccbbaa")); }
-  S.reports.unshift({ id: 777, title: "Prescription – Fictional Clinic", cat: "Prescription", date: "2026-11-15", lab: "Fictional Clinic", fields: { Diagnosis: "Fictional fever" }, imgs: 2,
+  S.reports.unshift({ id: 777, title: "Prescription – Fictional Clinic", cat: "Prescription", date: "2026-11-15", lab: "Fictional Clinic", fields: { "Fictomol": "650 mg · 1-0-1 · after food · 3 days", Diagnosis: "Fictional fever" }, imgs: 2,
     scan: { medicines: [{ raw: "Tab Fictomol 650 1-0-1 x3d", name: "Fictomol", form: "tablet", strength: "650 mg", frequency: "1-0-1", timing: "after food", duration: "3 days", confidence: "high", alternatives: [] }, { raw: "Syp Fict?x", name: "Fictox", confidence: "low", alternatives: ["Fictex"] }], unreadable: [], transcription: "Tab Fictomol 650 1-0-1 x3d" }, checked: false });
   go("reports");
 }); await W(300);
 const card = await pg.textContent(".rx-card");
 check("the record card shows title, date, provider and that it isn't checked yet", ["Prescription – Fictional Clinic", "15 Nov 2026", "Fictional Clinic", "Read automatically · not yet checked"].every((x) => card.includes(x)));
+check("before checking, the medicines aren't repeated as detail rows above the table", !(await pg.textContent(".rx-kv")).includes("Fictomol") && (await pg.textContent(".rx-kv")).includes("Fictional fever"));
 check("the medicines read from the photo are a table with strength, how often, when and for how long", (await pg.$$(".rx-meds tbody tr")).length === 2 && (await pg.textContent(".rx-meds")).includes("650 mg") && (await pg.textContent(".rx-meds")).includes("3 days") && (await pg.textContent(".rx-meds")).includes("Unsure"));
 check("the page preview shows the page count and loads the image", (await pg.textContent(".rx-pages")) === "2 pages" && await pg.evaluate("new Promise(r=>setTimeout(()=>r(document.querySelector('.rx-thumb img').src.startsWith('blob:')),300))"));
 await pg.click(".rx-thumb"); await W(300);
@@ -120,12 +122,18 @@ const [dl] = await Promise.all([pg.waitForEvent("download"), pg.click(".scanov [
 check("Download saves the page that's showing", /page-2-original\.jpg$/.test(dl.suggestedFilename()), dl.suggestedFilename());
 await pg.keyboard.press("Escape"); await W(100);
 check("Escape closes the viewer", !(await pg.$(".scanov")));
+await pg.click(".rx-card .mx-more summary"); await pg.click(".rx-card [data-rdel]"); await W(80);
+check("deleting a record also takes two taps", await pg.evaluate("S.reports.some(r=>r.id===777)") && (await pg.textContent(".rx-card [data-rdel]")).includes("Tap again"));
+await pg.keyboard.press("Escape"); await pg.click(".rx-card .mx-more summary");
 await pg.click("[data-rxmeds]"); await W(200);
 check("'Add to medicines' opens the prescription's medicines for checking", await pg.evaluate("S.view==='medicines'&&S.medScan&&S.medScan.meds.length===2") && (await txt()).includes("Check and add"));
 await pg.click("[data-msadd='0']"); await W(150);
 check("from the prescription: strength, amount (1-0-1 → 1), form, twice a day, after food and the end date are filled for checking", await pg.evaluate("(()=>{const d=S.medDraft;return d.sv==='650'&&d.su==='mg'&&d.amount==='1'&&d.unit==='tablet'&&d.mode==='twice'&&d.times.join()==='08:00,21:00'&&d.instr.join()==='After food'&&d.dur==='until'&&!!d.end})()"), JSON.stringify(await pg.evaluate("S.medDraft")));
 await pg.click("#mcancel");
-await pg.click("[data-msadd='1']"); await W(150);
+await pg.evaluate(() => { S.medScan.meds.push({ raw: "Syp Fictocough 10 ml SOS", name: "Fictocough", form: "syrup", frequency: "SOS", confidence: "high", alternatives: [] }); render(); });
+await pg.click("#mcancel").catch(() => {}); await pg.click("[data-msadd='2']"); await W(150);
+check("'SOS' on a prescription becomes 'only when needed', with no reminder times", await pg.evaluate("S.medDraft.mode==='prn'&&S.medDraft.times.length===0&&S.medDraft.unit==='ml'"));
+await pg.click("#mcancel"); await pg.click("[data-msadd='1']"); await W(150);
 check("an unclear prescription line gets no invented schedule", await pg.evaluate("S.medDraft.mode===''&&S.medDraft.times.length===0&&S.medDraft.amount===''"));
 
 check("no JavaScript errors on the page", errs.length === 0, errs.join(" | "));

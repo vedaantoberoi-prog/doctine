@@ -136,7 +136,7 @@ await pg.click(`#view [data-d$='|Undo']`); await W(150);
 check("a mistaken entry can be undone", (await pg.$(`#view [data-d$='|Taken']`)) !== null);
 await pg.click(`#view [data-d$='|Snoozed']`); await W(150);
 check("a dose can be snoozed for 10 minutes", (await text()).includes("Snoozed until"));
-await pg.click("#nav [data-nav=medicines]"); await pg.click(".mx-more summary"); await pg.click("[data-del]"); await W(200);
+await pg.click("#nav [data-nav=medicines]"); await pg.click(".mx-more summary"); await pg.click("[data-del]"); await W(80); await pg.click("[data-del]"); await W(200);
 check("a medicine can be deleted", !(await text()).includes("Cetirizine 10 mg"));
 
 // ---------- account switching (demo accounts on one browser) ----------

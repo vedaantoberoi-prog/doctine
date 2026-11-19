@@ -12,6 +12,7 @@ window.__writes = []; window.__failTable = null; window.__delay = {};
     const st = { filters: [], op: "select", rows: null, oc: null, ign: false, single: false, maybe: false };
     const exec = (u) => {
       if (!u) return { data: null, error: { message: "JWT missing" } };
+      if ((window.__missingTables || []).includes(n)) return { data: null, error: { code: "42P01", message: `relation "public.${n}" does not exist` } };
       const mine = T(n).filter((r) => r.user_id === u && st.filters.every(([k, v]) => String(r[k]) === String(v)));
       if (st.op === "select") return st.single || st.maybe ? { data: mine[0] || null, error: null } : { data: mine, error: null };
       if (st.op === "delete") {

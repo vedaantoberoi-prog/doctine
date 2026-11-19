@@ -35,7 +35,7 @@ const reg = async (name, email, pw) => { await pg.click("[data-auth=register]");
 await pg.click("[data-auth=register]"); await pg.fill("input[name=name]", "Kavya Rao"); await pg.fill("input[name=email]", "kavya.test@example.com"); await pg.fill("input[name=pw]", "short"); await pg.check("input[name=ack]"); await pg.click("#rf button.pri"); await W(200);
 check("registration rejects a short password", (await text("#aerr")).includes("at least 8"));
 await pg.click("[data-auth=login]"); await reg("Kavya Rao", "kavya.test@example.com", "kavya-pass-123");
-check("registration signs in and opens Home", (await text("#view")).includes("Hello, Kavya"));
+check("registration signs in and opens My Health", (await text("#view")).includes(", Kavya.") && (await text("#view")).includes("overview of your health"));
 check("the account is labelled as a browser-only demo account", (await text("#who")).includes("Demo · this browser only"));
 await pg.evaluate("document.getElementById('out').click()"); await W(200);
 check("sign-out returns to the sign-in screen", (await text("#auth")).includes("Welcome back"));
@@ -45,7 +45,7 @@ await pg.fill("input[name=pw]", "kavya-pass-123"); await pg.click("#lf button.pr
 check("login works after sign-out", await pg.evaluate("S.email==='kavya.test@example.com'"));
 
 // ---------- navigation ----------
-const views = { home: "Hello", chat: "What would you like help understanding", health: "My Health", reports: "Medical records", medicines: "Medicines", reminders: "Reminders", about: "Health is more than a collection of reports.", settings: "Settings" };
+const views = { home: "overview of your health today", chat: "What would you like help understanding", health: "Health profile", vitals: "Vitals", reports: "Medical records", medicines: "Medicines", reminders: "Reminders", about: "Health is more than a collection of reports.", settings: "Settings" };
 let navOk = true, bad = [];
 for (const [v, expect] of Object.entries(views)) { await pg.click(`#nav [data-nav=${v}]`); await W(80); if (!(await text()).includes(expect)) { navOk = false; bad.push(v); } }
 check("every menu item opens its screen", navOk, bad.join(","));

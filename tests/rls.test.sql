@@ -13,8 +13,10 @@ select pg_temp.expect(not exists (select 1 from pg_class where relnamespace = 'p
   'every table in the public schema has row-level security on');
 select pg_temp.expect((select count(*) from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relforcerowsecurity
   and relname = any(array['health_profiles','consents','documents','document_files','lab_results','prescriptions','prescription_items',
-                          'medicines','medication_schedules','dose_events','conversations','messages'])) = 12,
-  'row-level security is forced on all 12 health-data tables (it applies even to the table owner)');
+                          'medicines','medication_schedules','dose_events','conversations','messages','vital_readings'])) = 13,
+  'row-level security is forced on all 13 health-data tables (it applies even to the table owner)');
+select pg_temp.expect(not exists (select 1 from information_schema.role_table_grants where table_schema = 'public' and table_name = 'vital_readings' and grantee = 'anon'),
+  'signed-out visitors have no access to health readings');
 -- consent_log is the one deliberate exception: only the security-definer consent trigger writes it, and it has no write policy.
 select pg_temp.expect(not exists (select 1 from information_schema.role_table_grants where table_schema = 'public' and table_name = 'consent_log'
   and grantee in ('anon', 'authenticated') and privilege_type in ('INSERT', 'UPDATE', 'DELETE')), 'nobody can write the consent history directly');
@@ -63,6 +65,25 @@ do $$ begin
   exception when check_violation then raise notice 'ok: an empty dose amount is refused (null means not given)'; end;
 end $$;
 delete from medicines where client_id in (12, 13, 14);
+-- health readings (20261119010000)
+insert into vital_readings (client_id, kind, value, value2, unit, measured_at) values (21, 'blood_pressure', 124, 82, 'mmHg', '2026-11-18 08:10+05:30');
+insert into vital_readings (client_id, kind, value, unit, context, measured_at) values (22, 'glucose', 104, 'mg/dL', 'fasting', '2026-11-18 07:30+05:30');
+insert into vital_readings (client_id, kind, value, unit, measured_at, note) values (23, 'heart_rate', 72, 'bpm', '2026-11-18 08:10+05:30', 'After rest');
+select pg_temp.expect((select count(*) from vital_readings where user_id = auth.uid()) = 3, 'a person can add their own health readings');
+do $$ begin
+  begin insert into vital_readings (client_id, kind, value, unit, measured_at) values (24, 'heart_rate', 72, 'mmHg', now()); raise exception 'FAILED: wrong unit';
+  exception when check_violation then raise notice 'ok: a reading must use its own unit'; end;
+  begin insert into vital_readings (client_id, kind, value, unit, measured_at) values (24, 'spo2', 140, '%', now()); raise exception 'FAILED: SpO2 140';
+  exception when check_violation then raise notice 'ok: impossible values are refused (oxygen saturation over 100 per cent)'; end;
+  begin insert into vital_readings (client_id, kind, value, unit, measured_at) values (24, 'blood_pressure', 120, 'mmHg', now()); raise exception 'FAILED: BP without diastolic';
+  exception when check_violation then raise notice 'ok: blood pressure needs both numbers'; end;
+  begin insert into vital_readings (client_id, kind, value, value2, unit, measured_at) values (24, 'blood_pressure', 80, 120, 'mmHg', now()); raise exception 'FAILED: BP reversed';
+  exception when check_violation then raise notice 'ok: blood pressure with the numbers swapped is refused'; end;
+  begin insert into vital_readings (client_id, kind, value, unit, context, measured_at) values (24, 'heart_rate', 70, 'bpm', 'fasting', now()); raise exception 'FAILED: context on HR';
+  exception when check_violation then raise notice 'ok: fasting / after a meal applies to blood glucose only'; end;
+  begin insert into vital_readings (client_id, kind, value, unit, measured_at, source) values (24, 'weight', 60, 'kg', now(), 'device'); raise exception 'FAILED: device source';
+  exception when check_violation then raise notice 'ok: readings can only be entered by the person (no devices are connected)'; end;
+end $$;
 insert into consents (kind, granted) values ('ai_chat', true);
 update consents set granted = false where kind = 'ai_chat';
 select pg_temp.expect((select count(*) from consent_log) = 2, 'consent changes are logged');
@@ -98,6 +119,9 @@ select pg_temp.expect((select count(*) from storage.objects) = 0, 'B cannot list
 select pg_temp.expect((select count(*) from consent_log) = 0, 'B cannot read A''s consent history');
 with u as (update documents set title = 'hacked' returning 1) select pg_temp.expect((select count(*) from u) = 0, 'B cannot change A''s documents');
 with d as (delete from medicines returning 1) select pg_temp.expect((select count(*) from d) = 0, 'B cannot delete A''s medicines');
+select pg_temp.expect((select count(*) from vital_readings) = 0, 'B sees none of A''s health readings');
+with d as (delete from vital_readings returning 1) select pg_temp.expect((select count(*) from d) = 0, 'B cannot delete A''s health readings');
+with u as (update vital_readings set value = 200 returning 1) select pg_temp.expect((select count(*) from u) = 0, 'B cannot change A''s health readings');
 do $$ begin
   begin insert into documents (user_id, client_id, title) values ('aaaaaaaa-0000-0000-0000-000000000001', 99, 'planted'); raise exception 'FAILED: B created a document as A';
   exception when insufficient_privilege then raise notice 'ok: B cannot create records in A''s name'; end;

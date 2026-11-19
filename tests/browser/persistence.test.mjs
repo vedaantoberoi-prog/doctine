@@ -33,8 +33,10 @@ await addMed(pg, { name: "Telma 40", form: "tablet", strength: ["40", "mg"], tim
 await addMed(pg, { name: "Fictional antacid", form: "syrup", amount: "10", unit: "ml", mode: "prn", note: "Not more than 3 times a day" });
 await addMed(pg, { name: "Fictional antibiotic", form: "capsule", mode: "interval", interval: 8, first: "06:00" });
 await pg.evaluate(() => { const t = S.meds.find((m) => m.name === "Telma 40"); t.status = "paused"; S.doses[S.meds[0].id + "@09:00@2026-11-01"] = "Taken"; S.doses[S.meds[0].id + "@09:00@2026-10-25"] = "Skipped"; render(); });
+await pg.evaluate(() => { S.vitals.push({ id: 7001, kind: "blood_pressure", v: 126, v2: 84, unit: "mmHg", ctx: "", note: "Fictional reading", at: "2026-11-18T02:40:00.000Z" }, { id: 7002, kind: "glucose", v: 104, v2: null, unit: "mg/dL", ctx: "fasting", note: "", at: "2026-11-18T02:00:00.000Z" }); render(); });
 await pg.waitForTimeout(1500);
 const t1 = await pg.evaluate(() => window.__sbdb.tables);
+check("health readings are saved to the account with unit, time and context", (t1.vital_readings || []).length === 2 && t1.vital_readings.some((v) => v.kind === "blood_pressure" && v.value === 126 && v.value2 === 84 && v.unit === "mmHg" && v.measured_at === "2026-11-18T02:40:00.000Z") && t1.vital_readings.some((v) => v.kind === "glucose" && v.context === "fasting" && v.value2 === null), JSON.stringify(t1.vital_readings));
 check("profile saved to the account", t1.health_profiles?.[0]?.blood_group === "A+" && t1.health_profiles[0].allergies === "Sulfa" && t1.health_profiles[0].height_cm == 158);
 check("report and its AI reading saved", t1.documents?.[0]?.extraction?.lab_results?.[0]?.test === "HbA1c");
 // where the details came from: read automatically until the person checks them; the AI reading itself is never altered
@@ -86,7 +88,7 @@ await pg.evaluate("go('settings')"); await pg.waitForTimeout(150);
 check("Settings shows which account is signed in", (await pg.textContent("#acct")).includes("Signed in as meera@example.com"));
 await pg.click("#pwmail"); await pg.waitForTimeout(200);
 check("a password-change link can be emailed from Settings", (await pg.textContent("#acct")).includes("We sent a link to meera@example.com"));
-check("before deleting, Settings says exactly what is removed and that it can't be undone", /permanently removes your profile, reports, original documents and photos, medicines, dose history, saved chats/.test(await pg.textContent("#view")) && (await pg.textContent("#view")).includes("export first"));
+check("before deleting, Settings says exactly what is removed and that it can't be undone", /permanently removes your profile, reports, original documents and photos, medicines, dose history, health readings, saved chats/.test(await pg.textContent("#view")) && (await pg.textContent("#view")).includes("export first"));
 // refresh keeps you signed in and everything loads
 await pg.reload(); await pg.waitForTimeout(900);
 check("after a refresh, still signed in with all records", await pg.evaluate("S.cloud&&S.reports.length===2&&S.meds.length===5"));
@@ -117,6 +119,7 @@ check("medicines with schedules and status arrive", s2.m.length === 5 && s2.m.so
   check("an 'every 8 hours' medicine arrives with its interval and times", by("Fictional antibiotic").iv === 8 && by("Fictional antibiotic").t.join() === "06:00,14:00,22:00");
   check("the saved rows keep the new columns", await pg.evaluate("(()=>{const t=window.__sbdb.tables,m=t.medicines.find(x=>x.name==='Fictional antacid'),s=t.medication_schedules.find(x=>x.medicine_id===m.id),b=t.medicines.find(x=>x.name==='Fictional antibiotic'),bs=t.medication_schedules.find(x=>x.medicine_id===b.id);return m.dose==='10 ml'&&m.dose_amount==='10'&&m.dose_unit==='ml'&&m.form==='syrup'&&s.frequency==='as_needed'&&s.times.length===0&&bs.interval_hours===8})()")); }
 check("dose history arrives", s2.d.join() === "Skipped,Taken");
+check("health readings arrive on the new device", await pg.evaluate("S.vitals.length===2&&S.vitals.some(v=>v.kind==='blood_pressure'&&v.v===126&&v.v2===84&&v.note==='Fictional reading')&&S.vitals.some(v=>v.ctx==='fasting')"));
 check("the chat-saving choice arrives", s2.h === true);
 await pg.evaluate("go('reports')"); await pg.waitForTimeout(1200);
 check("page image is fetched from private storage on the new device", await pg.evaluate("(()=>{const i=document.querySelector('.rx-thumb img');return !!(i&&i.src.startsWith('blob:'))})()"));
@@ -126,6 +129,15 @@ console.log("VIEW:", (await pg.textContent("#view")).slice(0,300)); await pg.cli
 check("a saved chat reopens with its messages", await pg.evaluate("S.msgs.length===6&&S.msgs[1].p.reply.includes('prediabetes')"));
 pg.once("dialog", (d) => d.accept()); await pg.evaluate("go('settings')"); await pg.click("#histall"); await pg.waitForTimeout(600);
 check("'Delete all saved chats' removes them from the account", (await pg.evaluate("(window.__sbdb.tables.conversations||[]).length+(window.__sbdb.tables.messages||[]).length")) === 0);
+// Before the readings table exists in a database, the rest of the account must still load and save.
+pg.once("dialog", (d) => d.accept()); await pg.evaluate("document.getElementById('out').click()"); await pg.waitForTimeout(600);
+await pg.evaluate(() => { window.__missingTables = ["vital_readings"]; });
+await pg.fill("input[name=email]", "meera@example.com"); await pg.fill("input[name=pw]", "secret123"); await pg.click("#lf button.pri"); await pg.waitForTimeout(1200);
+check("without the readings table, the account still loads with its records and medicines", await pg.evaluate("S.cloud&&S.reports.length===2&&S.meds.length===5&&S.vitals.length===0&&CLOUD.noVitals===true"));
+await pg.evaluate("go('vitals')"); await pg.waitForTimeout(150);
+check("…Vitals says saving readings is switching on, and offers no Add button", (await pg.textContent("#view")).includes("switching on shortly") && !(await pg.$("#view [data-vadd='1']")));
+await pg.evaluate(() => { S.profile.allergies = "Sulfa, dust"; render(); }); await pg.waitForTimeout(1500);
+check("…and other changes still save", await pg.evaluate("window.__sbdb.tables.health_profiles[0].allergies==='Sulfa, dust'&&!CLOUD.err"));
 check("no JavaScript errors on the page", errs.length === 0, errs.join(" | "));
 console.log(results.filter((r) => r.startsWith("PASS")).length + "/" + results.length + " passed");
 await b.close(); process.exit(results.some((r) => r.startsWith("FAIL")) ? 1 : 0);

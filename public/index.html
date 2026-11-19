@@ -42,6 +42,71 @@ h1,h2,h3,.serif{font-family:var(--serif);font-weight:500;letter-spacing:-.012em;
 .attmenu{position:absolute;bottom:calc(100% + .4rem);left:0;z-index:20;min-width:14rem;padding:.35rem}
 .attmenu button{display:block;width:100%;text-align:left;padding:.6rem .75rem;border-radius:10px;font-size:.9rem;color:var(--text)}.attmenu button:hover{background:var(--hover)}
 .scanthumb{width:4.5rem;height:4.5rem;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--hover)}
+/* My Health dashboard, vitals, navigation groups and the phone tab bar */
+.navg{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);padding:.9rem .75rem .3rem;opacity:.85}
+.navg:first-child{padding-top:.2rem}
+#tabbar{display:flex;border-top:1px solid var(--line);background:var(--card);padding:.3rem max(.4rem,env(safe-area-inset-right,0px)) calc(.3rem + env(safe-area-inset-bottom,0px)) max(.4rem,env(safe-area-inset-left,0px))}
+#tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:.15rem;min-height:3.1rem;justify-content:center;font-size:.68rem;font-weight:600;color:var(--mute);border-radius:10px;background:none;border:0}
+#tabbar button .navi{display:inline-flex}#tabbar button.on{color:var(--ink-strong)}#tabbar button.on .navi{color:var(--tealtx)}
+@media (min-width:768px){#tabbar{display:none}}
+.dh-wrap{max-width:74rem;margin:0 auto;padding:2rem max(1.25rem,env(safe-area-inset-right,0px)) 2.5rem max(1.25rem,env(safe-area-inset-left,0px));display:grid;gap:1.5rem}@media (min-width:768px){.dh-wrap{padding-left:2rem;padding-right:2rem}}
+.dh-hello{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:1rem}
+.dh-date{font-size:.78rem;font-weight:600;letter-spacing:.04em;color:var(--tealtx)}
+.dh-hello h1{font-size:clamp(1.9rem,4vw,2.5rem);margin-top:.2rem;text-wrap:balance}
+.dh-sub{color:var(--mute);margin-top:.25rem}
+.dh-sample{font-size:.8rem;color:var(--warntx);background:var(--warnbg);border:1px solid var(--warnbd);border-radius:10px;padding:.45rem .75rem}
+.dh-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(11.5rem,1fr));gap:.75rem}
+.dh-tile{display:grid;gap:.2rem;text-align:left;align-content:start;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:.9rem 1rem;cursor:pointer;color:var(--text);transition:border-color .12s}
+.dh-tile:hover{border-color:var(--teal)}
+.dh-tl{font-size:.74rem;font-weight:600;color:var(--mute)}
+.dh-tv{font-size:1.65rem;font-weight:650;color:var(--ink-strong);font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.15}
+.dh-tv span{font-size:.8rem;font-weight:600;color:var(--mute)}
+.dh-ts{font-size:.76rem;color:var(--mute);line-height:1.35}
+.dh-empty{border-style:dashed}.dh-tlink{font-size:.78rem;font-weight:600;color:var(--tealtx);margin-top:.2rem}
+.dh-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;align-items:start}
+.dh-card{padding:1.15rem 1.25rem;display:grid;gap:.75rem;align-content:start}
+.dh-ch{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}
+.dh-ch h2{font-family:var(--sans);font-size:1rem;font-weight:700;letter-spacing:0}
+.dh-doses,.dh-vl,.dh-recs,.dh-act{list-style:none;margin:0;padding:0}
+.dh-dose{display:grid;grid-template-columns:4.6rem minmax(0,1fr) auto;gap:.75rem;align-items:center;padding:.6rem 0;border-top:1px solid var(--line)}
+.dh-dose:first-child{border-top:0;padding-top:.1rem}
+.dh-time{font-size:.85rem;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink-strong)}
+.dh-dose.taken .dh-time,.dh-dose.skipped .dh-time{color:var(--mute)}.dh-dose.taken .dh-dn{color:var(--mute)}
+.dh-dn{font-weight:650;font-size:.92rem;color:var(--ink-strong)}.dh-dn span{font-weight:500;color:var(--mute);font-size:.84rem}
+.dh-st .btn{padding:.35rem .75rem;font-size:.8rem}
+.dh-vl li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:.9rem;align-items:center;padding:.55rem 0;border-top:1px solid var(--line)}
+.dh-vl li:first-child{border-top:0;padding-top:.1rem}
+.dh-vn{font-size:.88rem;font-weight:600}
+.dh-vv{font-size:1.15rem;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink-strong);text-align:right;white-space:nowrap}.dh-vv span{font-size:.72rem;color:var(--mute);font-weight:600}
+.dh-spark{overflow:visible;flex-shrink:0}.dh-spark path{fill:none;stroke:var(--teal);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.dh-spark path.b{stroke:var(--mute);opacity:.6}.dh-spark circle{fill:var(--teal)}
+.dh-recs li{display:flex;justify-content:space-between;gap:.75rem;padding:.65rem 0;border-top:1px solid var(--line)}
+.dh-recs li:first-child{border-top:0;padding-top:.1rem}
+.dh-rt{font-weight:650;font-size:.92rem;color:var(--ink-strong);overflow-wrap:anywhere}
+.dh-rx{font-size:.8rem;color:var(--text);margin-top:.2rem;font-variant-numeric:tabular-nums}
+.dh-ra{display:flex;gap:.35rem;align-items:flex-start;flex-shrink:0}.dh-ra .btn{padding:.35rem .75rem;font-size:.8rem}
+.dh-prof{display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:.65rem 1rem;margin:0}
+.dh-prof dt{font-size:.74rem;color:var(--mute)}.dh-prof dd{font-size:.92rem;font-weight:600;color:var(--ink-strong);overflow-wrap:anywhere}
+.dh-act li{display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-top:1px dashed var(--line);font-size:.86rem}.dh-act li:first-child{border-top:0}
+.dh-ask{padding:1.25rem;display:grid;gap:.85rem;border-color:color-mix(in srgb,var(--teal) 35%,var(--line))}
+.dh-ask h2{font-family:var(--sans);font-size:1.05rem;font-weight:700;letter-spacing:0}
+.dh-askf{display:flex;gap:.5rem}.dh-askf .inp{min-height:2.85rem}
+.dh-sugg{display:flex;flex-wrap:wrap;gap:.4rem}
+.dh-start{padding:1.25rem}.dh-start h2{font-size:1.25rem}.dh-start ol{margin:.6rem 0 .6rem 1.1rem;display:grid;gap:.35rem;font-size:.9rem;list-style:decimal}
+.dh-vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(19rem,1fr));gap:1rem;align-items:start}
+.dh-vcard{padding:1.15rem 1.25rem;display:grid;gap:.6rem}
+.dh-vtop{display:flex;justify-content:space-between;gap:1rem;align-items:flex-end}
+.dh-vcard h2{font-family:var(--sans);font-size:.85rem;font-weight:700;letter-spacing:0;color:var(--mute)}
+.dh-big{font-size:2rem;font-weight:650;color:var(--ink-strong);font-variant-numeric:tabular-nums;letter-spacing:-.015em;line-height:1.2}.dh-big span{font-size:.85rem;color:var(--mute);font-weight:600}
+.dh-hist summary{cursor:pointer;font-size:.8rem;font-weight:600;color:var(--tealtx)}
+.dh-hist table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:.4rem}.dh-hist td{padding:.4rem .4rem .4rem 0;border-top:1px solid var(--line);vertical-align:top}.dh-hist td.n{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}.dh-hist td:last-child{text-align:right}
+.mx-link.dgt{color:var(--errtx)}
+.dh-none{padding:1.15rem 1.25rem;display:grid;gap:.6rem}.dh-none h2{font-family:var(--sans);font-size:1rem;font-weight:700;letter-spacing:0}
+.dh-vform{padding:1.25rem 1.5rem;display:grid;gap:1rem}
+.dh-unit{display:flex;align-items:center;gap:.5rem}.dh-unit .inp{max-width:8rem}.dh-unit span{font-size:.85rem;color:var(--mute);font-weight:600}
+.rx-hl{outline:2px solid var(--teal);outline-offset:3px;transition:outline-color 1s}
+@media (max-width:900px){.dh-grid{grid-template-columns:1fr}}
+@media (max-width:640px){.dh-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}.dh-tile{padding:.75rem .8rem}.dh-tv{font-size:1.35rem}
+ .dh-hello .mx-hacts{width:100%}.dh-hello .mx-hacts .btn{flex:1}.dh-dose{grid-template-columns:4.1rem minmax(0,1fr)}.dh-st{grid-column:2}.dh-recs li{flex-direction:column}.dh-vl .dh-spark{display:none}.dh-vl li{grid-template-columns:minmax(0,1fr) auto}.dh-vform{padding:1.1rem}}
 /* Medical records */
 .rx-list{display:grid;gap:1rem}
 .rx-card{display:flex;gap:1.35rem;padding:1.35rem 1.4rem;overflow:visible}
@@ -345,6 +410,7 @@ h1,h2,h3,.serif{font-family:var(--serif);font-weight:500;letter-spacing:-.012em;
   <header class="md:hidden flex items-center gap-3 px-4 py-3 bg-[var(--card)] border-b border-[var(--line)]"><button id="burger" class="btn" aria-label="Open menu">☰</button><span id="ttl" class="serif text-lg"></span></header>
   <div id="banner"></div>
   <div id="view" class="flex-1 overflow-y-auto"></div>
+  <nav id="tabbar" class="md:hidden" aria-label="Main"></nav>
  </main>
 </div>
 <div id="toast" role="status" aria-live="polite" class="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 hidden card px-4 py-3 shadow-lg text-sm max-w-[90vw]"></div>
@@ -461,8 +527,11 @@ const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const isOn=(m,d)=>(m.status||'active')==='active'&&d>=m.start&&(!m.end||d<=m.end)&&((m.freq||'daily')==='daily'||(m.days||[]).includes(new Date(d+'T00:00:00').getDay()));
 const LOGO='<svg viewBox="0 0 32 32" width="36" height="36" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#101C2B"/><path d="M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z" fill="none" stroke="#F3F1EB" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="7.6" r="2.3" fill="#8DB5AE"/></svg>';
-const NAV=[['home','Overview','home'],['health','My Health','health'],['reports','Medical records','reports'],['medicines','Medicines','meds'],['reminders','Reminders','clock'],['chat','AI Assistant','chat'],['about','About','about'],['settings','Settings','settings']];
-const NAVI=(()=>{const P={home:'<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/>',chat:'<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V15h0a2.5 2.5 0 0 1-2-2.5z"/>',health:'<path d="M3.5 12h4l2-4.5 3.5 9 2-4.5h5.5"/>',reports:'<path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/>',meds:'<rect x="3.5" y="9" width="17" height="6" rx="3"/><path d="M12 9v6"/>',clock:'<circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 1.5M9.5 3.5h5"/>',about:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M6 18l1.4-1.4M16.6 7.4 18 6"/>'};const o={};for(const k in P)o[k]=`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]}</svg>`;return o})();
+const NAV=[['home','My Health','home','Overview'],['medicines','Medicines','meds','Health'],['reminders','Reminders','clock','Health'],['vitals','Vitals','health','Health'],['reports','Medical records','reports','Health'],['health','Health profile','profile','Health'],['chat','Doctine AI','chat','AI'],['settings','Settings','settings','Account'],['about','About','about','Account']];
+const VIEWS=NAV.map(n=>n[0]);
+const hashView=()=>{const h=(location.hash||'').slice(1);return VIEWS.includes(h)?h:''};
+let wantView=hashView(); // the screen in the address when the page loaded; opened once sign-in finishes
+const NAVI=(()=>{const P={home:'<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/>',chat:'<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V15h0a2.5 2.5 0 0 1-2-2.5z"/>',health:'<path d="M3.5 12h4l2-4.5 3.5 9 2-4.5h5.5"/>',profile:'<circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c.9-3.4 3.6-5.2 7-5.2s6.1 1.8 7 5.2"/>',reports:'<path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/>',meds:'<rect x="3.5" y="9" width="17" height="6" rx="3"/><path d="M12 9v6"/>',clock:'<circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 1.5M9.5 3.5h5"/>',about:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M6 18l1.4-1.4M16.6 7.4 18 6"/>'};const o={};for(const k in P)o[k]=`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]}</svg>`;return o})();
 /* ---- demo storage: this browser only ---- */
 const KEY='doctine:v2';
 (()=>{try{ // one-time carry-over from the previous app name; old entries are left untouched
@@ -470,18 +539,30 @@ if(!localStorage.getItem(KEY)&&localStorage.getItem('sanora:v2'))localStorage.se
 if(!localStorage.getItem('doctine:theme')&&localStorage.getItem('sanora:theme'))localStorage.setItem('doctine:theme',localStorage.getItem('sanora:theme'))}catch{}})();
 const store={get(){try{const v=JSON.parse(localStorage.getItem(KEY)||'{}');v.users=v.users||{};return v}catch{return{users:{}}}},set(v){try{localStorage.setItem(KEY,JSON.stringify(v));return true}catch{return false}}};
 let DB=store.get();
-const blank=n=>({profile:{name:n,dob:'',height:'',weight:'',blood:'',allergies:''},reports:[],meds:[],doses:{},msgs:[],consent:{ai:false,analytics:false}});
+const blank=n=>({profile:{name:n,dob:'',height:'',weight:'',blood:'',allergies:''},reports:[],meds:[],doses:{},vitals:[],msgs:[],consent:{ai:false,analytics:false}});
 const sampleData=()=>({...blank('Asha Verma (sample)'),
  profile:{name:'Asha Verma (sample)',dob:'1988-04-12',height:'165',weight:'62',blood:'B+',allergies:'Penicillin'},
  reports:[{id:1,title:'Complete blood count',cat:'Lab report',date:'2026-09-02',lab:'Sample Labs',fields:{Hemoglobin:'11.4 g/dL (ref 12.0–15.5)',WBC:'6.8 10^3/uL (ref 4.0–11.0)',Platelets:'248 10^3/uL (ref 150–410)'}},
-  {id:2,title:'HbA1c and lipid panel',cat:'Lab report',date:'2026-07-18',lab:'Sample Labs',fields:{HbA1c:'5.9 % (ref 4.0–5.6)','LDL cholesterol':'132 mg/dL (ref < 100)',HDL:'54 mg/dL'}}],
- meds:[{id:1,name:'Iron + folic acid',dose:'1 tablet',times:['09:00'],start:'2026-08-10',end:'2026-11-10'}]});
+  {id:2,title:'HbA1c and lipid panel',cat:'Lab report',date:'2026-07-18',lab:'Sample Labs',fields:{HbA1c:'5.9 % (ref 4.0–5.6)','LDL cholesterol':'132 mg/dL (ref < 100)',HDL:'54 mg/dL'}},
+  {id:3,title:'Prescription – Sample Clinic',cat:'Prescription',date:addDays(today(),-40),lab:'Dr. R. Sample, Sample Clinic',fields:{Diagnosis:'Prediabetes (sample)','Metformin 500':'500 mg · 1-0-1 · after food'},scan:{medicines:[{raw:'Tab Metformin 500 mg 1-0-1 after food',name:'Metformin 500',form:'tablet',strength:'500 mg',frequency:'1-0-1',timing:'after food',duration:'',confidence:'high',alternatives:[]}],unreadable:[],transcription:''},checked:true}],
+ /* Made-up examples so the sample account shows every part of My Health. Dates are relative to today; never saved anywhere. */
+ ...(()=>{const td=today(),ago=(n,hm)=>new Date(addDays(td,-n)+'T'+hm).toISOString(),rs=[];let id=500;
+  [[13,'08:05',128,84,76],[11,'08:20',124,82,74],[9,'07:55',131,86,78],[7,'08:10',126,83,72],[5,'08:00',122,80,71],[3,'08:15',125,81,73],[1,'08:05',121,79,70]].forEach(([n,hm,a,b,h])=>{rs.push({id:id++,kind:'blood_pressure',v:a,v2:b,unit:'mmHg',ctx:'',note:'',at:ago(n,hm)});rs.push({id:id++,kind:'heart_rate',v:h,v2:null,unit:'bpm',ctx:'',note:'',at:ago(n,hm)})});
+  [[12,108],[8,104],[4,101],[0,99]].forEach(([n,g])=>rs.push({id:id++,kind:'glucose',v:g,v2:null,unit:'mg/dL',ctx:'fasting',note:'',at:ago(n,'07:30')}));
+  [[20,62.8],[10,62.3],[2,61.9]].forEach(([n,w])=>rs.push({id:id++,kind:'weight',v:w,v2:null,unit:'kg',ctx:'',note:'',at:ago(n,'07:00')}));
+  return{vitals:rs,doses:{[`2@08:00@${td}`]:'Taken'},
+   meds:[{id:1,name:'Iron + folic acid',dose:'1 tablet',times:['09:00'],start:'2026-08-10',end:'2026-11-10'},
+    {id:2,name:'Metformin',strength:'500 mg',form:'tablet',amount:'1',unit:'tablet',dose:'1 tablet',status:'active',freq:'daily',days:[],times:['08:00','20:00'],start:addDays(td,-40),end:'',instructions:'After food'},
+    {id:3,name:'Vitamin D3',strength:'60000 IU',form:'sachet',amount:'1',unit:'sachet',dose:'1 sachet',status:'active',freq:'weekly',days:[0],times:['09:00'],start:addDays(td,-30),end:addDays(td,26),instructions:'With food'},
+    {id:4,name:'Cetirizine',strength:'10 mg',form:'tablet',amount:'1',unit:'tablet',dose:'1 tablet',status:'active',freq:'as_needed',days:[],times:[],start:addDays(td,-60),end:'',instructions:'Not more than 1 a day'}]}})()});
 let S={view:'home',auth:'login',email:null,sample:false,q:'',typing:false,upload:null,exp:'',...blank('')};
-const enter=(email,data,sample,guest)=>{Object.assign(S,blank(''),data,{email,sample,guest:!!guest,cloud:!!(data&&data.cloud),view:guest?'chat':'home',upload:null,exp:'',msgs:[],cstate:null,cerr:'',useRecords:false,focusRid:null,chatDoc:null,chatReading:'',attMenu:false,medScan:null,scanning:'',histOpen:false,histList:null,histErr:'',histStatus:''});if(!sample&&!guest&&!(data&&data.cloud)){DB.session=email;store.set(DB)}render()};
-function persist(){if(S.cloud){cloudQueue();return}if(!S.email||S.sample||!DB.users[S.email])return;const{profile,reports,meds,doses,consent}=S;DB.users[S.email].data={profile,reports,meds,doses,consent};if(!store.set(DB)&&!persist.w){persist.w=1;toast('This browser would not save your data. Changes will be lost on refresh.')}}
+const enter=(email,data,sample,guest)=>{Object.assign(S,blank(''),data,{email,sample,guest:!!guest,cloud:!!(data&&data.cloud),view:guest?'chat':(()=>{const w=wantView||hashView();wantView='';return w||'home'})(),upload:null,exp:'',msgs:[],cstate:null,cerr:'',useRecords:false,focusRid:null,chatDoc:null,chatReading:'',attMenu:false,medScan:null,scanning:'',histOpen:false,histList:null,histErr:'',histStatus:''});if(!sample&&!guest&&!(data&&data.cloud)){DB.session=email;store.set(DB)}render()};
+function persist(){if(S.cloud){cloudQueue();return}if(!S.email||S.sample||!DB.users[S.email])return;const{profile,reports,meds,doses,vitals,consent}=S;DB.users[S.email].data={profile,reports,meds,doses,vitals,consent};if(!store.set(DB)&&!persist.w){persist.w=1;toast('This browser would not save your data. Changes will be lost on refresh.')}}
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.add('hidden'),4000)};
-const setHash=on=>{try{if(on&&location.hash!=='#about')history.replaceState(null,'','#about');else if(!on&&location.hash==='#about')history.replaceState(null,'',location.pathname+location.search)}catch{}};
-const go=v=>{S.view=v;setHash(v==='about');closeNav();render();if(v==='about'){const w=$('#view');if(w)w.scrollTop=0}};
+/* The open screen is kept in the address (#medicines, #vitals…) so a refresh or a shared bookmark opens it again.
+   Only plain screen names are written or cleared, never a sign-in link's hash. */
+const setHash=x=>{try{const want=x===true?'#about':typeof x==='string'&&x!=='home'&&VIEWS.includes(x)?'#'+x:'',cur=location.hash;if(cur===want||(cur&&cur!=='#'&&!VIEWS.includes(cur.slice(1))))return;history.replaceState(null,'',want||location.pathname+location.search)}catch{}};
+const go=v=>{S.view=v;setHash(v);closeNav();render();if(v==='about'){const w=$('#view');if(w)w.scrollTop=0}};
 const closeNav=()=>{$('#side').classList.add('-translate-x-full');$('#scrim').classList.add('hidden')};
 $('#burger').onclick=()=>{$('#side').classList.remove('-translate-x-full');$('#scrim').classList.remove('hidden')};$('#scrim').onclick=closeNav;
 $('#out').onclick=async()=>{if(S.cloud){const n=unsavedCount();if(n&&!confirm('Some of your changes or chat messages haven’t been saved to your account yet. If you sign out now, they will be lost. Sign out anyway?'))return;closeNav();leaveCloud();await CLOUD.sb.auth.signOut().catch(()=>{});return}DB.session=null;store.set(DB);S={...S,...blank(''),email:null,sample:false,guest:false,auth:'login',cstate:null,cerr:'',useRecords:false};closeNav();render()};
@@ -817,14 +898,14 @@ async function cloudEnter(user){
  try{
   let gc=false;try{gc=sessionStorage.getItem('doctine:google-consent')==='1';sessionStorage.removeItem('doctine:google-consent')}catch{}
   if(gc||(user.user_metadata||{}).agreed_at)await sb.from('consents').upsert([{user_id:user.id,kind:'cloud_storage',granted:true}],{onConflict:'user_id,kind',ignoreDuplicates:true});
-  const[pr,cs,ds,fs,ms,sc,de]=await Promise.all([
+  const[pr,cs,ds,fs,ms,sc,de,vr]=await Promise.all([
    sb.from('health_profiles').select('*').maybeSingle(),sb.from('consents').select('*'),sb.from('documents').select('*').order('created_at',{ascending:false}),
-   sb.from('document_files').select('document_id,kind,page,storage_path,content_type'),sb.from('medicines').select('*').order('created_at'),sb.from('medication_schedules').select('*'),sb.from('dose_events').select('*')]);
+   sb.from('document_files').select('document_id,kind,page,storage_path,content_type'),sb.from('medicines').select('*').order('created_at'),sb.from('medication_schedules').select('*'),sb.from('dose_events').select('*'),sb.from('vital_readings').select('*').order('measured_at',{ascending:false})]);
   if(CLOUD.epoch!==ep)return;   // signed out or switched while loading: show nothing of this account
   const bad=[pr,cs,ds,fs,ms,sc,de].find(r=>r.error);if(bad)throw bad.error;
   const p=pr.data||{},meta=user.user_metadata||{};
   const consent={ai:false,analytics:false,history:false};(cs.data||[]).forEach(c=>{if(c.kind==='ai_chat')consent.ai=!!c.granted&&Date.parse(c.updated_at)>=AI_CONSENT_FROM;if(c.kind==='analytics')consent.analytics=!!c.granted&&Date.parse(c.updated_at)>=ANALYTICS_CONSENT_FROM;if(c.kind==='chat_history')consent.history=c.granted});
-  const docByUuid={};CLOUD.ids={docs:{},meds:{}};CLOUD.files={};
+  const docByUuid={};CLOUD.ids={docs:{},meds:{},vitals:{}};CLOUD.files={};
   const reports=(ds.data||[]).map(d=>{docByUuid[d.id]=d.client_id;CLOUD.ids.docs[d.client_id]=d.id;return{id:Number(d.client_id),title:d.title,cat:d.category,date:d.document_date||'',lab:d.provider||'',fields:d.fields||{},hash:d.file_hash||undefined,imgs:d.page_count||0,scan:d.extraction||null,src:d.source,checked:d.source==='manual'&&(d.page_count||0)>0}});
   (fs.data||[]).forEach(f=>{const cid=docByUuid[f.document_id];if(cid==null)return;CLOUD.files[`${f.kind==='original'?'orig':'scan'}:${cid}:${f.page}`]=f.storage_path;if(f.content_type==='application/pdf'){const r=reports.find(x=>x.id===Number(cid));if(r)r.orig='pdf'}});
   const schedBy={};(sc.data||[]).forEach(s=>schedBy[s.medicine_id]=s);
@@ -833,21 +914,25 @@ async function cloudEnter(user){
    return{id:Number(m.client_id),name:m.name,dose:m.dose,status:m.status,start:m.start_date,end:m.end_date||'',freq:s.frequency||'daily',days:s.days_of_week||[],times:s.times||(s.frequency==='as_needed'?[]:['08:00']),
     brand:m.brand||'',strength:m.strength||'',form:m.form||'',amount:m.dose_amount||'',unit:m.dose_unit||'',instructions:m.instructions||'',interval:s.interval_hours||null,
     ...(m.source_document_id||m.source_raw?{src:{doc:m.source_document_id?Number(docByUuid[m.source_document_id]):null,raw:m.source_raw||'',conf:m.source_confidence||''}}:{})}});
+  // Health readings arrived with a later database update; until it is in place the rest of the account still loads.
+  CLOUD.noVitals=!!vr.error;CLOUD.ids.vitals={};
+  const vitals=(vr.error?[]:vr.data||[]).map(v=>{CLOUD.ids.vitals[v.client_id]=v.id;return{id:Number(v.client_id),kind:v.kind,v:Number(v.value),v2:v.value2!=null?Number(v.value2):null,unit:v.unit,ctx:v.context||'',note:v.note||'',at:new Date(v.measured_at).toISOString()}});
   const doses={};(de.data||[]).forEach(d=>{const cid=medByUuid[d.medicine_id];if(cid!=null)doses[`${cid}@${d.scheduled_time}@${d.scheduled_date}`]=d.status});
-  const data={profile:{name:p.full_name||meta.full_name||'',dob:p.date_of_birth||'',height:p.height_cm!=null?String(p.height_cm):'',weight:p.weight_kg!=null?String(p.weight_kg):'',blood:p.blood_group||'',allergies:p.allergies||''},reports,meds,doses,consent,cloud:true};
+  const data={profile:{name:p.full_name||meta.full_name||'',dob:p.date_of_birth||'',height:p.height_cm!=null?String(p.height_cm):'',weight:p.weight_kg!=null?String(p.weight_kg):'',blood:p.blood_group||'',allergies:p.allergies||''},reports,meds,doses,vitals,consent,cloud:true};
   CLOUD.snap=snapshot(data);CLOUD.err='';CLOUD.lastOk=Date.now();
   S.loadingCloud=false;enter(user.email,data,false);
   if(!pr.data){CLOUD.snap.profile='';cloudQueue()}
  }catch(e){S.loadingCloud=false;cloudFail('Loading your records',e);toast('Your records couldn’t be loaded. Check your connection and refresh. Nothing was changed.');S.auth='login';render()}}
 /* Forget everything about the previous sign-in: pending saves, ids, file paths, cached page images. */
-function resetCloudState(){clearTimeout(CLOUD.timer);CLOUD.timer=null;CLOUD.snap=null;CLOUD.dirty=false;CLOUD.err='';CLOUD.again=false;CLOUD.ids={docs:{},meds:{}};CLOUD.files={};cloudSync.warned=0}
+function resetCloudState(){clearTimeout(CLOUD.timer);CLOUD.timer=null;CLOUD.snap=null;CLOUD.dirty=false;CLOUD.err='';CLOUD.again=false;CLOUD.ids={docs:{},meds:{},vitals:{}};CLOUD.noVitals=false;CLOUD.files={};cloudSync.warned=0}
 async function clearImageCache(){for(const u of Object.values(IMG.urls))try{URL.revokeObjectURL(u)}catch{};IMG.urls={};
  try{const d=await IMG.open();await new Promise(r=>{const t=d.transaction('img','readwrite');t.objectStore('img').clear();t.oncomplete=t.onerror=r})}catch{}}
 const unsavedCount=()=>(S.cloud?(CLOUD.dirty||CLOUD.err||CLOUD.busy?1:0):0)+HIST.pending.length;
 function leaveCloud(to='login'){if(window.DoctineNative)DoctineNative.clearExports();CLOUD.epoch++;CLOUD.uid=null;S.help=null;resetCloudState();resetHistory();clearImageCache();S={...S,...blank(''),email:null,cloud:false,sample:false,guest:false,auth:to,cstate:null,cerr:'',useRecords:false};render()}
 
 /* What is saved, as comparable JSON per row, so each save sends only what changed. */
-function snapshot(d){const o={profile:JSON.stringify(d.profile),consent:JSON.stringify(d.consent),docs:{},meds:{},doses:{}};
+function snapshot(d){const o={profile:JSON.stringify(d.profile),consent:JSON.stringify(d.consent),docs:{},meds:{},doses:{},vitals:{}};
+ (d.vitals||[]).forEach(v=>o.vitals[v.id]=JSON.stringify([v.kind,v.v,v.v2,v.unit,v.ctx||'',v.note||'',v.at]));
  (d.reports||[]).forEach(r=>o.docs[r.id]=JSON.stringify([r.title,r.cat,r.date,r.lab,r.fields,r.hash||null,r.imgs||0,r.scan||null,r.src||null,!!r.checked,r.orig||null]));
  (d.meds||[]).forEach(m=>o.meds[m.id]=JSON.stringify([m.name,m.dose,m.status||'active',m.start,m.end||'',m.freq||'daily',m.days||[],m.times,m.src||null,m.brand||'',m.strength||'',m.form||'',m.amount||'',m.unit||'',m.instructions||'',m.interval||null]));
  Object.entries(d.doses||{}).forEach(([k,v])=>o.doses[k]=v);return o}
@@ -858,8 +943,8 @@ const ABORT={aborted:true};
 async function cloudSync(){
  if(CLOUD.busy){CLOUD.again=true;return}if(!S.cloud||!CLOUD.uid)return;CLOUD.busy=true;
  // Everything below works on a copy of THIS person's data, under THIS sign-in; if the sign-in changes, it stops.
- const ep=CLOUD.epoch,sb=CLOUD.sb,uid=CLOUD.uid,now=snapshot(S),was=CLOUD.snap||{docs:{},meds:{},doses:{}};
- const R=S.reports.slice(),M=S.meds.slice(),P={...S.profile},C={...S.consent};
+ const ep=CLOUD.epoch,sb=CLOUD.sb,uid=CLOUD.uid,now=snapshot(S),was=CLOUD.snap||{docs:{},meds:{},doses:{},vitals:{}};was.vitals=was.vitals||{};CLOUD.ids.vitals=CLOUD.ids.vitals||{};
+ const R=S.reports.slice(),M=S.meds.slice(),V=(S.vitals||[]).slice(),P={...S.profile},C={...S.consent};
  const step=async p=>{const r=await p;if(CLOUD.epoch!==ep||CLOUD.uid!==uid)throw ABORT;return r};
  try{
   if(now.profile!==was.profile){const p=P;const{error}=await step(sb.from('health_profiles').upsert({user_id:uid,full_name:nn(p.name),date_of_birth:dobOk(p.dob)?p.dob:null,height_cm:nn(p.height)==null?null:+p.height,weight_kg:nn(p.weight)==null?null:+p.weight,blood_group:nn(p.blood),allergies:nn(p.allergies)}));if(error)throw error;was.profile=now.profile}
@@ -885,7 +970,12 @@ async function cloudSync(){
   if(up.length){const rows=up.map(k=>{const[mid,t,d]=k.split('@');return CLOUD.ids.meds[mid]?{user_id:uid,medicine_id:CLOUD.ids.meds[mid],scheduled_date:d,scheduled_time:t,status:now.doses[k],recorded_at:new Date().toISOString()}:null}).filter(Boolean);
    if(rows.length){const{error}=await step(sb.from('dose_events').upsert(rows,{onConflict:'medicine_id,scheduled_date,scheduled_time'}));if(error)throw error}up.forEach(k=>was.doses[k]=now.doses[k])}
   for(const k of gone){const[mid,t,d]=k.split('@');if(CLOUD.ids.meds[mid]){const{error}=await step(sb.from('dose_events').delete().eq('medicine_id',CLOUD.ids.meds[mid]).eq('scheduled_date',d).eq('scheduled_time',t));if(error)throw error}delete was.doses[k]}
-  CLOUD.snap=was;CLOUD.err='';CLOUD.lastOk=Date.now();CLOUD.dirty=JSON.stringify(snapshot(S))!==JSON.stringify(was);
+  if(!CLOUD.noVitals){
+   for(const v of V){if(was.vitals[v.id]===now.vitals[v.id]&&CLOUD.ids.vitals[v.id])continue;
+    const{data,error}=await step(sb.from('vital_readings').upsert({user_id:uid,client_id:v.id,kind:v.kind,value:v.v,value2:v.kind==='blood_pressure'?v.v2:null,unit:v.unit,context:v.kind==='glucose'&&v.ctx?v.ctx:null,note:nn(v.note),measured_at:v.at},{onConflict:'user_id,client_id'}).select('id').single());
+    if(error)throw error;CLOUD.ids.vitals[v.id]=data.id;was.vitals[v.id]=now.vitals[v.id]}
+   for(const id of Object.keys(was.vitals))if(!(id in now.vitals)){const{error}=await step(sb.from('vital_readings').delete().eq('client_id',id));if(error)throw error;delete CLOUD.ids.vitals[id];delete was.vitals[id]}}
+  CLOUD.snap=was;CLOUD.err='';CLOUD.lastOk=Date.now();CLOUD.dirty=JSON.stringify(CLOUD.noVitals?{...snapshot(S),vitals:was.vitals}:snapshot(S))!==JSON.stringify(was);
  }catch(e){if(e===ABORT||CLOUD.epoch!==ep){CLOUD.busy=false;return}   // the person signed out or switched: touch nothing of the new sign-in
   CLOUD.snap=was;cloudFail('Saving',e);if(!cloudSync.warned){cloudSync.warned=1;toast('Your latest changes couldn’t be saved to your account. Doctine will keep trying; don’t close this page yet.')}clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(cloudSync,15000)}
  finally{if(CLOUD.epoch!==ep)return;CLOUD.busy=false;if(!CLOUD.err)cloudSync.warned=0;if(S.view==='settings'){const el=$('#syncst');if(el)el.textContent=syncText()}const bn=$('#banner');if(bn&&S.cloud){const h=bannerHTML();if(S._bh!==h){S._bh=h;bn.innerHTML=h}}if(CLOUD.again||(CLOUD.dirty&&!CLOUD.err)){CLOUD.again=false;cloudQueue()}}} // after a failure, wait for the retry timer (or a new change) instead of retrying at once
@@ -906,11 +996,12 @@ function localAccounts(){return Object.entries(DB.users||{}).map(([email,u])=>({
 async function importLocal(email,pw){const u=DB.users[email];if(!u)return'That account isn’t in this browser.';
  if(await hashPw(pw,u.salt)!==u.hash)return'That password doesn’t match the account saved in this browser.';
  const d=u.data||{},idMap={},medMap={};let nr=0,nm=0;
- const free=x=>{let id=Number(x)||Date.now();while(S.reports.some(r=>r.id===id)||S.meds.some(m=>m.id===id))id++;return id};
+ const free=x=>{let id=Number(x)||Date.now();while(S.reports.some(r=>r.id===id)||S.meds.some(m=>m.id===id)||(S.vitals||[]).some(v=>v.id===id))id++;return id};
  for(const r of d.reports||[]){if(r.hash&&S.reports.some(x=>x.hash===r.hash))continue;const id=free(r.id);idMap[r.id]=id;
   for(let i=0;i<(r.imgs||0);i++)for(const pre of['scan','orig']){const b=await IMG.get(`${pre}:${r.id}:${i}`).catch(()=>null);if(b&&id!==r.id)await IMG.put(`${pre}:${id}:${i}`,b).catch(()=>{})}
   S.reports.push({...r,id});nr++}
  for(const m of d.meds||[]){const id=free(m.id);medMap[m.id]=id;S.meds.push({...m,id,...(m.src?{src:{...m.src,doc:m.src.doc!=null?idMap[m.src.doc]??null:null}}:{})});nm++}
+ if(!CLOUD.noVitals)for(const v of d.vitals||[]){S.vitals=S.vitals||[];S.vitals.push({...v,id:free(v.id)})}
  for(const[k,v]of Object.entries(d.doses||{})){const[mid,t,dt]=k.split('@');if(medMap[mid]!=null)S.doses[`${medMap[mid]}@${t}@${dt}`]=v}
  const p=d.profile||{};for(const k of['dob','height','weight','blood','allergies'])if(!S.profile[k]&&p[k]&&(k!=='dob'||dobOk(p[k])))S.profile[k]=p[k];
  S.reports.sort((a,b)=>(b.date||'').localeCompare(a.date||''));render();
@@ -1157,15 +1248,82 @@ function histSection(){const h=histOf().slice(0,12);return `<section class="card
 /* How much of the health profile is filled in, with a link to finish it. Hidden once complete and for sample data. */
 function profileCard(){if(S.sample)return'';const F=[['name','name'],['dob','date of birth'],['height','height'],['weight','weight'],['blood','blood group'],['allergies','allergies']],miss=F.filter(([k])=>!String(S.profile[k]||'').trim());if(!miss.length)return'';const done=F.length-miss.length;
  return`<section class="card p-5 flex flex-wrap items-center gap-4" id="profcard"><div class="flex-1" style="min-width:12rem"><h2 class="text-xl">Your health profile</h2><p class="text-sm text-[var(--mute)] mt-1">${done} of ${F.length} details added. Still to add: ${miss.map(x=>x[1]).join(', ')}.</p><div class="mt-3 meter" role="progressbar" aria-label="Health profile completeness" aria-valuemin="0" aria-valuemax="${F.length}" aria-valuenow="${done}"><div style="width:${Math.round(done/F.length*100)}%"></div></div></div><button class="btn" data-nav="health">Complete profile</button></section>`}
-function homeView(){
- const nm=esc((S.profile.name||'').split(' ')[0]),d=today(),rec=[...S.reports].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,3);
- const due=S.meds.filter(m=>isOn(m,d)).flatMap(m=>m.times.map(t=>({m,t,k:m.id+'@'+t+'@'+d}))).filter(x=>!S.doses[x.k]||S.doses[x.k].startsWith('Snoozed')).sort((a,b)=>a.t.localeCompare(b.t)).slice(0,4);
- const hist=histOf().slice(0,4),first=!S.reports.length&&!S.meds.length&&!S.sample;
- return wrap(`<div class="flex flex-wrap items-end justify-between gap-3"><h1 class="text-4xl">Hello${nm?', '+nm:''}.</h1><button class="btn pri" data-add="1">Add health record</button></div><div class="flex flex-wrap gap-2"><button class="chip" data-nav="medicines">Add a medicine</button>${aiOff()?'':'<button class="chip" data-nav="chat">Ask the assistant</button>'}<button class="chip" data-nav="health">Health timeline</button></div><form id="hs" class="flex gap-2"><input class="inp" name="hq" placeholder="Search your saved records" aria-label="Search your saved records" maxlength="80"><button class="btn">Search</button></form>`+
- (profileCard())+(first?`<div class="card p-6"><h2 class="text-xl">Start your health memory</h2><ol class="mt-3 space-y-2 text-sm text-[var(--mute)] list-decimal pl-5"><li>Upload a text-based PDF report. Doctine reads it in your browser.</li><li>Check the values it found, fix anything wrong, then confirm.</li>${aiOff()?'<li>Add your medicines and complete your health profile.</li>':'<li>Ask questions that point back to the saved report.</li>'}</ol><p class="text-xs text-[var(--mute)] mt-3">Your account starts empty. Nothing here is sample data.</p></div>`:'')+
- `<div class="grid md:grid-cols-2 gap-4"><section class="card p-5"><h2 class="text-xl">Recent records</h2>${rec.length?`<ul class="mt-3 divide-y divide-[var(--line)]">${rec.map(r=>`<li class="py-3"><div class="font-medium">${esc(r.title)}</div><div class="text-sm text-[var(--mute)]">${esc(r.date||'Date missing')} · ${esc(r.lab||'Provider not recorded')}</div></li>`).join('')}</ul><button class="underline text-sm mt-3" data-nav="reports">All reports</button>`:'<p class="mt-3 text-[var(--mute)]">No records yet.</p>'}</section>
- <section class="card p-5"><h2 class="text-xl">Today’s medicines</h2>${due.length?`<ul class="mt-3 divide-y divide-[var(--line)]">${due.map(({m,t})=>`<li class="py-3 flex justify-between"><div><div class="font-medium">${esc(m.name)}</div><div class="text-sm text-[var(--mute)]">${esc(doseLine(m))}</div></div><span class="serif text-lg">${esc(t)}</span></li>`).join('')}</ul>`:`<p class="mt-3 text-[var(--mute)]">${S.meds.length?'Nothing left to log today.':'No medicines added yet.'}</p>`}<button class="underline text-sm mt-3" data-nav="${S.meds.length?'reminders':'medicines'}">${S.meds.length?'Open reminders':'Add a medicine'}</button></section></div>
- <section class="card p-5"><h2 class="text-xl">Recent activity</h2>${hist.length||rec.length?`<ul class="mt-3 text-sm space-y-2">${hist.map(x=>`<li>${esc(x.s)}: ${esc(x.name)} at ${esc(x.t)} on ${esc(x.d)}</li>`).join('')}${rec.map(r=>`<li>Saved record: ${esc(r.title)}</li>`).join('')}</ul>`:'<p class="mt-3 text-[var(--mute)]">Your saved records and dose log will show here.</p>'}</section>`)}
+/* ---- Health readings (vitals) ----
+   Entered by the person; Doctine connects to no devices yet. Each reading keeps its unit and when it was measured.
+   Doctine never labels a reading healthy or unhealthy, and draws a trend only from three or more readings. */
+const VK={blood_pressure:{l:'Blood pressure',u:'mmHg'},heart_rate:{l:'Heart rate',u:'bpm'},glucose:{l:'Blood glucose',u:'mg/dL'},spo2:{l:'Oxygen saturation',s:'SpO₂',u:'%'},weight:{l:'Weight',u:'kg'}};
+const VORDER=['blood_pressure','heart_rate','glucose','spo2','weight'];
+const VRANGE={heart_rate:[20,250],blood_pressure:[50,260],bp2:[30,160],glucose:[20,600],spo2:[50,100],weight:[1,500]};
+const GCTX={fasting:'Fasting',after_meal:'After a meal',random:'Random'};
+const vitalsOf=k=>(S.vitals||[]).filter(v=>v.kind===k).sort((a,b)=>b.at.localeCompare(a.at));
+const vNum=(k,x)=>k==='weight'?(+x).toFixed(1).replace(/\.0$/,''):String(Math.round(+x));
+const vText=v=>v.kind==='blood_pressure'?`${vNum('',v.v)}/${vNum('',v.v2)}`:vNum(v.kind,v.v);
+function whenAt(iso){const d=new Date(iso);if(isNaN(d))return'';const ds=ymdOf(d),td=today(),tm=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+ return ds===td?`Today, ${tm}`:ds===addDays(td,-1)?`Yesterday, ${tm}`:`${d.toLocaleDateString('en-GB',{day:'numeric',month:'short',...(ds.slice(0,4)!==td.slice(0,4)?{year:'numeric'}:{})})}, ${tm}`}
+/* A small line of the last readings, oldest to newest, scaled to their own range. Two lines for blood pressure. */
+function spark(list,w=132,h=36){const pts=list.slice(0,12).reverse();if(pts.length<3)return'';
+ const vals=pts.flatMap(p=>[p.v,p.v2].filter(x=>x!=null)),lo=Math.min(...vals),hi=Math.max(...vals),span=hi-lo||1,x=i=>2+i*(w-4)/(pts.length-1),y=v=>h-3-(v-lo)*(h-6)/span;
+ const line=f=>pts.map((p,i)=>`${i?'L':'M'}${x(i).toFixed(1)} ${y(f(p)).toFixed(1)}`).join(' '),last=pts.length-1;
+ return`<svg class="dh-spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><path d="${line(p=>p.v)}"/>${pts[0].v2!=null?`<path class="b" d="${line(p=>p.v2)}"/>`:''}<circle cx="${x(last).toFixed(1)}" cy="${y(pts[last].v).toFixed(1)}" r="2.6"/></svg>`}
+const vSummary=l=>l.length>=3?`${l.length} readings since ${dFmt(ymdOf(new Date(l[l.length-1].at)),false)}`:l.length===2?'2 readings':'1 reading';
+const newVDraft=k=>{const n=new Date();return{kind:k||'',v:'',v2:'',ctx:'',note:'',date:today(),time:`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`}};
+function captureV(){const f=$('#vf');if(!f||!S.vDraft)return;const F=new FormData(f),d=S.vDraft;['v','v2','ctx','note','date','time'].forEach(k=>{if(F.has(k))d[k]=String(F.get(k)||'')});if(F.get('kind'))d.kind=String(F.get('kind'))}
+function vProblems(d){const e={},num=x=>/^\d{1,3}(\.\d)?$/.test(String(x).trim());if(!VK[d.kind])return{kind:'Choose what you measured.'};const[a,b]=VRANGE[d.kind];
+ if(!num(d.v)||+d.v<a||+d.v>b)e.v=d.kind==='blood_pressure'?`Enter the top number (systolic), between ${a} and ${b}.`:`Enter a number between ${a} and ${b} ${VK[d.kind].u}.`;
+ if(d.kind==='blood_pressure'&&(!num(d.v2)||+d.v2<30||+d.v2>160||(!e.v&&+d.v2>=+d.v)))e.v2='Enter the bottom number (diastolic), lower than the top number.';
+ if(!d.date||!d.time)e.when='Enter the date and time you measured it.';else if(new Date(d.date+'T'+d.time)>new Date(Date.now()+5*60e3))e.when='The time can’t be in the future.';
+ if(d.note.length>200)e.note='Keep the note under 200 characters.';return e}
+const vErr=k=>S.vErr&&S.vErr[k]?`<p class="mx-err" id="vxe-${k}">${esc(S.vErr[k])}</p>`:'',vBad=k=>S.vErr&&S.vErr[k]?` aria-invalid="true" aria-describedby="vxe-${k}"`:'';
+function vForm(){const d=S.vDraft,K=VK[d.kind];
+ return`<form id="vf" class="card mx-form" novalidate><div class="mx-head"><div><h2>Add a reading</h2><p>Type it exactly as your device or clinic showed it.</p></div><button type="button" class="btn" id="vcancel">Cancel</button></div>
+ <div class="dh-vform"><div><span class="mx-lab">What you measured</span>${seg('kind',VORDER.map(k=>[k,VK[k].l]),d.kind)}${vErr('kind')}</div>
+ ${K?`<div class="mx-row">${d.kind==='blood_pressure'?`<label><span class="mx-lab">Top number (systolic)</span><div class="dh-unit"><input class="inp" name="v" inputmode="numeric" maxlength="3" value="${esc(d.v)}" placeholder="120"${vBad('v')}><span>mmHg</span></div></label><label><span class="mx-lab">Bottom number (diastolic)</span><div class="dh-unit"><input class="inp" name="v2" inputmode="numeric" maxlength="3" value="${esc(d.v2)}" placeholder="80"${vBad('v2')}><span>mmHg</span></div></label>`
+  :`<label><span class="mx-lab">${esc(K.l)}</span><div class="dh-unit"><input class="inp" name="v" inputmode="decimal" maxlength="5" value="${esc(d.v)}"${vBad('v')}><span>${K.u}</span></div></label>${d.kind==='glucose'?`<label><span class="mx-lab">When <span class="opt">optional</span></span><select class="inp" name="ctx">${opt('','Not specified',d.ctx)}${Object.entries(GCTX).map(([k,l])=>opt(k,l,d.ctx)).join('')}</select></label>`:''}`}</div>${vErr('v')}${vErr('v2')}
+ <div class="mx-row"><label><span class="mx-lab">Date</span><input class="inp" type="date" name="date" max="${today()}" value="${esc(d.date)}"${vBad('when')}></label><label><span class="mx-lab">Time</span><input class="inp" type="time" name="time" value="${esc(d.time)}"${vBad('when')}></label></div>${vErr('when')}
+ <label><span class="mx-lab">Note <span class="opt">optional</span></span><input class="inp" name="note" maxlength="200" value="${esc(d.note)}" placeholder="e.g. After a walk, left arm"${vBad('note')}></label>${vErr('note')}`:''}</div>
+ <div class="mx-foot"><span class="mx-hint" style="margin:0">Saved as entered by you.</span><button class="btn pri" ${K?'':'disabled'}>Save reading</button></div></form>`}
+function vitalsView(){const off=S.cloud&&CLOUD.noVitals,have=VORDER.filter(k=>vitalsOf(k).length),none=VORDER.filter(k=>!vitalsOf(k).length);
+ const card=k=>{const l=vitalsOf(k),v=l[0],K=VK[k];return`<section class="card dh-vcard" id="vk-${k}"><div class="dh-vtop"><div><h2>${esc(K.l)}</h2><div class="dh-big">${vText(v)} <span>${K.u}</span></div><div class="mx-sub">${esc(whenAt(v.at))}${v.ctx?' · '+esc(GCTX[v.ctx]):''} · Added by you</div></div>${spark(l)}</div>
+  <p class="mx-sub">${esc(vSummary(l))}${l.length>=2?` · lowest ${vText(l.reduce((a,b)=>b.v<a.v?b:a))}, highest ${vText(l.reduce((a,b)=>b.v>a.v?b:a))} ${K.u}`:''}</p>
+  <details class="dh-hist"${l.length<=3?' open':''}><summary>All readings</summary><table><tbody>${l.map(r=>`<tr><td>${esc(whenAt(r.at))}</td><td class="n">${vText(r)} ${K.u}</td><td>${esc([r.ctx?GCTX[r.ctx]:'',r.note].filter(Boolean).join(' · '))}</td><td><button class="mx-link dgt" data-vdel="${r.id}">Delete</button></td></tr>`).join('')}</tbody></table></details></section>`};
+ return wrap(head('Vitals','Readings you add yourself, with the time you measured them. Doctine doesn’t judge them as good or bad; ask your doctor what your numbers mean for you.',S.vDraft||off?'':'<button class="btn pri" data-vadd="1">Add reading</button>')+
+ (off?'<div class="warn">Saving readings to your account is switching on shortly. Your other records work as usual.</div>':'')+(S.vDraft?vForm():'')+
+ (have.length?`<div class="dh-vgrid">${have.map(card).join('')}</div>`:'')+
+ (none.length?`<section class="card dh-none"><h2>${have.length?'Not recorded yet':'No readings yet'}</h2><p class="mx-sub">${have.length?'':'Add a reading from a home monitor, a clinic visit or a lab slip to start seeing changes over time. '}Trends appear after three readings.</p><div class="mx-seg">${none.map(k=>`<button class="mx-chip" data-vadd="${k}" ${off?'disabled':''}>+ ${esc(VK[k].l)}</button>`).join('')}</div></section>`:'')+
+ `<p class="mx-hint">Sleep and activity aren’t available yet: Doctine doesn’t connect to watches or fitness apps.</p>`)}
+
+/* ---- My Health: the screen after signing in ---- */
+function todayDoses(){const d=today(),n=new Date(),hm=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+ return S.meds.filter(m=>isOn(m,d)).flatMap(m=>m.times.map(t=>{const k=m.id+'@'+t+'@'+d,s=S.doses[k]||'',st=s==='Taken'?'taken':s==='Skipped'?'skipped':s.startsWith('Snoozed')?'snoozed':t<=hm?'due':'later';return{m,t,k,st,s}})).sort((a,b)=>a.t.localeCompare(b.t))}
+const greet=()=>{const h=new Date().getHours();return h<5?'Good evening':h<12?'Good morning':h<17?'Good afternoon':'Good evening'};
+function recLine(r){const ms=((r.scan&&r.scan.medicines)||[]).filter(m=>m.name).map(m=>m.name),F=Object.entries(r.fields||{});
+ if(r.cat==='Prescription'&&ms.length)return'Medicines: '+ms.slice(0,4).join(', ')+(ms.length>4?` and ${ms.length-4} more`:'');
+ return F.slice(0,3).map(([k,v])=>`${k} ${String(v).split(' (')[0]}`).join(' · ')||(r.imgs?'Photo saved; details not added yet':'No details added')}
+function homeView(){const p=S.profile,nm=esc((p.name||'').replace(/\s*\(sample\)$/,'').split(' ')[0]),D=todayDoses(),taken=D.filter(x=>x.st==='taken').length,act=S.meds.filter(m=>(m.status||'active')==='active'&&!medEnded(m));
+ const nx=act.map(m=>({m,n:nextDose(m)})).filter(x=>x.n).sort((a,b)=>(a.n.d+a.n.t).localeCompare(b.n.d+b.n.t))[0];
+ const rec=[...S.reports].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4),first=!S.reports.length&&!S.meds.length&&!(S.vitals||[]).length&&!S.sample,vk=VORDER.filter(k=>vitalsOf(k).length);
+ const tile=(lab,val,unit,sub,nav)=>`<button class="dh-tile" data-nav="${nav}"><span class="dh-tl">${lab}</span><span class="dh-tv">${val}${unit?` <span>${unit}</span>`:''}</span><span class="dh-ts">${sub}</span></button>`;
+ const tiles=[S.meds.length?tile('Doses today',D.length?`${taken} <span>of</span> ${D.length}`:'—',D.length?'taken':'',nx?`Next ${esc(nx.n.d===today()?t12(nx.n.t):whenText(nx.n))} · ${esc(nx.m.name)}`:'No more doses scheduled','medicines'):tile('Medicines','None','','Add what your doctor prescribed','medicines'),
+  ...vk.slice(0,3).map(k=>{const v=vitalsOf(k)[0];return tile(esc(VK[k].s||VK[k].l),vText(v),VK[k].u,`${esc(whenAt(v.at))} · Added by you`,'vitals')}),
+  ...(vk.length?[]:[`<button class="dh-tile dh-empty" data-vadd="1"><span class="dh-tl">Vitals</span><span class="dh-ts">Add a blood pressure, heart rate or glucose reading to see it here.</span><span class="dh-tlink">Add a reading</span></button>`])].join('');
+ const doseRow=x=>`<li class="dh-dose ${x.st}"><span class="dh-time">${t12(x.t)}</span><div class="min-w-0"><div class="dh-dn">${esc(x.m.name)}${x.m.strength?` <span>${esc(x.m.strength)}</span>`:''}</div><div class="mx-sub">${esc(x.m.amount?amountText(x.m.amount,x.m.unit):x.m.dose)}${x.m.instructions?' · '+esc(x.m.instructions.replace(/;\s*/g,' · ')):''}</div></div>
+  <span class="dh-st">${x.st==='taken'?'<span class="mx-st on">Taken</span>':x.st==='skipped'?'<span class="mx-st done">Skipped</span>':x.st==='snoozed'?`<span class="mx-st paused">${esc(x.s.replace('Snoozed until ','Snoozed to '))}</span>`:x.st==='due'?`<button class="btn tl" data-d="${x.k}|Taken" aria-label="Mark ${esc(x.m.name)} at ${t12(x.t)} as taken">Mark taken</button>`:'<span class="mx-sub">Later today</span>'}</span></li>`;
+ const asks=[S.reports.some(r=>r.cat==='Lab report')&&'Explain my latest blood report',S.meds.length&&'What medicines am I currently taking?',S.reports.length&&'Summarise my medical history',S.reports.some(r=>r.cat==='Prescription')&&'Help me understand my prescription','How can I improve my sleep?','When should I see a doctor for a headache?'].filter(Boolean).slice(0,4);
+ const pdone=['name','dob','height','weight','blood','allergies'].filter(k=>String(p[k]||'').trim()).length,age=ageOf(p.dob),prof=[['Age',age!=null?age+' years':''],['Blood group',p.blood],['Allergies',p.allergies],['Height',p.height?p.height+' cm':''],['Weight',p.weight?p.weight+' kg':'']];
+ const acts=[...histOf().slice(0,5).map(x=>({at:x.d+'T'+x.t,t:`${x.s}: ${x.name}`,w:`${dFmt(x.d,false)}, ${t12(x.t)}`})),...(S.vitals||[]).slice().sort((a,b)=>b.at.localeCompare(a.at)).slice(0,4).map(v=>({at:v.at,t:`${VK[v.kind].l} added: ${vText(v)} ${v.unit}`,w:whenAt(v.at)})),...rec.slice(0,3).map(r=>({at:(r.date||'')+'T00:00',t:`Record: ${r.title}`,w:r.date?dFmt(r.date):'Date missing'}))].sort((a,b)=>b.at.localeCompare(a.at)).slice(0,6);
+ return`<div class="dh-wrap">`+(`<header class="dh-hello"><div><p class="dh-date">${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}</p><h1>${greet()}${nm?', '+nm:''}.</h1><p class="dh-sub">Here’s an overview of your health today.</p></div><div class="mx-hacts"><button class="btn" data-vadd="1">Add reading</button><button class="btn pri" data-add="1">Add health record</button></div></header>`+
+ 
+ (first?`<section class="card dh-start"><h2>Start your health record</h2><ol><li><button class="mx-link" data-add="1">Add a report or prescription</button> as a PDF or a photo.</li><li><button class="mx-link" data-nav="medicines">Add your medicines</button> with their doses and times, for reminders.</li><li><button class="mx-link" data-vadd="1">Add a reading</button> such as blood pressure or weight.</li></ol><p class="mx-sub">Your account starts empty. Nothing here is sample data.</p></section>`:'')+
+ `${S.meds.length||vk.length?`<div class="dh-tiles">${tiles}</div>`:''}
+ <div class="dh-grid">
+ <section class="card dh-card"><div class="dh-ch"><h2>Today’s medicines</h2><button class="mx-link" data-nav="medicines">View all medicines</button></div>${D.length?`<ul class="dh-doses">${D.map(doseRow).join('')}</ul>`:`<p class="mx-sub">${act.length?'Nothing scheduled for today.':'No medicines yet. Add each one with its dose and times to get reminders.'}</p>`}${act.some(m=>m.freq==='as_needed')?`<p class="mx-hint">Taken only when needed: ${esc(act.filter(m=>m.freq==='as_needed').map(m=>m.name).join(', '))}</p>`:''}</section>
+ <section class="card dh-card"><div class="dh-ch"><h2>Vitals</h2><button class="mx-link" data-nav="vitals">View all vitals</button></div>${vk.length?`<ul class="dh-vl">${vk.map(k=>{const l=vitalsOf(k),v=l[0];return`<li><div class="min-w-0"><div class="dh-vn">${esc(VK[k].l)}</div><div class="mx-sub">${esc(whenAt(v.at))}${l.length>=3?'':' · '+esc(vSummary(l))}</div></div>${spark(l,96,30)}<div class="dh-vv">${vText(v)} <span>${VK[k].u}</span></div></li>`}).join('')}</ul>`:`<p class="mx-sub">No readings yet. Add one from a home monitor or a clinic visit to see it here.</p><button class="btn" data-vadd="1">Add a reading</button>`}</section>
+ <section class="card dh-card"><div class="dh-ch"><h2>Recent records</h2><button class="mx-link" data-nav="reports">All records</button></div>${rec.length?`<ul class="dh-recs">${rec.map(r=>`<li><div class="min-w-0"><div class="dh-rt">${esc(r.title)}</div><div class="mx-sub">${esc(r.cat)} · ${r.date?esc(dFmt(r.date)):'Date missing'}${r.lab?' · '+esc(r.lab):''}</div><div class="dh-rx">${esc(recLine(r))}</div></div><div class="dh-ra"><button class="btn" data-rfocus="${r.id}">Open</button>${r.orig==='pdf'?`<button class="btn" data-opdf="${r.id}">PDF</button>`:r.imgs?`<button class="btn" data-vs="${r.id}|0">Original</button>`:''}</div></li>`).join('')}</ul>`:`<p class="mx-sub">No records yet. Reports, prescriptions and scans you add appear here.</p><button class="btn" data-add="1">Add a record</button>`}</section>
+ <section class="card dh-card" id="profcard"><div class="dh-ch"><h2>Health profile</h2><button class="mx-link" data-nav="health">${pdone===6?'Edit':'Complete profile'}</button></div>${pdone<6?`<div><p class="mx-sub">${pdone} of 6 details added</p><div class="mt-2 meter" role="progressbar" aria-label="Health profile completeness" aria-valuemin="0" aria-valuemax="6" aria-valuenow="${pdone}"><div style="width:${Math.round(pdone/6*100)}%"></div></div></div>`:''}<dl class="dh-prof">${prof.map(([k,v])=>`<div><dt>${k}</dt><dd>${v?esc(v):'<span class="rx-miss">Not added</span>'}</dd></div>`).join('')}</dl></section>
+ </div>
+ ${acts.length?`<section class="card dh-card"><div class="dh-ch"><h2>Recent activity</h2></div><ul class="dh-act">${acts.map(a=>`<li><span>${esc(a.t)}</span><span class="mx-sub">${esc(a.w)}</span></li>`).join('')}</ul></section>`:''}
+ <section class="card dh-ask" aria-labelledby="dhaskh"><div class="dh-ch"><div><h2 id="dhaskh">Ask Doctine</h2><p class="mx-sub">Understand your health information, explore your medical reports and ask questions about your health.</p></div><button class="mx-link" data-nav="chat">Open Doctine AI</button></div>
+ ${aiOff()?`<p class="warn">Doctine AI switches on once doctors have finished checking its answers. Your records, medicines and vitals already work.</p>`:`<form id="hask" class="dh-askf"><input class="inp" id="haq" name="haq" maxlength="2000" autocomplete="off" placeholder="Ask about your health or your records" aria-label="Ask Doctine"><button class="btn pri">Send</button></form><div class="dh-sugg">${asks.map(q=>`<button class="mx-chip" data-hq="${esc(q)}">${esc(q)}</button>`).join('')}</div><p class="mx-hint">An AI that can be wrong, not a doctor. Your saved records are only used in a chat if you tick “Use my saved reports”.</p>`}</section>`)+'</div>'}
 
 function ansView(x,last){const p=x.p,em=p.urgency==='emergency';if(p.ai_unavailable&&!p._n){p._n=1;p.safety_note=(p.safety_note?p.safety_note+' ':'')+(p.ai_unavailable==='not_allowed'?'The AI assistant is switched off for you, so this is Doctine’s built-in safety guidance. Nothing was sent anywhere.':'The AI assistant couldn’t be reached, so this is Doctine’s built-in safety guidance.')}
  const paras=s=>esc(s).split(/\n{2,}/).map(t=>`<p class="leading-relaxed">${t.replace(/\n/g,'<br>')}</p>`).join('');
@@ -1203,7 +1361,7 @@ function healthView(){
  const p=S.profile,f=(k,l,t='text',x='')=>`<label class="block text-sm"><span class="text-[var(--mute)]">${l}</span><input class="inp mt-1" type="${t}" ${x} data-p="${k}" value="${esc(p[k])}"></label>`;
  const h=+p.height,w=+p.weight,bmi=h>0&&w>0?(w/((h/100)**2)).toFixed(1):'—',age=ageOf(p.dob);
  const tl=[...S.reports].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<li class="flex gap-3"><div class="flex flex-col items-center"><span class="w-3 h-3 rounded-full mt-1.5" style="background:var(--teal)"></span><span class="flex-1 w-px bg-[var(--line)]"></span></div><div class="pb-5"><div class="text-xs text-[var(--mute)]">${esc(r.date)}</div><div class="font-medium">${esc(r.title)}</div><div class="text-sm text-[var(--mute)]">${esc(r.lab||'')}</div></div></li>`).join('');
- return wrap(head('My Health','Your profile and timeline.','<button class="btn tl" id="exp">Export my data</button>')+
+ return wrap(head('Health profile','Your details and medical timeline.','<button class="btn tl" id="exp">Export my data</button>')+
  `<div class="grid grid-cols-2 md:grid-cols-4 gap-3">${[['Age',age!=null?age+' yrs':'—'],['BMI',bmi],['Blood group',esc(p.blood)||'—'],['Medicines',S.meds.length+' added']].map(([a,b])=>`<div class="card p-4"><div class="text-sm text-[var(--mute)]">${a}</div><div class="serif text-2xl mt-1">${b}</div></div>`).join('')}</div>
  <section class="card p-5"><h2 class="text-xl mb-4">Health profile</h2><div class="grid sm:grid-cols-2 gap-4">${f('name','Full name')}${f('dob','Date of birth','date',`min="1900-01-01" max="${dobMax()}"`)}${f('height','Height (cm)','number','min="30" max="275" step="0.1"')}${f('weight','Weight (kg)','number','min="1" max="500" step="0.1"')}${f('blood','Blood group')}${f('allergies','Allergies')}</div><p class="text-xs text-[var(--mute)] mt-3">Everything here is entered by you. ${S.cloud?'Saved to your account':'Saved in this browser'} when you leave a field.</p></section>
  <section class="card p-5"><h2 class="text-xl mb-4">Medical timeline</h2>${tl?`<ul>${tl}</ul>`:'<p class="text-[var(--mute)]">Saved reports will appear here in date order.</p>'}</section>`)}
@@ -1240,7 +1398,7 @@ function rxCard(r){const p=provOf(r),n=r.imgs||0,ms=((r.scan&&r.scan.medicines)|
  const acts=[n?`<button class="btn" data-vs="${r.id}|0">View ${n>1?'pages':'page'}</button>`:'',r.orig==='pdf'?`<button class="btn" data-opdf="${r.id}">Open original PDF</button>`:'',
   `<button class="btn ${p.k==='auto'?'pri':''}" data-redit="${r.id}">${p.k==='auto'?'Check details':p.k==='photo'?'Add details':'Edit details'}</button>`,
   ms.length?`<button class="btn" data-rxmeds="${r.id}">Add to medicines</button>`:'',aiOff()?'':`<button class="btn" data-ask="${esc(r.title)}">Ask about this</button>`].join('');
- return`<article class="card rx-card">${thumb?`<div class="rx-side">${thumb}</div>`:''}<div class="rx-body">
+ return`<article class="card rx-card" id="rx-${r.id}">${thumb?`<div class="rx-side">${thumb}</div>`:''}<div class="rx-body">
  <header class="rx-hd"><div class="min-w-0"><h2 class="rx-title">${esc(r.title)}</h2><div class="rx-meta"><span>${r.date?esc(dFmt(r.date)):'<span class="rx-miss">Date missing</span>'}</span><span>${r.lab?esc(r.lab):'<span class="rx-miss">Provider not recorded</span>'}</span></div></div><span class="rx-cat">${esc(r.cat)}</span></header>
  <div class="rx-tags">${tags}</div>${p.d?`<p class="rx-pd">${p.d}</p>`:''}
  ${F.length?`<section class="rx-sec"><h3>${rd?'Details read from the photo':'Details'}</h3><dl class="rx-kv">${F.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></section>`:''}
@@ -1477,7 +1635,7 @@ const setView=()=>wrap(head('Settings','Permissions and your data.')+(S.cloud?''
  ${S.cloud?`<section class="card p-5 space-y-3" id="acct"><h2 class="text-xl">Account</h2><p class="text-sm">Signed in as <b>${esc(CLOUD.email||S.email||'')}</b>.</p><div class="flex gap-2 flex-wrap"><button class="btn" id="pwmail">Email me a link to change my password</button><button class="btn" id="outall">Sign out on all devices</button></div><p class="text-xs text-[var(--mute)]">If you signed up with Google, the link lets you add a Doctine password as well. Signing out on all devices ends every session, including this one.</p>${S.acctMsg?`<p class="text-sm" role="status">${esc(S.acctMsg)}</p>`:''}</section>`:''}
  ${helpCard()}${whatsNewCard()}
  <section class="card p-5 space-y-3"><h2 class="text-xl">Your data</h2><p class="text-sm text-[var(--mute)]">${S.sample?'You are viewing sample data. Nothing is saved.':S.cloud?'Saved to your Doctine account, which only you can open.':'Saved only in this browser on this device.'} Export shows everything as text you can copy. The .zip download also includes your original PDFs and photos.</p>${S.zipNote?`<p class="text-sm" role="status">${esc(S.zipNote)}</p>`:''}<p class="text-sm"><a class="underline" href="https://doctine.com/privacy/" target="_blank" rel="noopener">Privacy policy</a> · <a class="underline" href="https://doctine.com/terms/" target="_blank" rel="noopener">Terms</a> · Questions or a complaint: <a class="underline" href="mailto:support@doctine.com">support@doctine.com</a></p>${S.cloud?`<p class="text-sm" id="syncst" role="status">${esc(syncText())}</p>`:''}
- ${S.cloud?`<p class="text-sm text-[var(--mute)]">Deleting your account permanently removes your profile, reports, original documents and photos, medicines, dose history, saved chats and your record of choices. It can't be undone, so export first if you want a copy. Copies in our providers' backups are removed on their normal schedules.</p>`:''}<div class="flex gap-2 flex-wrap"><button class="btn" id="exp2">Export my data</button><button class="btn" id="expzip" ${S.zipping?'disabled':''}>${S.zipping?'Preparing download…':'Download with original files (.zip)'}</button>${S.cloud?'<button class="btn" id="histall">Delete all saved chats</button>':''}<button class="btn dg" id="wipe">${S.sample?'Reset sample data':'Delete my account and data'}</button></div>
+ ${S.cloud?`<p class="text-sm text-[var(--mute)]">Deleting your account permanently removes your profile, reports, original documents and photos, medicines, dose history, health readings, saved chats and your record of choices. It can't be undone, so export first if you want a copy. Copies in our providers' backups are removed on their normal schedules.</p>`:''}<div class="flex gap-2 flex-wrap"><button class="btn" id="exp2">Export my data</button><button class="btn" id="expzip" ${S.zipping?'disabled':''}>${S.zipping?'Preparing download…':'Download with original files (.zip)'}</button>${S.cloud?'<button class="btn" id="histall">Delete all saved chats</button>':''}<button class="btn dg" id="wipe">${S.sample?'Reset sample data':'Delete my account and data'}</button></div>
  ${S.exp?`<textarea readonly class="inp font-mono text-xs h-48" aria-label="Exported data">${esc(S.exp)}</textarea><button class="btn" id="cp">Copy</button>`:''}</section>
  ${S.cloud&&localAccounts().length?`<section class="card p-5 space-y-3"><h2 class="text-xl">Records saved in this browser</h2><p class="text-sm text-[var(--mute)]">This browser still has records from Doctine’s earlier demo accounts. You can copy them into your account. Nothing is copied unless you choose an account and enter its password. Sample data is never copied.</p>
  <ul class="divide-y divide-[var(--line)] text-sm">${localAccounts().map(a=>`<li class="py-2 flex justify-between items-center gap-3 flex-wrap"><span>${esc(a.email)} · ${a.n} record${a.n===1?'':'s'}, ${a.m} medicine${a.m===1?'':'s'}</span><button class="btn" data-impsel="${esc(a.email)}">Copy into my account</button></li>`).join('')}</ul>
@@ -1562,16 +1720,17 @@ setInterval(()=>{if($('#app').classList.contains('hidden'))return;S.alerted=S.al
 async function notify(title,body){try{if(!('Notification' in window)||Notification.permission!=='granted')return;const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(reg&&reg.showNotification)reg.showNotification(title,{body,icon:'icons/icon-192.png',tag:title});else new Notification(title,{body})}catch{}}
 function render(){
  const authed=S.email||S.sample||S.guest;$('#auth').classList.toggle('hidden',!!authed);$('#app').classList.toggle('hidden',!authed);
- if(!authed){$('#auth').innerHTML=authView();abObserve();return}
- $('#nav').innerHTML=NAV.map(([k,l,i])=>`<button class="nav ${S.view===k?'on':''}" data-nav="${k}" ${S.view===k?'aria-current="page"':''}><span class="navi">${NAVI[i]||''}</span>${l}</button>`).join('');
+ if(!authed){const hv=hashView();if(hv&&hv!=='about')setHash(false);$('#auth').innerHTML=authView();abObserve();return}
+ $('#nav').innerHTML=NAV.map(([k,l,i,g],n)=>`${!n||NAV[n-1][3]!==g?`<div class="navg">${g}</div>`:''}<button class="nav ${S.view===k?'on':''}" data-nav="${k}" ${S.view===k?'aria-current="page"':''}><span class="navi">${NAVI[i]||''}</span>${l}</button>`).join('');
+ const tb=$('#tabbar');if(tb)tb.innerHTML=[['home','My Health','home'],['medicines','Medicines','meds'],['reports','Records','reports'],['chat','Doctine AI','chat']].map(([k,l,i])=>`<button data-nav="${k}" class="${S.view===k?'on':''}" ${S.view===k?'aria-current="page"':''}><span class="navi">${NAVI[i]||''}</span>${l}</button>`).join('')+`<button id="tbmore" class="${['home','medicines','reports','chat'].includes(S.view)?'':'on'}" aria-label="More: vitals, reminders, profile, settings"><span class="navi"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg></span>More</button>`;
  $('#ttl').textContent=(NAV.find(n=>n[0]===S.view)||[,S.view==='family'?'Family':''])[1];$('#who').innerHTML=S.sample?'Sample data':S.guest?'Not signed in':`${esc(S.email)}<span class="tag" style="display:inline-block;margin-top:.25rem;${S.cloud?'':'background:var(--warnbg);color:var(--warntx)'}">${S.cloud?'Doctine account':'Demo · this browser only'}</span>`;
  $('#banner').innerHTML=bannerHTML();
- const V={home:homeView,chat:chatView,health:healthView,reports:reportsView,medicines:medsView,reminders:remView,family:soon,about:aboutView,settings:setView}[S.view];
+ const V={home:homeView,chat:chatView,health:healthView,vitals:vitalsView,reports:reportsView,medicines:medsView,reminders:remView,family:soon,about:aboutView,settings:setView}[S.view]||homeView;
  const v=$('#view'),ae=document.activeElement,fk=ae&&v.contains(ae)&&(ae.id?'#'+CSS.escape(ae.id):['p','uf','mt'].map(k=>ae.dataset&&ae.dataset[k]!==undefined?`[data-${k}="${CSS.escape(ae.dataset[k])}"]`:'').find(Boolean)),fsel=fk&&typeof ae.selectionStart==='number'?[ae.selectionStart,ae.selectionEnd]:null;
  v.innerHTML=V();
  if(fk){const n=v.querySelector(fk);if(n){n.focus({preventScroll:true});if(fsel)try{n.setSelectionRange(fsel[0],fsel[1])}catch{}}}v.style.overflow=S.view==='chat'?'hidden':'';
  if(S.view==='chat'){const m=$('#msgs');if(m)m.scrollTop=S.msgs.length||S.typing?m.scrollHeight:0}persist();alarmSync();hydrateImgs();abObserve()}
-const exportData=()=>({exported_at:new Date().toISOString(),sample:S.sample,profile:S.profile,reports:S.reports,medicines:S.meds,dose_history:S.doses,chat:S.msgs,consent:S.consent});
+const exportData=()=>({exported_at:new Date().toISOString(),sample:S.sample,profile:S.profile,reports:S.reports,medicines:S.meds,dose_history:S.doses,health_readings:S.vitals||[],chat:S.msgs,consent:S.consent});
 const exportJson=()=>{S.exp=JSON.stringify(exportData(),null,2);go('settings')};
 // A .zip with the data and every original PDF and photo. Files are stored uncompressed (they're already compressed), so no library is needed.
 const ZIP={t:null,crc(u){const t=this.t||(this.t=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})());let c=~0;for(let i=0;i<u.length;i++)c=t[(c^u[i])&255]^(c>>>8);return(~c)>>>0},
@@ -1651,6 +1810,12 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.dataset.opdf){const id=t.dataset.opdf;(async()=>{const b=await IMG.get(`orig:${id}:0`).catch(()=>null)||await cloudImage(`orig:${id}:0`);if(!b)return toast('The original PDF isn’t available on this device right now. Check your connection and try again.');if(NATIVE&&window.DoctineNative){const r=S.reports.find(x=>String(x.id)===String(id));const ok=await DoctineNative.saveFile(((r&&r.title)||'doctine-record').replace(/[^\w.-]+/g,'-').slice(0,60)+'.pdf',new Blob([b],{type:'application/pdf'}));if(!ok)toast('The PDF wasn’t opened.');return}const u=URL.createObjectURL(new Blob([b],{type:'application/pdf'}));const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)})();return}
  if(t.dataset.vs){const[id,i]=t.dataset.vs.split('|'),r=S.reports.find(x=>x.id==id);if(r)openViewer(r,+i||0);return}
  if(t.dataset.rxmeds){const r=S.reports.find(x=>x.id==t.dataset.rxmeds);if(!r)return;S.medScan={rid:r.id,title:r.title,meds:((r.scan&&r.scan.medicines)||[]).filter(m=>m.name),added:{}};S.medDraft=null;S.medEdit=null;go('medicines');return}
+ if(t.dataset.vadd){if(S.cloud&&CLOUD.noVitals)return toast('Saving readings is switching on shortly.');S.vDraft=newVDraft(VK[t.dataset.vadd]?t.dataset.vadd:'');S.vErr=null;if(S.view!=='vitals')go('vitals');else render();const f=$('#vf');if(f){f.scrollIntoView({block:'start'});const i=f.querySelector(S.vDraft.kind?'[name=v]':'input[name=kind]');if(i)i.focus({preventScroll:true})}return}
+ if(t.id==='vcancel'){S.vDraft=null;S.vErr=null;return render()}
+ if(t.dataset.vdel){if(!t.dataset.armed){t.dataset.armed='1';t.textContent='Tap again to delete';return}S.vitals=(S.vitals||[]).filter(v=>String(v.id)!==t.dataset.vdel);toast('Reading deleted');return render()}
+ if(t.dataset.rfocus){go('reports');const c=document.getElementById('rx-'+t.dataset.rfocus);if(c){c.scrollIntoView({block:'start'});c.classList.add('rx-hl');setTimeout(()=>c.classList.remove('rx-hl'),1600)}return}
+ if(t.dataset.hq){go('chat');const i=$('#ci');if(i){i.value=t.dataset.hq;i.focus()}if(/report|record|history|prescription|medicines am I/i.test(t.dataset.hq)&&S.reports.length&&!S.useRecords)toast('Tick “Use my saved reports” below the chat so Doctine AI can see your records.');return}
+ if(t.id==='tbmore'){$('#burger').click();return}
  if(t.dataset.add){S.view='reports';render();setTimeout(()=>{const f=$('#file');if(f)f.click()},60);return}
  if(t.dataset.d){DoctineAlarms.stop();const[k,s]=t.dataset.d.split('|');if(s==='Undo')delete S.doses[k];else if(s==='Snoozed'){const x=new Date(Date.now()+6e5);S.doses[k]='Snoozed until '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')}else S.doses[k]=s;return render()}
  if(t.id==='sim'){const m=S.meds[0];if(m)toast('⏰ Time for '+m.name+' ('+m.dose+'). Demo reminder, shown only while this page is open.')}
@@ -1688,6 +1853,10 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
 document.addEventListener('submit',async e=>{e.preventDefault();const id=e.target.id,F=new FormData(e.target);
  if(id==='hs'){S.q=String(F.get('hq')).trim();if(S.q)track('search_performed',{scope:'home'},'search:'+today());return go('reports')}
  if(id==='cf'){const i=$('#ci'),v=i.value;i.value='';send(v)}
+ if(id==='hask'){const v=String(F.get('haq')||'').trim();if(!v)return;go('chat');send(v);return}
+ if(id==='vf'){captureV();const d=S.vDraft,pr=vProblems(d);if(Object.keys(pr).length){S.vErr=pr;render();const f=$('#vf [aria-invalid=true]');if(f)f.focus();return}
+  const at=new Date(d.date+'T'+d.time);S.vitals=S.vitals||[];S.vitals.push({id:Date.now(),kind:d.kind,v:+d.v,v2:d.kind==='blood_pressure'?+d.v2:null,unit:VK[d.kind].u,ctx:d.kind==='glucose'?d.ctx:'',note:d.note.trim(),at:at.toISOString()});
+  toast(VK[d.kind].l+' saved');S.vDraft=null;S.vErr=null;render();const c=$('#vk-'+d.kind);if(c)c.scrollIntoView({block:'center'});return}
  if(id==='mf'){const d=S.medDraft;if(!d)return;
   if(e.target.dataset.step==='form'){captureMed();const pr=medProblems(d);if(Object.keys(pr).length){S.medErr=pr;render();const f=$('#mf [aria-invalid=true]');if(f){f.focus();f.scrollIntoView({block:'center'})}return}S.medErr=null;d.step='review';render();const f=$('#mf');if(f)f.scrollIntoView({block:'start'});return}
   if(d.src&&d.src.conf!=='high'&&!F.get('srcok')){$('#merr').innerHTML='<div class="err" role="alert">Tick the box once you’ve checked this medicine against the prescription.</div>';return}
@@ -1730,6 +1899,7 @@ document.addEventListener('submit',async e=>{e.preventDefault();const id=e.targe
 document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='au-pw'&&t.form&&t.form.id==='npf')pwStrength(t.value)
  ;
  if(t.dataset.mt!==undefined){S.medDraft.times[+t.dataset.mt]=t.value;return}
+ if(t.form&&t.form.id==='vf'){if(t.name!=='kind')captureV();return}
  if(t.form&&t.form.id==='mf'){if(t.dataset.mre!==undefined)return;captureMed();if(S.medErr&&t.name){const k=t.name==='unit'?'amount':['forN','forU'].includes(t.name)?'end':['interval','first'].includes(t.name)?'mode':t.name;if(S.medErr[k]&&!medProblems(S.medDraft)[k]){delete S.medErr[k];const m=$('#mxe-'+k);if(m)m.remove();t.form.querySelectorAll(`[aria-describedby="mxe-${k}"]`).forEach(x=>{x.removeAttribute('aria-invalid');x.removeAttribute('aria-describedby')})}}return}
  if(t.dataset.uf)S.upload[t.dataset.uf]=t.value;
  if(t.dataset.ur){const[n,k]=t.dataset.ur.split('|');S.upload.rows[+n][k]=t.value}
@@ -1737,6 +1907,7 @@ document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='au-pw'&&t.f
 document.addEventListener('change',e=>{const t=e.target;
  if(t.id==='showpw'){const i=document.querySelector('input[name=pw]');if(i)i.type=t.checked?'text':'password';return}
  if(t.id==='usrec'){S.useRecords=t.checked;return}
+ if(t.form&&t.form.id==='vf'&&t.name==='kind'){captureV();S.vDraft.kind=t.value;S.vErr=null;render();const i=$('#vf [name=v]');if(i)i.focus();return}
  if(t.dataset.mre!==undefined&&t.form&&t.form.id==='mf'){const d=S.medDraft,pf=d._pf,pm=d._pm;captureMed();
   if(d.mode!==pm){const n=MSLOTS[d.mode];if(n){const ts=d.times.filter(Boolean).slice(0,n);while(ts.length<n)ts.push('');d.times=ts}else if(d.mode==='times'||d.mode==='days'){if(!d.times.length)d.times=[''];}}
   if(d.form!==pf&&(!d.unit||d.unit===(MUNIT_OF[pf]||'')))d.unit=MUNIT_OF[d.form]||'';
@@ -1752,7 +1923,7 @@ if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude\.ai|clau
 applyTheme();
 /* restore a signed-in session only after every function and constant above exists (doing it earlier left a blank page on refresh) */
 if(DB.session&&DB.users[DB.session])enter(DB.session,DB.users[DB.session].data,false);else render();
-const openAboutFromHash=()=>{if(location.hash!=='#about')return;if(S.email||S.sample||S.guest){if(S.view!=='about')go('about')}else if(S.auth!=='about'){S.auth='about';render()}};
+const openAboutFromHash=()=>{const h=hashView();if(!h)return;if(S.email||S.sample||S.guest){if(S.view!==h)go(h)}else if(h==='about'&&S.auth!=='about'){S.auth='about';render()}};
 openAboutFromHash();addEventListener('hashchange',openAboutFromHash);
 initCloud().then(on=>{if(!on&&NATIVE){S.email=null;S.sample=false;S.guest=false;S.auth='noserver';return render()}if(on&&S.email&&!S.cloud&&!S.sample&&!S.guest){DB.session=null;store.set(DB);S={...S,...blank(''),email:null,auth:'login'};render()}});
 DoctineAlarms.onAction((k,a)=>{if(!S.email||S.sample||S.guest)return;if(a==='taken')S.doses[k]='Taken';else if(a==='snooze'){const x=new Date(Date.now()+6e5);S.doses[k]='Snoozed until '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')}else return;_asig='';render()});

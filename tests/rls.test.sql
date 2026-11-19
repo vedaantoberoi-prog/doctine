@@ -15,6 +15,11 @@ select pg_temp.expect((select count(*) from pg_class where relnamespace = 'publi
   and relname = any(array['health_profiles','consents','documents','document_files','lab_results','prescriptions','prescription_items',
                           'medicines','medication_schedules','dose_events','conversations','messages','vital_readings'])) = 13,
   'row-level security is forced on all 13 health-data tables (it applies even to the table owner)');
+select pg_temp.expect(not exists (select 1 from pg_proc p where p.pronamespace in ('public'::regnamespace, 'private'::regnamespace) and p.prokind = 'f'
+  and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')
+  and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')), 'every Doctine function has a fixed search path');
+select pg_temp.expect(not has_function_privilege('anon', 'public.log_consent()', 'execute') and not has_function_privilege('authenticated', 'public.log_consent()', 'execute'),
+  'the consent-logging trigger function cannot be called directly');
 select pg_temp.expect(not exists (select 1 from information_schema.role_table_grants where table_schema = 'public' and table_name = 'vital_readings' and grantee = 'anon'),
   'signed-out visitors have no access to health readings');
 -- consent_log is the one deliberate exception: only the security-definer consent trigger writes it, and it has no write policy.

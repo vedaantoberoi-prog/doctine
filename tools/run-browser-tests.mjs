@@ -29,6 +29,7 @@ const SUITES = [
   ["help", "tests/browser/help.test.mjs", "Settings → Help and feedback and What's new; Supabase simulated with ownership rules"],
   ["app", "tests/browser/app.test.mjs", "API responses simulated in the browser"],
   ["dashboard", "tests/browser/dashboard.test.mjs", "My Health after sign-in, Vitals, grouped sidebar, phone tab bar and screen routing; demo and sample accounts"],
+  ["hostile-data", "tests/browser/hostile-data.test.mjs", "script-injection text in every new field, on every screen; demo account"],
   ["medicines", "tests/browser/medicines.test.mjs", "Medicines form, review, list and the medical-record cards and page viewer; demo account"],
   ["google", "tests/browser/google.test.mjs", "Google sign-in; Supabase simulated with ownership rules"],
   ["auth", "tests/browser/auth.test.mjs", "sign-in, sign-up and recovery screens and states; Supabase simulated"],

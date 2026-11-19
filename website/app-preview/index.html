@@ -46,6 +46,129 @@ h1,h2,h3,.serif{font-family:var(--serif);font-weight:500;letter-spacing:-.012em;
 .attmenu{position:absolute;bottom:calc(100% + .4rem);left:0;z-index:20;min-width:14rem;padding:.35rem}
 .attmenu button{display:block;width:100%;text-align:left;padding:.6rem .75rem;border-radius:10px;font-size:.9rem;color:var(--text)}.attmenu button:hover{background:var(--hover)}
 .scanthumb{width:4.5rem;height:4.5rem;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--hover)}
+/* Medical records */
+.rx-list{display:grid;gap:1rem}
+.rx-card{display:flex;gap:1.35rem;padding:1.35rem 1.4rem;overflow:visible}
+.rx-side{flex-shrink:0}
+.rx-thumb{position:relative;display:block;width:7.5rem;aspect-ratio:3/4;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--hover);padding:0;cursor:zoom-in}
+.rx-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.rx-thumb:hover{border-color:var(--teal)}
+.rx-pages{position:absolute;left:.4rem;bottom:.4rem;font-size:.68rem;font-weight:700;background:rgba(16,28,43,.78);color:#fff;border-radius:999px;padding:.12rem .45rem}
+.rx-pdf{display:grid;place-items:center;cursor:pointer}.rx-pdf span{font-size:.8rem;font-weight:700;letter-spacing:.08em;color:var(--tealtx);border:1.5px solid currentColor;border-radius:6px;padding:.3rem .5rem}
+.rx-body{min-width:0;flex:1;display:grid;gap:.85rem;align-content:start}
+.rx-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+.rx-title{font-family:var(--sans);font-size:1.08rem;font-weight:700;letter-spacing:0;color:var(--ink-strong);overflow-wrap:anywhere}
+.rx-meta{display:flex;flex-wrap:wrap;gap:.2rem .9rem;font-size:.84rem;color:var(--text);margin-top:.2rem}
+.rx-miss{color:var(--mute)}
+.rx-cat{flex-shrink:0;font-size:.72rem;font-weight:700;color:var(--tealtx);background:var(--tealbg);border-radius:999px;padding:.18rem .6rem}
+.rx-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:-.25rem}
+.rx-tag{font-size:.72rem;font-weight:600;border-radius:6px;padding:.12rem .5rem;background:var(--hover);color:var(--mute)}
+.rx-tag.prov-auto{background:var(--warnbg);color:var(--warntx)}.rx-tag.prov-ok{background:var(--tealbg);color:var(--tealtx)}
+.rx-pd{font-size:.78rem;color:var(--mute);line-height:1.5;margin-top:-.35rem}
+.rx-sec{border-top:1px solid var(--line);padding-top:.85rem}
+.rx-sec h3{font-family:var(--sans);font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);margin-bottom:.55rem}
+.rx-read>summary{cursor:pointer;list-style-position:inside;color:var(--mute)}.rx-read>summary h3{display:inline;margin:0}
+.rx-read[open]>summary{margin-bottom:.6rem}
+.rx-kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:0 1.75rem;margin:0}
+.rx-kv>div{display:grid;grid-template-columns:minmax(6.5rem,42%) 1fr;gap:.75rem;padding:.45rem 0;border-bottom:1px dashed var(--line);font-size:.86rem}
+.rx-kv dt{color:var(--mute);overflow-wrap:anywhere}.rx-kv dd{color:var(--ink-strong);font-weight:500;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.rx-meds{width:100%;border-collapse:collapse;font-size:.85rem}
+.rx-meds th{text-align:left;font-size:.72rem;font-weight:600;color:var(--mute);padding:.4rem .6rem .4rem 0;border-bottom:1px solid var(--line)}
+.rx-meds td{padding:.6rem .6rem .6rem 0;border-bottom:1px solid var(--line);vertical-align:top;color:var(--text)}
+.rx-meds tr:last-child td{border-bottom:0}
+.rx-mn{font-weight:650;color:var(--ink-strong)}.rx-raw{font-size:.75rem;color:var(--mute);margin-top:.15rem}
+.rx-cf{font-size:.66rem;font-weight:700;border-radius:999px;padding:.08rem .45rem;margin-left:.25rem;vertical-align:.1em}
+.rx-cf.ok{background:var(--tealbg);color:var(--tealtx)}.rx-cf.chk,.rx-cf.bad{background:var(--warnbg);color:var(--warntx)}
+.rx-read>.rx-pd{margin-top:.8rem}.rx-tx{margin-top:.7rem;font-size:.8rem}.rx-tx summary{cursor:pointer;color:var(--tealtx);font-weight:600}.rx-tx pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.76rem;background:var(--hover);border-radius:10px;padding:.7rem .85rem;margin-top:.5rem}
+.rx-acts{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;border-top:1px solid var(--line);padding-top:.9rem}
+.rx-acts .btn{padding:.48rem .95rem}
+.rx-acts .mx-more{margin-left:auto}
+.sv-t{min-width:0;display:flex;flex-direction:column}.sv-name{color:#e8eef5;font-size:.9rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sv-pg{color:#9fb0c3;font-size:.76rem}
+.sv-acts{display:flex;gap:.45rem;flex-wrap:wrap;justify-content:flex-end}
+.sv-seg{display:inline-flex;border:1px solid #27384f;border-radius:999px;padding:2px;gap:2px}.sv-seg .btn{border:0;padding:.4rem .8rem}.sv-seg .btn.on{background:#e8eef5;color:#0b1420}
+.sv-nav{display:flex;justify-content:center;gap:.6rem;padding:.75rem 0}.scanov .btn:disabled{opacity:.4}
+@media (max-width:640px){.rx-card{flex-direction:column;padding:1.1rem;gap:1rem}.rx-thumb{width:100%;aspect-ratio:auto;height:11rem}.rx-thumb img{object-position:top}
+ .rx-meds thead{display:none}.rx-meds,.rx-meds tbody,.rx-meds tr,.rx-meds td{display:block;width:100%}.rx-meds tr{padding:.6rem 0;border-bottom:1px solid var(--line)}.rx-meds td{border:0;padding:.12rem 0;display:grid;grid-template-columns:6.5rem 1fr}.rx-meds td::before{content:attr(data-l);color:var(--mute);font-size:.75rem}.rx-meds td:first-child{display:block}.rx-meds td:first-child::before{content:none}
+ .scanbar{flex-direction:column;align-items:stretch}.sv-acts{justify-content:flex-start}}
+/* Medicines: form, review and list */
+.mx-hacts{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.mx-form{padding:0;overflow:hidden}
+.mx-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:1.25rem 1.5rem 1.1rem;border-bottom:1px solid var(--line)}
+.mx-head h2{font-size:1.4rem}.mx-head p{font-size:.82rem;color:var(--mute);margin-top:.2rem}
+.mx-src{margin:1rem 1.5rem 0}
+.mx-sec{display:grid;grid-template-columns:12.5rem minmax(0,1fr);gap:1rem 2.25rem;padding:1.5rem;border-bottom:1px solid var(--line)}
+.mx-step{font-size:.7rem;font-weight:700;letter-spacing:.09em;color:var(--tealtx);font-variant-numeric:tabular-nums}
+.mx-sech h3{font-family:var(--sans);font-size:1rem;font-weight:700;letter-spacing:0;color:var(--ink-strong);margin-top:.1rem}
+.mx-sech p{font-size:.8rem;color:var(--mute);margin-top:.3rem;line-height:1.5;max-width:16rem}
+.mx-fields{display:grid;gap:1.05rem;min-width:0;align-content:start}
+.mx-row{display:grid;gap:.85rem;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))}
+.mx-lab{display:block;font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.38rem}
+.mx-lab .opt{font-weight:500;color:var(--mute)}
+.mx-hint{font-size:.78rem;color:var(--mute);margin-top:.4rem;line-height:1.45}
+.mx-form .inp{border-radius:11px;min-height:2.75rem}
+.mx-form textarea.inp{min-height:4.5rem;resize:vertical}
+.mx-form .inp:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal)}
+.mx-form .inp[aria-invalid=true]{border-color:var(--errbd);background:color-mix(in srgb,var(--errbg) 45%,var(--card))}
+.mx-name{font-size:1.15rem!important;font-weight:600;padding:.8rem 1rem!important;min-height:3.25rem!important}
+.mx-date{max-width:14rem}
+.mx-pair{display:grid;grid-template-columns:minmax(5rem,7.5rem) minmax(7rem,12rem);gap:.5rem}
+.mx-err{font-size:.8rem;color:var(--errtx);margin-top:.4rem;font-weight:500}.mx-fields>.mx-err{margin-top:-.6rem}
+.mx-seg{display:flex;flex-wrap:wrap;gap:.45rem}
+.mx-seg label{position:relative;display:inline-flex}
+.mx-seg input{position:absolute;opacity:0;width:1px;height:1px}
+.mx-opt{display:inline-flex;align-items:center;min-height:2.5rem;border:1px solid var(--line);border-radius:10px;padding:.45rem .85rem;font-size:.85rem;font-weight:500;background:var(--card);color:var(--text);cursor:pointer;transition:border-color .12s;user-select:none}
+.mx-opt:hover{border-color:var(--teal)}
+.mx-seg input:checked+.mx-opt{background:var(--ink-strong);border-color:var(--ink-strong);color:var(--card)}
+.mx-seg input:focus-visible+.mx-opt{outline:2px solid var(--teal);outline-offset:2px}
+.mx-day{min-width:3.3rem;justify-content:center}
+.mx-times{display:grid;gap:.5rem}
+.mx-time{display:grid;grid-template-columns:7.5rem 10.5rem auto;align-items:center;gap:.75rem}
+.mx-tl{font-size:.82rem;color:var(--mute)}
+.mx-link{background:none;border:0;padding:.3rem .2rem;font-size:.8rem;font-weight:600;color:var(--tealtx);cursor:pointer;justify-self:start}
+.mx-link:hover{text-decoration:underline}.mx-link:disabled{opacity:.45;cursor:default;text-decoration:none}
+.mx-add{margin-top:-.4rem}
+.mx-quick{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;font-size:.76rem;color:var(--mute)}
+.mx-quick>span{margin-right:.15rem}
+.mx-chip{border:1px dashed var(--line);background:transparent;color:var(--text);border-radius:999px;padding:.28rem .7rem;font-size:.76rem;cursor:pointer}
+.mx-chip:hover{border-style:solid;border-color:var(--teal);background:var(--tealbg)}
+.mx-note{background:var(--hover);border-radius:10px;padding:.65rem .85rem;font-size:.83rem;color:var(--text);line-height:1.5}
+.mx-sentence b{font-weight:650;color:var(--ink-strong)}
+.mx-foot{display:flex;gap:.6rem;align-items:center;justify-content:flex-end;flex-wrap:wrap;padding:1rem 1.5rem;border-top:1px solid var(--line);background:color-mix(in srgb,var(--bg) 55%,var(--card))}
+.mx-foot .mx-hint{margin-right:auto}
+.mx-rev{margin:0;padding:.4rem 1.5rem}
+.mx-rev>div{display:grid;grid-template-columns:10rem minmax(0,1fr);gap:1rem;padding:.7rem 0;border-bottom:1px solid var(--line)}
+.mx-rev>div:last-child{border-bottom:0}
+.mx-rev dt{font-size:.8rem;color:var(--mute);font-weight:500}.mx-rev dd{font-size:.92rem;color:var(--ink-strong);font-weight:500;overflow-wrap:anywhere}
+.mx-check{display:flex;gap:.6rem;align-items:flex-start;margin:0 1.5rem 1rem;font-size:.86rem}.mx-check input{margin-top:.2rem}
+.mx-merr:not(:empty){margin:0 1.5rem 1rem}
+.mx-grp>h2,.mx-grp>summary h2{font-family:var(--sans);font-size:.74rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);margin:0 0 .6rem .25rem;display:inline-flex;gap:.45rem}
+.mx-grp h2 span{font-weight:600;color:var(--mute);opacity:.8}
+.mx-fin>summary{cursor:pointer;list-style-position:inside;color:var(--mute)}
+.mx-list{padding:0;overflow:visible}
+.mx-item{display:flex;justify-content:space-between;gap:1rem;padding:1.1rem 1.35rem;border-top:1px solid var(--line)}
+.mx-item:first-child{border-top:0}
+.mx-main{min-width:0;display:grid;gap:.22rem}
+.mx-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:.25rem .6rem}
+.mx-mname{font-size:1.02rem;font-weight:700;color:var(--ink-strong)}
+.mx-str{font-size:.9rem;font-weight:600;color:var(--text)}
+.mx-form-t{font-size:.8rem;color:var(--mute)}
+.mx-st{font-size:.7rem;font-weight:700;border-radius:999px;padding:.1rem .5rem;align-self:center}
+.mx-st.on{background:var(--tealbg);color:var(--tealtx)}.mx-st.paused{background:var(--warnbg);color:var(--warntx)}.mx-st.done{background:var(--hover);color:var(--mute)}
+.mx-line{font-size:.88rem;color:var(--text)}
+.mx-sub{font-size:.8rem;color:var(--mute)}
+.mx-next{font-size:.8rem;font-weight:600;color:var(--tealtx);margin-top:.15rem}.mx-next.quiet{color:var(--mute);font-weight:500}
+.mx-acts{display:flex;gap:.4rem;align-items:flex-start;flex-shrink:0}
+.mx-acts .btn{padding:.45rem .9rem}
+.mx-more{position:relative}
+.mx-more>summary{list-style:none}.mx-more>summary::-webkit-details-marker{display:none}
+.mx-menu{position:absolute;right:0;top:calc(100% + .35rem);z-index:20;min-width:11rem;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:.3rem;display:grid}
+.mx-menu button{text-align:left;padding:.55rem .75rem;border-radius:8px;font-size:.85rem;color:var(--text);background:none;border:0;cursor:pointer}
+.mx-menu button:hover{background:var(--hover)}.mx-menu .dgt{color:var(--errtx)}
+.mx-empty{padding:2rem 1.5rem;text-align:center}.mx-empty h2{font-size:1.35rem}.mx-empty p{color:var(--mute);font-size:.9rem;max-width:28rem;margin:.4rem auto 1.1rem}
+@media (max-width:760px),(pointer:coarse){.mx-opt{min-height:2.75rem}.mx-chip{min-height:2.5rem}}
+@media (max-width:760px){.mx-sec{grid-template-columns:1fr;gap:.9rem;padding:1.2rem 1.1rem}.mx-sech p{max-width:none}.mx-head,.mx-foot{padding-left:1.1rem;padding-right:1.1rem}.mx-src{margin:1rem 1.1rem 0}.mx-rev{padding:.3rem 1.1rem}.mx-rev>div{grid-template-columns:1fr;gap:.15rem}
+ .mx-time{grid-template-columns:1fr auto}.mx-time .mx-tl{grid-column:1/-1;margin-bottom:-.3rem}.mx-pair{grid-template-columns:minmax(4.5rem,6.5rem) 1fr}
+ .mx-item{flex-direction:column;padding:1rem 1.1rem;gap:.75rem}.mx-acts{width:100%}.mx-check,.mx-merr:not(:empty){margin-left:1.1rem;margin-right:1.1rem}.mx-date{max-width:none}}
 /* Dark: the website's dark tokens; primary actions turn ivory on navy, as on doctine.com. */
 :root[data-theme=dark]{--ink-strong:#F3F1EB;--shadow:0 1px 2px rgba(0,0,0,.3),0 14px 34px -20px rgba(0,0,0,.7);--navy:#2E4A66;--text:#DCE2E9;--card:#142131;--hover:#1A2A3D;--tealtx:#8DB5AE;--teal:#7FA9A1;--tealbg:#16302F;--bg:#0C1520;--line:#26364A;--mute:#A9B4C2;--warnbg:#3a2e12;--warnbd:#5b4a1d;--warntx:#f0d9a0;--errbg:#3a1a1a;--errbd:#6a2c2c;--errtx:#f3b4b4;color-scheme:dark}
 
@@ -593,7 +716,7 @@ async function saveScan(blobs,doc,{store:keep=true}={}){
 /* Times for a prescription's frequency: 1-0-1 → morning and night, BD → twice a day, and so on. */
 function freqTimes(f){f=String(f||'').toUpperCase().replace(/\s/g,'');const m=f.match(/^([\d½.]+)-([\d½.]+)-([\d½.]+)(?:-([\d½.]+))?$/);
  if(m){const parts=[m[1],m[2],m[3],m[4]].filter(x=>x!==undefined),t=parts.length===4?['08:00','14:00','20:00','22:00']:['08:00','14:00','21:00'];return t.filter((_,i)=>parts[i]&&!/^0+$/.test(parts[i]))}
- if(/QID|QDS/.test(f))return['08:00','12:00','16:00','20:00'];if(/TDS|TID/.test(f))return['08:00','14:00','20:00'];if(/BD|BID/.test(f))return['08:00','20:00'];if(/HS|BEDTIME/.test(f))return['22:00'];if(/OD|ONCE/.test(f))return['08:00'];return['08:00']}
+ if(/QID|QDS/.test(f))return['08:00','12:00','16:00','20:00'];if(/TDS|TID/.test(f))return['08:00','14:00','20:00'];if(/BD|BID/.test(f))return['08:00','20:00'];if(/HS|BEDTIME/.test(f))return['22:00'];if(/OD|ONCE/.test(f))return['08:00'];return[]}
 function durEnd(dur){const m=String(dur||'').match(/(\d+)\s*(d|day|w|week|m|month)/i);if(!m)return'';const n=+m[1],u=m[2][0].toLowerCase(),x=new Date();x.setDate(x.getDate()+(u==='d'?n:u==='w'?n*7:n*30)-1);return`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`}
 /* Scan for records or medicines: camera → crop/clean → read → saved with a name. */
 async function quickScan(camera,after,given){
@@ -711,7 +834,8 @@ async function cloudEnter(user){
   const schedBy={};(sc.data||[]).forEach(s=>schedBy[s.medicine_id]=s);
   const medByUuid={};
   const meds=(ms.data||[]).map(m=>{const s=schedBy[m.id]||{};medByUuid[m.id]=m.client_id;CLOUD.ids.meds[m.client_id]=m.id;
-   return{id:Number(m.client_id),name:m.name,dose:m.dose,status:m.status,start:m.start_date,end:m.end_date||'',freq:s.frequency||'daily',days:s.days_of_week||[],times:s.times||['08:00'],
+   return{id:Number(m.client_id),name:m.name,dose:m.dose,status:m.status,start:m.start_date,end:m.end_date||'',freq:s.frequency||'daily',days:s.days_of_week||[],times:s.times||(s.frequency==='as_needed'?[]:['08:00']),
+    brand:m.brand||'',strength:m.strength||'',form:m.form||'',amount:m.dose_amount||'',unit:m.dose_unit||'',instructions:m.instructions||'',interval:s.interval_hours||null,
     ...(m.source_document_id||m.source_raw?{src:{doc:m.source_document_id?Number(docByUuid[m.source_document_id]):null,raw:m.source_raw||'',conf:m.source_confidence||''}}:{})}});
   const doses={};(de.data||[]).forEach(d=>{const cid=medByUuid[d.medicine_id];if(cid!=null)doses[`${cid}@${d.scheduled_time}@${d.scheduled_date}`]=d.status});
   const data={profile:{name:p.full_name||meta.full_name||'',dob:p.date_of_birth||'',height:p.height_cm!=null?String(p.height_cm):'',weight:p.weight_kg!=null?String(p.weight_kg):'',blood:p.blood_group||'',allergies:p.allergies||''},reports,meds,doses,consent,cloud:true};
@@ -729,7 +853,7 @@ function leaveCloud(to='login'){if(window.DoctineNative)DoctineNative.clearExpor
 /* What is saved, as comparable JSON per row, so each save sends only what changed. */
 function snapshot(d){const o={profile:JSON.stringify(d.profile),consent:JSON.stringify(d.consent),docs:{},meds:{},doses:{}};
  (d.reports||[]).forEach(r=>o.docs[r.id]=JSON.stringify([r.title,r.cat,r.date,r.lab,r.fields,r.hash||null,r.imgs||0,r.scan||null,r.src||null,!!r.checked,r.orig||null]));
- (d.meds||[]).forEach(m=>o.meds[m.id]=JSON.stringify([m.name,m.dose,m.status||'active',m.start,m.end||'',m.freq||'daily',m.days||[],m.times,m.src||null]));
+ (d.meds||[]).forEach(m=>o.meds[m.id]=JSON.stringify([m.name,m.dose,m.status||'active',m.start,m.end||'',m.freq||'daily',m.days||[],m.times,m.src||null,m.brand||'',m.strength||'',m.form||'',m.amount||'',m.unit||'',m.instructions||'',m.interval||null]));
  Object.entries(d.doses||{}).forEach(([k,v])=>o.doses[k]=v);return o}
 function cloudQueue(){if(!S.cloud||!CLOUD.uid)return;CLOUD.dirty=true;clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(cloudSync,700)}
 async function cloudSyncNow(){clearTimeout(CLOUD.timer);if(CLOUD.busy){await new Promise(r=>{const t=setInterval(()=>{if(!CLOUD.busy){clearInterval(t);r()}},100)})}await cloudSync();return !CLOUD.err}
@@ -755,9 +879,9 @@ async function cloudSync(){
    const{error}=await step(sb.from('documents').delete().eq('client_id',id));if(error)throw error;Object.keys(CLOUD.files).forEach(k=>{if(k.split(':')[1]===id)delete CLOUD.files[k]});delete CLOUD.ids.docs[id];delete was.docs[id]}
   for(const m of M){if(was.meds[m.id]===now.meds[m.id]&&CLOUD.ids.meds[m.id])continue;
    const srcDoc=m.src&&m.src.doc!=null?CLOUD.ids.docs[m.src.doc]||null:null;
-   const{data,error}=await step(sb.from('medicines').upsert({user_id:uid,client_id:m.id,name:m.name,dose:m.dose,status:m.status||'active',start_date:m.start,end_date:nn(m.end),source_document_id:srcDoc,source_raw:m.src?nn(m.src.raw):null,source_confidence:m.src&&['high','medium','low'].includes(m.src.conf)?m.src.conf:null},{onConflict:'user_id,client_id'}).select('id').single());
+   const{data,error}=await step(sb.from('medicines').upsert({user_id:uid,client_id:m.id,name:m.name,dose:m.dose,status:m.status||'active',start_date:m.start,end_date:nn(m.end),brand:nn(m.brand),strength:nn(m.strength),form:nn(m.form),dose_amount:nn(m.amount),dose_unit:nn(m.unit),instructions:nn(m.instructions),source_document_id:srcDoc,source_raw:m.src?nn(m.src.raw):null,source_confidence:m.src&&['high','medium','low'].includes(m.src.conf)?m.src.conf:null},{onConflict:'user_id,client_id'}).select('id').single());
    if(error)throw error;CLOUD.ids.meds[m.id]=data.id;
-   const{error:e2}=await step(sb.from('medication_schedules').upsert({user_id:uid,medicine_id:data.id,frequency:m.freq||'daily',days_of_week:m.freq==='weekly'?m.days:[],times:m.times,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'},{onConflict:'medicine_id'}));if(e2)throw e2;was.meds[m.id]=now.meds[m.id]}
+   const{error:e2}=await step(sb.from('medication_schedules').upsert({user_id:uid,medicine_id:data.id,frequency:m.freq||'daily',days_of_week:m.freq==='weekly'?m.days:[],times:m.freq==='as_needed'?[]:m.times,interval_hours:m.freq==='daily'&&m.interval?m.interval:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'},{onConflict:'medicine_id'}));if(e2)throw e2;was.meds[m.id]=now.meds[m.id]}
   for(const id of Object.keys(was.meds))if(!(id in now.meds)){const{error}=await step(sb.from('medicines').delete().eq('client_id',id));if(error)throw error;delete CLOUD.ids.meds[id];delete was.meds[id];Object.keys(was.doses).forEach(k=>{if(k.split('@')[0]===id)delete was.doses[k]})}
   const up=[],gone=[];
   for(const[k,v]of Object.entries(now.doses))if(was.doses[k]!==v)up.push(k);
@@ -1032,7 +1156,6 @@ function authView(){
 
 
 const DAYN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const freqText=m=>(m.freq||'daily')==='daily'?'Every day':'Weekly on '+(m.days||[]).map(i=>DAYN[i]).join(', ');
 const histOf=()=>Object.entries(S.doses).filter(([,s])=>!s.startsWith('Snoozed')).map(([k,s])=>{const[id,t,d]=k.split('@');const m=S.meds.find(x=>String(x.id)===id);return m?{k,name:m.name,t,d,s}:null}).filter(Boolean).sort((a,b)=>(b.d+b.t).localeCompare(a.d+a.t));
 function histSection(){const h=histOf().slice(0,12);return `<section class="card p-5"><h2 class="text-xl">Dose history</h2>${h.length?`<ul class="mt-3 divide-y divide-[var(--line)] text-sm">${h.map(x=>`<li class="py-2 flex justify-between gap-3"><span>${esc(x.d)} ${esc(x.t)} · ${esc(x.name)}</span><span class="flex items-center gap-2"><span class="tag">${esc(x.s)}</span><button class="btn" data-d="${x.k}|Undo">Undo</button></span></li>`).join('')}</ul>`:'<p class="mt-3 text-[var(--mute)]">Taken and skipped doses are listed here. You can undo a mistake.</p>'}</section>`}
 /* How much of the health profile is filled in, with a link to finish it. Hidden once complete and for sample data. */
@@ -1045,7 +1168,7 @@ function homeView(){
  return wrap(`<div class="flex flex-wrap items-end justify-between gap-3"><h1 class="text-4xl">Hello${nm?', '+nm:''}.</h1><button class="btn pri" data-add="1">Add health record</button></div><div class="flex flex-wrap gap-2"><button class="chip" data-nav="medicines">Add a medicine</button>${aiOff()?'':'<button class="chip" data-nav="chat">Ask the assistant</button>'}<button class="chip" data-nav="health">Health timeline</button></div><form id="hs" class="flex gap-2"><input class="inp" name="hq" placeholder="Search your saved records" aria-label="Search your saved records" maxlength="80"><button class="btn">Search</button></form>`+
  (profileCard())+(first?`<div class="card p-6"><h2 class="text-xl">Start your health memory</h2><ol class="mt-3 space-y-2 text-sm text-[var(--mute)] list-decimal pl-5"><li>Upload a text-based PDF report. Doctine reads it in your browser.</li><li>Check the values it found, fix anything wrong, then confirm.</li>${aiOff()?'<li>Add your medicines and complete your health profile.</li>':'<li>Ask questions that point back to the saved report.</li>'}</ol><p class="text-xs text-[var(--mute)] mt-3">Your account starts empty. Nothing here is sample data.</p></div>`:'')+
  `<div class="grid md:grid-cols-2 gap-4"><section class="card p-5"><h2 class="text-xl">Recent records</h2>${rec.length?`<ul class="mt-3 divide-y divide-[var(--line)]">${rec.map(r=>`<li class="py-3"><div class="font-medium">${esc(r.title)}</div><div class="text-sm text-[var(--mute)]">${esc(r.date||'Date missing')} · ${esc(r.lab||'Provider not recorded')}</div></li>`).join('')}</ul><button class="underline text-sm mt-3" data-nav="reports">All reports</button>`:'<p class="mt-3 text-[var(--mute)]">No records yet.</p>'}</section>
- <section class="card p-5"><h2 class="text-xl">Today’s medicines</h2>${due.length?`<ul class="mt-3 divide-y divide-[var(--line)]">${due.map(({m,t})=>`<li class="py-3 flex justify-between"><div><div class="font-medium">${esc(m.name)}</div><div class="text-sm text-[var(--mute)]">${esc(m.dose)}</div></div><span class="serif text-lg">${esc(t)}</span></li>`).join('')}</ul>`:`<p class="mt-3 text-[var(--mute)]">${S.meds.length?'Nothing left to log today.':'No medicines added yet.'}</p>`}<button class="underline text-sm mt-3" data-nav="medicines">${S.meds.length?'Open medicines':'Add a medicine'}</button></section></div>
+ <section class="card p-5"><h2 class="text-xl">Today’s medicines</h2>${due.length?`<ul class="mt-3 divide-y divide-[var(--line)]">${due.map(({m,t})=>`<li class="py-3 flex justify-between"><div><div class="font-medium">${esc(m.name)}</div><div class="text-sm text-[var(--mute)]">${esc(doseLine(m))}</div></div><span class="serif text-lg">${esc(t)}</span></li>`).join('')}</ul>`:`<p class="mt-3 text-[var(--mute)]">${S.meds.length?'Nothing left to log today.':'No medicines added yet.'}</p>`}<button class="underline text-sm mt-3" data-nav="medicines">${S.meds.length?'Open medicines':'Add a medicine'}</button></section></div>
  <section class="card p-5"><h2 class="text-xl">Recent activity</h2>${hist.length||rec.length?`<ul class="mt-3 text-sm space-y-2">${hist.map(x=>`<li>${esc(x.s)}: ${esc(x.name)} at ${esc(x.t)} on ${esc(x.d)}</li>`).join('')}${rec.map(r=>`<li>Saved record: ${esc(r.title)}</li>`).join('')}</ul>`:'<p class="mt-3 text-[var(--mute)]">Your saved records and dose log will show here.</p>'}</section>`)}
 
 function ansView(x,last){const p=x.p,em=p.urgency==='emergency';if(p.ai_unavailable&&!p._n){p._n=1;p.safety_note=(p.safety_note?p.safety_note+' ':'')+(p.ai_unavailable==='not_allowed'?'The AI assistant is switched off for you, so this is Doctine’s built-in safety guidance. Nothing was sent anywhere.':'The AI assistant couldn’t be reached, so this is Doctine’s built-in safety guidance.')}
@@ -1107,35 +1230,167 @@ function provOf(r){if(r.imgs&&r.scan&&!r.checked)return{k:'auto',t:'Read automat
  if(r.imgs&&!Object.keys(r.fields||{}).length)return{k:'photo',t:'Original only',d:'Only the photo is saved. Add the details with Edit if you want them searchable.'};
  return{k:'ok',t:r.imgs?'Details checked by you':'Checked by you',d:''}}
 function provTags(r){const p=provOf(r);return`<div class="mt-3 flex flex-wrap gap-2 items-center">${r.imgs?`<span class="tag">Original photo kept</span>`:''}${r.orig==='pdf'?`<span class="tag">Original PDF kept</span>`:''}<span class="tag prov-${p.k}">${p.t}</span></div>${p.d?`<p class="text-xs text-[var(--mute)] mt-2">${p.d}</p>`:''}`}
+/* ---- Medical records: one card per record ----
+   Page preview, what kind of record it is, where the details came from, the details themselves and, for a scanned
+   prescription, each medicine as read from the photo with how sure the reading was. Confirmed details always come first;
+   the automatic reading is shown as a reading, never as fact. */
+const CONF={high:['Clear','ok'],medium:['Check','chk'],low:['Unsure','bad']};
+function rxMeds(r){const ms=((r.scan&&r.scan.medicines)||[]).filter(m=>m&&(m.name||m.raw));if(!ms.length)return'';
+ return`<table class="rx-meds"><thead><tr><th scope="col">Medicine</th><th scope="col">Strength</th><th scope="col">How often</th><th scope="col">When</th><th scope="col">For</th></tr></thead><tbody>${ms.map(m=>{const c=CONF[m.confidence]||CONF.low;
+  return`<tr><td data-l="Medicine"><div class="rx-mn">${esc(m.name||'Unreadable')} <span class="rx-cf ${c[1]}">${c[0]}</span></div>${m.raw?`<div class="rx-raw">As written: ${esc(m.raw)}</div>`:''}${m.confidence!=='high'&&(m.alternatives||[]).length?`<div class="rx-raw">Could also be ${esc(m.alternatives.join(', '))}</div>`:''}</td><td data-l="Strength">${esc(m.strength||'—')}</td><td data-l="How often">${esc(m.frequency||'—')}</td><td data-l="When">${esc(m.timing||'—')}</td><td data-l="For">${esc(m.duration||'—')}</td></tr>`}).join('')}</tbody></table>`}
+function rxCard(r){const p=provOf(r),n=r.imgs||0,ms=((r.scan&&r.scan.medicines)||[]).filter(m=>m&&m.name),F=Object.entries(r.fields||{}),rd=r.scan&&!r.checked;
+ const thumb=n?`<button class="rx-thumb" data-vs="${r.id}|0" aria-label="Open ${esc(r.title)}, page 1 of ${n}"><img data-scanimg="scan:${r.id}:0" alt=""><span class="rx-pages">${n===1?'1 page':n+' pages'}</span></button>`:r.orig==='pdf'?`<button class="rx-thumb rx-pdf" data-opdf="${r.id}" aria-label="Open the original PDF of ${esc(r.title)}"><span>PDF</span></button>`:'';
+ const tags=`${n?'<span class="rx-tag">Original photo kept</span>':''}${r.orig==='pdf'?'<span class="rx-tag">Original PDF kept</span>':''}<span class="rx-tag prov-${p.k}">${p.t}</span>`;
+ const acts=[n?`<button class="btn" data-vs="${r.id}|0">View ${n>1?'pages':'page'}</button>`:'',r.orig==='pdf'?`<button class="btn" data-opdf="${r.id}">Open original PDF</button>`:'',
+  `<button class="btn ${p.k==='auto'?'pri':''}" data-redit="${r.id}">${p.k==='auto'?'Check details':p.k==='photo'?'Add details':'Edit details'}</button>`,
+  ms.length?`<button class="btn" data-rxmeds="${r.id}">Add to medicines</button>`:'',aiOff()?'':`<button class="btn" data-ask="${esc(r.title)}">Ask about this</button>`].join('');
+ return`<article class="card rx-card">${thumb?`<div class="rx-side">${thumb}</div>`:''}<div class="rx-body">
+ <header class="rx-hd"><div class="min-w-0"><h2 class="rx-title">${esc(r.title)}</h2><div class="rx-meta"><span>${r.date?esc(dFmt(r.date)):'<span class="rx-miss">Date missing</span>'}</span><span>${r.lab?esc(r.lab):'<span class="rx-miss">Provider not recorded</span>'}</span></div></div><span class="rx-cat">${esc(r.cat)}</span></header>
+ <div class="rx-tags">${tags}</div>${p.d?`<p class="rx-pd">${p.d}</p>`:''}
+ ${F.length?`<section class="rx-sec"><h3>${rd?'Details read from the photo':'Details'}</h3><dl class="rx-kv">${F.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></section>`:''}
+ ${r.scan?`<details class="rx-sec rx-read" ${rd&&ms.length?'open':''}><summary><h3>What Doctine read from the photo</h3></summary>${rxMeds(r)}${(r.scan.unreadable||[]).length?`<div class="warn mt-3">Couldn’t read: ${esc(r.scan.unreadable.join('; '))}</div>`:''}${r.scan.transcription?`<details class="rx-tx"><summary>Full text as read</summary><pre>${esc(r.scan.transcription)}</pre></details>`:''}<p class="rx-pd">Read by software from your photo and may be wrong. The paper and your doctor’s instructions come first.</p></details>`:''}
+ <div class="rx-acts">${acts}<details class="mx-more"><summary class="btn" aria-label="More actions for ${esc(r.title)}">More</summary><div class="mx-menu"><button class="dgt" data-rdel="${r.id}">Delete record</button></div></details></div></div></article>`}
 function reportsView(){const q=S.q.toLowerCase(),L=S.reports.filter(r=>(r.title+r.cat+(r.lab||'')+Object.keys(r.fields).join(' ')).toLowerCase().includes(q));
- return wrap(head('Medical records','Your reports, prescriptions and documents, by date. Each one shows where its details came from.')+uploadBox()+`<input class="inp" id="sq" placeholder="Search by title, type, lab or test name" value="${esc(S.q)}" aria-label="Search reports">
- <div class="space-y-3">${L.map(r=>`<div class="card p-4"><div class="flex justify-between gap-3 flex-wrap"><div><div class="font-medium">${esc(r.title)}</div><div class="text-sm text-[var(--mute)]">${esc(r.lab||'Provider not recorded')} · ${esc(r.date||'Date missing')}</div></div><span class="tag h-fit">${esc(r.cat)}</span></div>${provTags(r)}
- ${r.imgs?`<div class="mt-3 flex gap-2 flex-wrap">${Array.from({length:r.imgs},(_,i)=>`<button data-vs="${r.id}|${i}" aria-label="View page ${i+1}"><img class="scanthumb" data-scanimg="scan:${r.id}:${i}" alt="Page ${i+1}"></button>`).join('')}</div>`:''}<div class="mt-3 grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">${Object.entries(r.fields).map(([k,v])=>`<div><span class="text-[var(--mute)]">${esc(k)}:</span> ${esc(v)}</div>`).join('')}</div>
- ${r.scan?`<details class="mt-3 text-sm"><summary class="cursor-pointer font-medium">What Doctine read from the photo</summary><div class="mt-2 space-y-2">${(r.scan.medicines||[]).map(m=>`<div><b>${esc(m.name||'Unreadable')}</b> <span class="tag" ${m.confidence==='high'?'':'style="background:var(--warnbg);color:var(--warntx)"'}>${m.confidence==='high'?'Clear':m.confidence==='medium'?'Check':'Unsure'}</span><div class="text-xs text-[var(--mute)]">As written: ${esc(m.raw||'—')}${(m.alternatives||[]).length?' · could also be '+esc(m.alternatives.join(', ')):''}</div></div>`).join('')}${(r.scan.unreadable||[]).length?`<div class="warn">Couldn’t read: ${esc(r.scan.unreadable.join('; '))}</div>`:''}${r.scan.transcription?`<pre class="whitespace-pre-wrap break-words text-xs">${esc(r.scan.transcription)}</pre>`:''}<p class="text-xs text-[var(--mute)]">Read by AI from your photo. The paper and your doctor’s instructions come first.</p></div></details>`:''}
- <div class="mt-3 flex flex-wrap gap-2">${aiOff()?'':`<button class="btn" data-ask="${esc(r.title)}">Ask about this report</button>`}${r.orig==='pdf'?`<button class="btn" data-opdf="${r.id}">Open original PDF</button>`:''}<button class="btn" data-redit="${r.id}">${provOf(r).k==='auto'?'Check details':'Edit'}</button><button class="btn dg" data-rdel="${r.id}">Delete</button></div></div>`).join('')||`<p class="text-[var(--mute)]">${S.reports.length?'No reports match your search.':'No reports yet. Upload a text-based PDF above to get started.'}</p>`}</div>`)}
-
+ return wrap(head('Medical records','Your reports, prescriptions and documents. Each one shows where its details came from.')+uploadBox()+`<input class="inp" id="sq" placeholder="Search by title, type, lab or test name" value="${esc(S.q)}" aria-label="Search records">
+ <div class="rx-list">${L.map(rxCard).join('')||`<p class="text-[var(--mute)]">${S.reports.length?'No records match your search.':'No records yet. Scan a document or upload a PDF above to get started.'}</p>`}</div>`)}
+/* Full-screen page viewer: cleaned page or original photo, page by page, with download. */
+function openViewer(r,i){const n=r.imgs||1,back=document.activeElement;let k='scan';const ov=document.createElement('div');ov.className='scanov';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label',r.title);
+ const draw=()=>{ov.innerHTML=`<div class="scanbar"><div class="sv-t"><span class="sv-name">${esc(r.title)}</span>${n>1?`<span class="sv-pg">Page ${i+1} of ${n}</span>`:''}</div><div class="sv-acts"><div class="sv-seg" role="group" aria-label="Which image"><button class="btn ${k==='scan'?'on':''}" data-k="scan" aria-pressed="${k==='scan'}">Cleaned page</button><button class="btn ${k==='orig'?'on':''}" data-k="orig" aria-pressed="${k==='orig'}">Original photo</button></div><button class="btn" data-k="dl">Download</button><button class="btn" data-k="x">Close</button></div></div>
+ <div class="scanmid"><img class="scanimg" data-scanimg="${k}:${r.id}:${i}" alt="${esc(r.title)}, page ${i+1}${k==='orig'?', original photo':''}"></div>${n>1?`<div class="sv-nav"><button class="btn" data-k="prev" ${i?'':'disabled'}>Previous page</button><button class="btn" data-k="next" ${i<n-1?'':'disabled'}>Next page</button></div>`:''}`;hydrateImgs()};
+ const close=()=>{ov.remove();document.removeEventListener('keydown',key,true);if(back&&back.focus)back.focus()};
+ const key=e=>{if(e.key==='Escape'){e.preventDefault();close()}else if(e.key==='ArrowRight'&&i<n-1){i++;draw()}else if(e.key==='ArrowLeft'&&i>0){i--;draw()}};
+ ov.onclick=async e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.k;
+  if(a==='x')return close();if(a==='scan'||a==='orig'){k=a;return draw()}if(a==='prev'&&i>0){i--;return draw()}if(a==='next'&&i<n-1){i++;return draw()}
+  if(a==='dl'){const key2=`${k}:${r.id}:${i}`,blob=await IMG.get(key2).catch(()=>null)||await cloudImage(key2);if(!blob)return toast('This page isn’t available on this device right now. Check your connection and try again.');
+   const ext=/png/.test(blob.type)?'png':/webp/.test(blob.type)?'webp':'jpg',name=`${(r.title||'doctine-record').replace(/[^\w.-]+/g,'-').slice(0,50)}-page-${i+1}${k==='orig'?'-original':''}.${ext}`;
+   if(NATIVE&&window.DoctineNative){const ok=await DoctineNative.saveFile(name,blob);if(!ok)toast('The page wasn’t saved.');return}
+   const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}};
+ document.addEventListener('keydown',key,true);document.body.appendChild(ov);draw();const c=ov.querySelector('[data-k=x]');if(c)c.focus()}
+const medFocus=()=>{const f=$('#mf');if(!f)return;f.scrollIntoView({block:'start'});const i=f.querySelector('[name=name]');if(i)i.focus({preventScroll:true})};
+document.addEventListener('toggle',e=>{const d=e.target;if(d.classList&&d.classList.contains('mx-more')&&d.open)document.querySelectorAll('details.mx-more[open]').forEach(x=>{if(x!==d)x.open=false})},true);
 const PRESETS=[['Morning','08:00'],['Afternoon','14:00'],['Evening','20:00'],['Bedtime','22:00']];
-const newDraft=()=>({name:'',dose:'',freq:'daily',days:[],start:today(),end:'',times:['08:00']});
-function captureMed(){const f=$('#mf');if(!f||!S.medDraft)return;const F=new FormData(f),d=S.medDraft;d.name=String(F.get('name')||'');d.dose=String(F.get('dose')||'');d.freq=F.get('freq')==='weekly'?'weekly':'daily';d.days=F.getAll('day').map(Number);d.start=String(F.get('start')||'');d.end=String(F.get('end')||'')}
-function medsView(){if(!S.medDraft)S.medDraft=newDraft();const e=S.meds.find(x=>x.id==S.medEdit),v=S.medDraft,tz=esc(Intl.DateTimeFormat().resolvedOptions().timeZone);
- const ms=S.medScan;
- return wrap(head('Medicines','Add what your doctor prescribed. Doses are stored exactly as you type them. Times follow this device’s clock and time zone ('+tz+').'+(aiOff()?' Scanned prescriptions are saved as photos for now. Add each medicine by hand until automatic reading switches on.':''),`<button class="btn tl" id="medscan" ${S.scanning?'disabled':''}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg> ${S.scanning?'Saving…':'Scan prescription'}</button>`)+
- (ms?`<section class="card p-5"><div class="flex items-center justify-between gap-3 flex-wrap"><h2 class="text-lg">From “${esc(ms.title)}”</h2><button class="btn" id="msdone">Done</button></div>${ms.meds.length?`<ul class="mt-3 divide-y divide-[var(--line)]">${ms.meds.map((m,i)=>`<li class="py-3 flex justify-between items-center gap-3"><div class="min-w-0"><div class="font-medium">${esc(m.name)} ${m.confidence==='high'?'':`<span class="tag" style="background:var(--warnbg);color:var(--warntx)">${m.confidence==='low'?'Unsure':'Check'}</span>`}</div><div class="text-sm text-[var(--mute)]">${esc([m.strength,m.frequency,m.timing,m.duration].filter(Boolean).join(' · ')||m.raw)}</div>${m.raw?`<div class="text-xs text-[var(--mute)]">As written: ${esc(m.raw)}</div>`:''}${m.confidence!=='high'&&(m.alternatives||[]).length?`<div class="text-xs text-[var(--mute)]">Could also be: ${esc(m.alternatives.join(', '))}</div>`:''}</div><button class="btn tl" data-msadd="${i}">${ms.added&&ms.added[i]?'Added':m.confidence==='high'?'Add':'Check and add'}</button></li>`).join('')}</ul><p class="text-xs text-[var(--mute)] mt-2">Check each one against the prescription before saving.</p>`:'<p class="mt-2 text-sm text-[var(--mute)]">No medicines were read from it. It’s saved in Reports.</p>'}</section>`:'')+
- `<form id="mf" class="card p-5 grid sm:grid-cols-2 gap-3" novalidate><h2 class="text-lg sm:col-span-2">${e?'Edit medicine':'Add a medicine'}</h2>
- <input class="inp" name="name" placeholder="Medicine name" maxlength="120" value="${esc(v.name)}" aria-label="Medicine name"><input class="inp" name="dose" placeholder="Dose as prescribed" maxlength="120" value="${esc(v.dose)}" aria-label="Dose as prescribed">
- <select class="inp sm:col-span-2" name="freq" id="freq" aria-label="How often"><option value="daily" ${v.freq!=='weekly'?'selected':''}>Every day</option><option value="weekly" ${v.freq==='weekly'?'selected':''}>Selected days of the week</option></select>
- <div class="sm:col-span-2 ${v.freq==='weekly'?'':'hidden'}" id="daysbox"><div class="text-sm text-[var(--mute)] mb-1">Days</div><div class="flex flex-wrap gap-2">${DAYN.map((d,i)=>`<label class="chip"><input type="checkbox" name="day" value="${i}" class="mr-1" ${(v.days||[]).includes(i)?'checked':''}>${d}</label>`).join('')}</div></div>
- <div class="sm:col-span-2"><div class="text-sm text-[var(--mute)] mb-1">Times each day. Tap a time to open the clock.</div>
-  <div class="flex flex-wrap gap-2 items-center">${v.times.map((t,i)=>`<span class="inline-flex items-center gap-1"><input type="time" class="inp" style="width:9.5rem" data-mt="${i}" value="${esc(t)}" aria-label="Dose time ${i+1}"><button type="button" class="btn dg" data-mtrm="${i}" aria-label="Remove time ${i+1}">✕</button></span>`).join('')}<button type="button" class="btn tl" id="mtadd">+ Add another time</button></div>
-  <div class="flex flex-wrap gap-2 mt-2"><span class="text-xs text-[var(--mute)] self-center">Quick add:</span>${PRESETS.map(([l,t])=>`<button type="button" class="chip" data-mtp="${t}">${l} ${t}</button>`).join('')}</div></div>
- <div class="grid grid-cols-2 gap-3 sm:col-span-2"><label class="text-sm text-[var(--mute)]">Start date<input class="inp mt-1" type="date" name="start" value="${esc(v.start)}"></label><label class="text-sm text-[var(--mute)]">End date (optional)<input class="inp mt-1" type="date" name="end" value="${esc(v.end||'')}"></label></div>
- ${v.src?`<div class="${v.src.conf==='high'?'warn':'err'} sm:col-span-2">${v.src.conf==='high'?'Filled in from your prescription.':'Doctine wasn’t sure it read this medicine correctly.'} As written: <b>${esc(v.src.raw||'not readable')}</b>${v.src.conf!=='high'&&(v.src.alts||[]).length?`. It could also be ${esc(v.src.alts.join(' or '))}`:''}. Check the name, dose and times against the prescription. Your doctor’s written instruction always comes first.${v.src.conf!=='high'?`<label class="flex gap-2 mt-2"><input type="checkbox" name="srcok" class="mt-1"><span>I’ve checked this against the prescription.</span></label>`:''}</div>`:''}<div id="merr" class="sm:col-span-2"></div><div class="flex gap-2 sm:col-span-2"><button class="btn pri">${e?'Save changes':'Add medicine'}</button>${e?'<button type="button" class="btn" id="mcancel">Cancel</button>':''}</div></form>`+
- `<div class="space-y-3">${S.meds.map(m=>{const st=m.status||'active';return`<div class="card p-4 flex justify-between gap-3 flex-wrap"><div><div class="font-medium">${esc(m.name)}</div><div class="text-sm text-[var(--mute)]">${esc(m.dose)} · ${m.times.map(esc).join(', ')} · ${esc(freqText(m))}${st==='active'?'':' · '+esc(st)}</div><div class="text-xs text-[var(--mute)] mt-1">${esc(m.start)} to ${esc(m.end||'ongoing')}</div>${m.src?`<div class="text-xs text-[var(--mute)] mt-1">From ${esc((S.reports.find(r=>r.id===m.src.doc)||{}).title||'a scanned prescription')}${m.src.raw?' · as written: '+esc(m.src.raw):''}</div>`:''}</div><div class="flex gap-2 items-start flex-wrap">${st==='active'?`<button class="btn" data-st="${m.id}|paused">Pause</button><button class="btn" data-st="${m.id}|completed">Mark completed</button>`:`<button class="btn" data-st="${m.id}|active">Resume</button>`}<button class="btn" data-edit="${m.id}">Edit</button><button class="btn dg" data-del="${m.id}">Delete</button></div></div>`}).join('')||'<p class="text-[var(--mute)]">No medicines yet. Add your first one above.</p>'}</div>`)}
+const MFORMS=[['tablet','Tablet'],['capsule','Capsule'],['syrup','Syrup'],['suspension','Suspension'],['drops','Drops'],['injection','Injection'],['inhaler','Inhaler'],['cream','Cream or ointment'],['gel','Gel'],['patch','Patch'],['sachet','Sachet or powder'],['spray','Spray'],['other','Other']];
+const MUNITS=[['tablet','tablet','tablets'],['capsule','capsule','capsules'],['ml','ml','ml'],['drop','drop','drops'],['puff','puff','puffs'],['spray','spray','sprays'],['sachet','sachet','sachets'],['unit','unit','units'],['application','application','applications'],['patch','patch','patches'],['mg','mg','mg'],['g','g','g']];
+const MUNIT_OF={tablet:'tablet',capsule:'capsule',syrup:'ml',suspension:'ml',drops:'drop',injection:'ml',inhaler:'puff',cream:'application',gel:'application',patch:'patch',sachet:'sachet',spray:'spray'};
+const MSUNITS=['mg','mcg','g','ml','mg/5 ml','mg/ml','IU','%'];
+const MINSTR=['Before food','After food','With food','On an empty stomach','At bedtime'];
+const MFREQ=[['once','Once a day'],['twice','Twice a day'],['thrice','Three times a day'],['times','At specific times'],['interval','Every few hours'],['days','On certain days'],['prn','Only when needed']];
+const MSLOTS={once:1,twice:2,thrice:3};
+const WEEK=[1,2,3,4,5,6,0];
+const t12=t=>{const m=/^(\d\d):(\d\d)$/.exec(t||'');if(!m)return t||'';const h=+m[1];return`${h%12||12}:${m[2]} ${h<12?'AM':'PM'}`};
+const dFmt=(d,y=true)=>{if(!d)return'';const x=new Date(d+'T00:00:00');return isNaN(x)?d:x.toLocaleDateString('en-GB',{day:'numeric',month:'short',...(y?{year:'numeric'}:{})})};
+const ymdOf=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+const addDays=(d,n)=>{const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return ymdOf(x)};
+const unitWord=(u,a)=>{const r=MUNITS.find(x=>x[0]===u);if(!r)return u||'';const n=parseFloat(String(a).replace('½','.5').replace('¼','.25').replace('¾','.75'));return n>1?r[2]:r[1]};
+const amountText=(a,u)=>a?`${a} ${unitWord(u,a)}`.trim():'';
+/* "1 tablet · 500 mg" for structured medicines, the text as saved for older ones. */
+const doseLine=m=>m.amount?[amountText(m.amount,m.unit),m.strength].filter(Boolean).join(' · '):(m.dose||'');
+const medMode=m=>m.freq==='as_needed'?'prn':m.freq==='weekly'?'days':m.interval?'interval':({1:'once',2:'twice',3:'thrice'})[(m.times||[]).length]||'times';
+function freqLabel(m){const k=medMode(m),n=(m.times||[]).length;
+ if(k==='prn')return'Only when needed';if(k==='interval')return`Every ${m.interval} hours`;
+ if(k==='days')return`${n>1?n+' times':'Once'} on ${WEEK.filter(i=>(m.days||[]).includes(i)).map(i=>DAYN[i]).join(', ')}`;
+ return n===1?'Once a day':n===2?'Twice a day':n===3?'Three times a day':n+' times a day'}
+const freqText=m=>freqLabel(m);
+const intervalTimes=(first,h)=>{if(!/^\d\d:\d\d$/.test(first||'')||!h)return[];const[a,b]=first.split(':').map(Number),out=[];for(let k=0;k<Math.min(12,Math.floor(24/h));k++){const x=(a+k*h)%24;out.push(`${String(x).padStart(2,'0')}:${String(b).padStart(2,'0')}`)}return out.sort()};
+function splitStrength(s){s=String(s||'').trim();if(!s)return{sv:'',su:'mg'};const m=/^(.*?)\s*(mg\/5\s?ml|mg\/ml|mcg|mg|g|ml|iu|%)$/i.exec(s);if(!m||!m[1])return{sv:s,su:''};const u=MSUNITS.find(x=>x.toLowerCase().replace(/\s/g,'')===m[2].toLowerCase().replace(/\s/g,''))||m[2];return{sv:m[1].trim(),su:u}}
+const formKey=f=>{f=String(f||'').toLowerCase();if(!f)return'';const hit=MFORMS.find(([k])=>f.startsWith(k.slice(0,3)));return hit?hit[0]:/tab/.test(f)?'tablet':/cap/.test(f)?'capsule':/syr|liq/.test(f)?'syrup':/inj/.test(f)?'injection':/oint|crea/.test(f)?'cream':/drop/.test(f)?'drops':'other'};
+function splitInstr(s){const chips=[],rest=[];String(s||'').split(/;\s*/).filter(Boolean).forEach(x=>{const k=MINSTR.find(c=>c.toLowerCase()===x.trim().toLowerCase());k&&!rest.length?chips.push(k):rest.push(x.trim())});return{instr:chips,note:rest.join('; ')}}
+const newDraft=()=>({step:'form',name:'',brand:'',sv:'',su:'mg',form:'',amount:'',unit:'',mode:'',times:[],interval:'',first:'',days:[],start:today(),dur:'ongoing',end:'',forN:'',forU:'days',instr:[],note:'',legacy:''});
+/* A saved medicine back into the form. Older medicines kept the dose as one line ("1 tablet after dinner"): its amount and
+   unit are lifted out when they are unambiguous, the rest becomes the instruction, and the original line is shown. */
+function draftFrom(m){const sp=splitStrength(m.strength),si=splitInstr(m.instructions),d={...newDraft(),name:m.name||'',brand:m.brand||'',sv:sp.sv,su:sp.su||'mg',form:m.form||'',amount:m.amount||'',unit:m.unit||'',mode:medMode(m),times:[...(m.times||[])],interval:m.interval?String(m.interval):'',first:m.interval?(m.times||[])[0]||'':'',days:[...(m.days||[])],start:m.start||today(),dur:m.end?'until':'ongoing',end:m.end||'',instr:si.instr,note:si.note};
+ if(!m.amount&&m.dose){const x=/^\s*(\d+(?:\.\d+)?|½|¼|¾|1\/2)\s*(tablet|tab|capsule|cap|ml|drop|puff|spray|sachet|unit|application|patch)s?\b\.?\s*(.*)$/i.exec(m.dose);
+  if(x){d.amount=x[1];d.unit=({tab:'tablet',cap:'capsule'})[x[2].toLowerCase()]||x[2].toLowerCase();if(x[3]&&!d.note&&!d.instr.length){const s2=splitInstr(x[3].replace(/^[,;·-]\s*/,'').replace(/^./,c=>c.toUpperCase()));d.instr=s2.instr;d.note=s2.note}}
+  d.legacy=m.dose}
+ if(d.mode==='interval')d.times=[];return d}
+function captureMed(){const f=$('#mf');if(!f||!S.medDraft||f.dataset.step!=='form')return;const F=new FormData(f),d=S.medDraft,g=k=>String(F.get(k)??'');
+ Object.assign(d,{name:g('name'),brand:g('brand'),sv:g('sv'),su:g('su'),form:g('form'),amount:g('amount'),unit:g('unit'),mode:g('mode')||d.mode,interval:g('interval'),first:g('first'),start:g('start'),dur:g('dur')||'ongoing',end:g('end'),forN:g('forN'),forU:g('forU')||'days',note:g('note')});
+ d.days=F.getAll('day').map(Number);d.instr=F.getAll('instr').map(String);
+ f.querySelectorAll('[data-mt]').forEach(i=>{d.times[+i.dataset.mt]=i.value})}
+/* The end date the duration choice means, or '' for ongoing. */
+const draftEnd=d=>d.dur==='until'?d.end:d.dur==='for'&&+d.forN>0&&d.start?addDays(d.start,+d.forN*(d.forU==='weeks'?7:1)-1):'';
+const draftTimes=d=>d.mode==='prn'?[]:d.mode==='interval'?intervalTimes(d.first,+d.interval):[...new Set(d.times.filter(Boolean))].sort();
+function medProblems(d){const e={},T=draftTimes(d),hm=/^([01]\d|2[0-3]):[0-5]\d$/;
+ if(!d.name.trim())e.name='Enter the medicine name.';
+ if(d.sv.trim()&&!d.su)e.sv='Choose the unit for the strength.';
+ if(!d.amount.trim())e.amount='Enter how much to take each time, for example 1.';else if(!/^(\d{1,4}(\.\d{1,2})?|½|¼|¾|\d\/\d)$/.test(d.amount.trim()))e.amount='Use a number such as 1, 2, 0.5 or ½.';
+ if(!d.unit)e.amount=e.amount||'Choose what one dose is measured in.';
+ if(!d.mode)e.mode='Choose how often it is taken.';
+ else if(d.mode==='interval'){if(!d.interval)e.mode='Choose how many hours apart.';else if(!hm.test(d.first))e.mode='Set the time of the first dose.'}
+ else if(d.mode!=='prn'){if(d.times.some(t=>t&&!hm.test(t)))e.mode='One of the times isn’t valid.';else if(MSLOTS[d.mode]&&T.length<MSLOTS[d.mode])e.mode=`Set ${MSLOTS[d.mode]===1?'the time':'all '+MSLOTS[d.mode]+' times'} for this medicine.`;else if(!T.length)e.mode='Add at least one time.';else if(T.length>12)e.mode='Up to 12 times a day.';
+  if(d.mode==='days'&&!d.days.length)e.mode=e.mode||'Choose at least one day.'}
+ if(!d.start)e.start='Choose a start date.';
+ if(d.dur==='until'&&!d.end)e.end='Choose the end date, or pick Ongoing.';else if(d.dur==='until'&&d.end<d.start)e.end='The end date must be on or after the start date.';
+ if(d.dur==='for'&&!(+d.forN>=1&&+d.forN<=365&&Number.isInteger(+d.forN)))e.end='Enter a number of days or weeks, from 1 to 365.';
+ if((d.brand+d.note).length>500)e.note='Keep the instructions under 500 characters.';
+ return e}
+function draftRecord(d){const T=draftTimes(d),instr=[...MINSTR.filter(x=>d.instr.includes(x)),d.note.trim()].filter(Boolean).join('; '),sv=d.sv.trim();
+ return{name:d.name.trim(),brand:d.brand.trim(),strength:sv?`${sv} ${d.su}`.trim():'',form:d.form,amount:d.amount.trim(),unit:d.unit,dose:amountText(d.amount.trim(),d.unit).slice(0,120),
+  freq:d.mode==='prn'?'as_needed':d.mode==='days'?'weekly':'daily',days:d.mode==='days'?[...new Set(d.days)].sort():[],times:T,interval:d.mode==='interval'?+d.interval:null,start:d.start,end:draftEnd(d),instructions:instr.slice(0,500)}}
+/* Next reminder for a medicine that's on, within two weeks, skipping doses already marked taken or skipped. */
+function nextDose(m){if((m.status||'active')!=='active'||!(m.times||[]).length)return null;const now=new Date(),td=today(),hm=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+ for(let i=0;i<15;i++){const d=addDays(td,i);if(!isOn(m,d))continue;for(const t of [...m.times].sort()){if(d===td&&t<=hm)continue;const s=S.doses[m.id+'@'+t+'@'+d];if(s&&!s.startsWith('Snoozed'))continue;return{d,t}}}return null}
+const whenText=({d,t})=>{const td=today();return`${d===td?'Today':d===addDays(td,1)?'Tomorrow':new Date(d+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}, ${t12(t)}`};
+const medEnded=m=>(m.status||'active')==='completed'||(!!m.end&&m.end<today());
+const fErr=(k)=>S.medErr&&S.medErr[k]?`<p class="mx-err" id="mxe-${k}">${esc(S.medErr[k])}</p>`:'';
+const fBad=k=>S.medErr&&S.medErr[k]?` aria-invalid="true" aria-describedby="mxe-${k}"`:'';
+const opt=(v,l,cur)=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(l)}</option>`;
+const seg=(name,list,cur,re=true)=>`<div class="mx-seg" role="radiogroup">${list.map(([v,l])=>`<label><input type="radio" name="${name}" value="${v}" ${v===cur?'checked':''} ${re?'data-mre':''}><span class="mx-opt">${esc(l)}</span></label>`).join('')}</div>`;
+function medSec(n,title,hint,body,id){return`<section class="mx-sec"${id?` id="${id}"`:''}><div class="mx-sech"><div class="mx-step">STEP ${n}</div><h3>${title}</h3>${hint?`<p>${hint}</p>`:''}</div><div class="mx-fields">${body}</div></section>`}
+function timeRows(v){const lab=MSLOTS[v.mode]>1?['First dose','Second dose','Third dose']:MSLOTS[v.mode]===1?['Time']:null;
+ return`<div class="mx-times">${v.times.map((t,i)=>`<div class="mx-time"><span class="mx-tl">${lab?lab[i]:'Dose '+(i+1)}</span><input type="time" class="inp" data-mt="${i}" value="${esc(t)}" aria-label="${lab?lab[i]:'Dose '+(i+1)} time"${fBad('mode')}>${MSLOTS[v.mode]?'':`<button type="button" class="mx-link" data-mtrm="${i}" aria-label="Remove dose ${i+1} time">Remove</button>`}</div>`).join('')}</div>
+ ${MSLOTS[v.mode]?'':`<button type="button" class="mx-link mx-add" id="mtadd" ${v.times.length>=12?'disabled':''}>+ Add a time</button>`}
+ <div class="mx-quick"><span>Fill the next empty time:</span>${PRESETS.map(([l,t])=>`<button type="button" class="mx-chip" data-mtp="${t}">${l} · ${t12(t)}</button>`).join('')}</div>`}
+function scheduleBody(v){const m=v.mode;let b=seg('mode',MFREQ,m)+fErr('mode');
+ if(MSLOTS[m]||m==='times'||m==='days'){if(m==='days')b+=`<div><span class="mx-lab">Days</span><div class="mx-seg">${WEEK.map(i=>`<label><input type="checkbox" name="day" value="${i}" ${(v.days||[]).includes(i)?'checked':''}><span class="mx-opt mx-day">${DAYN[i]}</span></label>`).join('')}</div></div><span class="mx-lab" style="margin-bottom:-.5rem">Times on those days</span>`;
+  else b+=`<p class="mx-hint" style="margin-top:0">Enter the times your doctor told you. Reminders use this device’s clock.</p>`;b+=timeRows(v)}
+ if(m==='interval'){const T=intervalTimes(v.first,+v.interval);b+=`<div class="mx-row"><label><span class="mx-lab">Every</span><select class="inp" name="interval" data-mre${fBad('mode')}>${opt('','Choose',v.interval)}${[2,3,4,6,8,12].map(h=>opt(String(h),h+' hours',v.interval)).join('')}</select></label><label><span class="mx-lab">First dose of the day</span><input type="time" class="inp" name="first" value="${esc(v.first)}" data-mre${fBad('mode')}></label></div>${T.length?`<p class="mx-note">Reminders at ${T.map(t12).join(', ')}.</p>`:''}`}
+ if(m==='prn')b+=`<p class="mx-note">No reminders are set. Take it only as your doctor advised, and note the most you can take in a day under instructions.</p>`;
+ return b}
+function medForm(e,v){v._pf=v.form;v._pm=v.mode;const units=MUNITS.map(([k,s])=>opt(k,s,v.unit)).join(''),names=[...new Set([...S.meds.map(m=>m.name),...S.reports.flatMap(r=>((r.scan&&r.scan.medicines)||[]).map(x=>x.name)).filter(Boolean)])].slice(0,60),end=draftEnd(v);
+ const src=v.src?`<div class="${v.src.conf==='high'?'warn':'err'} mx-src">${v.src.conf==='high'?'Filled in from your prescription.':'Doctine wasn’t sure it read this medicine correctly.'} As written: <b>${esc(v.src.raw||'not readable')}</b>${v.src.conf!=='high'&&(v.src.alts||[]).length?`. It could also be ${esc(v.src.alts.join(' or '))}`:''}. Check every field against the prescription. Your doctor’s written instruction always comes first.</div>`:'';
+ return`<form id="mf" class="card mx-form" data-step="form" novalidate><div class="mx-head"><div><h2>${e?'Edit medicine':'Add a medicine'}</h2><p>Fields marked optional can be left empty.</p></div><button type="button" class="btn" id="mcancel">Cancel</button></div>${src}
+ ${medSec('1','Medicine','The name on the strip, bottle or prescription.',`<label><span class="mx-lab">Medicine name</span><input class="inp mx-name" name="name" maxlength="120" autocomplete="off" list="mxnames" value="${esc(v.name)}" placeholder="e.g. Paracetamol"${fBad('name')}></label>${fErr('name')}<datalist id="mxnames">${names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+  <div class="mx-row"><label><span class="mx-lab">Brand <span class="opt">optional</span></span><input class="inp" name="brand" maxlength="120" value="${esc(v.brand)}"></label><label><span class="mx-lab">Form <span class="opt">optional</span></span><select class="inp" name="form" data-mre>${opt('','Choose',v.form)}${MFORMS.map(([k,l])=>opt(k,l,v.form)).join('')}</select></label></div>
+  <div><span class="mx-lab" id="mxsl">Strength <span class="opt">optional · how strong each ${esc(unitWord(MUNIT_OF[v.form]||'tablet',1))} is</span></span><div class="mx-pair" role="group" aria-labelledby="mxsl"><input class="inp" name="sv" inputmode="decimal" maxlength="40" value="${esc(v.sv)}" placeholder="500" aria-label="Strength amount"${fBad('sv')}><select class="inp" name="su" aria-label="Strength unit">${MSUNITS.map(u=>opt(u,u,v.su)).join('')}</select></div>${fErr('sv')}</div>`)}
+ ${medSec('2','Dose','How much you take each time. This is not the strength.',`<div><span class="mx-lab" id="mxdl">Amount per dose</span><div class="mx-pair" role="group" aria-labelledby="mxdl"><input class="inp" name="amount" inputmode="decimal" maxlength="8" value="${esc(v.amount)}" placeholder="1" aria-label="Amount per dose"${fBad('amount')}><select class="inp" name="unit" aria-label="Unit" data-mre${fBad('amount')}>${opt('','Choose unit',v.unit)}${units}</select></div>${fErr('amount')}</div>
+  ${v.amount&&v.unit?`<p class="mx-note mx-sentence">Each dose: <b>${esc(amountText(v.amount,v.unit))}</b>${v.sv?` of <b>${esc((v.sv+' '+v.su).trim())}</b>`:''}</p>`:''}${v.legacy?`<p class="mx-hint">Saved before as “${esc(v.legacy)}”. Check the amount, unit and instructions match.</p>`:''}`)}
+ ${medSec('3','Schedule','When you take it. Doctine never guesses a schedule.',scheduleBody(v),'mxsched')}
+ ${medSec('4','Duration','',`<label><span class="mx-lab">Start date</span><input class="inp mx-date" type="date" name="start" value="${esc(v.start)}"${fBad('start')}></label>${fErr('start')}
+  <div><span class="mx-lab">How long</span>${seg('dur',[['ongoing','Ongoing'],['until','Until a date'],['for','For a number of days']],v.dur)}</div>
+  ${v.dur==='until'?`<label><span class="mx-lab">End date</span><input class="inp mx-date" type="date" name="end" min="${esc(v.start)}" value="${esc(v.end)}"${fBad('end')}></label>`:''}
+  ${v.dur==='for'?`<div class="mx-pair" style="max-width:16rem"><input class="inp" name="forN" inputmode="numeric" maxlength="3" value="${esc(v.forN)}" placeholder="7" aria-label="Number of days or weeks" data-mre${fBad('end')}><select class="inp" name="forU" aria-label="Days or weeks" data-mre>${opt('days','days',v.forU)}${opt('weeks','weeks',v.forU)}</select></div>`:''}${fErr('end')}
+  ${end&&v.dur==='for'?`<p class="mx-hint">Last dose on ${esc(dFmt(end))}.</p>`:''}`)}
+ ${medSec('5','Instructions','Optional. Only what your doctor or the label says.',`<div class="mx-seg">${MINSTR.map(x=>`<label><input type="checkbox" name="instr" value="${esc(x)}" ${v.instr.includes(x)?'checked':''}><span class="mx-opt">${esc(x)}</span></label>`).join('')}</div>
+  <label><span class="mx-lab">Other instructions <span class="opt">optional</span></span><textarea class="inp" name="note" rows="2" maxlength="400" placeholder="e.g. Not more than 4 doses in 24 hours"${fBad('note')}>${esc(v.note)}</textarea></label>${fErr('note')}`)}
+ <div class="mx-foot"><span class="mx-hint" style="margin:0">Next, check everything before it’s saved.</span><button class="btn pri">Review</button></div></form>`}
+function medReview(e,v){const r=draftRecord(v),rows=[['Medicine',r.name+(r.brand?` (${r.brand})`:'')],['Strength',r.strength||'Not given'],['Form',(MFORMS.find(x=>x[0]===r.form)||[,'Not given'])[1]],['Dose',amountText(r.amount,r.unit)+' each time'],['How often',freqLabel(r)],['Times',r.times.length?r.times.map(t12).join(', '):'No reminders'],['Start date',dFmt(r.start)],['End date',r.end?dFmt(r.end):'Ongoing'],['Instructions',r.instructions||'None']];
+ return`<form id="mf" class="card mx-form" data-step="review" novalidate><div class="mx-head"><div><h2>Check before saving</h2><p>Compare this with the prescription or label.</p></div></div>
+ <dl class="mx-rev">${rows.map(([k,x])=>`<div><dt>${k}</dt><dd>${esc(x)}</dd></div>`).join('')}</dl>
+ ${v.src&&v.src.conf!=='high'?`<label class="mx-check"><input type="checkbox" name="srcok"><span>I’ve checked this against the prescription.</span></label>`:''}<div id="merr" class="mx-merr"></div>
+ <div class="mx-foot"><button type="button" class="btn" id="medback">Edit</button><button class="btn pri">${e?'Save changes':'Save medicine'}</button></div></form>`}
+function medItem(m){const st=m.status||'active',ended=medEnded(m),nd=!ended&&st==='active'?nextDose(m):null,form=(MFORMS.find(x=>x[0]===m.form)||[])[1];
+ const pill=st==='paused'?'<span class="mx-st paused">Paused</span>':ended?'<span class="mx-st done">'+(st==='completed'?'Completed':'Course ended')+'</span>':'<span class="mx-st on">Active</span>';
+ const rem=m.freq==='as_needed'?'No reminders · taken when needed':st==='paused'?'Reminders off while paused':ended?'':nd?`Next dose · ${whenText(nd)}`:m.start>today()?`Starts ${dFmt(m.start)}`:'No more doses scheduled';
+ const span=m.end?`${dFmt(m.start,false)} – ${dFmt(m.end)}`:`Since ${dFmt(m.start)} · ongoing`,src=m.src?`From ${(S.reports.find(r=>r.id===m.src.doc)||{}).title||'a scanned prescription'}${m.src.raw?' · as written: '+m.src.raw:''}`:'';
+ return`<li class="mx-item"><div class="mx-main"><div class="mx-title"><span class="mx-mname">${esc(m.name)}</span>${m.strength?`<span class="mx-str">${esc(m.strength)}</span>`:''}${form?`<span class="mx-form-t">${esc(form)}</span>`:''}${pill}</div>
+ <div class="mx-line">${esc(m.amount?amountText(m.amount,m.unit):m.dose)} · ${esc(freqLabel(m))}${(m.times||[]).length?' · '+m.times.map(t12).join(', '):''}</div>
+ ${m.instructions?`<div class="mx-sub">${esc(m.instructions.replace(/;\s*/g,' · '))}</div>`:''}<div class="mx-sub">${esc(span)}${src?' · '+esc(src):''}</div>${rem?`<div class="mx-next ${nd?'':'quiet'}">${esc(rem)}</div>`:''}</div>
+ <div class="mx-acts"><button class="btn" data-edit="${m.id}">Edit</button><details class="mx-more"><summary class="btn" aria-label="More actions for ${esc(m.name)}">More</summary><div class="mx-menu">${st==='active'&&!ended?`<button data-st="${m.id}|paused">Pause reminders</button><button data-st="${m.id}|completed">Mark completed</button>`:`<button data-st="${m.id}|active">${ended?'Restart':'Resume'}</button>`}<button class="dgt" data-del="${m.id}">Delete</button></div></details></div></li>`}
+function medList(){const cur=S.meds.filter(m=>!medEnded(m)&&(m.status||'active')==='active'),pz=S.meds.filter(m=>(m.status||'active')==='paused'&&!medEnded(m)),fin=S.meds.filter(medEnded);
+ const grp=(t,l,open=true)=>l.length?`<section class="mx-grp"><h2>${t} <span>${l.length}</span></h2><ul class="card mx-list">${l.map(medItem).join('')}</ul></section>`:'';
+ if(!S.meds.length)return S.medDraft?'':`<div class="card mx-empty"><h2>No medicines yet</h2><p>Add each medicine with its strength, dose and times. You can also scan a prescription and check what Doctine reads.</p><button class="btn pri" data-medadd="1">Add medicine</button></div>`;
+ return grp('Current',cur)+grp('Paused',pz)+(fin.length?`<details class="mx-grp mx-fin" ${fin.length<=3?'open':''}><summary><h2>Finished <span>${fin.length}</span></h2></summary><ul class="card mx-list">${fin.map(medItem).join('')}</ul></details>`:'')}
+function medsView(){const e=S.meds.find(x=>x.id==S.medEdit),v=S.medDraft,tz=esc(Intl.DateTimeFormat().resolvedOptions().timeZone),ms=S.medScan;
+ const acts=`<div class="mx-hacts"><button class="btn tl" id="medscan" ${S.scanning?'disabled':''}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg> ${S.scanning?'Saving…':'Scan prescription'}</button>${v?'':'<button class="btn pri" id="medadd" data-medadd="1">Add medicine</button>'}</div>`;
+ return wrap(head('Medicines','What you take, how much and when. Reminders follow this device’s clock and time zone ('+tz+').'+(aiOff()?' Scanned prescriptions are saved as photos for now, so add each medicine by hand.':''),acts)+
+ (ms?`<section class="card p-5"><div class="flex items-center justify-between gap-3 flex-wrap"><h2 class="text-lg">From “${esc(ms.title)}”</h2><button class="btn" id="msdone">Done</button></div>${ms.meds.length?`<ul class="mt-3 divide-y divide-[var(--line)]">${ms.meds.map((m,i)=>`<li class="py-3 flex justify-between items-center gap-3"><div class="min-w-0"><div class="font-medium">${esc(m.name)} ${m.confidence==='high'?'':`<span class="tag" style="background:var(--warnbg);color:var(--warntx)">${m.confidence==='low'?'Unsure':'Check'}</span>`}</div><div class="text-sm text-[var(--mute)]">${esc([m.strength,m.frequency,m.timing,m.duration].filter(Boolean).join(' · ')||m.raw)}</div>${m.raw?`<div class="text-xs text-[var(--mute)]">As written: ${esc(m.raw)}</div>`:''}${m.confidence!=='high'&&(m.alternatives||[]).length?`<div class="text-xs text-[var(--mute)]">Could also be: ${esc(m.alternatives.join(', '))}</div>`:''}</div><button class="btn tl" data-msadd="${i}">${ms.added&&ms.added[i]?'Added':m.confidence==='high'?'Add':'Check and add'}</button></li>`).join('')}</ul><p class="text-xs text-[var(--mute)] mt-2">Check each one against the prescription before saving.</p>`:'<p class="mt-2 text-sm text-[var(--mute)]">No medicines were read from it. It’s saved in Medical records.</p>'}</section>`:'')+
+ (v?(v.step==='review'?medReview(e,v):medForm(e,v)):'')+medList())}
 function remView(){const d=today(),act=S.meds.filter(m=>isOn(m,d));
  const rows=act.flatMap(m=>m.times.map(t=>({m,t,k:m.id+'@'+t+'@'+d}))).sort((a,b)=>a.t.localeCompare(b.t));
  return wrap(head('Reminders','Today’s schedule.',`<button class="btn tl" id="sim" ${S.meds.length?'':'disabled'}>Test a reminder</button>`)+
  `<div class="warn">Reminders show only while Doctine is open in your browser. The website can’t send phone notifications when it’s closed. A reminder is a schedule you set, not proof a dose was taken.</div>
- <div class="space-y-3">${rows.map(({m,t,k})=>{const st=S.doses[k];return`<div class="card p-4 flex items-center justify-between gap-3 flex-wrap"><div class="flex items-center gap-4"><div class="serif text-xl w-16">${esc(t)}</div><div><div class="font-medium">${esc(m.name)}</div><div class="text-sm text-[var(--mute)]">${esc(m.dose)}</div></div></div>
+ <div class="space-y-3">${rows.map(({m,t,k})=>{const st=S.doses[k];return`<div class="card p-4 flex items-center justify-between gap-3 flex-wrap"><div class="flex items-center gap-4"><div class="serif text-xl w-16">${esc(t)}</div><div><div class="font-medium">${esc(m.name)}</div><div class="text-sm text-[var(--mute)]">${esc(doseLine(m))}</div></div></div>
  ${st&&!st.startsWith('Snoozed')?`<div class="flex items-center gap-2"><span class="tag">${esc(st)}</span><button class="btn" data-d="${k}|Undo">Undo</button></div>`:`<div class="flex gap-2 items-center">${st?`<span class="tag">${esc(st)}</span>`:''}<button class="btn tl" data-d="${k}|Taken">Taken</button><button class="btn" data-d="${k}|Skipped">Skip</button><button class="btn" data-d="${k}|Snoozed">Snooze 10 min</button></div>`}</div>`}).join('')||'<p class="text-[var(--mute)]">Nothing scheduled today. Add a medicine to create reminders.</p>'}</div>`+histSection())}
 
 /* ---- About: the company, the product today, and the long-term ambition ---- */
@@ -1289,7 +1544,7 @@ function bannerHTML(){
  let h=noticesHTML()+(S.cloud&&CLOUD.err?`<div class="err m-3 flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>Some changes aren’t saved to your account yet.</b> ${esc(CLOUD.err)}. Doctine keeps retrying; don’t close this page.</span><button class="btn" data-syncnow="1">Try again now</button></div>`:'');
  h+=S.email&&!S.cloud&&!S.sample&&!S.guest&&(S.view==='home'||S.view==='reports')?'<div class="warn m-3">Demo account: saved only in this browser on this device, not in a Doctine account.</div>':'';
  h+=S.guest?'<div class="warn m-3">You’re not signed in. Nothing here is saved. If you allow the AI assistant, your messages go to an AI provider through this site’s server.</div>':S.sample?'<div class="warn m-3">Preview with made-up sample data. Nothing you change is saved.</div>':'';
- dueNow().slice(0,2).forEach(({m,t,k})=>{h+=`<div class="m-3 card p-3 flex flex-wrap items-center justify-between gap-2" role="alert"><div><b>Time for ${esc(m.name)}</b> <span class="text-sm text-[var(--mute)]">${esc(m.dose)} · scheduled ${esc(t)}.<span class="dnote">${alarmNote()}</span></span></div><div class="flex gap-2"><button class="btn tl" data-d="${k}|Taken">Taken</button><button class="btn" data-d="${k}|Skipped">Skip</button><button class="btn" data-d="${k}|Snoozed">Snooze 10 min</button></div></div>`});
+ dueNow().slice(0,2).forEach(({m,t,k})=>{h+=`<div class="m-3 card p-3 flex flex-wrap items-center justify-between gap-2" role="alert"><div><b>Time for ${esc(m.name)}</b> <span class="text-sm text-[var(--mute)]">${esc(doseLine(m))} · scheduled ${esc(t)}.<span class="dnote">${alarmNote()}</span></span></div><div class="flex gap-2"><button class="btn tl" data-d="${k}|Taken">Taken</button><button class="btn" data-d="${k}|Skipped">Skip</button><button class="btn" data-d="${k}|Snoozed">Snooze 10 min</button></div></div>`});
  if(DoctineAlarms.ringing())h+='<div class="m-3 err flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>🔔 Alarm ringing.</b> It stops when you respond, or after 2 minutes.</span><button class="btn dg" data-stopalarm="1">Stop alarm</button></div>';
  return h}
 const alarmCard=()=>{const a=S.alarmStatus||{},nat=DoctineAlarms.isNative();let st='';
@@ -1370,25 +1625,30 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='stop'){if(S.abort)S.abort.abort();return}
  if(t.dataset.redit){const r=S.reports.find(x=>x.id==t.dataset.redit);if(r){S.upload={name:r.title,status:'review',rows:Object.entries(r.fields).map(([k,v])=>({k,v})),title:r.title,date:r.date||'',lab:r.lab||'',cat:r.cat,text:'',warns:[r.scan&&!r.checked?'These details were read automatically from the photo. Compare each one with the original (tap a page to open it), correct anything wrong, then confirm. Confirming marks them as checked by you.':'You are editing a saved report. Changes apply when you confirm.'],img:null,editId:r.id,hash:r.hash,dup:''};S.q='';S.view='reports';render();const v=$('#view');if(v)v.scrollTop=0}return}
  if(t.dataset.rdel){if(confirm('Delete this report?')){const r=S.reports.find(x=>x.id==t.dataset.rdel);if(r){for(let i=0;i<(r.imgs||0);i++){IMG.del(`scan:${r.id}:${i}`);IMG.del(`orig:${r.id}:${i}`)}if(r.orig==='pdf')IMG.del(`orig:${r.id}:0`)}S.reports=S.reports.filter(r=>r.id!=t.dataset.rdel);render()}return}
- if(t.dataset.del){if(confirm('Delete this medicine?')){S.meds=S.meds.filter(m=>m.id!=t.dataset.del);if(S.medEdit==t.dataset.del){S.medEdit=null;S.medDraft=null}toast('Medicine deleted');render()}return}
- if(t.dataset.edit){const m=S.meds.find(x=>x.id==t.dataset.edit);if(!m)return;S.medEdit=m.id;S.medDraft={name:m.name,dose:m.dose,freq:m.freq||'daily',days:[...(m.days||[])],start:m.start,end:m.end||'',times:[...m.times]};render();$('#mf').scrollIntoView();return}
- if(t.id==='mtadd'){captureMed();S.medDraft.times.push('');render();return}
+ if(t.dataset.del){const dm=S.meds.find(x=>x.id==t.dataset.del);if(confirm(`Delete ${dm?dm.name:'this medicine'}? Its dose history is deleted too.`)){S.meds=S.meds.filter(m=>m.id!=t.dataset.del);if(S.medEdit==t.dataset.del){S.medEdit=null;S.medDraft=null}toast('Medicine deleted');render()}return}
+ if(t.dataset.edit){const m=S.meds.find(x=>x.id==t.dataset.edit);if(!m)return;S.medEdit=m.id;S.medErr=null;S.medDraft=draftFrom(m);render();medFocus();return}
+ if(t.dataset.medadd){S.medEdit=null;S.medErr=null;S.medDraft=newDraft();render();medFocus();return}
+ if(t.id==='medback'){S.medDraft.step='form';render();medFocus();return}
+ if(t.id==='mtadd'){captureMed();if(S.medDraft.times.length<12)S.medDraft.times.push('');render();const x=document.querySelectorAll('[data-mt]');if(x.length)x[x.length-1].focus();return}
  if(t.dataset.mtrm!==undefined){captureMed();S.medDraft.times.splice(+t.dataset.mtrm,1);if(!S.medDraft.times.length)S.medDraft.times=[''];render();return}
- if(t.dataset.mtp){captureMed();const ts=S.medDraft.times.filter(Boolean);if(!ts.includes(t.dataset.mtp))ts.push(t.dataset.mtp);S.medDraft.times=ts.sort();render();return}
- if(t.id==='mcancel'){S.medEdit=null;S.medDraft=null;return render()}
+ if(t.dataset.mtp){captureMed();const d=S.medDraft,v=t.dataset.mtp;if(d.times.includes(v))return toast(t12(v)+' is already set.');const i=d.times.findIndex(x=>!x);if(i>=0)d.times[i]=v;else if(!MSLOTS[d.mode]&&d.times.length<12)d.times.push(v);else return toast('All the times are set. Change one directly to use a different time.');render();return}
+ if(t.id==='mcancel'){S.medEdit=null;S.medDraft=null;S.medErr=null;return render()}
  if(t.dataset.st){const[i,s]=t.dataset.st.split('|'),m=S.meds.find(x=>x.id==i);if(m){m.status=s;toast(s==='active'?'Medicine resumed.':s==='paused'?'Medicine paused. No reminders will show for it.':'Marked completed. No more reminders for it.');render()}return}
  if(t.id==='scancam')return quickScan(true);
  if(t.id==='medscan')return quickScan(true,(rec,doc)=>{S.medScan={rid:rec.id,title:rec.title,meds:(doc&&doc.medicines||[]).filter(m=>m.name),added:{}}});
  if(t.id==='msdone'){S.medScan=null;return render()}
- if(t.dataset.msadd!==undefined){const m=S.medScan.meds[+t.dataset.msadd];S.medEdit=null;S.medDraft={name:m.name,dose:[m.strength,m.form,m.timing].filter(Boolean).join(', ')||m.raw||'',freq:'daily',days:[],start:today(),end:durEnd(m.duration),times:freqTimes(m.frequency),src:{doc:S.medScan.rid,raw:m.raw||'',conf:m.confidence||'low',alts:m.alternatives||[]}};S.medScan.pending=+t.dataset.msadd;render();const f=$('#mf');if(f)f.scrollIntoView({behavior:'smooth'});return}
+ if(t.dataset.msadd!==undefined){const m=S.medScan.meds[+t.dataset.msadd],d=newDraft(),sp=splitStrength(m.strength),T=freqTimes(m.frequency),parts=String(m.frequency||'').match(/^\s*([\d½.]+)\s*-\s*([\d½.]+)\s*-\s*([\d½.]+)/),amt=parts?[...new Set(parts.slice(1).filter(x=>!/^0+$/.test(x)))]:[],tm=String(m.timing||'').toLowerCase(),ins=[/before|\bac\b|empty/.test(tm)?(/empty/.test(tm)?'On an empty stomach':'Before food'):/after|\bpc\b/.test(tm)?'After food':/with/.test(tm)?'With food':/bed|\bhs\b/.test(tm)?'At bedtime':''].filter(Boolean);
+  Object.assign(d,{name:m.name||'',sv:sp.sv,su:sp.su||'mg',form:formKey(m.form),amount:amt.length===1?amt[0]:'',mode:T.length?({1:'once',2:'twice',3:'thrice'})[T.length]||'times':'',times:T,instr:ins,note:[ins.length?'':m.timing,m.instructions].filter(Boolean).join('; ').slice(0,400),src:{doc:S.medScan.rid,raw:m.raw||'',conf:m.confidence||'low',alts:m.alternatives||[]}});
+  d.unit=MUNIT_OF[d.form]||'';const en=durEnd(m.duration);if(en){d.dur='until';d.end=en}
+  S.medEdit=null;S.medErr=null;S.medDraft=d;S.medScan.pending=+t.dataset.msadd;render();const f=$('#mf');if(f)f.scrollIntoView({behavior:'smooth'});return}
  if(t.id==='supsend'&&S.cloud)return helpSend('support',t);
  if(t.id==='fbsend'&&S.cloud)return helpSend('feedback',t);
  if(t.dataset.supreply&&S.cloud)return helpSend(t.dataset.supreply,t);
  if(t.id==='pwmail'&&S.cloud){t.disabled=true;const{error}=await CLOUD.sb.auth.resetPasswordForEmail(CLOUD.email||S.email,{redirectTo:RESET_URL()});S.acctMsg=error?'The email couldn’t be sent: '+error.message:'We sent a link to '+(CLOUD.email||S.email)+'. Open it on this device to set a new password.';return render()}
  if(t.id==='outall'&&S.cloud){const n=unsavedCount();if(!confirm(n?'Some changes haven’t been saved yet and will be lost. Sign out on all devices anyway?':'Sign out of Doctine on every device, including this one?'))return;closeNav();leaveCloud();await CLOUD.sb.auth.signOut({scope:'global'}).catch(()=>{});return}
  if(t.dataset.opdf){const id=t.dataset.opdf;(async()=>{const b=await IMG.get(`orig:${id}:0`).catch(()=>null)||await cloudImage(`orig:${id}:0`);if(!b)return toast('The original PDF isn’t available on this device right now. Check your connection and try again.');if(NATIVE&&window.DoctineNative){const r=S.reports.find(x=>String(x.id)===String(id));const ok=await DoctineNative.saveFile(((r&&r.title)||'doctine-record').replace(/[^\w.-]+/g,'-').slice(0,60)+'.pdf',new Blob([b],{type:'application/pdf'}));if(!ok)toast('The PDF wasn’t opened.');return}const u=URL.createObjectURL(new Blob([b],{type:'application/pdf'}));const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)})();return}
- if(t.dataset.vs){const[id,i]=t.dataset.vs.split('|'),r=S.reports.find(x=>x.id==id);if(!r)return;const ov=document.createElement('div');ov.className='scanov';const show=k=>{ov.innerHTML=`<div class="scanbar"><span class="text-sm" style="color:#cdd8e4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title)}</span><span style="display:flex;gap:.5rem"><button class="btn" data-k="${k==='scan'?'orig':'scan'}">${k==='scan'?'Original photo':'Cleaned page'}</button><button class="btn" data-k="x">Close</button></span></div><div class="scanmid"><img class="scanimg" data-scanimg="${k}:${r.id}:${i}" alt="${esc(r.title)}"></div>`;hydrateImgs()};show('scan');
-  ov.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k==='x')ov.remove();else show(b.dataset.k)};document.body.appendChild(ov);hydrateImgs();return}
+ if(t.dataset.vs){const[id,i]=t.dataset.vs.split('|'),r=S.reports.find(x=>x.id==id);if(r)openViewer(r,+i||0);return}
+ if(t.dataset.rxmeds){const r=S.reports.find(x=>x.id==t.dataset.rxmeds);if(!r)return;S.medScan={rid:r.id,title:r.title,meds:((r.scan&&r.scan.medicines)||[]).filter(m=>m.name),added:{}};S.medDraft=null;S.medEdit=null;go('medicines');return}
  if(t.dataset.add){S.view='reports';render();setTimeout(()=>{const f=$('#file');if(f)f.click()},60);return}
  if(t.dataset.d){DoctineAlarms.stop();const[k,s]=t.dataset.d.split('|');if(s==='Undo')delete S.doses[k];else if(s==='Snoozed'){const x=new Date(Date.now()+6e5);S.doses[k]='Snoozed until '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')}else S.doses[k]=s;return render()}
  if(t.id==='sim'){const m=S.meds[0];if(m)toast('⏰ Time for '+m.name+' ('+m.dose+'). Demo reminder, shown only while this page is open.')}
@@ -1426,15 +1686,11 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
 document.addEventListener('submit',async e=>{e.preventDefault();const id=e.target.id,F=new FormData(e.target);
  if(id==='hs'){S.q=String(F.get('hq')).trim();if(S.q)track('search_performed',{scope:'home'},'search:'+today());return go('reports')}
  if(id==='cf'){const i=$('#ci'),v=i.value;i.value='';send(v)}
- if(id==='mf'){captureMed();const d=S.medDraft,times=[...new Set(d.times.filter(Boolean))].sort(),st=d.start,en=d.end,err=m=>$('#merr').innerHTML=`<div class="err" role="alert">${esc(m)}</div>`;
-  if(!d.name.trim()||!d.dose.trim())return err('Enter the medicine name and the dose exactly as prescribed.');
-  if(!times.length||!times.every(x=>/^([01]\d|2[0-3]):[0-5]\d$/.test(x)))return err('Choose at least one time using the clock.');
-  if(!st)return err('Choose a start date.');
-  if(en&&en<st)return err('The end date must be on or after the start date.');
-  const freq=d.freq,days=[...new Set(d.days)].sort();if(freq==='weekly'&&!days.length)return err('Pick at least one day for a weekly medicine.');
-  if(d.src&&d.src.conf!=='high'&&!F.get('srcok'))return err('Tick the box once you’ve checked this medicine against the prescription.');
-  const rec={name:d.name.trim(),dose:d.dose.trim(),times,start:st,end:en,freq,days:freq==='weekly'?days:[],...(d.src?{src:{doc:d.src.doc,raw:d.src.raw,conf:d.src.conf}}:{})};
-  const ed=S.meds.find(x=>x.id==S.medEdit);if(ed){Object.assign(ed,rec);toast('Medicine updated')}else{S.meds.push({id:Date.now(),status:'active',...rec});toast('Medicine added')}if(S.medScan&&S.medScan.pending!=null){S.medScan.added[S.medScan.pending]=1;S.medScan.pending=null}S.medEdit=null;S.medDraft=null;render()}
+ if(id==='mf'){const d=S.medDraft;if(!d)return;
+  if(e.target.dataset.step==='form'){captureMed();const pr=medProblems(d);if(Object.keys(pr).length){S.medErr=pr;render();const f=$('#mf [aria-invalid=true]');if(f){f.focus();f.scrollIntoView({block:'center'})}return}S.medErr=null;d.step='review';render();const f=$('#mf');if(f)f.scrollIntoView({block:'start'});return}
+  if(d.src&&d.src.conf!=='high'&&!F.get('srcok')){$('#merr').innerHTML='<div class="err" role="alert">Tick the box once you’ve checked this medicine against the prescription.</div>';return}
+  const rec={...draftRecord(d),...(d.src?{src:{doc:d.src.doc,raw:d.src.raw,conf:d.src.conf}}:{})};
+  const ed=S.meds.find(x=>x.id==S.medEdit);if(ed){Object.assign(ed,rec);toast(ed.name+' updated')}else{S.meds.push({id:Date.now(),status:'active',...rec});toast(rec.name+' added')}if(S.medScan&&S.medScan.pending!=null){S.medScan.added[S.medScan.pending]=1;S.medScan.pending=null}S.medEdit=null;S.medDraft=null;S.medErr=null;render()}
  if(CLOUD.on&&['rf','lf','ff','npf'].includes(id)){e.target.querySelectorAll('[aria-invalid]').forEach(x=>{x.removeAttribute('aria-invalid');x.removeAttribute('aria-errormessage')});const err=(m,field,extra='')=>{const a=$('#aerr');if(a)a.innerHTML=`<div class="au-err" role="alert" id="au-err">${esc(m)}${extra}</div>`;const f=field&&e.target.querySelector(`[name=${field}]`);if(f){f.setAttribute('aria-invalid','true');f.setAttribute('aria-errormessage','au-err');f.focus()}},email=String(F.get('email')||'').trim().toLowerCase(),pw=String(F.get('pw')||''),btn=e.target.querySelector('button.pri');
   const nice=x=>/invalid login/i.test(x)?'Email or password is incorrect.':/already registered|already exists/i.test(x)?'An account with that email already exists. Try signing in.':/confirm/i.test(x)?'Please confirm your email first, using the link we sent you.':/rate|too many/i.test(x)?'Too many attempts. Please wait a minute and try again.':x;
   if(id!=='npf'&&!/^\S+@\S+\.\S+$/.test(email))return err(email?'Enter a valid email address, like name@example.com.':'Enter your email address.','email');
@@ -1472,14 +1728,18 @@ document.addEventListener('submit',async e=>{e.preventDefault();const id=e.targe
 document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='au-pw'&&t.form&&t.form.id==='npf')pwStrength(t.value)
  ;
  if(t.dataset.mt!==undefined){S.medDraft.times[+t.dataset.mt]=t.value;return}
- if(t.form&&t.form.id==='mf'){captureMed();return}
+ if(t.form&&t.form.id==='mf'){if(t.dataset.mre!==undefined)return;captureMed();if(S.medErr&&t.name){const k=t.name==='unit'?'amount':['forN','forU'].includes(t.name)?'end':['interval','first'].includes(t.name)?'mode':t.name;if(S.medErr[k]&&!medProblems(S.medDraft)[k]){delete S.medErr[k];const m=$('#mxe-'+k);if(m)m.remove();t.form.querySelectorAll(`[aria-describedby="mxe-${k}"]`).forEach(x=>{x.removeAttribute('aria-invalid');x.removeAttribute('aria-describedby')})}}return}
  if(t.dataset.uf)S.upload[t.dataset.uf]=t.value;
  if(t.dataset.ur){const[n,k]=t.dataset.ur.split('|');S.upload.rows[+n][k]=t.value}
  if(t.id==='sq'){S.q=t.value;if(S.q.trim().length>1)track('search_performed',{scope:'records'},'search:'+today());const p=t.selectionStart;render();const n=$('#sq');n.focus();n.setSelectionRange(p,p)}});
 document.addEventListener('change',e=>{const t=e.target;
  if(t.id==='showpw'){const i=document.querySelector('input[name=pw]');if(i)i.type=t.checked?'text':'password';return}
  if(t.id==='usrec'){S.useRecords=t.checked;return}
- if(t.id==='freq'){$('#daysbox').classList.toggle('hidden',t.value!=='weekly');return}
+ if(t.dataset.mre!==undefined&&t.form&&t.form.id==='mf'){const d=S.medDraft,pf=d._pf,pm=d._pm;captureMed();
+  if(d.mode!==pm){const n=MSLOTS[d.mode];if(n){const ts=d.times.filter(Boolean).slice(0,n);while(ts.length<n)ts.push('');d.times=ts}else if(d.mode==='times'||d.mode==='days'){if(!d.times.length)d.times=[''];}}
+  if(d.form!==pf&&(!d.unit||d.unit===(MUNIT_OF[pf]||'')))d.unit=MUNIT_OF[d.form]||'';
+  if(S.medErr){S.medErr=medProblems(d);Object.keys(S.medErr).length||(S.medErr=null)}
+  const nm=t.name,val=t.value;render();const x=[...document.querySelectorAll('#mf [name="'+nm+'"]')].find(y=>y.type!=='radio'&&y.type!=='checkbox'||y.value===val);if(x)x.focus();return}
  if(t.id==='file'&&t.files[0]){const f=t.files[0];t.value='';return /^image\//.test(f.type)?quickScan(false,null,[f]):startUpload(f)}
  if(t.dataset.c){S.consent[t.dataset.c]=t.checked;if(t.dataset.c==='history'){const n=HIST.pending.length;if(!t.checked)resetHistory();toast(t.checked?'New chats will be saved to your account.':'Saving stopped.'+(n?` ${n} unsaved message${n===1?' was':'s were'} discarded.`:'')+' Chats already saved stay until you delete them.');render()}return persist()}
  if(t.dataset.p){const k=t.dataset.p,v=t.value.trim(),n=+v;

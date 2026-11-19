@@ -2,7 +2,7 @@
 
 The public website at https://doctine.com: static pages (`index.html`, `about/`, `medical-safety/`, `privacy/`, `terms/`) sharing `assets/site.css` and one header and footer (see `DESIGN.md`). It is separate from the app.
 
-**Sample records:** every "Explore with sample records" / "Sample preview" link opens the real app at `https://app.doctine.com/?sample=1`, which goes straight into the app's fictional sample account, so the sample is always the current app. (Until 19 Nov 2026 the website kept its own copy of the app in `app-preview/`, which fell behind; `app-preview/index.html` is now only a redirect for old links. Don't put a copy of the app back here.) `_headers` gives the website the same security headers as the app.
+**Sample records:** every "Explore with sample records" / "Sample records" link opens the real app at `https://app.doctine.com/?sample=1`, which goes straight into the app's fictional sample account, so the sample is always the current app. (Until 19 Nov 2026 the website kept its own copy of the app in `app-preview/`, which fell behind; `app-preview/index.html` is now only a redirect for old links. Don't put a copy of the app back here.) `_headers` gives the website the same security headers as the app.
 
 | What | Where |
 |---|---|

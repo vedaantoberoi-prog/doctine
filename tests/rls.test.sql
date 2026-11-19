@@ -36,6 +36,33 @@ insert into medicines (client_id, name, dose, start_date, source_document_id, so
  select 11, 'Pan-D', '40 mg before food', '2026-11-01', id, 'Tab Pan-D 1-0-0 AC x5d', 'medium' from documents where client_id = 1;
 insert into medication_schedules (medicine_id, frequency, times) select id, 'daily', '{08:00}' from medicines where client_id = 11;
 insert into dose_events (medicine_id, scheduled_date, scheduled_time, status) select id, '2026-11-02', '08:00', 'Taken' from medicines where client_id = 11;
+-- medicine details (20261119000000): structured strength / dose / form / instructions, "as needed" and "every N hours"
+insert into medicines (client_id, name, dose, start_date, brand, strength, form, dose_amount, dose_unit, instructions)
+ values (12, 'Fictional paracetamol', '1 tablet', '2026-11-01', 'Fictobrand', '500 mg', 'tablet', '1', 'tablet', 'After food'),
+        (13, 'Fictional antibiotic', '1 capsule', '2026-11-01', null, '250 mg', 'capsule', '1', 'capsule', null),
+        (14, 'Old-style medicine', '1 tablet after dinner', '2026-11-01', null, null, null, null, null, null);
+insert into medication_schedules (medicine_id, frequency, times) select id, 'as_needed', '{}' from medicines where client_id = 12;
+insert into medication_schedules (medicine_id, frequency, times, interval_hours) select id, 'daily', '{06:00,12:00,18:00}', 6 from medicines where client_id = 13;
+select pg_temp.expect((select strength || '|' || dose_amount || '|' || dose_unit || '|' || form || '|' || instructions from medicines where client_id = 12) = '500 mg|1|tablet|tablet|After food', 'medicine details are stored as separate fields');
+select pg_temp.expect((select frequency = 'as_needed' and cardinality(times) = 0 from medication_schedules s join medicines m on m.id = s.medicine_id where m.client_id = 12), 'an "as needed" medicine has no reminder times');
+select pg_temp.expect((select interval_hours from medication_schedules s join medicines m on m.id = s.medicine_id where m.client_id = 13) = 6, 'an "every 6 hours" schedule keeps its interval');
+do $$ begin
+  begin update medication_schedules set times = '{}' where frequency = 'daily'; raise exception 'FAILED: daily schedule without times';
+  exception when check_violation then raise notice 'ok: a daily schedule needs at least one time'; end;
+  begin update medication_schedules set times = '{08:00}' where frequency = 'as_needed'; raise exception 'FAILED: as-needed with times';
+  exception when check_violation then raise notice 'ok: an "as needed" schedule has no reminder times'; end;
+  begin update medication_schedules set frequency = 'weekly', days_of_week = '{1}' where interval_hours is not null; raise exception 'FAILED: weekly interval';
+  exception when check_violation then raise notice 'ok: "every N hours" applies to daily schedules only'; end;
+  begin update medication_schedules set interval_hours = 0 where interval_hours is not null; raise exception 'FAILED: zero interval';
+  exception when check_violation then raise notice 'ok: the interval must be 1 to 24 hours'; end;
+  begin update medication_schedules set frequency = 'monthly' where interval_hours is not null; raise exception 'FAILED: unknown frequency';
+  exception when check_violation then raise notice 'ok: unknown frequencies are refused'; end;
+  begin update medicines set strength = repeat('x', 61) where client_id = 12; raise exception 'FAILED: long strength';
+  exception when check_violation then raise notice 'ok: strength is limited to 60 characters'; end;
+  begin update medicines set dose_amount = '' where client_id = 12; raise exception 'FAILED: empty amount';
+  exception when check_violation then raise notice 'ok: an empty dose amount is refused (null means not given)'; end;
+end $$;
+delete from medicines where client_id in (12, 13, 14);
 insert into consents (kind, granted) values ('ai_chat', true);
 update consents set granted = false where kind = 'ai_chat';
 select pg_temp.expect((select count(*) from consent_log) = 2, 'consent changes are logged');

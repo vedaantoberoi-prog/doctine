@@ -53,9 +53,12 @@ check("uncertain medicine is labelled and offers 'Check and add'", btn.trim() ==
 await pg.click("[data-msadd='0']"); await pg.waitForTimeout(200);
 check("form explains the uncertainty and shows the line as written", (await pg.textContent("#mf")).includes("wasn’t sure") && (await pg.textContent("#mf")).includes("Mon[?]-LC"));
 check("times are prefilled from 0-0-1", JSON.stringify(await pg.evaluate("S.medDraft.times")) === '["21:00"]');
+check("the amount per dose comes from 0-0-1 and stays separate from the strength", await pg.evaluate("S.medDraft.amount==='1'&&S.medDraft.mode==='once'"));
+await pg.selectOption("#mf [name=unit]", "tablet"); await pg.click("#mf button.pri"); await pg.waitForTimeout(200);
+check("Review shows a summary before anything is saved", await pg.evaluate("S.meds.length===0&&S.medDraft.step==='review'") && (await pg.textContent("#mf")).includes("1 tablet each time") && (await pg.textContent("#mf")).includes("9:00 PM"));
 await pg.click("#mf button.pri"); await pg.waitForTimeout(200);
 check("an uncertain medicine cannot be saved without confirming it was checked", await pg.evaluate("S.meds.length===0") && (await pg.textContent("#merr")).includes("Tick the box"));
-await pg.check("input[name=srcok]"); await pg.fill("#mf [name=dose]", "1 tablet at night"); await pg.click("#mf button.pri"); await pg.waitForTimeout(200);
+await pg.check("input[name=srcok]"); await pg.click("#mf button.pri"); await pg.waitForTimeout(200);
 const med = await pg.evaluate("S.meds[0]");
 check("after confirming, it saves with a link to its source prescription", med && med.src && med.src.raw === "Tab Mon[?]-LC 0-0-1" && med.src.conf === "medium" && (await pg.textContent("#view")).includes("as written: Tab Mon[?]-LC"));
 // scanned record keeps original + cleaned pages, and shows what was read

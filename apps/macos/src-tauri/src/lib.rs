@@ -104,7 +104,12 @@ fn focus_window(app: AppHandle) {
 async fn save_file(app: AppHandle, name: String, data: String) -> Result<bool, String> {
     let name: String = name.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')).take(80).collect();
     let bytes = base64::engine::general_purpose::STANDARD.decode(data.as_bytes()).map_err(|_| "invalid file".to_string())?;
-    let (label, ext) = if name.to_ascii_lowercase().ends_with(".pdf") { ("PDF document", "pdf") } else { ("ZIP archive", "zip") };
+    let lower = name.to_ascii_lowercase();
+    let (label, ext) = if lower.ends_with(".pdf") { ("PDF document", "pdf") }
+        else if lower.ends_with(".jpg") || lower.ends_with(".jpeg") { ("JPEG image", "jpg") }
+        else if lower.ends_with(".png") { ("PNG image", "png") }
+        else if lower.ends_with(".webp") { ("WebP image", "webp") }
+        else { ("ZIP archive", "zip") };
     let picked = app.dialog().file().set_file_name(if name.is_empty() { "doctine-export.zip" } else { &name }).add_filter(label, &[ext]).blocking_save_file();
     match picked {
         None => Ok(false),

@@ -72,7 +72,7 @@
       if (P === 'macos') return invoke('save_file', { name: name, data: data }).then(function (saved) { return !!saved; });
       // Android: written to the app's private cache only for the share sheet, then removed on the next start or sign-out.
       return CP.Filesystem.writeFile({ path: 'exports/' + name, data: data, directory: 'CACHE', recursive: true })
-        .then(function (w) { return CP.Share.share({ title: name, url: w.uri, dialogTitle: /\.pdf$/i.test(name) ? 'Open or save this PDF' : 'Save or share your Doctine export' }); })
+        .then(function (w) { return CP.Share.share({ title: name, url: w.uri, dialogTitle: /\.pdf$/i.test(name) ? 'Open or save this PDF' : /\.(jpe?g|png|webp)$/i.test(name) ? 'Open or save this page' : 'Save or share your Doctine export' }); })
         .then(function () { return true; }, function (e) { return !/cancel/i.test(String(e && e.message)); });
     }).catch(function () { return false; });
   }

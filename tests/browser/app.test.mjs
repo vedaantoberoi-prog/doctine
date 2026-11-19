@@ -19,7 +19,7 @@ check("browser-demo account created when Supabase isn't configured", await pg.ev
 const navKeys = await pg.$$eval("#nav [data-nav]", (e) => e.map((x) => x.dataset.nav));
 check("the menu lists only working sections: no Family, which isn't built yet", !navKeys.includes("family") && navKeys.includes("medicines") && navKeys.includes("reminders"), navKeys.join(","));
 check("menu icons are drawn as line icons, not emoji", await pg.$$eval("#nav [data-nav]", (e) => e.every((x) => x.querySelector("svg") && !/\p{Extended_Pictographic}/u.test(x.textContent))));
-check("home shows how much of the health profile is filled in, with a link to finish it", (await pg.textContent("#profcard")).includes("1 of 6 details added") && (await pg.$("#profcard [data-nav=health]")) !== null);
+check("home shows how much of the health profile is filled in, with a link to finish it", (await pg.textContent("#profcard")).includes("1 of 7 details added") && (await pg.$("#profcard [data-nav=health]")) !== null);
 // A/B: chat without any reports, then a follow-up
 // the AI assistant is a separate permission, off by default: an emergency still gets built-in guidance with nothing sent,
 // and anything else asks first

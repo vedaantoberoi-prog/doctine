@@ -70,6 +70,13 @@ do $$ begin
   exception when check_violation then raise notice 'ok: an empty dose amount is refused (null means not given)'; end;
 end $$;
 delete from medicines where client_id in (12, 13, 14);
+-- gender in the profile (20261119030000)
+update health_profiles set gender = 'prefer_not_to_say' where user_id = auth.uid();
+select pg_temp.expect((select gender from health_profiles where user_id = auth.uid()) = 'prefer_not_to_say', 'a person can save their gender, including "prefer not to say"');
+do $$ begin
+  begin update health_profiles set gender = 'unknown-value' where user_id = auth.uid(); raise exception 'FAILED: odd gender value';
+  exception when check_violation then raise notice 'ok: only the listed gender answers are accepted'; end;
+end $$;
 -- health readings (20261119010000)
 insert into vital_readings (client_id, kind, value, value2, unit, measured_at) values (21, 'blood_pressure', 124, 82, 'mmHg', '2026-11-18 08:10+05:30');
 insert into vital_readings (client_id, kind, value, unit, context, measured_at) values (22, 'glucose', 104, 'mg/dL', 'fasting', '2026-11-18 07:30+05:30');

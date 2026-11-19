@@ -103,10 +103,11 @@ select pg_temp.denied(format('select public.admin_data_overview(%L, now() - inte
 select pg_temp.expect((select (t->>'rows')::int = 1 and t->>'area' = 'Health data' and not (t ? 'sample') from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t where t->>'table' = 'health_profiles'), 'the Founder sees each table''s purpose and row count, not its rows');
 select pg_temp.expect((select bool_and((t->>'rls')::boolean) from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t), 'the overview reports row-level security for every table');
 
--- profile completion: which of the six details are added, never their values
-select pg_temp.expect((select (r->>'profile_filled')::int = 2 and (r->>'profile_pct')::int = 33 from jsonb_array_elements(public.admin_users(:support, null, null, null, 1, 100, null, null)->'rows') r where r->>'id' = 'b0000000-0000-0000-0000-000000000001'), 'the list shows how much of a profile is filled in (2 of 6, 33%)');
-select pg_temp.expect((select p = '{"name": true, "date_of_birth": false, "height": false, "weight": false, "blood_group": false, "allergies": true}'::jsonb from (select public.admin_user(:support, :asha)->'profile'->'fields' p) x)
-  and (public.admin_user(:support, :asha)->'profile'->>'total')::int = 6, 'the account panel lists which details are added, as true or false only');
+-- profile completion: which of the seven details are added, never their values
+select pg_temp.expect((select (r->>'profile_filled')::int = 2 and (r->>'profile_pct')::int = 29 from jsonb_array_elements(public.admin_users(:support, null, null, null, 1, 100, null, null)->'rows') r where r->>'id' = 'b0000000-0000-0000-0000-000000000001'), 'the list shows how much of a profile is filled in (2 of 7, 29%)');
+select pg_temp.expect((select p = '{"name": true, "date_of_birth": false, "gender": false, "height": false, "weight": false, "blood_group": false, "allergies": true}'::jsonb from (select public.admin_user(:support, :asha)->'profile'->'fields' p) x)
+  and (public.admin_user(:support, :asha)->'profile'->>'total')::int = 7, 'the account panel lists which details are added, as true or false only');
+select pg_temp.expect(not exists (select 1 from jsonb_each(public.admin_user(:support, :asha)->'profile'->'fields') e where jsonb_typeof(e.value) <> 'boolean'), 'gender, like every detail, reaches the console only as true or false');
 select pg_temp.expect((public.admin_user(:support, :ravi)->'profile'->>'pct')::int < 100 and (public.admin_user(:support, :ravi)->'profile'->>'filled')::int >= 0, 'an account without a saved profile still gets a completion score');
 select pg_temp.expect((public.admin_users(:support, null, 'profile_complete', null, 1, 100, null, null)->>'total')::int = 0
   and (public.admin_users(:support, null, 'profile_incomplete', null, 1, 100, null, null)->>'total')::int = (public.admin_users(:support, null, null, null, 1, 100, null, null)->>'total')::int, 'accounts can be filtered by complete or incomplete profile');

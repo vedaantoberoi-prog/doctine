@@ -26,6 +26,7 @@ let { ctx, pg } = await device(null);
 await pg.click("[data-auth=register]"); await pg.fill("input[name=name]", "Meera"); await pg.fill("input[name=email]", "meera@example.com"); await pg.fill("input[name=pw]", "secret123"); await pg.check("input[name=ack]"); await pg.click("#rf button.pri"); await pg.waitForTimeout(500);
 check("signed in with a Doctine account, labelled as such", await pg.evaluate("S.cloud") && (await pg.textContent("#who")).includes("Doctine account"));
 await pg.evaluate("go('health')"); for (const [k, v] of [["dob", "1979-03-02"], ["height", "158"], ["weight", "64"], ["blood", "A+"], ["allergies", "Sulfa"]]) { await pg.fill(`[data-p=${k}]`, v); await pg.dispatchEvent(`[data-p=${k}]`, "change"); }
+await pg.selectOption("[data-p=gender]", "female"); await pg.waitForTimeout(100);
 await pg.evaluate("go('reports')"); await pg.evaluate(`(async()=>{const f=await ${photo};quickScan(false,null,[f])})()`);
 await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]"); await pg.click("[data-ai='1']"); await pg.waitForTimeout(1500);
 await pg.evaluate("go('medicines')"); await addMed(pg, { name: "Vitamin D3", form: "sachet", strength: ["60000", "IU"], unit: "sachet", mode: "days", days: [0], times: ["09:00"] });
@@ -37,7 +38,7 @@ await pg.evaluate(() => { S.vitals.push({ id: 7001, kind: "blood_pressure", v: 1
 await pg.waitForTimeout(1500);
 const t1 = await pg.evaluate(() => window.__sbdb.tables);
 check("health readings are saved to the account with unit, time and context", (t1.vital_readings || []).length === 2 && t1.vital_readings.some((v) => v.kind === "blood_pressure" && v.value === 126 && v.value2 === 84 && v.unit === "mmHg" && v.measured_at === "2026-11-18T02:40:00.000Z") && t1.vital_readings.some((v) => v.kind === "glucose" && v.context === "fasting" && v.value2 === null), JSON.stringify(t1.vital_readings));
-check("profile saved to the account", t1.health_profiles?.[0]?.blood_group === "A+" && t1.health_profiles[0].allergies === "Sulfa" && t1.health_profiles[0].height_cm == 158);
+check("profile saved to the account, including gender", t1.health_profiles?.[0]?.blood_group === "A+" && t1.health_profiles[0].gender === "female" && t1.health_profiles[0].allergies === "Sulfa" && t1.health_profiles[0].height_cm == 158);
 check("report and its AI reading saved", t1.documents?.[0]?.extraction?.lab_results?.[0]?.test === "HbA1c");
 // where the details came from: read automatically until the person checks them; the AI reading itself is never altered
 await pg.evaluate("go('reports')"); await pg.waitForTimeout(150);
@@ -103,7 +104,7 @@ await ctx.close();
 check("new device starts signed out with no local records", await pg.evaluate("S.email===null") && await pg.evaluate("Object.keys(JSON.parse(localStorage.getItem('doctine:v2')||'{\"users\":{}}').users).length===0"));
 await pg.fill("input[name=email]", "meera@example.com"); await pg.fill("input[name=pw]", "secret123"); await pg.click("#lf button.pri"); await pg.waitForTimeout(900);
 const s2 = await pg.evaluate("({p:S.profile,r:S.reports.map(r=>({t:r.title,f:r.fields,x:!!(r.scan&&r.scan.lab_results)})),m:S.meds.map(m=>({n:m.name,f:m.freq,d:m.days,t:m.times,s:m.status||'active'})),d:Object.values(S.doses).sort(),h:S.consent.history})");
-check("profile arrives on the new device", s2.p.name === "Meera" && s2.p.blood === "A+" && s2.p.allergies === "Sulfa" && s2.p.dob === "1979-03-02");
+check("profile arrives on the new device, including gender", s2.p.gender === "female" && s2.p.name === "Meera" && s2.p.blood === "A+" && s2.p.allergies === "Sulfa" && s2.p.dob === "1979-03-02");
 check("report with its extracted results arrives", s2.r.length === 2 && s2.r.some((r) => r.x) && s2.r.some((r) => Object.keys(r.f).includes("HbA1c")));
 check("the 'checked by you' status arrives on the new device", await pg.evaluate("S.reports.some(r=>r.scan&&r.checked===true&&provOf(r).k==='ok')"));
 // on a device that has never seen the files, the .zip export fetches the original PDF and the page image from private storage
@@ -138,6 +139,8 @@ await pg.evaluate("go('vitals')"); await pg.waitForTimeout(150);
 check("…Vitals says saving readings is switching on, and offers no Add button", (await pg.textContent("#view")).includes("switching on shortly") && !(await pg.$("#view [data-vadd='1']")));
 await pg.evaluate(() => { S.profile.allergies = "Sulfa, dust"; render(); }); await pg.waitForTimeout(1500);
 check("…and other changes still save", await pg.evaluate("window.__sbdb.tables.health_profiles[0].allergies==='Sulfa, dust'&&!CLOUD.err"));
+await pg.evaluate(() => { window.__missingColumns = { health_profiles: "gender" }; S.profile.gender = "male"; S.profile.allergies = "Sulfa, dust, pollen"; render(); }); await pg.waitForTimeout(1500);
+check("on a database without the gender field, the rest of the profile still saves", await pg.evaluate("window.__sbdb.tables.health_profiles[0].allergies==='Sulfa, dust, pollen'&&!CLOUD.err&&CLOUD.noGender===true"));
 check("no JavaScript errors on the page", errs.length === 0, errs.join(" | "));
 console.log(results.filter((r) => r.startsWith("PASS")).length + "/" + results.length + " passed");
 await b.close(); process.exit(results.some((r) => r.startsWith("FAIL")) ? 1 : 0);

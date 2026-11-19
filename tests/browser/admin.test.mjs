@@ -63,7 +63,7 @@ function data(action, body) {
         { schema: "private", table: "admin_audit_log", area: "Administration", purpose: "Audit log (append-only)", rows: 40, estimated: false, new_in_period: 40, last_write: null, bytes: 98304, rls: true, rls_forced: false, policies: 0, browser_access: false }],
       buckets: [{ id: "documents", public: false, file_size_limit: 10485760, objects: 0, bytes: 0, new_in_period: 0 }] },
     user: { id: "b0000000-0000-0000-0000-000000000001", email: "person1.sample@example.test", name: "Person 1 Sample", created_at: iso(now), email_confirmed_at: null, last_sign_in_at: null, suspended: false, admin_role: null, sign_in_methods: ["email"], mfa: false, first_activity: null,
-      profile: { pct: 50, filled: 3, total: 6, fields: { name: true, date_of_birth: true, height: false, weight: false, blood_group: true, allergies: false }, updated_at: iso(now) },
+      profile: { pct: 43, filled: 3, total: 7, fields: { name: true, date_of_birth: true, gender: false, height: false, weight: false, blood_group: true, allergies: false }, updated_at: iso(now) },
       usage: { records: 2, records_by_source: { scan: 2 }, files: 1, file_bytes: 120000, medicines: 0, doses_recorded: 0, profile_saved: true, last_activity: null, active_days_30: 1 }, adoption: { profile: true, record: true, file: true, schedule: false, dose: false, search: false, export: false },
       uploads: { failed_30d: 0, processing_failed_30d: 0 }, notes: ROLE.perms.includes("users.notes") ? [] : null, admin_actions: [] },
     user_suspend: { ok: true, sessions_ended: 1 }, user_reset_password: { ok: true },
@@ -240,7 +240,7 @@ check("9 · CSV export of the account list downloads a file and goes through the
 await pg.click("tr.click"); await pg.waitForSelector(".drawer h3");
 await pg.waitForFunction(() => /feature adoption/i.test(document.querySelector(".drawer")?.innerText || ""), null, { timeout: 5000 }).catch(() => {});
 const drw = await text(pg, ".drawer");
-check("account drawer: profile completion with which details are added, never their values", /profile completion/i.test(drw) && drw.includes("50%") && drw.includes("3 of 6 details added") && ["Date of birth", "Height", "Weight", "Blood group", "Allergies"].every((x) => drw.includes(x)) && (await pg.$$eval(".drawer .chips .chip.yes", (e) => e.length)) >= 3);
+check("account drawer: profile completion with which details are added, never their values", /profile completion/i.test(drw) && drw.includes("43%") && drw.includes("3 of 7 details added") && ["Date of birth", "Gender", "Height", "Weight", "Blood group", "Allergies"].every((x) => drw.includes(x)) && (await pg.$$eval(".drawer .chips .chip.yes", (e) => e.length)) >= 3);
 check("account drawer: metadata, sign-in methods, usage counts, feature adoption; no record contents", /feature adoption/i.test(drw) && /sign-in method/i.test(drw) && !drw.includes(SECRET_MARK), drw.slice(0, 200).replace(/\n/g, " / "));
 await pg.click('[data-act="suspend"]'); await pg.waitForSelector("dialog[open]"); await pg.click("dialog #co"); await pg.waitForTimeout(150);
 check("suspending needs a reason before anything is sent", (await text(pg, "dialog #cerr")) === "Please give a reason." && !log.calls.some((c) => c.action === "user_suspend"));

@@ -634,12 +634,12 @@ VIEWS.reports = async (v, seq) => {
 
 /* Users */
 // Profile completion: how many of the six profile details a person has added. Never the details themselves.
-const PROFILE_FIELDS = [["name", "Name"], ["date_of_birth", "Date of birth"], ["height", "Height"], ["weight", "Weight"], ["blood_group", "Blood group"], ["allergies", "Allergies"]];
+const PROFILE_FIELDS = [["name", "Name"], ["date_of_birth", "Date of birth"], ["gender", "Gender"], ["height", "Height"], ["weight", "Weight"], ["blood_group", "Blood group"], ["allergies", "Allergies"]];
 const profileTone = (p) => (p >= 100 ? "" : p >= 50 ? "warn" : "bad");
 function profileCell(pct, filled) {
   if (!Number.isFinite(+pct)) return `<td><span class="muted">—</span></td>`;
   const p = Math.max(0, Math.min(100, Math.round(+pct)));
-  return `<td><div class="pcell" title="${n(filled)} of 6 profile details added"><div class="meter ${profileTone(p)}" role="img" aria-label="Profile ${p}% complete"><div style="width:${p}%"></div></div><span>${p}%</span></div></td>`;
+  return `<td><div class="pcell" title="${n(filled)} of ${PROFILE_FIELDS.length} profile details added"><div class="meter ${profileTone(p)}" role="img" aria-label="Profile ${p}% complete"><div style="width:${p}%"></div></div><span>${p}%</span></div></td>`;
 }
 const COLS = [["id", "Account ID"], ["name", "Name"], ["profile", "Profile"], ["email", "Email"], ["created_at", "Registered"], ["verified", "Email verification"], ["last_sign_in_at", "Last sign-in"], ["last_activity", "Last meaningful activity"], ["records", "Records"], ["files", "Files"], ["status", "Status"], ["role", "Role"]];
 const UQ = { q: "", status: "", sort: "created_desc", page: 1, size: ls.get("usize", 25), reg_from: "", reg_to: "", cols: ls.get("ucols.v3", ["id", "name", "profile", "email", "created_at", "verified", "last_sign_in_at", "last_activity", "records", "files", "status"]) };

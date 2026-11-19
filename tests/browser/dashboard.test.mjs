@@ -112,6 +112,36 @@ check("…and choosing from it closes the menu", await pg.evaluate("S.view==='vi
 await pg.setViewportSize({ width: 1366, height: 1000 }); await W(100);
 check("on desktop the tab bar is hidden and the sidebar stays", !(await pg.isVisible("#tabbar")) && await pg.isVisible("#nav"));
 
+// ---------- the website's sample link: the real app, straight into the sample account ----------
+{ const c2 = await b.newContext({ viewport: { width: 1280, height: 900 } }), p2 = await c2.newPage(), e2 = []; p2.on("pageerror", (e) => e2.push(e.message));
+  await p2.goto(BASE + "/?sample=1"); await p2.waitForTimeout(900);
+  check("?sample=1 opens the sample account directly, on My Health", await p2.evaluate("S.sample===true&&!S.email&&S.view==='home'") && (await p2.textContent("#banner")).includes("Sample data"));
+  check("…and the address no longer shows ?sample=1", await p2.evaluate("location.search") === "");
+  check("the sample uses the same screens as a real account (no separate demo version)", await p2.evaluate("typeof sampleData==='function'") && !!(await p2.$(".dh-tiles")) && (await p2.$$eval("#nav [data-nav]", (e) => e.map((x) => x.dataset.nav).join())) === "home,medicines,reminders,vitals,reports,health,chat,settings,about");
+  await p2.evaluate("go('medicines')"); await p2.waitForTimeout(150);
+  check("sample medicines show strength, dose and schedule in the new list", (await p2.textContent("#view")).includes("Metformin") && (await p2.textContent("#view")).includes("500 mg") && (await p2.textContent("#view")).includes("Only when needed"));
+  await p2.click("[data-medadd]"); await p2.waitForTimeout(150);
+  check("Add medicine in the sample is the new five-step form", (await p2.$$("#mf .mx-sec")).length === 5);
+  await p2.fill("#mf [name=name]", "Fictional sample tablet"); await p2.fill("#mf [name=amount]", "1"); await p2.selectOption("#mf [name=unit]", "tablet"); await p2.waitForTimeout(80);
+  await p2.click("#mf input[name=mode][value=once] + .mx-opt"); await p2.waitForTimeout(80); await p2.fill("#mf [data-mt='0']", "09:30");
+  await p2.click("#mf button.pri"); await p2.waitForTimeout(120); await p2.click("#mf button.pri"); await p2.waitForTimeout(150);
+  check("a medicine can be added and edited in the sample", await p2.evaluate("S.meds.some(m=>m.name==='Fictional sample tablet'&&m.times.join()==='09:30')"));
+  check("…and nothing from the sample is written to this browser's saved accounts", await p2.evaluate("!(localStorage.getItem('doctine:v2')||'').includes('Fictional sample tablet')"));
+  await p2.evaluate("go('reports')"); await p2.waitForTimeout(150);
+  check("the sample prescription shows its medicines in the structured records view", (await p2.$$(".rx-card")).length >= 3 && (await p2.textContent("#rx-3")).includes("Metformin 500") && (await p2.textContent("#rx-3")).includes("Prediabetes"));
+  await p2.waitForTimeout(300); await p2.click("#rx-3 .rx-thumb"); await p2.waitForTimeout(300);
+  check("the sample prescription's page opens in the viewer, marked as a sample", !!(await p2.$(".scanov")) && await p2.evaluate("(document.querySelector('.scanimg')||{}).src?.startsWith('blob:')"));
+  await p2.keyboard.press("Escape"); await p2.waitForTimeout(100);
+  await p2.evaluate("go('vitals')"); await p2.waitForTimeout(150);
+  check("sample vitals show on the Vitals screen", (await p2.$$(".dh-vcard")).length >= 4);
+  check("no JavaScript errors in the sample opened by link", e2.length === 0, e2.join(" | "));
+  // someone already signed in keeps their own account
+  await p2.evaluate("document.getElementById('out').click()"); await p2.waitForTimeout(300);
+  await p2.click("[data-auth=register]"); await p2.fill("input[name=name]", "Signed In"); await p2.fill("input[name=email]", "signed.in@example.com"); await p2.fill("input[name=pw]", "fictional-pass-1"); await p2.check("input[name=ack]"); await p2.click("#rf button.pri"); await p2.waitForTimeout(400);
+  await p2.goto(BASE + "/?sample=1"); await p2.waitForTimeout(900);
+  check("a signed-in person opening the sample link stays in their own account", await p2.evaluate("S.email==='signed.in@example.com'&&!S.sample") && (await p2.textContent("#toast")).includes("Sign out to explore the sample"));
+  await c2.close(); }
+
 check("no JavaScript errors on the page", errs.length === 0, errs.join(" | "));
 await b.close();
 const failed = out.filter((l) => l.startsWith("FAIL")).length;

@@ -544,7 +544,7 @@ const sampleData=()=>({...blank('Asha Verma (sample)'),
  profile:{name:'Asha Verma (sample)',dob:'1988-04-12',height:'165',weight:'62',blood:'B+',allergies:'Penicillin'},
  reports:[{id:1,title:'Complete blood count',cat:'Lab report',date:'2026-09-02',lab:'Sample Labs',fields:{Hemoglobin:'11.4 g/dL (ref 12.0–15.5)',WBC:'6.8 10^3/uL (ref 4.0–11.0)',Platelets:'248 10^3/uL (ref 150–410)'}},
   {id:2,title:'HbA1c and lipid panel',cat:'Lab report',date:'2026-07-18',lab:'Sample Labs',fields:{HbA1c:'5.9 % (ref 4.0–5.6)','LDL cholesterol':'132 mg/dL (ref < 100)',HDL:'54 mg/dL'}},
-  {id:3,title:'Prescription – Sample Clinic',cat:'Prescription',date:addDays(today(),-40),lab:'Dr. R. Sample, Sample Clinic',fields:{Diagnosis:'Prediabetes (sample)','Metformin 500':'500 mg · 1-0-1 · after food'},scan:{medicines:[{raw:'Tab Metformin 500 mg 1-0-1 after food',name:'Metformin 500',form:'tablet',strength:'500 mg',frequency:'1-0-1',timing:'after food',duration:'',confidence:'high',alternatives:[]}],unreadable:[],transcription:''},checked:true}],
+  {id:3,imgs:1,title:'Prescription – Sample Clinic',cat:'Prescription',date:addDays(today(),-40),lab:'Dr. R. Sample, Sample Clinic',fields:{Diagnosis:'Prediabetes (sample)','Metformin 500':'500 mg · 1-0-1 · after food'},scan:{medicines:[{raw:'Tab Metformin 500 mg 1-0-1 after food',name:'Metformin 500',form:'tablet',strength:'500 mg',frequency:'1-0-1',timing:'after food',duration:'',confidence:'high',alternatives:[]}],unreadable:[],transcription:''},checked:true}],
  /* Made-up examples so the sample account shows every part of My Health. Dates are relative to today; never saved anywhere. */
  ...(()=>{const td=today(),ago=(n,hm)=>new Date(addDays(td,-n)+'T'+hm).toISOString(),rs=[];let id=500;
   [[13,'08:05',128,84,76],[11,'08:20',124,82,74],[9,'07:55',131,86,78],[7,'08:10',126,83,72],[5,'08:00',122,80,71],[3,'08:15',125,81,73],[1,'08:05',121,79,70]].forEach(([n,hm,a,b,h])=>{rs.push({id:id++,kind:'blood_pressure',v:a,v2:b,unit:'mmHg',ctx:'',note:'',at:ago(n,hm)});rs.push({id:id++,kind:'heart_rate',v:h,v2:null,unit:'bpm',ctx:'',note:'',at:ago(n,hm)})});
@@ -556,7 +556,12 @@ const sampleData=()=>({...blank('Asha Verma (sample)'),
     {id:3,name:'Vitamin D3',strength:'60000 IU',form:'sachet',amount:'1',unit:'sachet',dose:'1 sachet',status:'active',freq:'weekly',days:[0],times:['09:00'],start:addDays(td,-30),end:addDays(td,26),instructions:'With food'},
     {id:4,name:'Cetirizine',strength:'10 mg',form:'tablet',amount:'1',unit:'tablet',dose:'1 tablet',status:'active',freq:'as_needed',days:[],times:[],start:addDays(td,-60),end:'',instructions:'Not more than 1 a day'}]}})()});
 let S={view:'home',auth:'login',email:null,sample:false,q:'',typing:false,upload:null,exp:'',...blank('')};
-const enter=(email,data,sample,guest)=>{Object.assign(S,blank(''),data,{email,sample,guest:!!guest,cloud:!!(data&&data.cloud),view:guest?'chat':(()=>{const w=wantView||hashView();wantView='';return w||'home'})(),upload:null,exp:'',msgs:[],cstate:null,cerr:'',useRecords:false,focusRid:null,chatDoc:null,chatReading:'',attMenu:false,medScan:null,scanning:'',histOpen:false,histList:null,histErr:'',histStatus:''});if(!sample&&!guest&&!(data&&data.cloud)){DB.session=email;store.set(DB)}render()};
+/* The sample prescription's page: drawn in this browser when the sample opens, clearly marked as made up, never stored. */
+function samplePages(){if(IMG.urls['scan:3:0'])return;const draw=(bg,k)=>{try{const c=document.createElement('canvas');c.width=900;c.height=1200;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,900,1200);x.fillStyle='#1d2a3a';x.font='bold 42px Georgia,serif';x.fillText('Sample Clinic',70,110);x.font='24px Georgia,serif';
+ ['Dr. R. Sample, MBBS (sample)','Patient: Asha Verma (sample)','','Diagnosis: Prediabetes (sample)','','Rx','Tab Metformin 500 mg    1-0-1    after food','','Review after 3 months'].forEach((l,i)=>x.fillText(l,70,190+i*52));
+ x.fillStyle='#b4232a';x.font='bold 28px sans-serif';x.fillText('SAMPLE — NOT A REAL PRESCRIPTION',70,1120);c.toBlob(b=>{if(b){IMG.urls[k]=URL.createObjectURL(b);hydrateImgs()}},'image/jpeg',.85)}catch{}};
+ draw('#fbfaf6','scan:3:0');draw('#ddd5c4','orig:3:0')}
+const enter=(email,data,sample,guest)=>{if(sample)setTimeout(samplePages,0);else for(const k of['scan:3:0','orig:3:0'])if(IMG.urls[k]){URL.revokeObjectURL(IMG.urls[k]);delete IMG.urls[k]}Object.assign(S,blank(''),data,{email,sample,guest:!!guest,cloud:!!(data&&data.cloud),view:guest?'chat':(()=>{const w=wantView||hashView();wantView='';return w||'home'})(),upload:null,exp:'',msgs:[],cstate:null,cerr:'',useRecords:false,focusRid:null,chatDoc:null,chatReading:'',attMenu:false,medScan:null,scanning:'',histOpen:false,histList:null,histErr:'',histStatus:''});if(!sample&&!guest&&!(data&&data.cloud)){DB.session=email;store.set(DB)}render()};
 function persist(){if(S.cloud){cloudQueue();return}if(!S.email||S.sample||!DB.users[S.email])return;const{profile,reports,meds,doses,vitals,consent}=S;DB.users[S.email].data={profile,reports,meds,doses,vitals,consent};if(!store.set(DB)&&!persist.w){persist.w=1;toast('This browser would not save your data. Changes will be lost on refresh.')}}
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.add('hidden'),4000)};
 /* The open screen is kept in the address (#medicines, #vitals…) so a refresh or a shared bookmark opens it again.
@@ -1415,7 +1420,7 @@ function openViewer(r,i){const n=r.imgs||1,back=document.activeElement;let k='sc
  const key=e=>{if(e.key==='Escape'){e.preventDefault();close()}else if(e.key==='ArrowRight'&&i<n-1){i++;draw()}else if(e.key==='ArrowLeft'&&i>0){i--;draw()}};
  ov.onclick=async e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.k;
   if(a==='x')return close();if(a==='scan'||a==='orig'){k=a;return draw()}if(a==='prev'&&i>0){i--;return draw()}if(a==='next'&&i<n-1){i++;return draw()}
-  if(a==='dl'){const key2=`${k}:${r.id}:${i}`,blob=await IMG.get(key2).catch(()=>null)||await cloudImage(key2);if(!blob)return toast('This page isn’t available on this device right now. Check your connection and try again.');
+  if(a==='dl'){const key2=`${k}:${r.id}:${i}`,blob=await IMG.get(key2).catch(()=>null)||await cloudImage(key2)||(IMG.urls[key2]?await fetch(IMG.urls[key2]).then(x=>x.blob()).catch(()=>null):null);if(!blob)return toast('This page isn’t available on this device right now. Check your connection and try again.');
    const ext=/png/.test(blob.type)?'png':/webp/.test(blob.type)?'webp':'jpg',name=`${(r.title||'doctine-record').replace(/[^\w.-]+/g,'-').slice(0,50)}-page-${i+1}${k==='orig'?'-original':''}.${ext}`;
    if(NATIVE&&window.DoctineNative){const ok=await DoctineNative.saveFile(name,blob);if(!ok)toast('The page wasn’t saved.');return}
    const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}};
@@ -1925,6 +1930,14 @@ applyTheme();
 if(DB.session&&DB.users[DB.session])enter(DB.session,DB.users[DB.session].data,false);else render();
 const openAboutFromHash=()=>{const h=hashView();if(!h)return;if(S.email||S.sample||S.guest){if(S.view!==h)go(h)}else if(h==='about'&&S.auth!=='about'){S.auth='about';render()}};
 openAboutFromHash();addEventListener('hashchange',openAboutFromHash);
-initCloud().then(on=>{if(!on&&NATIVE){S.email=null;S.sample=false;S.guest=false;S.auth='noserver';return render()}if(on&&S.email&&!S.cloud&&!S.sample&&!S.guest){DB.session=null;store.set(DB);S={...S,...blank(''),email:null,auth:'login'};render()}});
+/* doctine.com's "Explore with sample records" opens https://app.doctine.com/?sample=1: this same app, straight into the
+   fictional sample account, so the sample always shows the current version. Someone already signed in stays in their
+   own account. The ?sample=1 is removed from the address either way. */
+const SAMPLE_LINK=(()=>{try{return !NATIVE&&new URLSearchParams(location.search).get('sample')==='1'}catch{return false}})();
+const openSampleLink=()=>{if(!SAMPLE_LINK)return;try{const q=new URLSearchParams(location.search);q.delete('sample');const r=q.toString();history.replaceState(null,'',location.pathname+(r?'?'+r:'')+location.hash)}catch{}
+ if(CLOUD.recovering||S.auth==='expired'||S.auth==='newpw')return;
+ if(S.email||S.cloud||S.guest){toast('You’re signed in, so your own account is open. Sign out to explore the sample records.');return}
+ if(!S.sample)enter(null,sampleData(),true)};
+initCloud().then(on=>{if(!on&&NATIVE){S.email=null;S.sample=false;S.guest=false;S.auth='noserver';return render()}if(on&&S.email&&!S.cloud&&!S.sample&&!S.guest){DB.session=null;store.set(DB);S={...S,...blank(''),email:null,auth:'login'};render()}openSampleLink()});
 DoctineAlarms.onAction((k,a)=>{if(!S.email||S.sample||S.guest)return;if(a==='taken')S.doses[k]='Taken';else if(a==='snooze'){const x=new Date(Date.now()+6e5);S.doses[k]='Snoozed until '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')}else return;_asig='';render()});
 </script></body></html>

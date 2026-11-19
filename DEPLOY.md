@@ -378,8 +378,9 @@ Direct Upload deployment can't be "retried", so upload the zip again.
 **Don't** upload the complete project package by mistake: only `doctine-app.zip` belongs here. A wrong upload makes
 its files public at that deployment's address; delete that deployment.
 
-**Website:** Cloudflare Pages project `doctine-website` (Direct Upload). Zip the `website/` folder's contents (run
-`npm run build:preview` first so the app preview matches the app) and upload it the same way.
+**Website:** Cloudflare Pages project `doctine-website` (Direct Upload). `node tools/build-website.mjs` writes
+`dist/doctine-website.zip`; upload it the same way. App updates don't need a website upload: the website's sample link opens the
+real app (`app.doctine.com/?sample=1`).
 
 **CI:** the workflows in `.github/workflows/` run again on GitHub (CI on every push; `apps.yml` for Android/Mac; on `main`:
 nightly backup, uptime, staging). Staging deploys to Netlify fail since 11 Nov (Netlify credits). Still run the local
@@ -392,7 +393,6 @@ npm test                                  # syntax, config, secret scan, server,
 node tests/hermetic.test.mjs              # server tests with a deployed site's settings present
 node tools/run-browser-tests.mjs          # all browser suites (AI and Supabase simulated)
 bash tests/run-db-tests.sh                # migrations + RLS on a throw-away PostgreSQL 15+
-node tools/build-preview.mjs --check      # website preview matches the app
 gitleaks git --redact --no-banner --exit-code 1 .   # history scan (v8.21.2, sha256 pinned in ci.yml)
 ```
 

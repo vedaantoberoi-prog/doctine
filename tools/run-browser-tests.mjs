@@ -33,7 +33,7 @@ const SUITES = [
   ["medicines", "tests/browser/medicines.test.mjs", "Medicines form, review, list and the medical-record cards and page viewer; demo account"],
   ["google", "tests/browser/google.test.mjs", "Google sign-in; Supabase simulated with ownership rules"],
   ["auth", "tests/browser/auth.test.mjs", "sign-in, sign-up and recovery screens and states; Supabase simulated"],
-  ["preview", "tests/browser/preview.test.mjs", "the website's app preview, served as static files"],
+  ["preview", "tests/browser/preview.test.mjs", "the website's sample link opens the real app's sample account; old preview address redirects"],
   ["csp", "tests/browser/csp.test.mjs", "the app under its Content-Security-Policy; an injected host script is refused"],
   ["admin", "tests/browser/admin.test.mjs", "the internal admin console page; /api/admin simulated with the database's role table"],
   ["admin-shapes", "tests/browser/admin-shapes.test.mjs", "every admin page, drawer and dialog with data shaped like the real database output, empty and busy, 320-1440 px"],

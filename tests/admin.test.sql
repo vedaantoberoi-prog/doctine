@@ -386,6 +386,10 @@ select pg_temp.denied(format('select public.admin_set_flag(%L, ''ai_gateway'', t
 select pg_temp.expect((public.admin_set_flag(:owner, 'ai_gateway', true, null, 'fictional test', null)->>'ok')::boolean, 'the Founder can switch the gateway on');
 select pg_temp.expect((public.public_settings()->'flags'->>'ai_gateway')::boolean, '...and the app sees it on');
 select public.admin_set_flag(:owner, 'ai_gateway', false, null, 'fictional test done', null);
+select pg_temp.expect((public.public_settings()->'flags'->>'ai_orchestrator')::boolean = false, 'the orchestrated assistant switch exists and starts off');
+select pg_temp.denied(format('select public.admin_set_flag(%L, ''ai_orchestrator'', true, null, ''x'', null)', :adm), 'only the Founder can switch the orchestrated assistant');
+select pg_temp.expect((public.admin_set_flag(:owner, 'ai_orchestrator', true, null, 'fictional test', null)->>'ok')::boolean, 'the Founder can switch the orchestrated assistant on');
+select public.admin_set_flag(:owner, 'ai_orchestrator', false, null, 'fictional test done', null);
 select public.admin_set_flag(:adm, 'sample_data', false, null, 'fictional', null);
 select public.admin_set_flag(:adm, 'sample_data', true, null, 'fictional', null);
 

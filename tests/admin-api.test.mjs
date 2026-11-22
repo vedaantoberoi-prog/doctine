@@ -57,6 +57,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (url.endsWith("/rpc/monitor_run")) return new Response(JSON.stringify({ opened: 1, open: 1, to_notify: [{ id: "c0000000-0000-0000-0000-000000000001", severity: "critical", message: "Database failed its last two checks", opened_at: new Date().toISOString() }] }));
   if (url.endsWith("/rpc/monitor_mark_notified")) return new Response("null");
   if (url.endsWith("/rpc/report_error")) return new Response("true");
+  if (url.endsWith("/rpc/admin_incidents")) return ROLES[body.p_actor] === "founder" ? new Response("[]") : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/version.json") || url.endsWith("/auth/v1/health") || url.includes("/storage/v1/bucket/") || url.endsWith("/rpc/public_settings")) return new Response("{}");
   if (url.startsWith("https://api.resend.com/")) return new Response("{}");
   if (url.endsWith("/rpc/record_event")) return body.p_props && Object.values(body.p_props).some((v) => typeof v === "string" && /\s/.test(v)) ? new Response(JSON.stringify({ code: "22023" }), { status: 400 }) : new Response("true");
@@ -207,6 +208,17 @@ await test("signed-out visitors cannot send any event (so failure counts can't b
 });
 await test("free text is refused", async () => {
   assert.equal((await ev(tok("user"), { name: "document_upload_failed", props: { reason: "Haemoglobin 13.1" }, key: "k2" }, "10.2.0.4")).status, 400);
+});
+
+const KEYLIKE = ["fictional", "provider", "value", "for", "tests"].join("-");
+await test("AI infrastructure page: configuration only, behind health.view; no key or health data", async () => {
+  process.env.ANTHROPIC_API_KEY = KEYLIKE;
+  const ok = await read(await post(admin, tok("owner"), { action: "ai_infrastructure" }, "10.3.0.1"));
+  delete process.env.ANTHROPIC_API_KEY;
+  assert.equal(ok.status, 200); assert.ok(ok.j.data.policy.version && ok.j.data.provider.key_configured === true);
+  assert.ok(!ok.t.includes(KEYLIKE) && !ok.t.includes(SECRET));
+  const no = await read(await post(admin, tok("analyst"), { action: "ai_infrastructure" }, "10.3.0.2"));
+  assert.equal(no.status, 403);
 });
 
 console.log(failed ? `${passed} admin server tests passed, ${failed} FAILED` : `${passed} admin server tests passed`);

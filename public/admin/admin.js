@@ -35,6 +35,7 @@ const ICON = {
   dashboard: "M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z", analytics: "M3 3v18h18M7 15l4-4 3 3 6-6", reports: "M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5",
   users: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75", documents: "M4 4h6l2 2h8v14H4zM4 10h16",
   health: "M22 12h-4l-3 9L9 3l-3 9H2", errors: "M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z", incidents: "M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  ai: "M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2M7 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM9 9h6v6H9z",
   alerts: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0", flags: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7", maintenance: "M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z",
   announcements: "M3 11l18-8v18L3 13zM7 12v6a2 2 0 0 0 4 0v-4", team: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", audit: "M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9",
   security: "M3 11h18v10H3zM7 11V7a5 5 0 0 1 10 0v4", definitions: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5", settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4",
@@ -225,7 +226,7 @@ async function renderMfa() {
 /* ───────────────────────── shell, navigation, top bar ───────────────────────── */
 const NAV = [
   ["Overview", [["dashboard", "Dashboard", "dashboard.view"], ["analytics", "Analytics", "analytics.view"], ["profile", "Health profile", "analytics.view"], ["reports", "Reports", "reports.export"]]],
-  ["Operations", [["users", "Users", "users.view"], ["documents", "Documents", "documents.view"], ["data", "Database", "data.view"], ["health", "Platform health", "health.view"], ["errors", "Errors", "health.view"], ["incidents", "Incidents", "health.view"], ["alerts", "Alerts", "health.view"]]],
+  ["Operations", [["users", "Users", "users.view"], ["documents", "Documents", "documents.view"], ["data", "Database", "data.view"], ["health", "Platform health", "health.view"], ["errors", "Errors", "health.view"], ["incidents", "Incidents", "health.view"], ["alerts", "Alerts", "health.view"], ["ai", "AI infrastructure", "health.view"]]],
   ["Product", [["support", "Support", "support.view"], ["feedback", "Feedback", "feedback.view"], ["work", "Bugs and tasks", "bugs.view|feedback.view"], ["content", "Content and releases", "content.view|releases.view"]]],
   ["Control", [["flags", "Feature switches", "flags.view"], ["maintenance", "Maintenance", "flags.view|maintenance.manage"], ["announcements", "Announcements", "content.view"]]],
   ["Leadership", [["team", "Leadership", "team.view"], ["audit", "Audit log", "audit.view"], ["security", "Security events", "security.view"]]],
@@ -473,6 +474,33 @@ const alignPrev = (prev, key) => (prev ? prev.map((r) => r[key]) : null);
 
 /* ───────────────────────── views ───────────────────────── */
 const VIEWS = {};
+
+/* AI infrastructure: configuration of the Intelligence Orchestrator only (lib/orchestrator/info.mjs). No health data. */
+VIEWS.ai = async (v, seq) => {
+  v.innerHTML = skel(200);
+  const d = await api("ai_infrastructure");
+  if (stale(seq)) return;
+  const dl = (rows) => `<dl class="dl" style="grid-template-columns:1fr auto;gap:5px 8px">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>`;
+  const onoff = (b) => (b ? `<span class="st good">On</span>` : `<span class="st none">Off</span>`);
+  const levels = ["Read", "Draft", "Request", "Execute after confirmation", "Human only"];
+  v.innerHTML = `<p class="lead">How the records assistant (/api/assist) is set up on this site. Configuration only: no health data, accounts or conversations are shown here.</p>
+  <div class="grid cols-3">
+    ${card("Policy", "Rules and prompts, versioned with the code", dl([["Version", `<span class="mono">${esc(d.policy.version)}</span>`], ["Content hash", `<span class="mono">${esc(d.policy.hash)}</span>`], ["Status", esc(d.policy.status)]]))}
+    ${card("Switches", esc(d.switches.note), dl([["AI assistant", onoff(d.switches.ai_assistant)], ["Records gateway", onoff(d.switches.ai_gateway)], ["Orchestrated assistant", onoff(d.switches.ai_orchestrator)]]))}
+    ${card("Provider", "The key itself is never shown", dl([["Provider", esc(d.provider.name)], ["Key on the server", d.provider.key_configured ? `<span class="st good">Configured</span>` : `<span class="st none">Not configured</span>`], ["Write tools", d.write_tools_enabled ? `<span class="st warn">Enabled</span>` : `<span class="st none">None enabled</span>`]]))}
+  </div>
+  ${section("Model routing", esc(d.fallback))}
+  <div class="card"><div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Category</th><th>Model</th><th>Used for</th><th>Price known</th></tr></thead><tbody>${d.routing.map((r) => `<tr><td><b>${esc(r.category)}</b> ${esc(r.name)}</td><td class="mono">${r.model ? esc(r.model) : `<span class="muted">no model</span>`}</td><td>${esc(r.when)}</td><td>${r.price_known == null ? "—" : r.price_known ? "Yes" : `<span class="muted">No: tokens counted, cost not</span>`}</td></tr>`).join("")}</tbody></table></div></div>
+  ${section("Tools", "What the assistant can run, and at what permission level")}
+  <div class="card"><div class="tbl-wrap" style="border-top:0;max-height:320px"><table><thead><tr><th>Tool</th><th>Level</th></tr></thead><tbody>${d.tools.map((t) => `<tr><td class="mono">${esc(t.name)}</td><td>${esc(levels[t.level] || t.level)}</td></tr>`).join("")}</tbody></table></div></div>
+  ${section("Request states", "Every request moves only along these steps")}
+  <div class="card"><div class="card-b"><p class="mono" style="white-space:normal;line-height:1.8">${d.states.map(esc).join(" · ")}</p></div></div>
+  ${section("Limits and observability")}
+  <div class="grid cols-2">
+    ${card("Limits", "Per request and per person", dl([["Message length", n(d.limits.message_chars) + " characters"], ["Whole request", n(d.limits.request_ms) + " ms"], ["Answer tokens", n(d.limits.max_output_tokens)], ["Tokens per person per day", n(d.limits.daily_tokens_per_person)], ["Answer cache", n(d.limits.cache_ttl_s) + " s, per person"]]))}
+    ${card("Traces and release gate", "", `<p>${esc(d.observability.traces)}</p><p class="hint">${esc(d.release_gate)}</p>`)}
+  </div>`;
+};
 
 /* Dashboard */
 VIEWS.dashboard = async (v, seq) => {
@@ -1011,6 +1039,7 @@ VIEWS.alerts = async (v, seq) => {
 
 /* Feature switches */
 const FLAG_INFO = {
+  ai_orchestrator: { label: "Orchestrated records assistant", on: "Signed-in people who consent and tick “Use my saved reports” get answers from /api/assist: their own records retrieved and checked by the server, facts shown with sources, and an AI explanation that is validated before it is shown.", off: "/api/assist refuses every request. The chat assistant is unchanged.", deps: "The AI assistant and gateway switches must also be on, plus a doctor's review of its answers.", layer: "Backend (server refuses)", sensitive: true },
   ai_gateway: { label: "Health-records gateway (read-only)", on: "Signed-in people can query their own records through /api/gateway: lab history, medicines, allergies, history. Read-only; the database limits each person to their own rows.", off: "The gateway refuses every request. Nothing else changes.", deps: "Nothing extra. The assistant does not use it until it is connected and the AI switch is on.", layer: "Backend (server refuses)", sensitive: true },
   ai_assistant: { label: "AI assistant and AI document reading", on: "People who give consent can chat with the assistant and send photos for AI reading through the server.", off: "The server refuses all AI requests. Emergency guidance still works. Nothing is sent to the AI provider.", deps: "An AI provider key on the server, user consent, legal review and the provider agreement.", layer: "Backend (server refuses) and app (hides the assistant)", sensitive: true },
   document_upload: { label: "Storing document files", on: "Original documents and page images are stored in private storage.", off: "No new files are stored. Records still save; their files stay on the person's device and are stored when this is back on.", deps: "Supabase Storage. Maintenance mode also pauses this.", layer: "Backend (database storage policy) and app", sensitive: false },
@@ -1032,8 +1061,8 @@ VIEWS.flags = async (v, seq) => {
   v.innerHTML = `<p class="lead">Each switch changes what Doctine actually does, at the layer shown. Every change needs a reason, is recorded in the audit log, and is confirmed against the live app.</p>
   <div class="grid cols-2">${flags.map((f) => { const i = FLAG_INFO[f.key] || { label: f.key, on: "", off: "", deps: "", layer: "" };
     return `<section class="card flag" data-flag="${esc(f.key)}"><div><h3>${esc(i.label)} ${i.sensitive ? `<span class="st warn">Sensitive</span>` : ""}</h3><div class="row" style="margin-top:4px">${f.enabled ? `<span class="st good">On</span>` : `<span class="st none">Off</span>`}<span class="muted" style="font-size:12px">${f.updated_by ? `changed by ${esc(f.updated_by)} ` : ""}${f.updated_at ? ago(f.updated_at) : "never changed"}</span></div><div id="prop-${esc(f.key)}" style="margin-top:6px"></div></div>
-      <button class="switch" role="switch" aria-checked="${f.enabled}" aria-label="${esc(i.label)}" data-k="${esc(f.key)}" ${can(f.key === "ai_assistant" || f.key === "ai_gateway" ? "ai.manage" : "flags.manage") ? "" : "disabled"}></button>
-      ${f.key === "ai_assistant" || f.key === "ai_gateway" ? `<p class="hint" style="grid-column:1/-1;margin:0">Founder only. Never switched on automatically.</p>` : ""}
+      <button class="switch" role="switch" aria-checked="${f.enabled}" aria-label="${esc(i.label)}" data-k="${esc(f.key)}" ${can(f.key === "ai_assistant" || f.key === "ai_gateway" || f.key === "ai_orchestrator" ? "ai.manage" : "flags.manage") ? "" : "disabled"}></button>
+      ${f.key === "ai_assistant" || f.key === "ai_gateway" || f.key === "ai_orchestrator" ? `<p class="hint" style="grid-column:1/-1;margin:0">Founder only. Never switched on automatically.</p>` : ""}
       <div class="grid2"><div><b>When on</b>${esc(i.on)}</div><div><b>When off</b>${esc(i.off)}</div><div><b>Depends on</b>${esc(i.deps)}</div><div><b>Enforced by</b>${esc(i.layer)}</div></div></section>`; }).join("")}</div>
   ${can("flags.manage") ? "" : `<p class="hint" style="margin-top:10px">Your permissions show switches but do not change them.</p>`}`;
   $$(".switch[data-k]", v).forEach((b) => b.onclick = async () => {

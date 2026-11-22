@@ -7,6 +7,8 @@
  * that value states are never confused, that nothing private leaks, and the layout from 320 px to desktop.
  * Fictional data only.
  */
+import { infrastructure } from "../../netlify/lib/orchestrator/info.mjs";
+const AI_INFO = infrastructure({ env: {}, flags: { ai_assistant: false } });
 import { chromium } from "playwright";
 import { readFileSync, readdirSync } from "node:fs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8888";
@@ -39,7 +41,7 @@ const PSECTIONS = (now) => { const secs = [
 const NEEDS = { overview: "dashboard.view", series: "analytics.view", funnel: "analytics.view", retention: "analytics.view", adoption: "analytics.view", adoption_trend: "analytics.view", engagement: "analytics.view", profile_analytics: "analytics.view", activity: "dashboard.view", search: "dashboard.view",
   users: "users.view", user: "users.view", user_suspend: "users.suspend", user_restore: "users.suspend", user_revoke_sessions: "users.suspend", user_reset_password: "users.reset_password", user_note: "users.notes",
   documents: "documents.view", flags: "flags.view", set_flag: "flags.manage", set_maintenance: "maintenance.manage", announcements: "dashboard.view", announcement_save: "content.edit", incidents: "health.view",
-  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view",
+  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view", ai_infrastructure: "health.view",
   data_overview: "data.view", perm_catalog: "dashboard.view", invite: "team.manage", invite_revoke: "team.manage", member_set: "team.manage", session: "dashboard.view", page_denied: "dashboard.view", product_overview: "dashboard.view",
   support_list: "support.view", support_item: "support.view", support_update: "support.view", support_message: "support.respond", feedback: "feedback.view", feedback_update: "feedback.manage",
   work: "bugs.view|feedback.view", work_save: "bugs.manage|feedback.manage", content: "content.view|releases.view", content_save: "content.edit",
@@ -94,6 +96,7 @@ function data(action, body) {
       total: 1, rows: [{ at: iso(now), account: "1a2b3c4d5e", file_type: "image/jpeg", bytes: 100000, upload_status: "stored", processing_status: null, error_code: null, ms: null }] },
     flags: [{ key: "ai_assistant", enabled: false, value: {}, updated_at: null }, { key: "document_upload", enabled: true, value: {}, updated_at: null }, { key: "maintenance", enabled: false, value: {}, updated_at: null, on_now: false }],
     set_flag: { ok: true }, set_maintenance: { ok: true, on_now: !!body.enabled },
+    ai_infrastructure: AI_INFO,
     health: { checks: [{ target: "app", name: "App", ok: true, status: 200, ms: 80, checked_at: iso(now) }, { target: "database", name: "DB", ok: true, status: 200, ms: 90, checked_at: iso(now) }, { target: "auth", name: "Auth", ok: false, status: null, ms: 5000, error: "timeout", checked_at: iso(now) }, { target: "storage", name: "Storage", ok: true, status: 200, ms: 4200, checked_at: iso(now) }],
       ai_state: "not_configured", config: { environment: "staging", supabase: true, ai_key: false, email_provider: false, alert_email_to: false, admin_mfa_required: false, rate_limit_secret: true, google_sign_in: false, release: "abc" } },
     uptime: { days: 7, bucket_hours: 6, since: iso(now - 864e5), last_round: iso(now - 300e3), rounds_24h: 20, recent: [{ at: iso(now), target: "app", ok: true, status: 200, ms: 100 }],
@@ -195,7 +198,7 @@ await ctx.close();
 
 // ── owner ──
 ({ ctx, pg, log } = await open("owner@example.test"));
-check("2 · the Founder sees every section, grouped", JSON.stringify(await navKeys(pg)) === JSON.stringify(["dashboard", "analytics", "profile", "reports", "users", "documents", "data", "health", "errors", "incidents", "alerts", "support", "feedback", "work", "content", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"]));
+check("2 · the Founder sees every section, grouped", JSON.stringify(await navKeys(pg)) === JSON.stringify(["dashboard", "analytics", "profile", "reports", "users", "documents", "data", "health", "errors", "incidents", "alerts", "ai", "support", "feedback", "work", "content", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"]));
 check("5 · the Founder is titled FOUNDER in the top bar and on a Founder dashboard", /founder/i.test(await text(pg, "#who .title-badge")) && (await text(pg, ".hello h2")) === "Founder dashboard");
 check("console sign-in is recorded once on entry", log.calls.filter((c) => c.action === "session" && c.event === "sign_in").length === 1);
 check("top bar: title, breadcrumb, date range, search, notifications, refresh, environment and profile", (await text(pg, "#title")) === "Dashboard" && (await text(pg, "#crumb")) === "Overview" && !!(await pg.$("#q")) && !!(await pg.$("#bell")) && !!(await pg.$("#refresh")) && (await text(pg, ".env")).toLowerCase() === "staging" && (await text(pg, "#who")).includes("owner@example.test"));
@@ -345,6 +348,8 @@ check("16 · health: a service that did not answer is Down, a slow one Degraded,
 check("health: uptime history, response time, failed checks and recent checks", (await text(pg, "#uh")).includes("Uptime history") && (await text(pg, "#uh")).includes("Response time") && (await text(pg, "#uh")).includes("Recent health checks"));
 const hc = log.calls.filter((c) => c.action === "health").length; await pg.click("#rc"); await settle(pg);
 check("the Re-check button runs the checks again", log.calls.filter((c) => c.action === "health").length === hc + 1);
+await go(pg, "#/ai", "table");
+{ const t = await text(pg, "#view"); check("AI infrastructure: policy version, switches, routing, tools and states; configuration only", t.includes(AI_INFO.policy.version) && t.includes("Model routing") && t.includes("investigate_records") && t.includes("PERMISSION_CHECKED") && /Not configured/.test(t) && !/mg\/dL/.test(t)); }
 
 // audit, settings
 await go(pg, "#/audit", "#af");

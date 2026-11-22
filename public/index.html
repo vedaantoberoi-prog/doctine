@@ -1158,6 +1158,17 @@ function profileCtx(p,toks){const prof={},age=ageOf(p.dob),SRCS={user:'self-repo
  const w=p.wh||{};if(w.shareAI&&whShown(p)){const pg={yes:'pregnant',no:'not pregnant',trying:'trying to conceive'}[w.preg];if(pg)prof.pregnancy=pg}
  return JSON.parse(JSON.stringify(prof))}   // no empty keys: a value that isn't known is simply absent
 const DOCQ='Explain this document: what it says, the diagnosis, what each medicine or test is for, and anything I should ask my doctor.';
+/* An /api/assist answer in the chat's reply shape. Facts come from the server's evidence; the AI explanation is its own section. */
+function assistReply(ja){const a=ja.answer,sec=a.sections||{},ev=Array.isArray(ja.evidence)?ja.evidence:[];
+ if(a.kind!=='records')return{reply:String(a.text||''),urgency:a.urgency==='emergency'?'emergency':'routine',sections:[],record_claims:[],state:S.cstate||null,assist:{state:ja.state,route:ja.route&&ja.route.category}};
+ const facts=String(a.text||'').split('\n\nWhat this may mean')[0].replace(/^What your records show:\n/,'').split('\n').filter(l=>l.trim()&&l.trim()!==String(sec.safety_note||'').trim()).map(l=>l.replace(/\b(ldl|hdl|vldl|tsh|egfr)\b/g,x=>x.toUpperCase()).replace(/\bhba1c\b/g,'HbA1c').replace(/^(\s*)([a-z])/,(m,w,c)=>w+c.toUpperCase())).join('\n');
+ const used=new Set((facts+' '+(sec.explanation||'')).match(/E\d+/g)||[]);
+ const src=ev.filter(e=>used.has(e.id)).map(e=>`${e.id}: ${e.document_title||e.document_type||'Document'}${e.date?', '+e.date:''}${e.page?', page '+e.page:''}${e.verification==='ai_extracted_unconfirmed'?' (AI reading, not confirmed)':''}`);
+ const out=[{title:'What your records show',body:facts}];
+ if(sec.explanation)out.push({title:'What this may mean (AI explanation)',body:sec.explanation+(sec.general_knowledge?'\n\nGeneral information, not about your records: '+sec.general_knowledge:'')});
+ if((sec.doctor_questions||[]).length)out.push({title:'Questions you could ask your doctor',body:sec.doctor_questions.join('\n')});
+ if(src.length)out.push({title:'Sources',body:src.join('\n')});
+ return{reply:ja.route&&ja.route.degraded?'Here is what your reports show. The AI explanation isn’t available right now.':'Here is what your reports show.',urgency:'routine',sections:out,record_claims:[],safety_note:sec.safety_note||'',state:S.cstate||null,assist:{state:ja.state,route:ja.route&&ja.route.category,records:true}}}
 async function send(q){q=String(q).trim();if(!q&&S.chatDoc&&!S.chatReading)q=DOCQ;if(!q||S.typing||S.chatReading)return;
  if(!S.consent.ai&&!S.sample){const ek=emergencyText(q);S.cerr='';
   if(ek){S.msgs.push({r:'u',t:q,doc:''},{r:'a',p:{...emergencyReply(ek),ai_unavailable:'not_allowed'},map:{}});S.aiAsk=null;return render()}
@@ -1172,9 +1183,16 @@ async function send(q){q=String(q).trim();if(!q&&S.chatDoc&&!S.chatReading)q=DOC
    if(a&&a.reply){S.msgs.push({r:'a',p:a,map:S.ctxMap||{}});saveTurn(q,a)}else{S.msgs.pop();S.cerr=(a&&a.err)||'bad_output'}
    S.typing=false;S.abort=null;render();const c0=$('#ci');if(c0)c0.focus({preventScroll:true});return}
   const ah=await authHeaders();
-  const r=S.chatDoc?await fetch(API+'/api/scan',{method:'POST',headers:{'Content-Type':'application/json',...ah},body:JSON.stringify({action:'explain',doc:S.chatDoc.doc,messages}),signal:ac.signal})
+  let r=null,j=null;
+  /* Records questions go through the orchestrated path (/api/assist) when its switch is on and the person has chosen to
+     share their reports for this chat; anything it doesn't answer (general questions) falls through to /api/chat. */
+  if(!S.chatDoc&&S.useRecords&&S.cloud&&CLOUD.features&&CLOUD.features.ai_orchestrator===true){
+   try{const ra=await fetch(API+'/api/assist',{method:'POST',headers:{'Content-Type':'application/json',...ah},body:JSON.stringify({message:q.slice(0,2000),share_records:true,request_id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2))}),signal:ac.signal});
+   let ja=null;try{ja=await ra.json()}catch{}
+   if(ra.ok&&ja&&ja.answer&&ja.answer.kind!=='redirect'){r=ra;j=assistReply(ja)}}catch(e){if(e.name==='AbortError')throw e}}
+  if(!j){r=S.chatDoc?await fetch(API+'/api/scan',{method:'POST',headers:{'Content-Type':'application/json',...ah},body:JSON.stringify({action:'explain',doc:S.chatDoc.doc,messages}),signal:ac.signal})
    :await fetch(API+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json',...ah},body:JSON.stringify({messages,state:S.cstate||null,context:buildCtx()}),signal:ac.signal});
-  let j=null;try{j=await r.json()}catch{}
+   try{j=await r.json()}catch{}}
   if(!r.ok||!j||!j.reply){S.msgs.pop();S.cinfo=j||{};S.cerr=(j&&j.error)||((r.status===404||r.status===405||!j)?'no_server':'network')}
   else{S.cstate=j.state||null;S.msgs.push({r:'a',p:j,map:S.ctxMap||{}});saveTurn(q,j)}
  }catch(e){S.msgs.pop();S.cerr=e.name==='AbortError'?'cancelled':'network'}
@@ -1466,7 +1484,7 @@ function ansView(x,last){const p=x.p,em=p.urgency==='emergency';if(p.ai_unavaila
  ${p.uncertainty?`<div class="warn"><b>What this can’t tell you:</b> ${esc(p.uncertainty)}</div>`:''}
  ${p.safety_note?`<div class="warn">${esc(p.safety_note)}</div>`:''}
  ${(p.sources||[]).length?`<section><h3 class="text-xs font-semibold text-[var(--tealtx)]">SOURCES</h3><ul class="mt-1 space-y-1 text-sm">${p.sources.filter(x=>/^https:\/\//.test(x.url||'')).map(x=>`<li><a class="underline" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a> <span class="text-xs text-[var(--mute)]">${esc(x.publisher)}${x.published?' · '+esc(x.published):''}</span></li>`).join('')}</ul></section>`:''}
- <p class="text-xs text-[var(--mute)]">${p.safety==='rule'||p.safety==='model'?'Emergency guidance triggered by Doctine’s safety checks.':((p.sources||[]).length?'':'From the AI model’s general knowledge. Doctine has not attached medical sources to this answer.')}</p></div>
+ <p class="text-xs text-[var(--mute)]">${p.safety==='rule'||p.safety==='model'?'Emergency guidance triggered by Doctine’s safety checks.':(p.assist&&p.assist.records?'Values and dates come from your saved reports (listed under Sources). Only the explanation is written by the AI.':(p.sources||[]).length?'':'From the AI model’s general knowledge. Doctine has not attached medical sources to this answer.')}</p></div>
  ${last&&!em&&p.question?`<div class="card p-3 text-sm"><b>${esc(p.question)}</b>${(p.options||[]).length?`<div class="flex flex-wrap gap-2 mt-2">${p.options.map(o=>`<button class="chip" data-q="${esc(o)}">${esc(o)}</button>`).join('')}</div>`:''}<div class="text-xs text-[var(--mute)] mt-2">Or type your own answer, or ask something else.</div></div>`:''}</div>`}
 function chatView(){
  const ex=['Why do I get headaches every morning?','How can I improve my sleep?','When should I see a doctor for back pain?','What’s the difference between viral and bacterial infections?'];

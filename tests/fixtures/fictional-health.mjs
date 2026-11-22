@@ -110,5 +110,5 @@ export function fakeSupabase({ people, base = "https://fictional.supabase.co", a
     if (table === "prescriptions" && /prescription_items/.test(u.searchParams.get("select") || "")) rows = rows.map((p) => ({ ...p, prescription_items: (tables.prescription_items || []).filter((i) => i.prescription_id === p.id && i.user_id === uid) }));
     return res(rows.slice(0, +(u.searchParams.get("limit") || 1000)));
   }
-  return { fetchImpl, seen, base, anon };
+  return { fetchImpl, seen, base, anon, tables };
 }

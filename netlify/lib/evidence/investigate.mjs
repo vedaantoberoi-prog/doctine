@@ -121,6 +121,14 @@ export async function investigate({ db }, { question, from, to, today, retriever
     for (const [date, ps] of byDate) if (new Set(ps.map((p) => p.number)).size > 1)
       conflicts.push({ test: s.test, date, values: ps.map((p) => ({ value_text: p.value_text, document_title: p.source.title, verification: p.verification })), note: "Different values on the same date in different documents." });
   }
+  // the same value on the same date in two documents: most likely one report uploaded twice; shown, never counted as a change
+  const duplicates = [];
+  for (const s of series) for (const g of s.groups) {
+    const seen = new Map();
+    for (const p of g.points) { const k = p.date + "|" + p.number; const first = seen.get(k);
+      if (first && first.source.document_id !== p.source.document_id) duplicates.push({ test: s.test, unit: g.unit || null, date: p.date, value_text: p.value_text, documents: [first.source.title, p.source.title].map((t) => String(t || "").slice(0, 160)) });
+      else if (!first) seen.set(k, p); }
+  }
   for (const d of disagreements) conflicts.push({ test: d.test, date: d.date, values: [{ value_text: d.confirmed, verification: "confirmed_by_person" }, { value_text: d.ai_reading, verification: "ai_extracted_unconfirmed" }],
     document_title: (docById.get(d.document_id) || {}).title, note: "The AI reading of this report differs from the value the person confirmed; the confirmed value is used." });
 
@@ -146,13 +154,15 @@ export async function investigate({ db }, { question, from, to, today, retriever
     lines.push(`${s.test}${g.unit ? ` (${g.unit})` : ""}: ` + g.points.map((p) => `${p.value}${g.unit ? " " + g.unit : ""} on ${p.date} [${p.evidence}]`).join("; ") + ".");
     if (g.changes.length) { const a = g.points[0], z = g.points.at(-1); lines.push(`  From ${a.date} to ${z.date}: ${z.value - a.value > 0 ? "higher" : z.value - a.value < 0 ? "lower" : "the same"} by ${Math.abs(+(z.value - a.value).toFixed(4))}${g.unit ? " " + g.unit : ""} across ${g.points.length} results.`); }
     for (const n of g.notes) lines.push("  Note: " + n);
+    const dup = duplicates.filter((d) => d.test === s.test && d.unit === (g.unit || null));
+    if (dup.length) lines.push(`  Note: ${dup.length} value(s) appear twice with the same date and value in different documents (possibly the same report uploaded twice): ${dup.map((d) => d.date).join(", ")}.`);
   }
   lap("assemble_ms");
   return {
     question: plan.question, plan: { intent: plan.intent, strategy: plan.strategy, concepts: plan.concepts.map(({ key, label }) => ({ key, label })), tests: plan.tests, terms: plan.terms.slice(0, 12), dates: range },
-    sufficiency, series: seriesOut, passages: text, conflicts, missing, lines, evidence,
+    sufficiency, series: seriesOut, passages: text, conflicts, duplicates, missing, lines, evidence,
     scope: "the signed-in person's own records only (row security)",
     telemetry: { ...T, start: undefined, documents: docs.length, instruction_like_ignored: ignored.size, pieces_searched: pieces.length, index_mode: chunkRes.mode,
-      lists: lists.map((l) => ({ name: l.name, candidates: l.items.length, note: l.note })), fused: fused.length, evidence_items: evidence.length, structured_series: seriesOut.length },
+      lists: lists.map((l) => ({ name: l.name, candidates: l.items.length, note: l.note })), fused: fused.length, evidence_items: evidence.length, structured_series: seriesOut.length, duplicates: duplicates.length },
   };
 }

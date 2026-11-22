@@ -68,6 +68,9 @@ Netlify → **Site configuration → Environment variables**. Set the scope to i
 | `ANTHROPIC_API_KEY` | chat and scanning | console.anthropic.com → API keys. Add credit under Billing. |
 | `AI_MODEL` (optional) | chat model | A Claude model id. Default `claude-sonnet-5-5`. |
 | `AI_SCAN_MODEL` (optional) | scanning model | Defaults to `AI_MODEL` if that's a Claude model. |
+| `AI_MODEL_LIGHT`, `AI_MODEL_HIGH` (optional) | records assistant routing (/api/assist) | Category B and D models of the orchestrator; defaults `claude-haiku-5-5` and `claude-opus-5-5`. Category C uses `AI_MODEL`. A model that can't be reached is never replaced by a weaker one. |
+| `AI_PRICES` (optional) | cost accounting | JSON of US$ per million tokens, e.g. `{"claude-haiku-5-5":[1,5]}`. Without a price, tokens are counted and cost is shown as unknown (never guessed). |
+| `ORCHESTRATOR_SECRET` (optional, server only) | confirmations | Signs confirmation tokens for actions that change something (level 2-3 tools). None are enabled yet; without it such actions are refused. Generate a long random value; never put it in the browser. |
 | `SUPABASE_URL` | accounts and storage | Supabase → Project settings → API → Project URL |
 | `SUPABASE_ANON_KEY` | accounts and storage | Same page → `anon` `public` key. Safe in browsers; the database rules protect data. |
 | `SUPABASE_SERVICE_ROLE_KEY` | account deletion, shared rate limits, the admin console (/admin) and platform switches | Same page → `service_role` key. **Secret: it bypasses row-level security, so it can read every person's health records.** Set it only as a Netlify environment variable. Never put it in the website or any browser code, never commit it, and never print it or include it in logs (application logs, CI logs or support messages). |

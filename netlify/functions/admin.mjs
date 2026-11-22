@@ -15,9 +15,10 @@ import { randomUUID, createHash } from "node:crypto";
 import { serviceHeaders } from "../lib/supabase-keys.mjs";
 import { json, readJson } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
-import { _resetSettingsCache } from "../lib/settings.mjs";
+import { _resetSettingsCache, getSettings } from "../lib/settings.mjs";
 import { runChecks, recordChecks, reportServerError } from "../lib/monitor.mjs";
 import { buildReport, toCsv, toPdf, REPORTS } from "../lib/reports.mjs";
+import { infrastructure } from "../lib/orchestrator/info.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY = 86400000;
@@ -201,6 +202,8 @@ const ACTIONS = {
   security: (uid) => rpc("admin_security", { p_actor: uid }),
   health: async (uid, b, rid, req) => { await rpc("admin_incidents", { p_actor: uid }); return healthChecks(uid, new URL(req.url).origin); }, // the incidents call checks health.view
   uptime: (uid, b) => rpc("admin_uptime", { p_actor: uid, p_days: Math.min(Math.max(int(b.days, 7), 1), 90) }),
+  // configuration only, never health data; the incidents call checks health.view
+  ai_infrastructure: async (uid) => { await rpc("admin_incidents", { p_actor: uid }); const st = await getSettings({ fresh: true }); return infrastructure({ flags: st.flags }); },
   errors: (uid, b) => rpc("admin_errors", { p_actor: uid, p_status: s(b.status, 20) || null }),
   error: (uid, b) => { if (!/^[0-9a-f]{32}$/.test(b.id || "")) throw httpError(400, "invalid_id"); return rpc("admin_error", { p_actor: uid, p_fp: b.id }); },
   error_update: (uid, b, rid) => { if (!/^[0-9a-f]{32}$/.test(b.id || "")) throw httpError(400, "invalid_id"); return rpc("admin_error_update", { p_actor: uid, p_fp: b.id, p_status: s(b.status, 20), p_request: rid }); },

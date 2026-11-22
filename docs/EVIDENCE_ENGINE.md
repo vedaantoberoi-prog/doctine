@@ -121,3 +121,7 @@ could not add page text to A's document, and deleting the document left 0 pieces
 | Evidence assembly, sufficiency, answer rules | gateway | `investigate.mjs`, `ANSWER_RULES` | evaluation proof of concept (18/18) |
 | Agent integration | Agent Execution Gateway | 3 capabilities | gateway tests (25/25), live harness (mock) |
 | Dependencies introduced | none | — | — |
+
+## 9. Used by the orchestrator
+
+The Intelligence Orchestrator (`/api/assist`, docs/AI_OPERATING_SYSTEM.md) reaches this engine only through the gateway capability `investigate_records`, as the signed-in person. Added for it: duplicate uploads (same test, date and value in two documents) are listed in `duplicates` and noted in the factual lines.

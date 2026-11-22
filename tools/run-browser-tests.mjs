@@ -27,6 +27,7 @@ const SUITES = [
   ["reset-password", "tests/browser/reset-password.test.mjs", "forgotten password end to end: the link opens the new-password screen even when signed in; Supabase simulated like supabase-js 2.45.4"],
   ["alarms-android", "tests/browser/alarms-android.test.mjs", "dose alarms in the Android app: permissions, Android 12+ on-time alarms, test alarm, Taken/Snooze from a notification; Capacitor and Supabase simulated"],
   ["native-bridge", "tests/browser/native-bridge.test.mjs", "the packaged app as the Android app runs it: Capacitor plugins simulated; PKCE, secure session, deep links, back button, alarms opt-in, exports"],
+  ["assist", "tests/browser/assist.test.mjs", "the chat's orchestrated records path (/api/assist) behind its switch, with fallback to /api/chat; Supabase and APIs simulated"],
   ["help", "tests/browser/help.test.mjs", "Settings → Help and feedback and What's new; Supabase simulated with ownership rules"],
   ["app", "tests/browser/app.test.mjs", "API responses simulated in the browser"],
   ["dashboard", "tests/browser/dashboard.test.mjs", "My Health after sign-in, Vitals, grouped sidebar, phone tab bar and screen routing; demo and sample accounts"],

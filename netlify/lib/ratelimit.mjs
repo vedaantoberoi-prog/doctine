@@ -31,6 +31,7 @@ export function limitsFor(route, who, env = process.env) {
     errors: { user: [["10m", o("10M", 30), 600]], ip: [["10m", o("10M", 30), 600]] },
     events: { user: [["10m", o("10M", 300), 600]], ip: [["10m", o("10M", 60), 600]] },
     gateway: { user: [["10m", o("10M", 120), 600], ["1d", o("1D", 1000), 86400]], ip: [["10m", o("10M", 30), 600]] },
+    assist: { user: [["10m", o("10M", 30), 600], ["1d", o("1D", 200), 86400]], ip: [["10m", o("10M", 10), 600]] },
     test: { user: [["10m", 10, 600]], ip: [["10m", 10, 600]] },
     eval: { eval: [["1h", o("1H", 300), 3600]] },
   };

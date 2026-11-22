@@ -115,6 +115,7 @@ const ACTIONS = {
   adoption: (uid, b) => rpc("admin_adoption", { p_actor: uid, ...period(b) }),
   adoption_trend: (uid, b) => rpc("admin_adoption_trend", { p_actor: uid, p_weeks: Math.min(Math.max(int(b.weeks, 12), 2), 52) }),
   engagement: (uid, b) => rpc("admin_engagement", { p_actor: uid, ...period(b) }),
+  profile_analytics: (uid, b) => rpc("admin_profile_analytics", { p_actor: uid, ...period(b), p_inactive_days: Math.min(Math.max(int(b.inactive_days, 14), 1), 180) }),
   activity: (uid) => rpc("admin_activity", { p_actor: uid }),
   search: (uid, b) => rpc("admin_search", { p_actor: uid, p_q: s(b.q, 80) }),
   users: (uid, b) => rpc("admin_users", { p_actor: uid, p_q: s(b.q, 120) || null, p_status: s(b.status, 20) || null, p_sort: s(b.sort, 20) || null, p_page: int(b.page, 1), p_size: int(b.size, 25),

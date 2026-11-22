@@ -103,25 +103,16 @@ select pg_temp.denied(format('select public.admin_data_overview(%L, now() - inte
 select pg_temp.expect((select (t->>'rows')::int = 1 and t->>'area' = 'Health data' and not (t ? 'sample') from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t where t->>'table' = 'health_profiles'), 'the Founder sees each table''s purpose and row count, not its rows');
 select pg_temp.expect((select bool_and((t->>'rls')::boolean) from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t), 'the overview reports row-level security for every table');
 
--- profile completion: which of the seven details are added, never their values
-select pg_temp.expect((select (r->>'profile_filled')::int = 2 and (r->>'profile_pct')::int = 29 from jsonb_array_elements(public.admin_users(:support, null, null, null, 1, 100, null, null)->'rows') r where r->>'id' = 'b0000000-0000-0000-0000-000000000001'), 'the list shows how much of a profile is filled in (2 of 7, 29%)');
-select pg_temp.expect((select p = '{"name": true, "date_of_birth": false, "gender": false, "height": false, "weight": false, "blood_group": false, "allergies": true}'::jsonb from (select public.admin_user(:support, :asha)->'profile'->'fields' p) x)
-  and (public.admin_user(:support, :asha)->'profile'->>'total')::int = 7, 'the account panel lists which details are added, as true or false only');
-select pg_temp.expect(not exists (select 1 from jsonb_each(public.admin_user(:support, :asha)->'profile'->'fields') e where jsonb_typeof(e.value) <> 'boolean'), 'gender, like every detail, reaches the console only as true or false');
-select pg_temp.expect((public.admin_user(:support, :ravi)->'profile'->>'pct')::int < 100 and (public.admin_user(:support, :ravi)->'profile'->>'filled')::int >= 0, 'an account without a saved profile still gets a completion score');
+-- profile completion (20261122020000): seven sections, field states only, never values
+select pg_temp.expect((public.admin_user(:support, :asha)->'profile_sections'->>'sections_total')::int = 7, 'the account panel has the seven health profile sections');
+select pg_temp.expect(not exists (select 1 from jsonb_array_elements(public.admin_user(:support, :asha)->'profile_sections'->'sections') s, jsonb_array_elements(s->'fields') f
+  where f->>'state' not in ('completed', 'not_answered', 'pending', 'not_applicable')), 'each field reaches the console only as a state (completed, not answered, pending, not applicable)');
+select pg_temp.expect((select s->'fields'->0->>'state' = 'completed' and s->>'answer' = 'declared_older_note' from jsonb_array_elements(public.admin_user(:support, :asha)->'profile_sections'->'sections') s where s->>'key' = 'allergies'),
+  'an older free-text allergy note counts as answered');
+select pg_temp.expect((public.admin_users(:support, null, null, 'profile_desc', 1, 1, null, null)->'rows'->0->>'id') = 'b0000000-0000-0000-0000-000000000001', 'accounts can be sorted by profile completion');
 select pg_temp.expect((public.admin_users(:support, null, 'profile_complete', null, 1, 100, null, null)->>'total')::int = 0
   and (public.admin_users(:support, null, 'profile_incomplete', null, 1, 100, null, null)->>'total')::int = (public.admin_users(:support, null, null, null, 1, 100, null, null)->>'total')::int, 'accounts can be filtered by complete or incomplete profile');
-select pg_temp.expect((public.admin_users(:support, null, null, 'profile_desc', 1, 1, null, null)->'rows'->0->>'id') = 'b0000000-0000-0000-0000-000000000001', 'accounts can be sorted by profile completion');
-select pg_temp.denied('select private.profile_completion(null::public.health_profiles, null)', 'profile completion is not callable from outside');
--- the complete health profile (20261122000000/010000): a structured allergy, or an explicit "no known allergies", counts
-reset role;
-insert into public.health_profiles (user_id, history_answers) values ('b0000000-0000-0000-0000-000000000002', '{"allergies":"nka"}')
-  on conflict (user_id) do update set history_answers = excluded.history_answers;
-insert into public.health_records (user_id, client_id, kind, title, category, certainty, severity) values ('b0000000-0000-0000-0000-000000000001', 7001, 'allergy', 'SECRET-HISTORY', 'medication', 'confirmed', 'severe');
-set role service_role;
-select pg_temp.expect((public.admin_user(:support, :ravi)->'profile'->'fields'->>'allergies')::boolean, 'answering "no known allergies" counts as answered in profile completion');
-select pg_temp.expect((public.admin_user(:support, :ravi)->'usage'->>'profile_saved')::boolean and (public.admin_user(:support, :ravi)->'adoption'->>'profile')::boolean,
-  'an account whose only detail is a history answer counts as having saved profile details');
+select pg_temp.denied('select private.profile_sections(null)', 'the completion calculation is not callable from outside');
 select pg_temp.expect((select t->>'purpose' like 'Medical history:%' and t->>'area' = 'Health data' from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t where t->>'table' = 'health_records'),
   'the database overview describes the medical-history table');
 select pg_temp.expect(not exists (select 1 from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t where t->>'table' in ('health_records', 'health_record_changes', 'vital_readings') and t->>'purpose' = 'Not described yet'),
@@ -532,4 +523,148 @@ select pg_temp.expect((select bool_and(has_function_privilege('authenticated', p
   where n.nspname = 'public' and p.proname in ('support_submit', 'support_mine', 'support_reply', 'feedback_submit')), 'support and feedback functions are for signed-in people only');
 
 select pg_temp.expect(not exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'private' and c.relkind = 'r' and not c.relrowsecurity), 'every private table has row-level security on');
+
+-- ===== Health profile completion, section by section (20261122020000) =====
+-- Fresh fictional accounts, so nothing above is affected.
+insert into auth.users (id, email, created_at, email_confirmed_at, last_sign_in_at) values
+  ('c0000000-0000-0000-0000-000000000001', 'new.person@example.test', now() - interval '1 day', now(), now()),
+  ('c0000000-0000-0000-0000-000000000002', 'filling.in@example.test', now() - interval '1 day', now(), now()),
+  ('c0000000-0000-0000-0000-000000000003', 'other.person@example.test', now() - interval '1 day', now(), now());
+\set newp '''c0000000-0000-0000-0000-000000000001'''
+\set fill '''c0000000-0000-0000-0000-000000000002'''
+\set other '''c0000000-0000-0000-0000-000000000003'''
+create or replace function pg_temp.sec(p_user uuid, k text) returns jsonb language sql as $$ select s from jsonb_array_elements(private.profile_sections(p_user)->'sections') s where s->>'key' = k $$;
+create or replace function pg_temp.fld(p_user uuid, k text, f text) returns text language sql as $$ select x->>'state' from jsonb_array_elements(pg_temp.sec(p_user, k)->'fields') x where x->>'key' = f $$;
+
+-- Test 1: a new account starts at 0 %, even after the app saves its name
+select pg_temp.expect((private.profile_sections(:newp)->>'pct')::int = 0 and not (private.profile_sections(:newp)->>'started')::boolean, 'a new account with nothing saved is at 0 % and not started');
+insert into public.health_profiles (user_id, full_name) values (:newp, 'Fictional New');
+select pg_temp.expect((private.profile_sections(:newp)->>'pct')::int = 0 and pg_temp.fld(:newp, 'personal', 'name') = 'completed',
+  'the name from sign-up is shown as added but not counted, so the score stays 0 %');
+select pg_temp.expect((select count(*) from private.profile_events where user_id = :newp and section = 'profile' and action = 'created') = 1
+  and not exists (select 1 from private.profile_events where user_id = :newp and section <> 'profile'), 'creating the profile is recorded once; no section counts as saved yet');
+
+-- Test 2: personal information
+insert into public.health_profiles (user_id, date_of_birth, sex_at_birth, gender, blood_group, phone, city, country)
+  values (:fill, '1990-01-01', 'female', 'prefer_not_to_say', 'O+', '+91 90000 00000', 'Pune', 'India');
+select pg_temp.expect((pg_temp.sec(:fill, 'personal')->>'completed')::int = 7 and (pg_temp.sec(:fill, 'personal')->>'applicable')::int = 9 and (pg_temp.sec(:fill, 'personal')->>'pct')::int = 78,
+  'personal information: 7 of 9 counted fields saved = 78 % ("Prefer not to say" counts as answered)');
+select pg_temp.expect((private.profile_sections(:fill)->>'pct')::int = 11, 'the overall score is the average of the seven sections (78 % ÷ 7 = 11 %)');
+select pg_temp.expect((select count(*) from private.profile_events where user_id = :fill and section = 'personal' and action = 'saved') = 1, 'the personal-information save is recorded');
+update public.health_profiles set emergency_name = 'Fictional Contact', emergency_phone = '+91 90000 00001' where user_id = :fill;
+select pg_temp.expect((pg_temp.sec(:fill, 'personal')->>'status') = 'complete', 'with the emergency contact added, the section is complete');
+update public.health_profiles set city = city where user_id = :fill;
+select pg_temp.expect((select count(*) from private.profile_events where user_id = :fill and section = 'personal') = 2, 'a save that changes nothing is not recorded');
+update public.health_profiles set emergency_name = '   ' where user_id = :fill;
+select pg_temp.expect(pg_temp.fld(:fill, 'personal', 'emergency_name') = 'not_answered', 'blank or whitespace-only values never count');
+update public.health_profiles set emergency_name = 'Fictional Contact' where user_id = :fill;
+
+-- Test 3: body & lifestyle, with the conditional "diet, described"
+update public.health_profiles set height_cm = 160, weight_kg = 60, lifestyle = '{"diet":"vegetarian","activity":"light","smoking":"never","alcohol":"prefer_not"}' where user_id = :fill;
+select pg_temp.expect(pg_temp.fld(:fill, 'body', 'diet_other') = 'not_applicable' and (pg_temp.sec(:fill, 'body')->>'applicable')::int = 11 and (pg_temp.sec(:fill, 'body')->>'completed')::int = 6,
+  'body & lifestyle: 6 of 11 applicable fields; the diet description does not apply');
+update public.health_profiles set lifestyle = lifestyle || '{"diet":"other"}' where user_id = :fill;
+select pg_temp.expect(pg_temp.fld(:fill, 'body', 'diet_other') = 'not_answered' and (pg_temp.sec(:fill, 'body')->>'applicable')::int = 12,
+  'choosing "Other" makes the diet description applicable (12 fields)');
+select pg_temp.expect((select count(*) from private.profile_events where user_id = :fill and section = 'body') = 2, 'each body & lifestyle save is recorded');
+
+-- Test 4: medical history, partly answered
+insert into public.health_records (user_id, client_id, kind, title, status) values (:fill, 1, 'condition', 'SECRET-CONDITION', 'active');
+update public.health_profiles set history_answers = '{"surgery":"no","hosp":"yes"}' where user_id = :fill;
+select pg_temp.expect(pg_temp.fld(:fill, 'history', 'conditions') = 'completed' and pg_temp.fld(:fill, 'history', 'surgery') = 'completed'
+  and pg_temp.fld(:fill, 'history', 'hosp') = 'pending' and pg_temp.fld(:fill, 'history', 'past') = 'not_answered' and (pg_temp.sec(:fill, 'history')->>'pct')::int = 40,
+  'medical history: an entry or an explicit "No" completes a question; "Yes" with no entry is pending; unanswered stays unanswered (2 of 5 = 40 %)');
+select pg_temp.expect((select count(*) from private.profile_events where user_id = :fill and section = 'history') = 2, 'adding a condition and answering a question are both recorded');
+
+-- Test 5: medicines: add, edit, delete
+insert into public.medicines (user_id, client_id, name, dose, start_date) values (:fill, 1, 'SECRET-MED', '1 tablet', current_date);
+select pg_temp.expect(pg_temp.fld(:fill, 'medicines', 'regular') = 'completed' and pg_temp.fld(:fill, 'medicines', 'details') = 'not_answered'
+  and (pg_temp.sec(:fill, 'medicines')->>'entries')::int = 1, 'a regular medicine answers that question; "what it is for" now applies and is missing');
+update public.medicines set reason = 'SECRET-REASON' where user_id = :fill;
+select pg_temp.expect(pg_temp.fld(:fill, 'medicines', 'details') = 'completed', 'adding what it is for completes that field');
+delete from public.medicines where user_id = :fill;
+select pg_temp.expect(pg_temp.fld(:fill, 'medicines', 'regular') = 'not_answered' and pg_temp.fld(:fill, 'medicines', 'details') = 'not_applicable'
+  and (pg_temp.sec(:fill, 'medicines')->>'entries')::int = 0, 'deleting the medicine stops it counting');
+select pg_temp.expect((select array_agg(action order by id) from private.profile_events where user_id = :fill and section = 'medicines') = array['entry_added', 'entry_updated', 'entry_removed'],
+  'adding, editing and deleting a medicine are each recorded');
+
+-- Test 6: allergies are never confused
+select pg_temp.expect(pg_temp.sec(:other, 'allergies')->>'answer' = 'unanswered' and pg_temp.fld(:other, 'allergies', 'allergies') = 'not_answered', 'an unanswered allergy section is "unanswered", not "no allergies"');
+insert into public.health_profiles (user_id, history_answers) values (:other, '{"allergies":"nka"}');
+select pg_temp.expect(pg_temp.sec(:other, 'allergies')->>'answer' = 'no_known' and pg_temp.fld(:other, 'allergies', 'allergies') = 'completed', '"No known allergies" is its own completed answer');
+update public.health_profiles set history_answers = '{"allergies":"yes"}' where user_id = :other;
+select pg_temp.expect(pg_temp.sec(:other, 'allergies')->>'answer' = 'pending' and pg_temp.fld(:other, 'allergies', 'allergies') = 'pending', '"I have allergies" with none added yet is pending');
+insert into public.health_records (user_id, client_id, kind, title, category, certainty) values (:other, 1, 'allergy', 'SECRET-ALLERGEN', 'food', 'confirmed');
+select pg_temp.expect(pg_temp.sec(:other, 'allergies')->>'answer' = 'declared' and (pg_temp.sec(:other, 'allergies')->>'entries')::int = 1, 'with an allergy added, the answer is "declared" with 1 entry');
+
+-- Test 7: medical devices
+select pg_temp.expect(pg_temp.sec(:fill, 'devices')->>'answer' = 'unanswered', 'devices: unanswered');
+update public.health_profiles set history_answers = history_answers || '{"devices":"no"}' where user_id = :fill;
+select pg_temp.expect(pg_temp.sec(:fill, 'devices')->>'answer' = 'none' and (pg_temp.sec(:fill, 'devices')->>'pct')::int = 100, 'devices: an explicit "No" completes the section');
+insert into public.health_records (user_id, client_id, kind, title, category) values (:other, 2, 'device', 'SECRET-DEVICE', 'wearable');
+select pg_temp.expect(pg_temp.sec(:other, 'devices')->>'answer' = 'declared' and (pg_temp.sec(:other, 'devices')->>'entries')::int = 1, 'devices: an entry is "declared"');
+
+-- Test 8: family history, with per-entry details only once there are entries
+select pg_temp.expect(pg_temp.fld(:fill, 'family', 'ages') = 'not_applicable', 'family: per-entry details do not apply before any entry');
+insert into public.health_records (user_id, client_id, kind, title, category) values (:fill, 2, 'family', 'SECRET-FAMILY', 'father');
+select pg_temp.expect(pg_temp.fld(:fill, 'family', 'family') = 'completed' and pg_temp.fld(:fill, 'family', 'ages') = 'not_answered' and pg_temp.fld(:fill, 'family', 'status') = 'not_answered'
+  and (pg_temp.sec(:fill, 'family')->>'pct')::int = 33, 'family: 1 of 3 applicable fields once an entry exists without age or status (33 %)');
+update public.health_records set details = '{"age":"50"}', status = 'living' where user_id = :fill and kind = 'family';
+select pg_temp.expect((pg_temp.sec(:fill, 'family')->>'status') = 'complete', 'family: complete once each entry has an age and a status');
+
+-- Test 10: accounts are independent
+select pg_temp.expect((private.profile_sections(:newp)->>'pct')::int = 0 and (private.profile_sections(:fill)->>'pct')::int > 0, 'each account has its own score');
+
+-- List and account panel use the same numbers
+select pg_temp.expect((select (r->>'profile_pct')::int = (private.profile_sections(:fill)->>'pct')::int and (r->>'sections_done')::int = (private.profile_sections(:fill)->>'sections_done')::int
+  from jsonb_array_elements(public.admin_users(:support, 'filling.in', null, null, 1, 10, null, null)->'rows') r)
+  and (public.admin_user(:support, :fill)->'profile_sections'->>'pct')::int = (private.profile_sections(:fill)->>'pct')::int, 'the list and the account panel show the same score');
+select pg_temp.expect((select count(*) from jsonb_array_elements(public.admin_users(:support, null, 'profile_not_started', null, 1, 100, null, null)->'rows') r where r->>'id' = 'c0000000-0000-0000-0000-000000000001') = 1
+  and (select count(*) from jsonb_array_elements(public.admin_users(:support, null, 'profile_lt25', null, 1, 100, null, null)->'rows') r where r->>'id' = 'c0000000-0000-0000-0000-000000000001') = 0,
+  'filters: a profile with nothing saved is "not started", not "below 25 %"');
+select pg_temp.expect((public.admin_users(:support, null, null, 'profile_asc', 1, 1, null, null)->'rows'->0->>'profile_pct')::int = 0, 'sorting lowest completion first works');
+select pg_temp.expect((public.admin_users(:support, null, 'recently_active', null, 1, 100, null, null)->>'total')::int >= 1, 'the "recently active" filter finds accounts with recent activity');
+select pg_temp.expect((public.admin_user(:support, :fill)->'profile_activity'->0) ? 'section' and not (public.admin_user(:support, :fill)->'profile_activity')::text ilike '%SECRET%',
+  'the account panel lists profile saves by section and time, never content');
+select pg_temp.expect((select f->>'state' from jsonb_array_elements(public.admin_user(:support, :fill)->'features') f where f->>'key' = 'profile') in ('used', 'active')
+  and (select f->>'state' from jsonb_array_elements(public.admin_user(:support, :newp)->'features') f where f->>'key' = 'record') = 'not_started', 'feature adoption shows used / not started with the last use');
+
+-- Test 11: analytics totals match the accounts
+select pg_temp.expect((select (a->>'users_total')::int = (select count(*) from auth.users where not is_anonymous and deleted_at is null)
+     and (select sum((d->>'n')::int) from jsonb_array_elements(a->'distribution') d) = (a->>'users_total')::int
+     and (a->>'started')::int = (select count(*) from auth.users u where not is_anonymous and deleted_at is null and (private.profile_sections(u.id)->>'started')::boolean)
+     and (a->>'avg_pct')::numeric = (select round(avg((private.profile_sections(u.id)->>'pct')::int), 1) from auth.users u where not is_anonymous and deleted_at is null)
+   from (select public.admin_profile_analytics(:owner, now() - interval '30 days', now() + interval '1 hour', 14) a) x),
+  'analytics: the distribution adds up to every account, and "started" and the average match the accounts one by one');
+select pg_temp.expect((select (s->>'completed')::int from jsonb_array_elements(public.admin_profile_analytics(:owner, now() - interval '30 days', now() + interval '1 hour', 14)->'sections') s where s->>'key' = 'personal')
+   = (select count(*) from auth.users u where not is_anonymous and deleted_at is null and pg_temp.sec(u.id, 'personal')->>'status' = 'complete'), 'analytics: section completions match the accounts');
+select pg_temp.expect((public.admin_profile_analytics(:owner, now() - interval '1 day', now() + interval '1 hour', 14)->'saves_by_day'->-1->>'people')::int >= 2, 'analytics: saves per day come from the recorded saves');
+select pg_temp.expect((public.admin_profile_analytics(:owner, now() - interval '1 day', now() + interval '1 hour', 14)->>'stopped_total')::int = 0,
+  'nobody is counted as having stopped while they are still within the inactivity window');
+select pg_temp.expect((public.admin_profile_analytics(:owner, now() - interval '1 day', now() + interval '1 hour', 0)->>'inactive_days')::int = 1, 'the inactivity window is configurable (and at least one day)');
+-- opening a section is a measurement (only with consent), never a save
+select public.record_event(:fill::uuid, 'profile_section_opened', '{"section":"history"}', 'sec:history:1');
+select pg_temp.expect((public.admin_profile_analytics(:owner, now() - interval '1 day', now() + interval '1 hour', 14)->'opened_by_section'->>'history')::int = 1
+  and (public.admin_user(:support, :fill)->'profile_opened') ? 'history', 'opening a section is recorded separately from saving it');
+do $$ begin
+  begin perform public.record_event('c0000000-0000-0000-0000-000000000002', 'profile_section_opened', '{"section":"Penicillin allergy"}', 'sec:x:1'); raise exception 'FAILED: free text in a section event';
+  exception when invalid_parameter_value then raise notice 'ok: a section event carries only a known section name, never free text'; end;
+end $$;
+
+-- Test 12: permissions and privacy
+select pg_temp.denied(format('select public.admin_profile_analytics(%L, now() - interval ''1 day'', now(), 14)', :support), 'the profile analytics need the analytics permission');
+select pg_temp.expect(not has_function_privilege('authenticated', 'public.admin_profile_analytics(uuid,timestamptz,timestamptz,integer)', 'execute')
+  and not has_function_privilege('anon', 'public.admin_profile_analytics(uuid,timestamptz,timestamptz,integer)', 'execute'), 'browsers cannot call the profile analytics');
+do $$ declare blob text; begin
+  blob := concat_ws(' ', public.admin_users('a0000000-0000-0000-0000-000000000001', null, null, null, 1, 100, null, null),
+    public.admin_user('a0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002'), public.admin_user('a0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000003'),
+    public.admin_profile_analytics('a0000000-0000-0000-0000-000000000001', now() - interval '30 days', now() + interval '1 hour', 14));
+  if blob like '%SECRET-%' or blob like '%Pune%' or blob like '%+91%' or blob like '%1990-01-01%' then raise exception 'FAILED: a profile answer reached the console'; end if;
+  raise notice 'ok: no profile answer (condition, medicine, allergy, device, relative, city, phone, date of birth) appears in the list, the panel or the analytics';
+end $$;
+reset role;
+select pg_temp.expect(not exists (select 1 from information_schema.role_table_grants where table_schema = 'private' and table_name in ('profile_events', 'profile_tracking') and grantee in ('anon', 'authenticated', 'PUBLIC')),
+  'nobody but the database itself can read or write the profile save log');
+delete from auth.users where id = 'c0000000-0000-0000-0000-000000000002';
+select pg_temp.expect(not exists (select 1 from private.profile_events where user_id = 'c0000000-0000-0000-0000-000000000002'), 'deleting an account deletes its profile save log');
 \echo ALL ADMIN TESTS PASSED

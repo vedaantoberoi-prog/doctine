@@ -2219,7 +2219,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.dataset.edit){const m=S.meds.find(x=>x.id==t.dataset.edit);if(!m)return;S.medEdit=m.id;S.medErr=null;S.medDraft=draftFrom(m);render();medFocus();return}
  if(t.dataset.medadd){S.medEdit=null;S.medErr=null;S.medDraft=newDraft();render();medFocus();return}
  /* health profile */
- if(t.dataset.hpsec){const k=t.dataset.hpsec;S.hpOpen=S.hpOpen||{};S.hpOpen[k]=!S.hpOpen[k];render();const b=$(`[data-hpsec="${k}"]`);if(b)b.focus();return}
+ if(t.dataset.hpsec){const k=t.dataset.hpsec;S.hpOpen=S.hpOpen||{};S.hpOpen[k]=!S.hpOpen[k];if(S.hpOpen[k])track('profile_section_opened',{section:k},'sec:'+k+':'+today());render();const b=$(`[data-hpsec="${k}"]`);if(b)b.focus();return}
  if(t.dataset.hpgo){S.hpOpen=S.hpOpen||{};S.hpOpen[t.dataset.hpgo]=true;render();const x=$('#hps-'+t.dataset.hpgo);if(x)x.scrollIntoView({block:'start'});return}
  if(t.dataset.hpadd){hpOpenRec(t.dataset.hpadd,null);return}
  if(t.dataset.hpedit){const r=(S.hist||[]).find(x=>String(x.id)===t.dataset.hpedit);if(r)hpOpenRec(r.kind,r.id);return}

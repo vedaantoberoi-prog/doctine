@@ -311,3 +311,17 @@ dialog form{max-height:calc(100dvh - 48px);overflow:auto}
 .msg.staff{align-self:flex-end;background:var(--accent-bg);border-color:#cddcf2}
 .msg.internal{align-self:flex-end;background:var(--warn-bg);border-color:#f3dfae}
 .msg .body{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:2px}
+/* health profile completion (account panel) */
+.pbig{display:grid;gap:4px;max-width:420px;margin-bottom:10px}.pbig b{font-size:26px;font-weight:700;letter-spacing:-.01em}.pbig .meter{height:10px}
+.psecs{display:grid;gap:6px}
+.psec{border:1px solid var(--line);border-radius:8px;background:#fff}
+.psec summary{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:auto auto;gap:4px 10px;align-items:center;padding:9px 12px;cursor:pointer;list-style:none;font-size:13px}
+.psec summary::-webkit-details-marker{display:none}.psec summary .meter{grid-column:1/-1;height:5px}
+.psec summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.psec .psl{font-weight:600}.psec .psv{font-variant-numeric:tabular-nums;color:var(--ink-2);white-space:nowrap}
+.psec[open] summary{border-bottom:1px solid var(--line-2)}.psec .dl{padding:10px 12px 4px}
+.pfields{list-style:none;margin:0;padding:4px 12px 10px;display:grid;gap:4px}
+.pfields li{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;padding:3px 0;border-bottom:1px dashed var(--line-2)}.pfields li:last-child{border-bottom:0}
+.pfields li.opt{color:var(--ink-3)}
+table.feat td,table.feat th{white-space:nowrap}
+@media (max-width:640px){.psec summary{grid-template-columns:minmax(0,1fr) auto}.psec summary .st{display:none}.dl{grid-template-columns:1fr}.dl dt{margin-top:6px}}

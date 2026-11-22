@@ -61,6 +61,7 @@ function periodRange(p = A.period) {
   if (p.key === "today") { from = today; label = "Today"; }
   else if (p.key === "7d") { from = today - 6 * DAY; label = "Last 7 days"; }
   else if (p.key === "90d") { from = today - 89 * DAY; label = "Last 90 days"; }
+  else if (p.key === "all") { from = today - 399 * DAY; label = "All time (up to 400 days)"; }
   else if (p.key === "month" || p.key === "lastmonth") {
     const d = new Date(now + IST); let y = d.getUTCFullYear(), m = d.getUTCMonth();
     if (p.key === "lastmonth") { m -= 1; if (m < 0) { m = 11; y -= 1; } }
@@ -223,7 +224,7 @@ async function renderMfa() {
 
 /* ───────────────────────── shell, navigation, top bar ───────────────────────── */
 const NAV = [
-  ["Overview", [["dashboard", "Dashboard", "dashboard.view"], ["analytics", "Analytics", "analytics.view"], ["reports", "Reports", "reports.export"]]],
+  ["Overview", [["dashboard", "Dashboard", "dashboard.view"], ["analytics", "Analytics", "analytics.view"], ["profile", "Health profile", "analytics.view"], ["reports", "Reports", "reports.export"]]],
   ["Operations", [["users", "Users", "users.view"], ["documents", "Documents", "documents.view"], ["data", "Database", "data.view"], ["health", "Platform health", "health.view"], ["errors", "Errors", "health.view"], ["incidents", "Incidents", "health.view"], ["alerts", "Alerts", "health.view"]]],
   ["Product", [["support", "Support", "support.view"], ["feedback", "Feedback", "feedback.view"], ["work", "Bugs and tasks", "bugs.view|feedback.view"], ["content", "Content and releases", "content.view|releases.view"]]],
   ["Control", [["flags", "Feature switches", "flags.view"], ["maintenance", "Maintenance", "flags.view|maintenance.manage"], ["announcements", "Announcements", "content.view"]]],
@@ -231,7 +232,7 @@ const NAV = [
   ["Settings", [["definitions", "Metric definitions", "dashboard.view"], ["settings", "Admin settings", "dashboard.view"]]],
 ];
 const PAGES = Object.fromEntries(NAV.flatMap(([g, items]) => items.map(([k, t, p]) => [k, { title: t, group: g, perm: p }])));
-const PERIOD_VIEWS = new Set(["dashboard", "analytics", "documents", "reports", "audit", "support", "data"]);
+const PERIOD_VIEWS = new Set(["dashboard", "analytics", "profile", "documents", "reports", "audit", "support", "data"]);
 
 function renderShell() {
   const env = (A.cfg.environment || "unset").toLowerCase();
@@ -339,7 +340,7 @@ function renderFilters() {
   const f = $("#filters"); if (!f) return;
   if (!PERIOD_VIEWS.has(A.route)) { f.innerHTML = ""; f.style.display = "none"; return; }
   f.style.display = "";
-  const keys = [["today", "Today"], ["7d", "7 days"], ["30d", "30 days"], ["90d", "90 days"], ["month", "This month"], ["lastmonth", "Last month"], ["custom", "Custom"]];
+  const keys = [["today", "Today"], ["7d", "7 days"], ["30d", "30 days"], ["90d", "90 days"], ["all", "All time"], ["month", "This month"], ["lastmonth", "Last month"], ["custom", "Custom"]];
   const r = periodRange(), days = Math.max(1, Math.round((Date.parse(r.to) - Date.parse(r.from)) / DAY));
   f.innerHTML = `<div class="seg" role="group" aria-label="Date range">${keys.map(([k, t]) => `<button data-p="${k}" aria-pressed="${A.period.key === k}">${t}</button>`).join("")}</div>
     ${A.period.key === "custom" ? `<label class="sr" for="pf">From</label><input type="date" id="pf" value="${esc(A.period.from || "")}"><span class="muted">to</span><label class="sr" for="pt">To</label><input type="date" id="pt" value="${esc(A.period.to || "")}"><button class="btn sm" id="papply">Apply</button>` : ""}
@@ -632,34 +633,77 @@ VIEWS.reports = async (v, seq) => {
   });
 };
 
+/* Health profile analytics: platform-wide completion, section by section, from the same calculation as the account panel. */
+const PSEC_COLOR = "#2a62b8";
+VIEWS.profile = async (v, seq) => {
+  const p = periodRange(), win = ls.get("pinactive", 14);
+  const [a, s] = await Promise.all([api("profile_analytics", { ...p, inactive_days: win }), api("series", p)]);
+  if (stale(seq)) return;
+  const secs = a.sections || [], started = (k) => (secs.find((x) => x.key === k) || {}).started || 0;
+  const OPEN_KEY = { personal: "personal", body: "body", history: "history", medicines: "meds", allergies: "allergy", devices: "allergy", family: "family" };
+  const funnel = a.started ? `<div class="funnel">${secs.map((x, i) => `<div class="step"><div><b>${esc(x.label)}</b><div class="muted">${pct(x.started, a.started)} of people who started their profile${x.stopped_here ? ` · <span class="drop">${n(x.stopped_here)} stopped here</span>` : ""}</div></div><div class="fb"><div style="width:${(x.started / Math.max(1, a.started)) * 100}%"></div></div><div style="text-align:right">${n(x.started)} started · ${n(x.completed)} complete</div></div>`).join("")}</div>`
+    : none("Nobody has saved anything in their health profile yet.", "No profiles started");
+  v.innerHTML = `${section("Health profile", `Completion is worked out from what each person saved, never from page visits. Successful saves are recorded from ${dt(a.tracking_since)}; earlier saves count towards completion but not in the charts over time.`)}
+  <div class="grid kpis">
+    ${kpi({ label: "Registered accounts", value: a.users_total, id: "pa-total" })}
+    ${kpi({ label: "Started their profile", value: a.started, meta: `<span class="muted">${pct(a.started, a.users_total)} of accounts</span>`, id: "pa-started" })}
+    ${kpi({ label: "Completed their profile", value: a.completed, meta: `<span class="muted">all seven sections · ${pct(a.completed, a.users_total)}</span>`, id: "pa-completed" })}
+    ${kpi({ label: "Average completion", display: `${a.avg_pct}%`, meta: `<span class="muted">across every account, including 0%</span>`, id: "pa-avg" })}
+  </div>
+  <div class="grid cols-2" style="margin-top:12px">
+    ${card("Completion distribution", "Accounts by overall health profile completion, now", hbars((a.distribution || []).map((d) => ({ label: d.label, value: d.n })), { total: a.users_total }))}
+    ${card("Completion by section", "Accounts that completed each section, now", hbars(secs.map((x) => ({ label: x.label, value: x.completed })), { total: a.users_total }), { foot: secs.map((x) => `${esc(x.label)}: average ${x.avg_pct}%`).join(" · ") })}
+  </div>
+  ${section("Where people stop", `Of the people who started their profile, how many started each section. “Stopped here” counts people whose first incomplete section this is and who have had no meaningful activity for ${n(a.inactive_days)} days.`)}
+  ${card("Section funnel", `Started = something saved or answered in the section. Inactivity window: ${n(a.inactive_days)} days.`, funnel, { right: `<label class="sr" for="pwin">Inactivity window</label><select id="pwin">${[7, 14, 30, 60, 90].map((d) => `<option value="${d}" ${+win === d ? "selected" : ""}>${d} days</option>`).join("")}</select>`,
+     foot: `${n(a.stopped_total)} people stopped part-way (inactive for ${n(a.inactive_days)}+ days) · ${n(a.returned_after_save)} came back to Doctine after their last profile save.` })}
+  <div class="card" style="margin-top:12px"><div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Section</th><th class="num">Started</th><th class="num">Completed</th><th class="num">Average</th><th class="num">Stopped here</th><th class="num">Saved in period</th><th class="num">Opened in period <span class="muted">(measured)</span></th></tr></thead><tbody>
+    ${secs.map((x) => `<tr><td>${esc(x.label)}</td><td class="num">${n(x.started)}</td><td class="num">${n(x.completed)}</td><td class="num">${x.avg_pct}%</td><td class="num">${n(x.stopped_here)}</td><td class="num">${n((a.saves_by_section || {})[x.key] || 0)}</td><td class="num">${(a.opened_by_section || {})[OPEN_KEY[x.key]] != null ? n(a.opened_by_section[OPEN_KEY[x.key]]) : `<span class="muted">0</span>`}</td></tr>`).join("")}
+  </tbody></table></div><p class="hint" style="padding:8px 12px">“Opened” is known only for people who allowed product measurements (${n(a.measured_people)} in this period), so it is shown apart from saves and never counted as completion. Allergies and medical devices share one section in the app.</p></div>
+  ${section("Over time", "From recorded saves")}
+  <div class="grid cols-2">
+    ${card("Profile saves by day", "People who saved any section, and people saving for the first time", chart(a.saves_by_day || [], [{ key: "people", label: "People saving", color: S1, type: "bar" }, { key: "started", label: "First save (profile started)", color: S3 }], { ytitle: "People", zeroText: "No profile saves were recorded in this period." }))}
+    ${card("Activity and engagement", "Daily active people (any meaningful action) and profile savers", chart((s || []).map((r) => ({ ...r, savers: ((a.saves_by_day || []).find((x) => String(x.day).slice(0, 10) === String(r.day).slice(0, 10)) || {}).people || 0 })), [{ key: "dau", label: "Daily active people", color: S2 }, { key: "savers", label: "Saved their profile", color: S1 }], { ytitle: "People", zeroText: "Nobody was active in this period." }))}
+  </div>
+  <p class="hint" style="margin-top:12px">Counts and percentages only. No profile answer reaches the console. Sample-data visits are never stored, so they never appear here.</p>`;
+  const w = $("#pwin"); if (w) w.onchange = () => { ls.set("pinactive", +w.value); VIEWS.profile(v, ++A.seq); };
+};
+
 /* Users */
-// Profile completion: how many of the six profile details a person has added. Never the details themselves.
-const PROFILE_FIELDS = [["name", "Name"], ["date_of_birth", "Date of birth"], ["gender", "Gender"], ["height", "Height"], ["weight", "Weight"], ["blood_group", "Blood group"], ["allergies", "Allergies"]];
+// Health profile completion: worked out in the database from what the person saved, section by section. The console gets
+// field names and states (completed / not answered / pending / not applicable), counts and times, never an answer.
+const FSTATE = { completed: ["Completed", "good"], not_answered: ["Not answered", "none"], pending: ["Said yes, nothing added yet", "warn"], not_applicable: ["Not applicable", "info"] };
+const SSTATE = { complete: ["Complete", "good"], in_progress: ["In progress", "warn"], not_started: ["Not started", "none"] };
+const ANSWER = { declared: "Allergies added", declared_older_note: "Allergies noted (older free-text note)", no_known: "No known allergies", not_assessed: "Never been checked", prefer_not: "Prefer not to say", pending: "Said yes, none added yet", unanswered: "Not answered", none: "Uses no medical devices", not_sure: "Not sure" };
+const EVENT_SEC = { profile: "Health profile", personal: "Personal information", body: "Body & lifestyle", history: "Medical history", medicines: "Medicines", allergies: "Allergies", devices: "Medical devices", family: "Family history" };
+const EVENT_ACT = { created: "created", saved: "saved", answered: "question answered", entry_added: "entry added", entry_updated: "entry changed", entry_removed: "entry removed" };
 const profileTone = (p) => (p >= 100 ? "" : p >= 50 ? "warn" : "bad");
 function profileCell(pct, filled) {
   if (!Number.isFinite(+pct)) return `<td><span class="muted">—</span></td>`;
   const p = Math.max(0, Math.min(100, Math.round(+pct)));
-  return `<td><div class="pcell" title="${n(filled)} of ${PROFILE_FIELDS.length} profile details added"><div class="meter ${profileTone(p)}" role="img" aria-label="Profile ${p}% complete"><div style="width:${p}%"></div></div><span>${p}%</span></div></td>`;
+  return `<td><div class="pcell" title="Health profile ${p}% complete (average of the seven sections)"><div class="meter ${profileTone(p)}" role="img" aria-label="Profile ${p}% complete"><div style="width:${p}%"></div></div><span>${p}%</span></div></td>`;
 }
-const COLS = [["id", "Account ID"], ["name", "Name"], ["profile", "Profile"], ["email", "Email"], ["created_at", "Registered"], ["verified", "Email verification"], ["last_sign_in_at", "Last sign-in"], ["last_activity", "Last meaningful activity"], ["records", "Records"], ["files", "Files"], ["status", "Status"], ["role", "Role"]];
-const UQ = { q: "", status: "", sort: "created_desc", page: 1, size: ls.get("usize", 25), reg_from: "", reg_to: "", cols: ls.get("ucols.v3", ["id", "name", "profile", "email", "created_at", "verified", "last_sign_in_at", "last_activity", "records", "files", "status"]) };
+const COLS = [["id", "Account ID"], ["name", "User"], ["email", "Email"], ["status", "Account status"], ["created_at", "Joined"], ["last_activity", "Last active"], ["profile", "Health profile"], ["sections", "Sections complete"], ["incomplete", "Sections incomplete"], ["records", "Records"], ["files", "Documents"], ["medicines", "Medicines"], ["verified", "Email verification"], ["last_sign_in_at", "Last sign-in"], ["role", "Role"]];
+const UQ = { q: "", status: "", sort: "created_desc", page: 1, size: ls.get("usize", 25), reg_from: "", reg_to: "", cols: ls.get("ucols.v4", ["name", "email", "status", "created_at", "last_activity", "profile", "sections", "incomplete", "records", "files", "medicines"]) };
+const USTATUS = [["", "All accounts"], ["profile_not_started", "Profile not started"], ["profile_lt25", "Profile below 25%"], ["profile_25_49", "Profile 25–49%"], ["profile_50_74", "Profile 50–74%"], ["profile_75_99", "Profile 75–99%"], ["profile_complete", "Profile 100% complete"], ["profile_incomplete", "Profile incomplete"],
+  ["recently_active", "Recently active (7 days)"], ["inactive", "Inactive (30 days or more)"], ["active", "Account active"], ["suspended", "Suspended"], ["verified", "Email verified"], ["unverified", "Email not verified"], ["admins", "Admin team"]];
 VIEWS.users = async (v, seq) => {
   const args = { q: UQ.q, status: UQ.status, sort: UQ.sort, page: UQ.page, size: UQ.size, reg_from: UQ.reg_from ? new Date(UQ.reg_from + "T00:00:00+05:30").toISOString() : null, reg_to: UQ.reg_to ? new Date(Date.parse(UQ.reg_to + "T00:00:00+05:30") + DAY).toISOString() : null };
   const d = await api("users", args);
   if (stale(seq)) return;
   const pages = Math.max(1, Math.ceil((d.total || 0) / (d.size || UQ.size || 25))), on = (c) => UQ.cols.includes(c);
   const sortBtn = (label, asc, desc) => `<button data-sort="${UQ.sort === desc ? asc : desc}" aria-label="Sort by ${label}">${label}${UQ.sort === desc ? " ▼" : UQ.sort === asc ? " ▲" : ""}</button>`;
-  const cell = { id: (u) => `<td class="mono" title="${esc(u.id)}">${esc(u.id.slice(0, 8))}</td>`, name: (u) => `<td>${u.name ? esc(u.name) : `<span class="muted">Not given</span>`}</td>`, email: (u) => `<td>${esc(u.email || "(no email)")}</td>`, profile: (u) => profileCell(u.profile_pct, u.profile_filled), created_at: (u) => `<td>${dt(u.created_at, false)}</td>`,
+  const cell = { id: (u) => `<td class="mono" title="${esc(u.id)}">${esc(u.id.slice(0, 8))}</td>`, name: (u) => `<td>${u.name ? esc(u.name) : `<span class="muted">Not given</span>`}</td>`, email: (u) => `<td>${esc(u.email || "(no email)")}</td>`, profile: (u) => profileCell(u.profile_pct, u.sections_done), sections: (u) => `<td class="num">${u.sections_total ? `${n(u.sections_done)}/${n(u.sections_total)}` : "—"}</td>`, incomplete: (u) => `<td class="num">${u.sections_total ? n(u.sections_incomplete) : "—"}</td>`, medicines: (u) => `<td class="num">${n(u.medicines)}</td>`, created_at: (u) => `<td>${dt(u.created_at, false)}</td>`,
     verified: (u) => `<td>${u.email_confirmed_at ? `<span class="st good">Verified</span>` : `<span class="st warn">Not verified</span>`}</td>`, last_sign_in_at: (u) => `<td>${u.last_sign_in_at ? ago(u.last_sign_in_at) : `<span class="muted">Never</span>`}</td>`,
     last_activity: (u) => `<td>${u.last_activity ? ago(u.last_activity) : `<span class="muted">None yet</span>`}</td>`, records: (u) => `<td class="num">${n(u.records)}</td>`, files: (u) => `<td class="num">${n(u.files)}</td>`,
     status: (u) => `<td>${u.suspended ? `<span class="st bad">Suspended</span>` : `<span class="st good">Active</span>`}</td>`, role: (u) => `<td>${u.admin_role ? titleBadge(u.admin_role) : `<span class="muted">Member</span>`}</td>` };
-  const head = { id: "<th>Account ID</th>", name: `<th>${sortBtn("Name", "name", "name")}</th>`, email: `<th>${sortBtn("Email", "email", "email")}</th>`, profile: `<th>${sortBtn("Profile", "profile_asc", "profile_desc")}</th>`, created_at: `<th>${sortBtn("Registered", "created_asc", "created_desc")}</th>`, verified: "<th>Email verification</th>", last_sign_in_at: "<th>Last sign-in</th>",
-    last_activity: `<th>${sortBtn("Last activity", "activity_asc", "activity_desc")}</th>`, records: `<th class="num">${sortBtn("Records", "records_desc", "records_desc")}</th>`, files: '<th class="num">Files</th>', status: "<th>Status</th>", role: "<th>Role</th>" };
+  const head = { id: "<th>Account ID</th>", name: `<th>${sortBtn("User", "name", "name")}</th>`, email: `<th>${sortBtn("Email", "email", "email")}</th>`, profile: `<th>${sortBtn("Health profile", "profile_asc", "profile_desc")}</th>`, sections: `<th class="num">${sortBtn("Sections", "sections_asc", "sections_desc")}</th>`, incomplete: '<th class="num">Incomplete</th>', medicines: `<th class="num">${sortBtn("Medicines", "medicines_desc", "medicines_desc")}</th>`, created_at: `<th>${sortBtn("Joined", "created_asc", "created_desc")}</th>`, verified: "<th>Email verification</th>", last_sign_in_at: "<th>Last sign-in</th>",
+    last_activity: `<th>${sortBtn("Last active", "activity_asc", "activity_desc")}</th>`, records: `<th class="num">${sortBtn("Records", "records_desc", "records_desc")}</th>`, files: `<th class="num">${sortBtn("Documents", "files_desc", "files_desc")}</th>`, status: "<th>Account status</th>", role: "<th>Role</th>" };
   const filtered = UQ.q || UQ.status || UQ.reg_from || UQ.reg_to;
   v.innerHTML = `<div class="card">
     <form class="toolbar" id="uf" role="search">
       <label class="sr" for="uq">Search by name, email or account ID</label><input id="uq" type="search" placeholder="Search name, email or account ID" value="${esc(UQ.q)}" style="min-width:min(240px,100%)">
-      <label class="sr" for="us">Status</label><select id="us">${[["", "All accounts"], ["active", "Active"], ["suspended", "Suspended"], ["verified", "Email verified"], ["unverified", "Email not verified"], ["admins", "Admin team"], ["profile_complete", "Profile complete"], ["profile_incomplete", "Profile incomplete"]].map(([k, t]) => `<option value="${k}" ${UQ.status === k ? "selected" : ""}>${t}</option>`).join("")}</select>
+      <label class="sr" for="us">Status</label><select id="us">${USTATUS.map(([k, t]) => `<option value="${k}" ${UQ.status === k ? "selected" : ""}>${t}</option>`).join("")}</select>
       <span class="muted" style="font-size:12px">Registered</span><label class="sr" for="urf">Registered from</label><input type="date" id="urf" value="${esc(UQ.reg_from)}"><label class="sr" for="urt">Registered to</label><input type="date" id="urt" value="${esc(UQ.reg_to)}">
       <button class="btn primary sm">Apply</button>${filtered ? `<button class="btn ghost sm" type="button" id="uclear">Clear</button>` : ""}
       <span class="spacer"></span>
@@ -672,7 +716,7 @@ VIEWS.users = async (v, seq) => {
     <div class="pager"><span>${n(d.total)} account${d.total === 1 ? "" : "s"}</span><span class="spacer"></span><label for="usz">Rows per page</label><select id="usz">${[10, 25, 50, 100].map((k) => `<option ${UQ.size == k ? "selected" : ""}>${k}</option>`).join("")}</select>
       <button class="btn sm" id="pp" ${UQ.page <= 1 ? "disabled" : ""}>Previous</button><span>Page ${UQ.page} of ${pages}</span><button class="btn sm" id="pn" ${UQ.page >= pages ? "disabled" : ""}>Next</button></div>
   </div>
-  <p class="hint" style="margin-top:10px">Account management only. Health records, files and messages are never shown in the console.</p>`;
+  <p class="hint" style="margin-top:10px">Health profile % is the average of seven sections, worked out from what each person saved. The console shows completion only: health records, answers, files and messages are never shown here.</p>`;
   const again = () => VIEWS.users(v, A.seq);
   $("#uf").onsubmit = (e) => { e.preventDefault(); Object.assign(UQ, { q: $("#uq").value.trim(), status: $("#us").value, reg_from: $("#urf").value, reg_to: $("#urt").value, page: 1 }); again(); };
   const cl = $("#uclear"); if (cl) cl.onclick = () => { Object.assign(UQ, { q: "", status: "", reg_from: "", reg_to: "", page: 1 }); again(); };
@@ -681,7 +725,7 @@ VIEWS.users = async (v, seq) => {
   $("#pp").onclick = () => { UQ.page--; again(); }; $("#pn").onclick = () => { UQ.page++; again(); };
   $$("tr.click", v).forEach((tr) => { tr.onclick = () => openUser(tr.dataset.id); tr.onkeydown = (e) => { if (e.key === "Enter") openUser(tr.dataset.id); }; });
   $("#ucols").onclick = (e) => popover(e.currentTarget, `<h4>Show columns</h4>${COLS.map(([k, t]) => `<label style="display:flex;gap:8px;padding:6px 8px;cursor:pointer"><input type="checkbox" data-col="${k}" ${on(k) ? "checked" : ""}> ${t}</label>`).join("")}`, (pop) => {
-    $$("[data-col]", pop).forEach((c) => c.onchange = () => { UQ.cols = $$("[data-col]", pop).filter((x) => x.checked).map((x) => x.dataset.col); if (!UQ.cols.length) UQ.cols = ["email"]; ls.set("ucols.v3", UQ.cols); closePop(); again(); });
+    $$("[data-col]", pop).forEach((c) => c.onchange = () => { UQ.cols = $$("[data-col]", pop).filter((x) => x.checked).map((x) => x.dataset.col); if (!UQ.cols.length) UQ.cols = ["email"]; ls.set("ucols.v4", UQ.cols); closePop(); again(); });
   });
   const csvB = $("#ucsv"); if (csvB) csvB.onclick = async () => {
     const r = args.reg_from && args.reg_to ? { from: args.reg_from, to: args.reg_to } : { from: new Date(Date.now() - 399 * DAY).toISOString(), to: new Date().toISOString() };
@@ -706,12 +750,38 @@ async function openUser(id) {
   D.head.textContent = u.name ? `${u.name} · ${u.email || "(no email)"}` : u.email || "(no email)";
   const g = u.usage, ad = u.adoption || {};
   const chip = (ok, label) => `<span class="chip ${ok ? "yes" : "no"}">${ok ? "✓" : "–"} ${label}</span>`;
+  const ps = u.profile_sections, feats = u.features || [], opened = u.profile_opened || {};
+  const ageDays = Math.floor((Date.now() - Date.parse(u.created_at)) / DAY);
+  const methods = (u.sign_in_methods || []).map((m) => ({ email: "Email and password", google: "Google" })[m] || m).join(", ") || "—";
+  const stateChip = (st) => { const [t, c] = FSTATE[st] || [st, "none"]; return `<span class="st ${c}">${esc(t)}</span>`; };
+  const OPEN_KEY = { personal: "personal", body: "body", history: "history", medicines: "meds", allergies: "allergy", devices: "allergy", family: "family" };
+  const secHtml = (x) => { const [st, sc] = SSTATE[x.status] || ["", "none"];
+    const head = x.key === "allergies" || x.key === "devices" ? `${esc(ANSWER[x.answer] || x.answer)}` : `${n(x.completed)}/${n(x.applicable)} — ${n(x.pct)}%`;
+    const extra = [x.entries != null ? `${n(x.entries)} entr${x.entries === 1 ? "y" : "ies"}` : "", x.current != null ? `${n(x.current)} current, ${n(x.stopped)} stopped` : "", x.pending ? `${n(x.pending)} pending` : ""].filter(Boolean).join(" · ");
+    const op = opened[OPEN_KEY[x.key]];
+    return `<details class="psec" data-sec="${esc(x.key)}"><summary><span class="psl">${esc(x.label)}</span><span class="psv">${head}</span><span class="st ${sc}">${st}</span><div class="meter ${profileTone(x.pct)}" aria-hidden="true"><div style="width:${Math.max(0, Math.min(100, +x.pct || 0))}%"></div></div></summary>
+      <dl class="dl"><dt>Applicable fields</dt><dd>${n(x.applicable)}</dd><dt>Completed</dt><dd>${n(x.completed)}</dd><dt>Incomplete</dt><dd>${n(x.incomplete)}${x.pending ? ` <span class="muted">(${n(x.pending)} said yes but added nothing yet)</span>` : ""}</dd><dt>Not applicable</dt><dd>${n(x.not_applicable)}</dd>
+        ${extra ? `<dt>Entries</dt><dd>${extra}</dd>` : ""}<dt>Last updated</dt><dd>${x.updated_at ? `${dt(x.updated_at)}${x.updated_source === "before_tracking" ? ` <span class="muted">(saved before tracking began, ${dt(ps.tracking_since, false)})</span>` : ""}` : `<span class="muted">Never saved</span>`}</dd>
+        <dt>Last opened</dt><dd>${op ? dt(op) : `<span class="muted">${op === undefined ? "Not recorded (measurements off or never opened)" : "—"}</span>`}</dd></dl>
+      <ul class="pfields">${x.fields.map((f) => `<li class="${f.counted ? "" : "opt"}"><span>${esc(f.label)}${f.counted ? "" : ` <span class="muted">· optional, not counted</span>`}</span>${stateChip(f.state)}</li>`).join("")}</ul></details>`; };
+  const actLine = (e) => `<li><b>${esc(EVENT_SEC[e.section] || e.section)}</b> · ${esc(EVENT_ACT[e.action] || e.action)}<div class="muted">${dt(e.at)}</div></li>`;
+  const FST = { not_started: ["Not started", "none"], used: ["Used", "info"], active: ["Actively used", "good"] };
   D.body.innerHTML = `<div class="row" style="margin-bottom:12px">${u.suspended ? `<span class="st bad">Suspended</span>` : `<span class="st good">Active</span>`}${u.admin_role ? titleBadge(u.admin_role) : ""}<span class="mono muted">${esc(u.id)}</span></div>
-    <h4>Account</h4><dl class="dl"><dt>Name</dt><dd>${u.name ? esc(u.name) : `<span class="muted">Not given at sign-up</span>`}</dd><dt>Email</dt><dd>${esc(u.email || "—")}</dd><dt>Registered</dt><dd>${dt(u.created_at)}</dd><dt>Email confirmed</dt><dd>${u.email_confirmed_at ? dt(u.email_confirmed_at) : "Not yet"}</dd><dt>First meaningful activity</dt><dd>${dt(u.first_activity)}</dd><dt>Last sign-in</dt><dd>${dt(u.last_sign_in_at)}</dd><dt>Last meaningful activity</dt><dd>${dt(g.last_activity)}</dd><dt>Sign-in methods</dt><dd>${(u.sign_in_methods || []).map((m) => `<span class="tag">${esc(m)}</span>`).join(" ") || "—"}</dd><dt>Two-step sign-in</dt><dd>${u.mfa ? "On" : "Off"}</dd></dl>
-    ${u.profile ? `<h4>Profile completion</h4><div class="pcell" style="max-width:320px;margin-bottom:8px"><div class="meter ${profileTone(u.profile.pct)}" role="img" aria-label="Profile ${n(u.profile.pct)}% complete"><div style="width:${Math.max(0, Math.min(100, +u.profile.pct || 0))}%"></div></div><span><b>${n(u.profile.pct)}%</b> · ${n(u.profile.filled)} of ${n(u.profile.total)} details added</span></div>
-      <div class="chips">${PROFILE_FIELDS.map(([k, t]) => chip(u.profile.fields && u.profile.fields[k] === true, t)).join("")}</div><p class="hint">Shows only whether each detail is added, never what was entered.</p>` : ""}
-    <h4>Usage summary (counts only)</h4><dl class="dl"><dt>Records</dt><dd>${n(g.records)} ${Object.keys(g.records_by_source || {}).length ? `<span class="muted">(${Object.entries(g.records_by_source).map(([k, c]) => esc(k) + " " + n(c)).join(", ")})</span>` : ""}</dd><dt>Files stored</dt><dd>${n(g.files)} · ${bytes(g.file_bytes)}</dd><dt>Medicines</dt><dd>${n(g.medicines)}</dd><dt>Doses recorded</dt><dd>${n(g.doses_recorded)}</dd><dt>Active days (30 days)</dt><dd>${n(g.active_days_30)}</dd><dt>Failed uploads (30 days)</dt><dd>${n(u.uploads.failed_30d)}</dd></dl>
-    <h4>Feature adoption</h4><div class="chips">${chip(ad.profile, "Profile")}${chip(ad.record, "Records")}${chip(ad.file, "Documents")}${chip(ad.schedule, "Medicine schedules")}${chip(ad.dose, "Dose tracking")}${chip(ad.search, "Search")}${chip(ad.export, "Export")}</div><p class="hint">Search and export show only if the person switched on measurements.</p>
+    <h4>Account overview</h4><dl class="dl"><dt>Name</dt><dd>${u.name ? esc(u.name) : `<span class="muted">Not given at sign-up</span>`}</dd><dt>Email</dt><dd>${esc(u.email || "—")}</dd>
+      <dt>Account created</dt><dd>${dt(u.created_at)} <span class="muted">(${ageDays < 1 ? "today" : n(ageDays) + " day" + (ageDays === 1 ? "" : "s") + " ago"})</span></dd><dt>Account status</dt><dd>${u.suspended ? "Suspended" : "Active"} · ${u.email_confirmed_at ? "email confirmed " + dt(u.email_confirmed_at, false) : "email not confirmed"}</dd>
+      <dt>Last sign-in</dt><dd>${u.last_sign_in_at ? dt(u.last_sign_in_at) : "Never"}</dd><dt>Sign-in method</dt><dd>${esc(methods)}</dd><dt>Two-step sign-in</dt><dd>${u.mfa ? "On" : "Off"}</dd>
+      <dt>First meaningful activity</dt><dd>${dt(u.first_activity)}</dd><dt>Last meaningful activity</dt><dd>${u.usage.last_activity ? dt(u.usage.last_activity) : "None yet"}</dd></dl>
+    ${ps ? `<h4>Health profile</h4><div class="pbig"><div><b>${n(ps.pct)}%</b> complete</div><div class="muted">${n(ps.sections_done)} of ${n(ps.sections_total)} sections complete · ${n(ps.sections_started)} started${ps.last_saved ? ` · last saved ${ago(ps.last_saved)}` : ""}</div><div class="meter ${profileTone(ps.pct)}" role="img" aria-label="Health profile ${n(ps.pct)}% complete"><div style="width:${Math.max(0, Math.min(100, +ps.pct || 0))}%"></div></div></div>
+      <div class="psecs">${ps.sections.map(secHtml).join("")}</div>
+      <p class="hint">Shows field names and whether each was answered, never what was entered. Overall % is the average of the seven sections; explicit answers such as “No” or “No known allergies” count as answered, an unanswered question never does.</p>
+      <h4>Health profile activity</h4>${u.profile_activity && u.profile_activity.length ? `<ul class="timeline">${u.profile_activity.map(actLine).join("")}</ul>` : `<p class="hint">No profile saves recorded yet.</p>`}
+      <p class="hint">Successful saves are recorded from ${dt(ps.tracking_since)}. Anything saved before then shows only as “saved before tracking began” above, never as invented history.</p>` : ""}
+    <h4>Usage summary (counts only)</h4><dl class="dl"><dt>Health records</dt><dd>${n(u.usage.records)} ${Object.keys(u.usage.records_by_source || {}).length ? `<span class="muted">(${Object.entries(u.usage.records_by_source).map(([k, c]) => esc(k) + " " + n(c)).join(", ")})</span>` : ""}</dd><dt>Documents stored</dt><dd>${n(u.usage.files)}</dd><dt>Storage used</dt><dd>${bytes(u.usage.file_bytes)}</dd>
+      <dt>Medicines</dt><dd>${n(u.usage.medicines)}</dd><dt>Medical history entries</dt><dd>${n(u.usage.history_entries)}</dd><dt>Health readings</dt><dd>${n(u.usage.readings)}</dd><dt>Doses recorded</dt><dd>${n(u.usage.doses_recorded)}</dd>
+      <dt>Active days, last 30</dt><dd>${n(u.usage.active_days_30)}</dd><dt>Failed uploads, last 30 days</dt><dd>${n(u.uploads.failed_30d)} <span class="muted">· failed readings ${n(u.uploads.processing_failed_30d)}</span></dd><dt>Last activity</dt><dd>${u.usage.last_activity ? dt(u.usage.last_activity) : "None yet"}</dd></dl>
+    <h4>Feature adoption</h4>${feats.length ? `<div class="tbl-wrap"><table class="feat"><thead><tr><th>Feature</th><th>Status</th><th>Last used</th><th class="num">Days used, last 30</th></tr></thead><tbody>${feats.map((f) => { const [t, c] = FST[f.state] || ["", "none"];
+      return `<tr><td>${esc(f.label)}${f.measured ? "" : ` <span class="muted">· measurement</span>`}</td><td><span class="st ${c}">${t}</span></td><td>${f.last ? dt(f.last) : "—"}</td><td class="num">${n(f.days_30)}</td></tr>`; }).join("")}</tbody></table></div>
+      <p class="hint">“Used” means the feature was actually used (a record saved, a dose recorded…), not that a page was opened. “Actively used” means used on 2 or more days in the last 30. Search and export are known only for people who allowed measurements.</p>` : ""}
     <h4>Actions</h4><div class="row">
       ${can("users.reset_password") ? `<button class="btn sm" data-act="reset">Send password reset</button>` : ""}
       ${can("users.suspend") ? `<button class="btn sm" data-act="revoke">Sign out everywhere</button>${u.suspended ? `<button class="btn sm" data-act="restore">Restore account</button>` : `<button class="btn sm danger" data-act="suspend">Suspend account</button>`}` : ""}

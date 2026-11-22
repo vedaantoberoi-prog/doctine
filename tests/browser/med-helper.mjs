@@ -20,3 +20,28 @@ export async function addMed(pg, o) {
   if (await pg.$("#mf[data-step=review]")) { await pg.click("#mf button.pri"); }
   await W(o.wait || 150);
 }
+
+/* Health profile: open a section, set fields through the real form, press Save and wait for the result.
+   Values: text and dates are typed, <select>s are chosen, radio groups (segmented buttons) are clicked. */
+async function setField(pg, form, k, v) {
+  const el = await pg.$(`${form} [name="${k}"]`); if (!el) throw new Error(`no field ${k} in ${form}`);
+  const tag = await el.evaluate((x) => x.tagName + ":" + (x.type || ""));
+  if (tag.startsWith("SELECT")) { await pg.selectOption(`${form} [name="${k}"]`, String(v)); await pg.waitForTimeout(60); }
+  else if (tag === "INPUT:radio") { await pg.click(`${form} input[name="${k}"][value="${v}"] + .mx-opt`); await pg.waitForTimeout(60); }
+  else await pg.fill(`${form} [name="${k}"]`, String(v));
+}
+export async function openSection(pg, sec) {
+  if ((await pg.evaluate("S.view")) !== "health") { await pg.evaluate("go('health')"); await pg.waitForTimeout(100); }
+  if ((await pg.getAttribute(`[data-hpsec="${sec}"]`, "aria-expanded")) !== "true") { await pg.click(`[data-hpsec="${sec}"]`); await pg.waitForTimeout(100); }
+}
+export async function editProfile(pg, sec, fields, { save = true, wait = 1200 } = {}) {
+  await openSection(pg, sec);
+  for (const [k, v] of Object.entries(fields)) await setField(pg, `#hpsf-${sec}`, k, v);
+  if (save) { await pg.click(`#hpsf-${sec} button[type=submit]`); await pg.waitForTimeout(wait); }
+}
+export async function addRecord(pg, kind, fields, { wait = 1200, sec } = {}) {
+  await openSection(pg, sec || { condition: "history", past_illness: "history", surgery: "history", hospitalization: "history", other_history: "history", allergy: "allergy", device: "allergy", family: "family" }[kind]);
+  await pg.click(`[data-hpadd="${kind}"]`); await pg.waitForTimeout(100);
+  for (const [k, v] of Object.entries(fields)) await setField(pg, "#hprf", k, v);
+  await pg.click("#hprf button[type=submit]"); await pg.waitForTimeout(wait);
+}

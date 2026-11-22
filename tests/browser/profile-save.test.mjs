@@ -7,6 +7,7 @@
  */
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
+import { editProfile } from "./med-helper.mjs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8766";
 const fake = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
 const out = []; const check = (n, ok, d = "") => { out.push((ok ? "PASS " : "FAIL ") + n + (d ? "  — " + d : "")); console.log(out[out.length - 1]); };
@@ -21,13 +22,13 @@ await pg.route("**/*", async (r) => { const u = r.request().url();
 await pg.goto(BASE + "/index.html"); await pg.clock.runFor(800);
 const W = async (ms) => { await pg.clock.runFor(ms); await pg.waitForTimeout(50); };
 await pg.click("[data-auth=register]"); await pg.fill("input[name=name]", "Asha"); await pg.fill("input[name=email]", "asha.dob@example.com"); await pg.fill("input[name=pw]", "secret123"); await pg.check("input[name=ack]"); await pg.click("#rf button.pri"); await W(1500);
-await pg.evaluate("go('health')"); await W(400);
-check("at 01:13 India time on 6 Nov, the latest date of birth allowed is 5 Nov (the database's date)", (await pg.evaluate("dobMax()")) === "2026-11-05" && (await pg.getAttribute("[data-p=dob]", "max")) === "2026-11-05");
+await pg.evaluate("go('health')"); await W(400); await pg.click('[data-hpsec="personal"]'); await W(200);
+check("at 01:13 India time on 6 Nov, the latest date of birth allowed is 5 Nov (the database's date)", (await pg.evaluate("dobMax()")) === "2026-11-05" && (await pg.getAttribute("#hpsf-personal [name=dob]", "max")) === "2026-11-05");
 const writes = () => pg.evaluate(() => window.__writes.filter((w) => w.table === "health_profiles"));
 const before = (await writes()).length;
-await pg.fill("[data-p=dob]", "2026-11-06"); await pg.press("[data-p=dob]", "Tab"); await W(1500);
-check("a date of birth of 'today' on the phone is refused in the app, not sent to the database", (await writes()).every((w) => w.rows[0].date_of_birth !== "2026-11-06") && (await pg.evaluate("S.profile.dob")) !== "2026-11-06");
-await pg.fill("[data-p=dob]", "1990-05-01"); await pg.press("[data-p=dob]", "Tab"); await W(1500);
+await pg.fill("#hpsf-personal [name=dob]", "2026-11-06"); await pg.click("#hpsf-personal button[type=submit]"); await W(1500);
+check("a date of birth of 'today' on the phone is refused in the app, not sent to the database", (await writes()).every((w) => w.rows[0].date_of_birth !== "2026-11-06") && (await pg.evaluate("S.profile.dob")) !== "2026-11-06" && /real date of birth/.test(await pg.textContent("#hpsf-personal")));
+await pg.fill("#hpsf-personal [name=dob]", "1990-05-01"); await pg.click("#hpsf-personal button[type=submit]"); await W(1500);
 check("a valid date of birth is saved to the account", (await writes()).some((w) => w.rows[0].date_of_birth === "1990-05-01"));
 // An out-of-range date already stored in the browser never blocks the rest of the profile
 await pg.evaluate(() => { S.profile.dob = "2026-11-06"; S.profile.height = "170"; persist(); }); await W(1500);

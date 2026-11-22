@@ -3,6 +3,7 @@
  * Demo accounts and the sample account (no Supabase); fictional data only. Run through tools/run-browser-tests.mjs.
  */
 import { chromium } from "playwright";
+import { editProfile, addRecord, openSection } from "./med-helper.mjs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8888";
 const out = [];
 const check = (n, ok, d = "") => { out.push((ok ? "PASS " : "FAIL ") + n + (d ? "  — " + d : "")); console.log(out[out.length - 1]); };
@@ -20,8 +21,8 @@ check("the greeting shows today's date and a short description", /Here’s an ov
 check("a new account shows a getting-started guide and no summary numbers", (await txt()).includes("Start your health record") && !(await pg.$(".dh-tiles")) && !(await pg.$(".dh-spark")));
 check("empty sections explain what will appear and how to add it", (await txt()).includes("No readings yet") && (await txt()).includes("No records yet") && (await txt()).includes("No medicines yet"));
 check("the profile shows 'Not added' rather than invented values, gender included", (await pg.textContent(".dh-prof")).includes("Not added") && (await pg.textContent(".dh-prof")).includes("Gender"));
-await pg.evaluate("go('health')"); await pg.selectOption("[data-p=gender]", "prefer_not_to_say"); await pg.waitForTimeout(150);
-check("gender can be chosen in the health profile, and 'Prefer not to say' counts as answered", await pg.evaluate("S.profile.gender==='prefer_not_to_say'") && JSON.stringify(await pg.$$eval("[data-p=gender] option", (o) => o.map((x) => x.textContent))) === JSON.stringify(["Choose", "Female", "Male", "Non-binary", "Another gender", "Prefer not to say"]));
+await editProfile(pg, "personal", { gender: "prefer_not_to_say" }, { wait: 300 });
+check("gender can be chosen in the health profile, and 'Prefer not to say' counts as answered", await pg.evaluate("S.profile.gender==='prefer_not_to_say'") && JSON.stringify(await pg.$$eval("#hpsf-personal [name=gender] option", (o) => o.map((x) => x.textContent))) === JSON.stringify(["Choose", "Female", "Male", "Non-binary", "Another gender", "Prefer not to say"]));
 await pg.evaluate("go('home')"); await pg.waitForTimeout(100);
 check("My Health shows the gender answer and counts it", (await pg.textContent(".dh-prof")).includes("Prefer not to say") && (await pg.textContent("#profcard")).includes("2 of 7 details added"));
 check("Ask Doctine sits below the health sections, not as the whole screen", await pg.evaluate("(()=>{const a=document.querySelector('.dh-ask'),g=document.querySelector('.dh-grid');return !!a&&!!g&&a.getBoundingClientRect().top>g.getBoundingClientRect().top})()"));

@@ -92,8 +92,26 @@ function cleanContext(c) {
   if (p) {
     const prof = {};
     if (Number.isFinite(+p.age) && +p.age >= 0 && +p.age < 130) prof.age = Math.round(+p.age);
-    const al = arr(p.allergies, 10).map((x) => str(x, 60)).filter(Boolean);
+    const one = (v, list) => (list.includes(v) ? v : undefined), day = (v) => (/^\d{4}(-\d{2}(-\d{2})?)?$/.test(str(v, 10)) ? str(v, 10) : undefined);
+    const SRC = ["self-reported", "clinician-documented", "from a medical record"];
+    const tidy = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== ""));
+    if (one(p.sex, ["female", "male", "intersex"])) prof.sex_assigned_at_birth = p.sex;
+    // Allergies: older app versions send plain names; newer ones say what kind of reaction it is and how sure that is.
+    const al = arr(p.allergies, 15).map((x) => typeof x === "string" ? (str(x, 60) ? { substance: str(x, 60) } : null)
+      : x && typeof x === "object" && str(x.substance, 60) ? tidy({ substance: str(x.substance, 60), kind: one(x.kind, ["confirmed allergy", "suspected allergy", "intolerance", "medicine side effect"]),
+        severity: one(x.severity, ["mild", "moderate", "severe"]), reaction: str(x.reaction, 120), source: one(x.source, SRC), since: day(x.since) }) : null).filter(Boolean);
     if (al.length) prof.allergies = al;
+    if (one(p.allergy_status, ["no known allergies", "never assessed"])) prof.allergy_status = p.allergy_status;
+    const conds = arr(p.conditions, 10).map((x) => x && typeof x === "object" && str(x.name, 120) ? tidy({ name: str(x.name, 120),
+      status: one(x.status, ["active", "controlled", "in remission", "status not recorded"]), since: day(x.since), source: one(x.source, SRC) }) : null).filter(Boolean);
+    if (conds.length) prof.conditions = conds;
+    const meds = arr(p.medicines, 15).map((x) => x && typeof x === "object" && str(x.name, 120) ? tidy({ name: str(x.name, 120), dose: str(x.dose, 120), how_often: str(x.how_often, 80),
+      taken: one(x.taken, ["regularly", "now and then"]), since: day(x.since), last_taken: day(x.last_taken), source: one(x.source, ["self-reported", "from a prescription the person checked"]) }) : null).filter(Boolean);
+    if (meds.length) prof.current_medicines = meds;
+    const hist = arr(p.related_history, 8).map((x) => x && typeof x === "object" && str(x.text, 200) ? tidy({ type: one(x.type, ["past illness", "surgery", "hospital stay", "other history", "family history", "stopped medicine", "medical device"]),
+      text: str(x.text, 200), when: day(x.when), source: one(x.source, SRC) }) : null).filter((x) => x && x.type);
+    if (hist.length) prof.related_history = hist;
+    if (one(p.pregnancy, ["pregnant", "not pregnant", "trying to conceive"])) prof.pregnancy = p.pregnancy;
     if (Object.keys(prof).length) out.profile = prof;
   }
   const recs = arr(c.records, 10).map((r) => ({
@@ -188,7 +206,8 @@ export default async (req, context) => {
 
   let system = SYSTEM;
   if (state) system += `\n\nYour notes from earlier in this conversation (written by you; the person may have corrected them since):\n${JSON.stringify(state)}`;
-  if (ctx) system += `\n\nSaved information the person chose to share for this chat (entered or confirmed by them; not verified by Doctine):\n${JSON.stringify(ctx)}`;
+  if (ctx) system += `\n\nSaved information the person chose to share for this chat (entered or confirmed by them; not verified by Doctine):\n${JSON.stringify(ctx)}`
+    + (ctx.profile ? `\nHow to use the profile: each entry is as the person recorded it, with where it came from ("source") and dates where known. Use it to make your one follow-up question more relevant, not to diagnose. Only "current_medicines" are being taken now; a "stopped medicine" is history and must never be treated as current. If an entry is old, has no date or no status, or matters to your answer, ask the person to confirm it is still accurate before relying on it. Never fill in a missing value (dose, date, severity, status) yourself, and never infer a risk or a diagnosis from family history or from the profile alone. A missing section means it wasn't shared, not that there is nothing.` : "");
   else system += `\n\nThe person has not shared any saved records or profile in this chat. Do not refer to records.`;
   if (flags.length) system += `\n\nDoctine's safety check flagged possible emergency wording (${flags.join(", ")}) in the latest message. Treat this as urgent unless the message clearly isn't about a current situation (e.g. a general question). Lead with emergency guidance.`;
 

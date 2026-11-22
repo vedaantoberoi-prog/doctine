@@ -1,5 +1,5 @@
 import { chromium } from "playwright";
-import { addMed } from "./med-helper.mjs";
+import { addMed, editProfile, addRecord } from "./med-helper.mjs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8766";
 import { readFileSync } from "node:fs";
 const fakeSrc = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
@@ -25,8 +25,9 @@ const photo = `(async()=>{const c=document.createElement('canvas');c.width=1200;
 let { ctx, pg } = await device(null);
 await pg.click("[data-auth=register]"); await pg.fill("input[name=name]", "Meera"); await pg.fill("input[name=email]", "meera@example.com"); await pg.fill("input[name=pw]", "secret123"); await pg.check("input[name=ack]"); await pg.click("#rf button.pri"); await pg.waitForTimeout(500);
 check("signed in with a Doctine account, labelled as such", await pg.evaluate("S.cloud") && (await pg.textContent("#who")).includes("Doctine account"));
-await pg.evaluate("go('health')"); for (const [k, v] of [["dob", "1979-03-02"], ["height", "158"], ["weight", "64"], ["blood", "A+"], ["allergies", "Sulfa"]]) { await pg.fill(`[data-p=${k}]`, v); await pg.dispatchEvent(`[data-p=${k}]`, "change"); }
-await pg.selectOption("[data-p=gender]", "female"); await pg.waitForTimeout(100);
+await editProfile(pg, "personal", { dob: "1979-03-02", blood: "A+", gender: "female" }, { wait: 800 });
+await editProfile(pg, "body", { h: "158", w: "64" }, { wait: 800 });
+await addRecord(pg, "allergy", { title: "Sulfa", cat: "medication", cert: "confirmed" }, { wait: 800 });
 await pg.evaluate("go('reports')"); await pg.evaluate(`(async()=>{const f=await ${photo};quickScan(false,null,[f])})()`);
 await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]"); await pg.click("[data-ai='1']"); await pg.waitForTimeout(1500);
 await pg.evaluate("go('medicines')"); await addMed(pg, { name: "Vitamin D3", form: "sachet", strength: ["60000", "IU"], unit: "sachet", mode: "days", days: [0], times: ["09:00"] });
@@ -37,8 +38,9 @@ await pg.evaluate(() => { const t = S.meds.find((m) => m.name === "Telma 40"); t
 await pg.evaluate(() => { S.vitals.push({ id: 7001, kind: "blood_pressure", v: 126, v2: 84, unit: "mmHg", ctx: "", note: "Fictional reading", at: "2026-11-18T02:40:00.000Z" }, { id: 7002, kind: "glucose", v: 104, v2: null, unit: "mg/dL", ctx: "fasting", note: "", at: "2026-11-18T02:00:00.000Z" }); render(); });
 await pg.waitForTimeout(1500);
 const t1 = await pg.evaluate(() => window.__sbdb.tables);
-check("health readings are saved to the account with unit, time and context", (t1.vital_readings || []).length === 2 && t1.vital_readings.some((v) => v.kind === "blood_pressure" && v.value === 126 && v.value2 === 84 && v.unit === "mmHg" && v.measured_at === "2026-11-18T02:40:00.000Z") && t1.vital_readings.some((v) => v.kind === "glucose" && v.context === "fasting" && v.value2 === null), JSON.stringify(t1.vital_readings));
-check("profile saved to the account, including gender", t1.health_profiles?.[0]?.blood_group === "A+" && t1.health_profiles[0].gender === "female" && t1.health_profiles[0].allergies === "Sulfa" && t1.health_profiles[0].height_cm == 158);
+check("a weight entered in the health profile is also kept as a dated reading", (t1.vital_readings || []).some((v) => v.kind === "weight" && v.value === 64 && v.unit === "kg"));
+check("health readings are saved to the account with unit, time and context", (t1.vital_readings || []).filter((v) => v.kind !== "weight").length === 2 && t1.vital_readings.some((v) => v.kind === "blood_pressure" && v.value === 126 && v.value2 === 84 && v.unit === "mmHg" && v.measured_at === "2026-11-18T02:40:00.000Z") && t1.vital_readings.some((v) => v.kind === "glucose" && v.context === "fasting" && v.value2 === null), JSON.stringify(t1.vital_readings));
+check("profile saved to the account, including gender", t1.health_profiles?.[0]?.blood_group === "A+" && t1.health_profiles[0].gender === "female" && (t1.health_records || []).some((r) => r.kind === "allergy" && r.title === "Sulfa" && r.certainty === "confirmed") && t1.health_profiles[0].height_cm == 158);
 check("report and its AI reading saved", t1.documents?.[0]?.extraction?.lab_results?.[0]?.test === "HbA1c");
 // where the details came from: read automatically until the person checks them; the AI reading itself is never altered
 await pg.evaluate("go('reports')"); await pg.waitForTimeout(150);
@@ -104,7 +106,7 @@ await ctx.close();
 check("new device starts signed out with no local records", await pg.evaluate("S.email===null") && await pg.evaluate("Object.keys(JSON.parse(localStorage.getItem('doctine:v2')||'{\"users\":{}}').users).length===0"));
 await pg.fill("input[name=email]", "meera@example.com"); await pg.fill("input[name=pw]", "secret123"); await pg.click("#lf button.pri"); await pg.waitForTimeout(900);
 const s2 = await pg.evaluate("({p:S.profile,r:S.reports.map(r=>({t:r.title,f:r.fields,x:!!(r.scan&&r.scan.lab_results)})),m:S.meds.map(m=>({n:m.name,f:m.freq,d:m.days,t:m.times,s:m.status||'active'})),d:Object.values(S.doses).sort(),h:S.consent.history})");
-check("profile arrives on the new device, including gender", s2.p.gender === "female" && s2.p.name === "Meera" && s2.p.blood === "A+" && s2.p.allergies === "Sulfa" && s2.p.dob === "1979-03-02");
+check("profile arrives on the new device, including gender", s2.p.gender === "female" && s2.p.name === "Meera" && s2.p.blood === "A+" && s2.p.dob === "1979-03-02" && await pg.evaluate("S.hist.some(r=>r.kind==='allergy'&&r.title==='Sulfa')"));
 check("report with its extracted results arrives", s2.r.length === 2 && s2.r.some((r) => r.x) && s2.r.some((r) => Object.keys(r.f).includes("HbA1c")));
 check("the 'checked by you' status arrives on the new device", await pg.evaluate("S.reports.some(r=>r.scan&&r.checked===true&&provOf(r).k==='ok')"));
 // on a device that has never seen the files, the .zip export fetches the original PDF and the page image from private storage
@@ -120,7 +122,7 @@ check("medicines with schedules and status arrive", s2.m.length === 5 && s2.m.so
   check("an 'every 8 hours' medicine arrives with its interval and times", by("Fictional antibiotic").iv === 8 && by("Fictional antibiotic").t.join() === "06:00,14:00,22:00");
   check("the saved rows keep the new columns", await pg.evaluate("(()=>{const t=window.__sbdb.tables,m=t.medicines.find(x=>x.name==='Fictional antacid'),s=t.medication_schedules.find(x=>x.medicine_id===m.id),b=t.medicines.find(x=>x.name==='Fictional antibiotic'),bs=t.medication_schedules.find(x=>x.medicine_id===b.id);return m.dose==='10 ml'&&m.dose_amount==='10'&&m.dose_unit==='ml'&&m.form==='syrup'&&s.frequency==='as_needed'&&s.times.length===0&&bs.interval_hours===8})()")); }
 check("dose history arrives", s2.d.join() === "Skipped,Taken");
-check("health readings arrive on the new device", await pg.evaluate("S.vitals.length===2&&S.vitals.some(v=>v.kind==='blood_pressure'&&v.v===126&&v.v2===84&&v.note==='Fictional reading')&&S.vitals.some(v=>v.ctx==='fasting')"));
+check("health readings arrive on the new device, including the weight from the profile", await pg.evaluate("S.vitals.filter(v=>v.kind!=='weight').length===2&&S.vitals.some(v=>v.kind==='weight'&&v.v===64)&&S.vitals.some(v=>v.kind==='blood_pressure'&&v.v===126&&v.v2===84&&v.note==='Fictional reading')&&S.vitals.some(v=>v.ctx==='fasting')"));
 check("the chat-saving choice arrives", s2.h === true);
 await pg.evaluate("go('reports')"); await pg.waitForTimeout(1200);
 check("page image is fetched from private storage on the new device", await pg.evaluate("(()=>{const i=document.querySelector('.rx-thumb img');return !!(i&&i.src.startsWith('blob:'))})()"));

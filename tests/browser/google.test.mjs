@@ -6,6 +6,7 @@
  */
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
+import { editProfile, addRecord } from "./med-helper.mjs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8766";
 const fakeSrc = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
 const results = [], errs = [];
@@ -49,12 +50,12 @@ check("the agreement is recorded once, as for an email sign-up", JSON.stringify(
 check("signing up doesn't switch on the AI assistant: that's a separate choice, off by default", await pg.evaluate("S.consent.ai===false") && !/AI provider/.test(await pg.evaluate("document.body.innerText")));
 
 // records go into the account and survive a reload
-await pg.evaluate("go('health')"); for (const [k, v] of [["blood", "O+"], ["allergies", "Penicillin"]]) { await pg.fill(`[data-p=${k}]`, v); await pg.dispatchEvent(`[data-p=${k}]`, "change"); }
-await pg.waitForTimeout(2500);
-const saved = await pg.evaluate("window.__sbdb.tables.health_profiles?.find(p=>p.user_id===CLOUD.uid)");
-check("health details are saved to the database under this account", saved && saved.blood_group === "O+" && saved.allergies === "Penicillin");
+await editProfile(pg, "personal", { blood: "O+" }, { wait: 1500 });
+await addRecord(pg, "allergy", { title: "Penicillin", cat: "medication", cert: "confirmed", sev: "severe" }, { wait: 1500 });
+const saved = await pg.evaluate("window.__sbdb.tables.health_profiles?.find(p=>p.user_id===CLOUD.uid)"), savedAl = await pg.evaluate("(window.__sbdb.tables.health_records||[]).find(r=>r.user_id===CLOUD.uid&&r.kind==='allergy')");
+check("health details are saved to the database under this account", saved && saved.blood_group === "O+" && savedAl && savedAl.title === "Penicillin" && savedAl.severity === "severe");
 await pg.reload(); await pg.waitForTimeout(1200);
-check("still signed in after a reload, with the details still there", await pg.evaluate("S.cloud&&S.profile.blood==='O+'&&S.profile.allergies==='Penicillin'"));
+check("still signed in after a reload, with the details still there", await pg.evaluate("S.cloud&&S.profile.blood==='O+'&&S.hist.some(r=>r.kind==='allergy'&&r.title==='Penicillin'&&r.sev==='severe')"));
 
 // a later choice is never overwritten by signing in again
 await pg.evaluate("(()=>{const c=window.__sbdb.tables.consents.find(c=>c.user_id===CLOUD.uid&&c.kind==='cloud_storage');c.granted=false;localStorage.setItem('__sbdb',JSON.stringify(window.__sbdb))})()");
@@ -87,8 +88,8 @@ await pg.evaluate("go('chat')"); await pg.waitForTimeout(150);
 check("with the AI not switched on yet, chat says so before anyone asks, and still mentions 112", (await pg.$("#aioff")) !== null && /switching on soon/.test(await pg.textContent("#aioff")) && /112/.test(await pg.textContent("#aioff")) && (await pg.$("[data-q]")) === null);
 await pg.evaluate("go('reports')"); await pg.waitForTimeout(100);
 check("…and scanning says pages are saved as photos for now", (await pg.textContent("#view")).includes("Saved as a photo. Automatic reading switches on soon."));
-await pg.evaluate("go('health')"); await pg.waitForTimeout(100);
-check("the health profile says it saves to the account, not this browser", (await pg.textContent("#view")).includes("Saved to your account when you leave a field") && !(await pg.textContent("#view")).includes("Saved in this browser"));
+await editProfile(pg, "personal", { city: "Pune" }, { wait: 1200 });
+check("the health profile says it saved to the account, not this browser", (await pg.textContent("#hps-personal")).includes("Saved to your account") && !(await pg.textContent("#view")).includes("Saved in this browser"));
 await pg.evaluate("go('settings')"); await pg.waitForTimeout(100);
 check("no 'demo' wording left in a real account's settings or reminders", !/this demo/i.test(await pg.textContent("#view")) && await pg.evaluate("go('reminders'),!/this demo|Simulate/i.test(document.querySelector('#view').textContent)"));
 await ctx.close();

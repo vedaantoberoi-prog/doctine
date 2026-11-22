@@ -23,7 +23,19 @@ await pg.evaluate(() => {
   S.reports.unshift({ id: 9, title: X("title"), cat: X("cat"), date: d, lab: X("lab"), fields: { [X("fkey")]: X("fval") }, imgs: 0,
     scan: { medicines: [{ raw: X("sraw"), name: X("sname"), form: X("sform"), strength: X("sstr"), frequency: X("sfreq"), timing: X("stime"), duration: X("sdur"), confidence: X("conf"), alternatives: [X("alt")] }], unreadable: [X("unread")], transcription: X("tx") }, checked: false });
   S.doses[`1@00:01@${d}`] = X("dose-status");
+  // the complete health profile: every text field and every kind of history record
+  Object.assign(S.profile, { sex: "female", phone: X("phone"), cemail: X("cemail"), city: X("city"), country: X("country"), ecName: X("ecName"), ecRel: X("ecRel"), ecPhone: X("ecPhone"), waist: X("waist"), measured: X("measured"),
+    life: { diet: "other", dietOther: X("dietOther"), restrict: X("restrict"), avoid: X("avoid"), prefs: X("prefs"), activity: X("act"), actNote: X("actNote"), sleepH: X("sleepH"), sleepQ: X("sleepQ"), sleepIssues: X("sleepI"), smoking: "current", smokingD: X("smokingD"), alcohol: X("alc") },
+    ans: { conditions: X("ans") }, wh: { enabled: true, cycleLen: X("cyc"), lmp: X("lmp"), preg: X("preg"), pregHist: X("pregHist"), meno: X("meno"), notes: X("whnotes") } });
+  S.hist = ["condition", "past_illness", "surgery", "hospitalization", "other_history", "allergy", "device", "family"].map((k, i) => ({ id: 900 + i, kind: k, title: X("t-" + k), status: X("st"), cat: X("cat"), sev: "severe", cert: X("cert"), onset: X("on"), src: X("src"), doc: 9,
+    d: { notes: X("n-" + k), reaction: X("react"), clinician: X("clin"), discharged: X("dis"), age: X("age"), treatment: X("treat"), facility: X("fac"), hospitalized: X("hosp"), confirmed: X("conf") } }));
+  Object.assign(S.meds[1], { generic: X("generic"), route: X("route"), reason: X("reason"), prescriber: X("prescriber"), stopReason: X("stopReason"), stopAdvice: X("stopAdvice"), useFreq: X("useFreq"), lastUsed: X("lastUsed"), notes: X("mnotes") });
+  S.meds.push({ id: 3, name: X("occ"), dose: X("occdose"), cat: "occasional", status: "active", start: "", end: "", freq: "as_needed", days: [], times: [], reason: X("occreason"), useFreq: X("occfreq") });
 });
+for (const k of ["personal", "body", "history", "meds", "allergy", "family", "women"]) { await pg.evaluate((k) => { S.hpOpen = { [k]: true }; S.hpForm = {}; go("health"); }, k); await W(120); }
+for (const id of [900, 905, 907]) { await pg.evaluate((id) => { const r = S.hist.find((x) => x.id === id); hpOpenRec(r.kind, id); }, id); await W(120); }
+for (const k of ["med_occ|3", "med_stop|2", "med_more|1"]) { await pg.evaluate((k) => { const [a, b] = k.split("|"); hpOpenRec(a, b); }, k); await W(120); }
+await pg.evaluate(() => { S.hpEdit = null; S.useRecords = true; S.msgs = [{ r: "u", t: "t-condition t-family occ" }]; window.__ctx = JSON.stringify(buildCtx()); S.useRecords = false; S.msgs = []; go("home"); }); await W(150);
 for (const v of ["home", "medicines", "vitals", "reports", "health", "reminders", "chat", "settings"]) { await pg.evaluate((x) => go(x), v); await W(150); }
 await pg.evaluate(() => { const r = S.reports[0]; S.medScan = { rid: r.id, title: r.title, meds: r.scan.medicines, added: {} }; go("medicines"); }); await W(150);
 await pg.click("[data-msadd='0']"); await W(150);

@@ -153,6 +153,54 @@ h1,h2,h3,.serif{font-family:var(--serif);font-weight:500;letter-spacing:-.012em;
  .scanbar{flex-direction:column;align-items:stretch}.sv-acts{justify-content:flex-start}}
 /* Medicines: form, review and list */
 .mx-hacts{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.mx-alarm{display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:1rem 1.1rem;margin-bottom:1rem}.mx-alarm>div{min-width:0;flex:1 1 16rem}.mx-alarm h2{margin:0;font:600 1rem/1.3 var(--sans)}.mx-alarm p{margin:.3rem 0 0;font-size:.875rem;color:var(--mute)}.mx-alarm.warnc{background:var(--warnbg);border-color:var(--warnbd)}.mx-alarm.warnc p,.mx-alarm.warnc h2{color:var(--warntx)}
+/* health profile */
+.hp-alert{border:1px solid var(--errbd);background:var(--errbg);color:var(--errtx);border-radius:16px;padding:.85rem 1.1rem;font-size:.92rem;line-height:1.5}.hp-alert span{font-weight:400}.hp-alsub{font-size:.78rem;margin-top:.2rem;opacity:.9}
+.hp-ovw{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;padding:0;overflow:hidden}
+.hp-ov{padding:1rem 1.1rem;border-left:1px solid var(--line);min-width:0}.hp-ov:first-child{border-left:0}
+.hp-ovl{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.hp-ovv{font-size:.93rem;font-weight:600;color:var(--ink-strong);margin-top:.3rem;overflow-wrap:anywhere}.hp-ovm{font-size:.76rem;color:var(--mute);margin-top:.15rem}
+:root[data-theme=dark] .hp-ovv{color:var(--text)}
+.hp-prog{font-size:.83rem;color:var(--mute);margin:-.25rem 0 0}
+.hp-secs{display:grid;gap:.75rem}
+.hp-sec{padding:0;overflow:hidden}.hp-sh{margin:0;font:inherit}
+.hp-tog{display:flex;align-items:center;gap:.9rem;width:100%;text-align:left;background:none;border:0;padding:1.05rem 1.25rem;cursor:pointer;color:inherit;font:inherit;min-height:4rem}
+.hp-tog:hover{background:var(--hover)}.hp-tog:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+.hp-ic{flex:none;width:2.4rem;height:2.4rem;border-radius:12px;display:grid;place-items:center;background:var(--tealbg);color:var(--tealtx)}
+.hp-ic-allergy{background:var(--errbg);color:var(--errtx)}.hp-ic-meds{background:var(--warnbg);color:var(--warntx)}.hp-ic-women{background:#F4E6EC;color:#7A2E4D}.hp-ic-family{background:#E7E9F4;color:#2F3B78}
+:root[data-theme=dark] .hp-ic-women{background:#3a2430;color:#f0c3d6}:root[data-theme=dark] .hp-ic-family{background:#25294a;color:#c5cbf2}
+.hp-tt{flex:1;min-width:0;display:grid;gap:.1rem}.hp-t{font-size:1.05rem;font-weight:700;color:var(--ink-strong)}:root[data-theme=dark] .hp-t{color:var(--text)}
+.hp-s{font-size:.82rem;color:var(--mute)}.hp-sum{font-size:.78rem;font-weight:600;color:var(--tealtx);white-space:nowrap}
+.hp-chev{width:.6rem;height:.6rem;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);transition:transform .2s;margin:0 .3rem .25rem}
+.hp-sec.open .hp-chev{transform:rotate(-135deg);margin-bottom:-.2rem}
+@media(prefers-reduced-motion:reduce){.hp-chev{transition:none}}
+.hp-body{border-top:1px solid var(--line);padding:1.25rem 1.4rem 1.4rem;display:grid;gap:1.25rem}
+.hp-form,.hp-rform{display:grid;gap:1rem;min-width:0}
+.hp-grid{display:grid;gap:.9rem 1rem;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))}.hp-grid>.wide,.hp-grid>.hp-f.wide{grid-column:1/-1}
+.hp-f{display:block;min-width:0}.hp-f textarea{resize:vertical;min-height:4.2rem}
+.hp-hint{margin-top:-.55rem}.hp-h3{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tealtx);margin:.6rem 0 -.2rem;padding-top:.9rem;border-top:1px solid var(--line)}.hp-h3.first{border-top:0;padding-top:0;margin-top:0}
+.hp-col{flex-direction:column;align-items:stretch}.hp-col .mx-opt{width:100%}
+.hp-habit{display:grid;gap:.55rem}
+.hp-foot{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;justify-content:flex-end;border-top:1px solid var(--line);padding-top:1rem;margin-top:.25rem}.hp-fst{margin-right:auto;min-height:1.2rem}
+.hp-st{font-size:.82rem;color:var(--mute);font-weight:600}.hp-st.ok{color:var(--tealtx)}.hp-st.bad{color:var(--errtx)}.hp-st.warn{color:var(--warntx)}
+.hp-secst{margin-top:-.25rem}
+.hp-sub{display:grid;gap:.6rem;min-width:0}.hp-sub+.hp-sub{border-top:1px solid var(--line);padding-top:1.15rem}
+.hp-subh{display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap}.hp-subh h3{font-size:1rem;font-weight:700;color:var(--ink-strong);margin:0}:root[data-theme=dark] .hp-subh h3{color:var(--text)}
+.hp-q{display:grid;gap:.45rem;font-size:.88rem;font-weight:600}
+.hp-empty{font-size:.86rem;color:var(--mute);margin:0}
+.hp-recs{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.hp-rec{display:flex;justify-content:space-between;gap:1rem;padding:.85rem 1rem;border-top:1px solid var(--line)}.hp-rec:first-child{border-top:0}
+.hp-rec.severe{background:var(--errbg)}.hp-rec.severe .hp-rt{color:var(--errtx)}.hp-rec.editing{display:block;background:var(--hover)}
+.hp-rm{min-width:0;display:grid;gap:.2rem}.hp-rt{font-weight:700;color:var(--ink-strong);overflow-wrap:anywhere}:root[data-theme=dark] .hp-rt{color:var(--text)}
+.hp-rd{font-size:.84rem;color:var(--mute);font-weight:400;overflow-wrap:anywhere}.hp-rel{font-weight:600;color:var(--tealtx)}
+.hp-tags{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.2rem}
+.hp-ra{display:flex;gap:.15rem .5rem;align-items:flex-start;flex-wrap:wrap;justify-content:flex-end;flex:none;max-width:45%}.mx-link.dg{color:var(--errtx)}
+.hp-confirm{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;font-size:.84rem;margin-top:.45rem;padding:.55rem .7rem;border-radius:10px;background:var(--card);border:1px solid var(--errbd);color:var(--errtx)}
+.hp-rform{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem}.hp-rfh h4{margin:0;font-size:1rem;font-weight:700}
+.hp-legacy{font-size:.85rem}
+@media (max-width:900px){.hp-ovw{grid-template-columns:repeat(2,minmax(0,1fr))}.hp-ov{border-left:0;border-top:1px solid var(--line)}.hp-ov:nth-child(-n+2){border-top:0}.hp-ov:nth-child(even){border-left:1px solid var(--line)}.hp-ov:last-child{grid-column:1/-1;border-left:0}}
+@media (max-width:760px),(pointer:coarse){.hp-ra .mx-link,.hp-legacy .mx-link,.hp-q .mx-link,.hp-f .mx-link,.hp-hint .mx-link{min-height:2.5rem;padding:.5rem .55rem;display:inline-flex;align-items:center}}
+@media (max-width:640px){.hp-tog{padding:.9rem 1rem;gap:.7rem}.hp-sum{display:none}.hp-body{padding:1rem}.hp-rec{flex-direction:column;gap:.4rem}.hp-ra{max-width:none;justify-content:flex-start}.hp-grid{grid-template-columns:1fr}.hp-foot .btn{flex:1}.hp-rform{padding:.85rem}}
 .mx-form{padding:0;overflow:hidden}
 .mx-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:1.25rem 1.5rem 1.1rem;border-bottom:1px solid var(--line)}
 .mx-head h2{font-size:1.4rem}.mx-head p{font-size:.82rem;color:var(--mute);margin-top:.2rem}
@@ -448,7 +496,8 @@ window.DOCTINE_API = window.DOCTINE_API || ''; // set at the top of the page ins
           var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hm[0], hm[1], 0, 0);
           if (at <= now) continue;
           var id = hash(k + (st ? '|s' : '')); while (ids[id]) id = (id + 1) % 2147483647 || 1; ids[id] = 1;
-          out.push({ id: id, key: k, at: at, title: 'Time for ' + m.name, body: m.dose + ' · scheduled ' + t });
+          var ins = String(m.instructions || '').split(/[.\n]/)[0].trim().slice(0, 60);
+          out.push({ id: id, key: k, at: at, title: 'Time for ' + m.name, body: [m.dose, ins, 'scheduled ' + t].filter(Boolean).join(' · ') });
         }
       }
     }
@@ -462,7 +511,11 @@ window.DOCTINE_API = window.DOCTINE_API || ''; // set at the top of the page ins
     var C = root.Capacitor; if (!C || !C.isNativePlatform || !C.isNativePlatform()) return null;
     return (C.Plugins && C.Plugins.LocalNotifications) || null;
   }
-  var CHANNEL = 'doses';
+  var CHANNEL = 'doses', TEST_ID = 2147480001;
+  function platform() { var C = root.Capacitor; try { return C && C.getPlatform ? C.getPlatform() : ''; } catch (e) { return ''; } }
+  /* Android has no limit like iPhone's 64 pending notifications (AlarmManager allows 500 per app), so a phone that isn't
+     opened for weeks keeps ringing: 30 days, up to 400 alarms. iPhone and Mac keep the 60 cap. */
+  function horizon() { return platform() === 'android' ? { days: 30, cap: 400 } : { days: 14, cap: 60 }; }
   async function prepare() {
     var LN = plugin(); if (!LN) return { state: 'web' };
     var p = await LN.checkPermissions(); if (p.display === 'prompt' || p.display === 'prompt-with-rationale') p = await LN.requestPermissions();
@@ -474,18 +527,27 @@ window.DOCTINE_API = window.DOCTINE_API || ''; // set at the top of the page ins
   }
   async function clearNative() {
     var LN = plugin(); if (!LN) return;
-    try { var pend = await LN.getPending(); if (pend.notifications && pend.notifications.length) await LN.cancel({ notifications: pend.notifications.map(function (n) { return { id: n.id }; }) }); } catch (e) { }
+    try { var pend = await LN.getPending(), keep = (pend.notifications || []).filter(function (n) { return Number(n.id) !== TEST_ID; }); if (keep.length) await LN.cancel({ notifications: keep.map(function (n) { return { id: n.id }; }) }); } catch (e) { }
   }
   /* Replace everything pending with the current plan. Safe to call often. */
   async function syncNative(meds, doses, now) {
     var LN = plugin(); if (!LN) return { state: 'web', count: 0 };
     var prep = await prepare(); if (prep.state === 'permission_denied') { await clearNative(); return { state: prep.state, count: 0 }; }
-    var list = plan(meds, doses, now);
+    var list = plan(meds, doses, now, horizon());
     await clearNative();
     if (list.length) {
       await LN.schedule({ notifications: list.map(function (n) { return { id: n.id, title: n.title, body: n.body, channelId: CHANNEL, actionTypeId: 'DOSE', extra: { key: n.key }, schedule: { at: n.at, allowWhileIdle: true } }; }) });
     }
     return { state: prep.state === 'exact_alarm_needed' ? 'exact_alarm_needed' : 'scheduled', count: list.length, next: list[0] ? list[0].at : null };
+  }
+  /* A real notification from the phone's own scheduler in 10 seconds, so the person can lock the phone or leave the app
+     and see that alarms ring with Doctine closed. */
+  async function testNative() {
+    var LN = plugin(); if (!LN) return { state: 'web' };
+    var prep = await prepare(); if (prep.state === 'permission_denied') return prep;
+    try { await LN.cancel({ notifications: [{ id: TEST_ID }] }); } catch (e) { }
+    await LN.schedule({ notifications: [{ id: TEST_ID, title: 'Doctine test alarm', body: 'Dose alarms work on this phone.', channelId: CHANNEL, schedule: { at: new Date(Date.now() + 10000), allowWhileIdle: true } }] });
+    return prep;
   }
   async function openExactAlarmSettings() { var LN = plugin(); if (LN && LN.changeExactNotificationSetting) await LN.changeExactNotificationSetting(); }
   /* Called when a notification button is pressed: returns {key, action} to the page. */
@@ -509,7 +571,7 @@ window.DOCTINE_API = window.DOCTINE_API || ''; // set at the top of the page ins
   function ringing() { return ring.active; }
   function audioReady() { return !!(ring.ctx && ring.ctx.state === 'running'); }
 
-  var api = { plan: plan, isOn: isOn, hash: hash, syncNative: syncNative, clearNative: clearNative, prepare: prepare, openExactAlarmSettings: openExactAlarmSettings, onAction: onAction, isNative: function () { return !!plugin(); }, start: start, stop: stop, ringing: ringing, unlock: unlock, audioReady: audioReady };
+  var api = { plan: plan, isOn: isOn, hash: hash, syncNative: syncNative, clearNative: clearNative, prepare: prepare, openExactAlarmSettings: openExactAlarmSettings, onAction: onAction, testNative: testNative, platform: platform, horizon: horizon, isNative: function () { return !!plugin(); }, start: start, stop: stop, ringing: ringing, unlock: unlock, audioReady: audioReady };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.DoctineAlarms = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -543,9 +605,21 @@ let DB=store.get();
 const GENDERS=[['female','Female'],['male','Male'],['non_binary','Non-binary'],['other','Another gender'],['prefer_not_to_say','Prefer not to say']];
 const genderText=g=>(GENDERS.find(x=>x[0]===g)||[])[1]||'';
 const PROFILE_KEYS=['name','dob','gender','height','weight','blood','allergies'];
-const blank=n=>({profile:{name:n,dob:'',gender:'',height:'',weight:'',blood:'',allergies:''},reports:[],meds:[],doses:{},vitals:[],msgs:[],consent:{ai:false,analytics:false}});
+const PROFILE_BLANK={dob:'',gender:'',height:'',weight:'',blood:'',allergies:'',sex:'',phone:'',cemail:'',city:'',country:'',ecName:'',ecRel:'',ecPhone:'',units:'',waist:'',measured:'',life:{},ans:{},wh:{},upd:''};
+const blank=n=>({profile:{...PROFILE_BLANK,name:n,life:{},ans:{},wh:{}},reports:[],meds:[],doses:{},vitals:[],hist:[],msgs:[],consent:{ai:false,analytics:false}});
 const sampleData=()=>({...blank('Asha Verma (sample)'),
- profile:{name:'Asha Verma (sample)',dob:'1988-04-12',gender:'female',height:'165',weight:'62',blood:'B+',allergies:'Penicillin'},
+ profile:{...PROFILE_BLANK,name:'Asha Verma (sample)',dob:'1988-04-12',gender:'female',height:'165',weight:'62',blood:'B+',allergies:'',sex:'female',phone:'+91 90000 00000',city:'Pune',country:'India',ecName:'Rahul Verma (sample)',ecRel:'Brother',ecPhone:'+91 90000 00001',units:'metric',measured:addDays(today(),-2),
+  life:{diet:'vegetarian',activity:'moderate',actNote:'Brisk walk, 30 minutes, 5 days a week',sleepH:'7',sleepQ:'fair',smoking:'never',alcohol:'occasional',alcoholD:'A glass of wine a month',caffeine:'low'},
+  ans:{conditions:'yes',past:'yes',surgery:'yes',hosp:'yes',allergies:'yes',devices:'no',family:'yes',meds_regular:'yes',meds_occasional:'yes'},wh:{enabled:true,cycleLen:'29',cycleReg:'regular',preg:'no',meno:'pre'},upd:new Date().toISOString()},
+ hist:[{id:801,kind:'allergy',title:'Penicillin',cat:'medication',cert:'confirmed',sev:'severe',onset:'2009',src:'clinician',doc:null,d:{reaction:'Hives and facial swelling',confirmed:'yes'}},
+  {id:802,kind:'allergy',title:'Dust mites',cat:'environmental',cert:'suspected',sev:'mild',onset:null,src:'user',doc:null,d:{reaction:'Sneezing'}},
+  {id:803,kind:'allergy',title:'Lactose',cat:'food',cert:'intolerance',sev:'mild',onset:null,src:'user',doc:null,d:{reaction:'Bloating'}},
+  {id:804,kind:'condition',title:'Prediabetes',status:'active',sev:null,onset:addDays(today(),-40).slice(0,7),src:'document',doc:3,d:{clinician:'Dr. R. Sample (sample)'}},
+  {id:805,kind:'past_illness',title:'Dengue',status:'recovered',onset:'2019-08',src:'user',doc:null,d:{duration:'2 weeks',hospitalized:'yes',treatment:'IV fluids'}},
+  {id:806,kind:'hospitalization',title:'Dengue fever',onset:'2019-08-10',src:'user',doc:null,d:{discharged:'2019-08-14',hospital:'Sample City Hospital',icu:'no'}},
+  {id:807,kind:'surgery',title:'Appendix removal',status:'recovered',onset:'2012',src:'user',doc:null,d:{facility:'Sample City Hospital'}},
+  {id:808,kind:'family',title:'Type 2 diabetes',cat:'father',status:'living',src:'user',doc:null,d:{age:'50'}},
+  {id:809,kind:'family',title:'Hypertension',cat:'mother',status:'living',src:'user',doc:null,d:{age:'45'}}],
  reports:[{id:1,title:'Complete blood count',cat:'Lab report',date:'2026-09-02',lab:'Sample Labs',fields:{Hemoglobin:'11.4 g/dL (ref 12.0–15.5)',WBC:'6.8 10^3/uL (ref 4.0–11.0)',Platelets:'248 10^3/uL (ref 150–410)'}},
   {id:2,title:'HbA1c and lipid panel',cat:'Lab report',date:'2026-07-18',lab:'Sample Labs',fields:{HbA1c:'5.9 % (ref 4.0–5.6)','LDL cholesterol':'132 mg/dL (ref < 100)',HDL:'54 mg/dL'}},
   {id:3,imgs:1,title:'Prescription – Sample Clinic',cat:'Prescription',date:addDays(today(),-40),lab:'Dr. R. Sample, Sample Clinic',fields:{Diagnosis:'Prediabetes (sample)','Metformin 500':'500 mg · 1-0-1 · after food'},scan:{medicines:[{raw:'Tab Metformin 500 mg 1-0-1 after food',name:'Metformin 500',form:'tablet',strength:'500 mg',frequency:'1-0-1',timing:'after food',duration:'',confidence:'high',alternatives:[]}],unreadable:[],transcription:''},checked:true}],
@@ -555,18 +629,19 @@ const sampleData=()=>({...blank('Asha Verma (sample)'),
   [[12,108],[8,104],[4,101],[0,99]].forEach(([n,g])=>rs.push({id:id++,kind:'glucose',v:g,v2:null,unit:'mg/dL',ctx:'fasting',note:'',at:ago(n,'07:30')}));
   [[20,62.8],[10,62.3],[2,61.9]].forEach(([n,w])=>rs.push({id:id++,kind:'weight',v:w,v2:null,unit:'kg',ctx:'',note:'',at:ago(n,'07:00')}));
   return{vitals:rs,doses:{[`2@08:00@${td}`]:'Taken'},
-   meds:[{id:1,name:'Iron + folic acid',dose:'1 tablet',times:['09:00'],start:'2026-08-10',end:'2026-11-10'},
+   meds:[{id:1,name:'Iron + folic acid',dose:'1 tablet',times:['09:00'],start:'2026-08-10',end:'2026-11-10',stopReason:'Course completed',stopAdvice:'yes'},
     {id:2,name:'Metformin',strength:'500 mg',form:'tablet',amount:'1',unit:'tablet',dose:'1 tablet',status:'active',freq:'daily',days:[],times:['08:00','20:00'],start:addDays(td,-40),end:'',instructions:'After food'},
     {id:3,name:'Vitamin D3',strength:'60000 IU',form:'sachet',amount:'1',unit:'sachet',dose:'1 sachet',status:'active',freq:'weekly',days:[0],times:['09:00'],start:addDays(td,-30),end:addDays(td,26),instructions:'With food'},
-    {id:4,name:'Cetirizine',strength:'10 mg',form:'tablet',amount:'1',unit:'tablet',dose:'1 tablet',status:'active',freq:'as_needed',days:[],times:[],start:addDays(td,-60),end:'',instructions:'Not more than 1 a day'}]}})()});
+    {id:4,name:'Cetirizine',strength:'10 mg',form:'tablet',amount:'1',unit:'tablet',dose:'1 tablet',status:'active',freq:'as_needed',days:[],times:[],start:addDays(td,-60),end:'',instructions:'Not more than 1 a day',cat:'occasional',reason:'Sneezing from dust',useFreq:'A few times a month'},
+    {id:5,name:'Paracetamol',strength:'500 mg',dose:'1 tablet',status:'active',freq:'as_needed',days:[],times:[],start:'',end:'',cat:'occasional',reason:'Headache or fever',useFreq:'Once or twice a month',lastUsed:addDays(td,-12)}]}})()});
 let S={view:'home',auth:'login',email:null,sample:false,q:'',typing:false,upload:null,exp:'',...blank('')};
 /* The sample prescription's page: drawn in this browser when the sample opens, clearly marked as made up, never stored. */
 function samplePages(){if(IMG.urls['scan:3:0'])return;const draw=(bg,k)=>{try{const c=document.createElement('canvas');c.width=900;c.height=1200;const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,900,1200);x.fillStyle='#1d2a3a';x.font='bold 42px Georgia,serif';x.fillText('Sample Clinic',70,110);x.font='24px Georgia,serif';
  ['Dr. R. Sample, MBBS (sample)','Patient: Asha Verma (sample)','','Diagnosis: Prediabetes (sample)','','Rx','Tab Metformin 500 mg    1-0-1    after food','','Review after 3 months'].forEach((l,i)=>x.fillText(l,70,190+i*52));
  x.fillStyle='#b4232a';x.font='bold 28px sans-serif';x.fillText('SAMPLE — NOT A REAL PRESCRIPTION',70,1120);c.toBlob(b=>{if(b){IMG.urls[k]=URL.createObjectURL(b);hydrateImgs()}},'image/jpeg',.85)}catch{}};
  draw('#fbfaf6','scan:3:0');draw('#ddd5c4','orig:3:0')}
-const enter=(email,data,sample,guest)=>{if(sample)setTimeout(samplePages,0);else for(const k of['scan:3:0','orig:3:0'])if(IMG.urls[k]){URL.revokeObjectURL(IMG.urls[k]);delete IMG.urls[k]}Object.assign(S,blank(''),data,{email,sample,guest:!!guest,cloud:!!(data&&data.cloud),view:guest?'chat':(()=>{const w=wantView||hashView();wantView='';return w||'home'})(),upload:null,exp:'',msgs:[],cstate:null,cerr:'',useRecords:false,focusRid:null,chatDoc:null,chatReading:'',attMenu:false,medScan:null,scanning:'',histOpen:false,histList:null,histErr:'',histStatus:''});if(!sample&&!guest&&!(data&&data.cloud)){DB.session=email;store.set(DB)}render()};
-function persist(){if(S.cloud){cloudQueue();return}if(!S.email||S.sample||!DB.users[S.email])return;const{profile,reports,meds,doses,vitals,consent}=S;DB.users[S.email].data={profile,reports,meds,doses,vitals,consent};if(!store.set(DB)&&!persist.w){persist.w=1;toast('This browser would not save your data. Changes will be lost on refresh.')}}
+const enter=(email,data,sample,guest)=>{if(sample)setTimeout(samplePages,0);else for(const k of['scan:3:0','orig:3:0'])if(IMG.urls[k]){URL.revokeObjectURL(IMG.urls[k]);delete IMG.urls[k]}Object.assign(S,blank(''),data,{email,sample,guest:!!guest,cloud:!!(data&&data.cloud),view:guest?'chat':(()=>{const w=wantView||hashView();wantView='';return w||'home'})(),upload:null,exp:'',msgs:[],cstate:null,cerr:'',useRecords:false,focusRid:null,chatDoc:null,chatReading:'',attMenu:false,medScan:null,scanning:'',histOpen:false,histList:null,histErr:'',histStatus:''});if(!sample&&!guest&&!(data&&data.cloud)){DB.session=email;store.set(DB)}render();if(typeof applyAlarmActs==='function')applyAlarmActs()};
+function persist(){if(S.cloud){cloudQueue();return}if(!S.email||S.sample||!DB.users[S.email])return;const{profile,reports,meds,doses,vitals,hist,consent}=S;DB.users[S.email].data={profile,reports,meds,doses,vitals,hist,consent};if(!store.set(DB)&&!persist.w){persist.w=1;toast('This browser would not save your data. Changes will be lost on refresh.')}}
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.add('hidden'),4000)};
 /* The open screen is kept in the address (#medicines, #vitals…) so a refresh or a shared bookmark opens it again.
    Only plain screen names are written or cleared, never a sign-in link's hash. */
@@ -907,14 +982,15 @@ async function cloudEnter(user){
  try{
   let gc=false;try{gc=sessionStorage.getItem('doctine:google-consent')==='1';sessionStorage.removeItem('doctine:google-consent')}catch{}
   if(gc||(user.user_metadata||{}).agreed_at)await sb.from('consents').upsert([{user_id:user.id,kind:'cloud_storage',granted:true}],{onConflict:'user_id,kind',ignoreDuplicates:true});
-  const[pr,cs,ds,fs,ms,sc,de,vr]=await Promise.all([
+  const[pr,cs,ds,fs,ms,sc,de,vr,hr]=await Promise.all([
    sb.from('health_profiles').select('*').maybeSingle(),sb.from('consents').select('*'),sb.from('documents').select('*').order('created_at',{ascending:false}),
-   sb.from('document_files').select('document_id,kind,page,storage_path,content_type'),sb.from('medicines').select('*').order('created_at'),sb.from('medication_schedules').select('*'),sb.from('dose_events').select('*'),sb.from('vital_readings').select('*').order('measured_at',{ascending:false})]);
+   sb.from('document_files').select('document_id,kind,page,storage_path,content_type'),sb.from('medicines').select('*').order('created_at'),sb.from('medication_schedules').select('*'),sb.from('dose_events').select('*'),sb.from('vital_readings').select('*').order('measured_at',{ascending:false}),sb.from('health_records').select('*').order('created_at')]);
   if(CLOUD.epoch!==ep)return;   // signed out or switched while loading: show nothing of this account
   const bad=[pr,cs,ds,fs,ms,sc,de].find(r=>r.error);if(bad)throw bad.error;
   const p=pr.data||{},meta=user.user_metadata||{};CLOUD.noGender=!!pr.data&&!('gender' in pr.data); // a database from before the gender field: don't send it
+  CLOUD.noHP=!!pr.data&&!('lifestyle' in pr.data)||(ms.data||[]).length>0&&!('category' in ms.data[0]); // ...or from before the full health profile
   const consent={ai:false,analytics:false,history:false};(cs.data||[]).forEach(c=>{if(c.kind==='ai_chat')consent.ai=!!c.granted&&Date.parse(c.updated_at)>=AI_CONSENT_FROM;if(c.kind==='analytics')consent.analytics=!!c.granted&&Date.parse(c.updated_at)>=ANALYTICS_CONSENT_FROM;if(c.kind==='chat_history')consent.history=c.granted});
-  const docByUuid={};CLOUD.ids={docs:{},meds:{},vitals:{}};CLOUD.files={};
+  const docByUuid={};CLOUD.ids={docs:{},meds:{},vitals:{},hist:{}};CLOUD.files={};
   const reports=(ds.data||[]).map(d=>{docByUuid[d.id]=d.client_id;CLOUD.ids.docs[d.client_id]=d.id;return{id:Number(d.client_id),title:d.title,cat:d.category,date:d.document_date||'',lab:d.provider||'',fields:d.fields||{},hash:d.file_hash||undefined,imgs:d.page_count||0,scan:d.extraction||null,src:d.source,checked:d.source==='manual'&&(d.page_count||0)>0}});
   (fs.data||[]).forEach(f=>{const cid=docByUuid[f.document_id];if(cid==null)return;CLOUD.files[`${f.kind==='original'?'orig':'scan'}:${cid}:${f.page}`]=f.storage_path;if(f.content_type==='application/pdf'){const r=reports.find(x=>x.id===Number(cid));if(r)r.orig='pdf'}});
   const schedBy={};(sc.data||[]).forEach(s=>schedBy[s.medicine_id]=s);
@@ -922,44 +998,54 @@ async function cloudEnter(user){
   const meds=(ms.data||[]).map(m=>{const s=schedBy[m.id]||{};medByUuid[m.id]=m.client_id;CLOUD.ids.meds[m.client_id]=m.id;
    return{id:Number(m.client_id),name:m.name,dose:m.dose,status:m.status,start:m.start_date,end:m.end_date||'',freq:s.frequency||'daily',days:s.days_of_week||[],times:s.times||(s.frequency==='as_needed'?[]:['08:00']),
     brand:m.brand||'',strength:m.strength||'',form:m.form||'',amount:m.dose_amount||'',unit:m.dose_unit||'',instructions:m.instructions||'',interval:s.interval_hours||null,
+    cat:m.category==='occasional'?'occasional':'regular',generic:m.generic_name||'',route:m.route||'',reason:m.reason||'',prescriber:m.prescriber||'',lastUsed:m.last_used||'',stopReason:m.stop_reason||'',stopAdvice:m.stopped_on_advice||'',useFreq:m.use_frequency||'',notes:m.notes||'',start:m.start_date||'',
     ...(m.source_document_id||m.source_raw?{src:{doc:m.source_document_id?Number(docByUuid[m.source_document_id]):null,raw:m.source_raw||'',conf:m.source_confidence||''}}:{})}});
   // Health readings arrived with a later database update; until it is in place the rest of the account still loads.
   CLOUD.noVitals=!!vr.error;CLOUD.ids.vitals={};
   const vitals=(vr.error?[]:vr.data||[]).map(v=>{CLOUD.ids.vitals[v.client_id]=v.id;return{id:Number(v.client_id),kind:v.kind,v:Number(v.value),v2:v.value2!=null?Number(v.value2):null,unit:v.unit,ctx:v.context||'',note:v.note||'',at:new Date(v.measured_at).toISOString()}});
   const doses={};(de.data||[]).forEach(d=>{const cid=medByUuid[d.medicine_id];if(cid!=null)doses[`${cid}@${d.scheduled_time}@${d.scheduled_date}`]=d.status});
-  const data={profile:{name:p.full_name||meta.full_name||'',dob:p.date_of_birth||'',gender:p.gender||'',height:p.height_cm!=null?String(p.height_cm):'',weight:p.weight_kg!=null?String(p.weight_kg):'',blood:p.blood_group||'',allergies:p.allergies||''},reports,meds,doses,vitals,consent,cloud:true};
+  // Structured medical history arrived with a later database update; until it is in place the rest still loads.
+  CLOUD.noHist=!!hr.error;
+  const hist=(hr.error?[]:hr.data||[]).map(r=>{CLOUD.ids.hist[r.client_id]=r.id;return{id:Number(r.client_id),kind:r.kind,title:r.title,status:r.status||null,cat:r.category||null,sev:r.severity||null,cert:r.certainty||null,onset:r.onset||null,src:r.source||'user',doc:r.source_document_id&&docByUuid[r.source_document_id]!=null?Number(docByUuid[r.source_document_id]):null,d:r.details&&typeof r.details==='object'?r.details:{},upd:r.updated_at}});
+  const data={profile:{...PROFILE_BLANK,name:p.full_name||meta.full_name||'',dob:p.date_of_birth||'',gender:p.gender||'',height:p.height_cm!=null?String(p.height_cm):'',weight:p.weight_kg!=null?String(p.weight_kg):'',blood:p.blood_group||'',allergies:p.allergies||'',
+   sex:p.sex_at_birth||'',phone:p.phone||'',cemail:p.contact_email||'',city:p.city||'',country:p.country||'',ecName:p.emergency_name||'',ecRel:p.emergency_relationship||'',ecPhone:p.emergency_phone||'',units:p.units||'',waist:p.waist_cm!=null?String(p.waist_cm):'',measured:p.measured_on||'',
+   life:p.lifestyle&&typeof p.lifestyle==='object'?p.lifestyle:{},ans:p.history_answers&&typeof p.history_answers==='object'?p.history_answers:{},wh:p.womens_health&&typeof p.womens_health==='object'?p.womens_health:{},upd:p.updated_at||''},reports,meds,doses,vitals,hist,consent,cloud:true};
   CLOUD.snap=snapshot(data);CLOUD.err='';CLOUD.lastOk=Date.now();
   S.loadingCloud=false;enter(user.email,data,false);
   if(!pr.data){CLOUD.snap.profile='';cloudQueue()}
  }catch(e){S.loadingCloud=false;cloudFail('Loading your records',e);toast('Your records couldn’t be loaded. Check your connection and refresh. Nothing was changed.');S.auth='login';render()}}
 /* Forget everything about the previous sign-in: pending saves, ids, file paths, cached page images. */
-function resetCloudState(){clearTimeout(CLOUD.timer);CLOUD.timer=null;CLOUD.snap=null;CLOUD.dirty=false;CLOUD.err='';CLOUD.again=false;CLOUD.ids={docs:{},meds:{},vitals:{}};CLOUD.noVitals=false;CLOUD.files={};cloudSync.warned=0}
+function resetCloudState(){clearTimeout(CLOUD.timer);CLOUD.timer=null;CLOUD.snap=null;CLOUD.dirty=false;CLOUD.err='';CLOUD.again=false;CLOUD.ids={docs:{},meds:{},vitals:{},hist:{}};CLOUD.noVitals=false;CLOUD.noHist=false;CLOUD.noHP=false;CLOUD.files={};cloudSync.warned=0}
 async function clearImageCache(){for(const u of Object.values(IMG.urls))try{URL.revokeObjectURL(u)}catch{};IMG.urls={};
  try{const d=await IMG.open();await new Promise(r=>{const t=d.transaction('img','readwrite');t.objectStore('img').clear();t.oncomplete=t.onerror=r})}catch{}}
-const unsavedCount=()=>(S.cloud?(CLOUD.dirty||CLOUD.err||CLOUD.busy?1:0):0)+HIST.pending.length;
+const hpDirty=()=>(S.hpEdit&&S.hpEdit.dirty?1:0)+Object.values(S.hpForm||{}).filter(f=>f.dirty).length;
+const unsavedCount=()=>(S.cloud?(CLOUD.dirty||CLOUD.err||CLOUD.busy?1:0):0)+HIST.pending.length+hpDirty();
 function leaveCloud(to='login'){if(window.DoctineNative)DoctineNative.clearExports();CLOUD.epoch++;CLOUD.uid=null;S.help=null;resetCloudState();resetHistory();clearImageCache();S={...S,...blank(''),email:null,cloud:false,sample:false,guest:false,auth:to,cstate:null,cerr:'',useRecords:false};render()}
 
 /* What is saved, as comparable JSON per row, so each save sends only what changed. */
-function snapshot(d){const o={profile:JSON.stringify(d.profile),consent:JSON.stringify(d.consent),docs:{},meds:{},doses:{},vitals:{}};
+function snapshot(d){const{upd,...pf}=d.profile||{};const o={profile:JSON.stringify(pf),consent:JSON.stringify(d.consent),docs:{},meds:{},doses:{},vitals:{},hist:{}};
+ (d.hist||[]).forEach(r=>o.hist[r.id]=JSON.stringify([r.kind,r.title,r.status||null,r.cat||null,r.sev||null,r.cert||null,r.onset||null,r.src||'user',r.doc!=null?r.doc:null,r.d||{}]));
  (d.vitals||[]).forEach(v=>o.vitals[v.id]=JSON.stringify([v.kind,v.v,v.v2,v.unit,v.ctx||'',v.note||'',v.at]));
  (d.reports||[]).forEach(r=>o.docs[r.id]=JSON.stringify([r.title,r.cat,r.date,r.lab,r.fields,r.hash||null,r.imgs||0,r.scan||null,r.src||null,!!r.checked,r.orig||null]));
- (d.meds||[]).forEach(m=>o.meds[m.id]=JSON.stringify([m.name,m.dose,m.status||'active',m.start,m.end||'',m.freq||'daily',m.days||[],m.times,m.src||null,m.brand||'',m.strength||'',m.form||'',m.amount||'',m.unit||'',m.instructions||'',m.interval||null]));
+ (d.meds||[]).forEach(m=>o.meds[m.id]=JSON.stringify([m.name,m.dose,m.status||'active',m.start,m.end||'',m.freq||'daily',m.days||[],m.times,m.src||null,m.brand||'',m.strength||'',m.form||'',m.amount||'',m.unit||'',m.instructions||'',m.interval||null,m.cat||'regular',m.generic||'',m.route||'',m.reason||'',m.prescriber||'',m.lastUsed||'',m.stopReason||'',m.stopAdvice||'',m.useFreq||'',m.notes||'']));
  Object.entries(d.doses||{}).forEach(([k,v])=>o.doses[k]=v);return o}
 function cloudQueue(){if(!S.cloud||!CLOUD.uid)return;CLOUD.dirty=true;clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(cloudSync,700)}
 async function cloudSyncNow(){clearTimeout(CLOUD.timer);if(CLOUD.busy){await new Promise(r=>{const t=setInterval(()=>{if(!CLOUD.busy){clearInterval(t);r()}},100)})}await cloudSync();return !CLOUD.err}
-addEventListener('beforeunload',e=>{if(S.cloud&&(CLOUD.err||CLOUD.dirty||CLOUD.busy)){e.preventDefault();e.returnValue=''}});
+addEventListener('beforeunload',e=>{if(S.cloud&&(CLOUD.err||CLOUD.dirty||CLOUD.busy)||(S.email||S.sample)&&hpDirty()){e.preventDefault();e.returnValue=''}});
 const ABORT={aborted:true};
 async function cloudSync(){
  if(CLOUD.busy){CLOUD.again=true;return}if(!S.cloud||!CLOUD.uid)return;CLOUD.busy=true;
  // Everything below works on a copy of THIS person's data, under THIS sign-in; if the sign-in changes, it stops.
  const ep=CLOUD.epoch,sb=CLOUD.sb,uid=CLOUD.uid,now=snapshot(S),was=CLOUD.snap||{docs:{},meds:{},doses:{},vitals:{}};was.vitals=was.vitals||{};CLOUD.ids.vitals=CLOUD.ids.vitals||{};
- const R=S.reports.slice(),M=S.meds.slice(),V=(S.vitals||[]).slice(),P={...S.profile},C={...S.consent};
+ const R=S.reports.slice(),M=S.meds.slice(),V=(S.vitals||[]).slice(),H=(S.hist||[]).slice(),P={...S.profile},C={...S.consent};was.hist=was.hist||{};CLOUD.ids.hist=CLOUD.ids.hist||{};
  const step=async p=>{const r=await p;if(CLOUD.epoch!==ep||CLOUD.uid!==uid)throw ABORT;return r};
  try{
-  if(now.profile!==was.profile){const p=P,row=()=>({user_id:uid,full_name:nn(p.name),date_of_birth:dobOk(p.dob)?p.dob:null,...(CLOUD.noGender?{}:{gender:GENDERS.some(x=>x[0]===p.gender)?p.gender:null}),height_cm:nn(p.height)==null?null:+p.height,weight_kg:nn(p.weight)==null?null:+p.weight,blood_group:nn(p.blood),allergies:nn(p.allergies)});
+  if(now.profile!==was.profile){const p=P,row=()=>({user_id:uid,full_name:nn(p.name),date_of_birth:dobOk(p.dob)?p.dob:null,...(CLOUD.noGender?{}:{gender:GENDERS.some(x=>x[0]===p.gender)?p.gender:null}),height_cm:nn(p.height)==null?null:+p.height,weight_kg:nn(p.weight)==null?null:+p.weight,blood_group:nn(p.blood),allergies:nn(p.allergies),...(CLOUD.noHP?{}:hpRow(p))});
    let{error}=await step(sb.from('health_profiles').upsert(row()));
    // A database from before the gender field: save the rest of the profile without it.
    if(error&&!CLOUD.noGender&&/gender/i.test(String(error.message||''))){CLOUD.noGender=true;({error}=await step(sb.from('health_profiles').upsert(row())))}
+   // ...and from before the full health profile: the core details still save
+   if(error&&!CLOUD.noHP&&/lifestyle|sex_at_birth|history_answers|womens_health|column/i.test(String(error.message||''))){CLOUD.noHP=true;({error}=await step(sb.from('health_profiles').upsert(row())))}
    if(error)throw error;was.profile=now.profile}
   if(now.consent!==was.consent){let P={};try{P=JSON.parse(was.consent)||{}}catch{}
   // only the choices that changed: rewriting an unchanged row would refresh its date and turn an old choice into a new one
@@ -973,7 +1059,7 @@ async function cloudSync(){
    const{error}=await step(sb.from('documents').delete().eq('client_id',id));if(error)throw error;Object.keys(CLOUD.files).forEach(k=>{if(k.split(':')[1]===id)delete CLOUD.files[k]});delete CLOUD.ids.docs[id];delete was.docs[id]}
   for(const m of M){if(was.meds[m.id]===now.meds[m.id]&&CLOUD.ids.meds[m.id])continue;
    const srcDoc=m.src&&m.src.doc!=null?CLOUD.ids.docs[m.src.doc]||null:null;
-   const{data,error}=await step(sb.from('medicines').upsert({user_id:uid,client_id:m.id,name:m.name,dose:m.dose,status:m.status||'active',start_date:m.start,end_date:nn(m.end),brand:nn(m.brand),strength:nn(m.strength),form:nn(m.form),dose_amount:nn(m.amount),dose_unit:nn(m.unit),instructions:nn(m.instructions),source_document_id:srcDoc,source_raw:m.src?nn(m.src.raw):null,source_confidence:m.src&&['high','medium','low'].includes(m.src.conf)?m.src.conf:null},{onConflict:'user_id,client_id'}).select('id').single());
+   const{data,error}=await step(sb.from('medicines').upsert({user_id:uid,client_id:m.id,name:m.name,dose:m.dose,status:m.status||'active',start_date:nn(m.start),end_date:nn(m.end),...(CLOUD.noHP?{}:medHpRow(m)),brand:nn(m.brand),strength:nn(m.strength),form:nn(m.form),dose_amount:nn(m.amount),dose_unit:nn(m.unit),instructions:nn(m.instructions),source_document_id:srcDoc,source_raw:m.src?nn(m.src.raw):null,source_confidence:m.src&&['high','medium','low'].includes(m.src.conf)?m.src.conf:null},{onConflict:'user_id,client_id'}).select('id').single());
    if(error)throw error;CLOUD.ids.meds[m.id]=data.id;
    const{error:e2}=await step(sb.from('medication_schedules').upsert({user_id:uid,medicine_id:data.id,frequency:m.freq||'daily',days_of_week:m.freq==='weekly'?m.days:[],times:m.freq==='as_needed'?[]:m.times,interval_hours:m.freq==='daily'&&m.interval?m.interval:null,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'},{onConflict:'medicine_id'}));if(e2)throw e2;was.meds[m.id]=now.meds[m.id]}
   for(const id of Object.keys(was.meds))if(!(id in now.meds)){const{error}=await step(sb.from('medicines').delete().eq('client_id',id));if(error)throw error;delete CLOUD.ids.meds[id];delete was.meds[id];Object.keys(was.doses).forEach(k=>{if(k.split('@')[0]===id)delete was.doses[k]})}
@@ -988,7 +1074,13 @@ async function cloudSync(){
     const{data,error}=await step(sb.from('vital_readings').upsert({user_id:uid,client_id:v.id,kind:v.kind,value:v.v,value2:v.kind==='blood_pressure'?v.v2:null,unit:v.unit,context:v.kind==='glucose'&&v.ctx?v.ctx:null,note:nn(v.note),measured_at:v.at},{onConflict:'user_id,client_id'}).select('id').single());
     if(error)throw error;CLOUD.ids.vitals[v.id]=data.id;was.vitals[v.id]=now.vitals[v.id]}
    for(const id of Object.keys(was.vitals))if(!(id in now.vitals)){const{error}=await step(sb.from('vital_readings').delete().eq('client_id',id));if(error)throw error;delete CLOUD.ids.vitals[id];delete was.vitals[id]}}
-  CLOUD.snap=was;CLOUD.err='';CLOUD.lastOk=Date.now();CLOUD.dirty=JSON.stringify(CLOUD.noVitals?{...snapshot(S),vitals:was.vitals}:snapshot(S))!==JSON.stringify(was);
+  if(!CLOUD.noHist){
+   for(const r of H){if(was.hist[r.id]===now.hist[r.id]&&CLOUD.ids.hist[r.id])continue;
+    const doc=r.doc!=null?CLOUD.ids.docs[r.doc]||null:null,dd={...(r.d||{})};
+    const{data,error}=await step(sb.from('health_records').upsert({user_id:uid,client_id:r.id,kind:r.kind,title:String(r.title).slice(0,160),status:r.status||null,category:r.cat||null,severity:r.sev||null,certainty:r.cert||null,onset:r.onset||null,details:dd,source:['user','clinician','document','import'].includes(r.src)?r.src:'user',source_document_id:doc},{onConflict:'user_id,client_id'}).select('id').single());
+    if(error){if(/health_records/i.test(String(error.message||''))&&/exist|schema cache|not find/i.test(String(error.message||''))){CLOUD.noHist=true;break}throw error}CLOUD.ids.hist[r.id]=data.id;was.hist[r.id]=now.hist[r.id]}
+   if(!CLOUD.noHist)for(const id of Object.keys(was.hist))if(!(id in now.hist)){const{error}=await step(sb.from('health_records').delete().eq('client_id',id));if(error)throw error;delete CLOUD.ids.hist[id];delete was.hist[id]}}
+  CLOUD.snap=was;CLOUD.err='';CLOUD.lastOk=Date.now();CLOUD.dirty=JSON.stringify({...(CLOUD.noVitals?{...snapshot(S),vitals:was.vitals}:snapshot(S)),...(CLOUD.noHist?{hist:was.hist}:{})})!==JSON.stringify(was);
  }catch(e){if(e===ABORT||CLOUD.epoch!==ep){CLOUD.busy=false;return}   // the person signed out or switched: touch nothing of the new sign-in
   CLOUD.snap=was;cloudFail('Saving',e);if(!cloudSync.warned){cloudSync.warned=1;toast('Your latest changes couldn’t be saved to your account. Doctine will keep trying; don’t close this page yet.')}clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(cloudSync,15000)}
  finally{if(CLOUD.epoch!==ep)return;CLOUD.busy=false;if(!CLOUD.err)cloudSync.warned=0;if(S.view==='settings'){const el=$('#syncst');if(el)el.textContent=syncText()}const bn=$('#banner');if(bn&&S.cloud){const h=bannerHTML();if(S._bh!==h){S._bh=h;bn.innerHTML=h}}if(CLOUD.again||(CLOUD.dirty&&!CLOUD.err)){CLOUD.again=false;cloudQueue()}}} // after a failure, wait for the retry timer (or a new change) instead of retrying at once
@@ -1031,15 +1123,35 @@ const CHAT_ERR={sign_in_required:'Your sign-in has expired. Sign out and sign in
 const errText=(c,i)=>{i=i||{};return(CHAT_ERR[c]||CHAT_ERR.network).replace('{missing}',(i.missing||[]).join(', ')||'the AI key').replace('{model}',i.model||'configured')};
 function buildCtx(){
  if(!S.useRecords)return null;
- const ctx={},p=S.profile,age=ageOf(p.dob),prof={};
- if(age!=null)prof.age=age;const al=(p.allergies||'').split(',').map(x=>x.trim()).filter(Boolean);if(al.length)prof.allergies=al;if(Object.keys(prof).length)ctx.profile=prof;
+ const ctx={},p=S.profile;
  const toks=[...new Set(S.msgs.filter(m=>m.r==='u').slice(-3).flatMap(m=>(m.t.toLowerCase().match(/[a-z0-9][a-z0-9+-]{2,}/g)||[]).map(nz)).filter(t=>t.length>=3))];
+ const prof=profileCtx(p,toks);if(Object.keys(prof).length)ctx.profile=prof;
  const items=[],focus=S.reports.find(r=>r.id===S.focusRid);
  if(focus)Object.entries(focus.fields).slice(0,12).forEach(([k,v])=>items.push({r:focus,k,v}));
  [...S.reports].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(r=>Object.entries(r.fields).forEach(([k,v])=>{const n=nz(k);if(n.length>=3&&toks.some(t=>n.includes(t)||t.includes(n))&&!items.some(i=>i.r===r&&i.k===k))items.push({r,k,v})}));
  S.ctxMap={};
  ctx.records=items.slice(0,10).map((i,n)=>{const id='R'+(n+1);S.ctxMap[id]={rid:i.r.id,title:i.r.title,date:i.r.date};return{id,title:i.r.title,date:i.r.date||'',test:i.k,value:i.v}});
  return ctx}
+/* The part of the health profile a chat may use, chosen for this conversation: always the safety-relevant facts
+   (allergies, current conditions and medicines, age, sex), and other history only when it matches what the person is
+   asking about. Each item keeps where it came from and its date; nothing missing is filled in. */
+function profileCtx(p,toks){const prof={},age=ageOf(p.dob),SRCS={user:'self-reported',clinician:'clinician-documented',document:'from a medical record',import:'self-reported'};
+ if(age!=null)prof.age=age;if(['female','male','intersex'].includes(p.sex))prof.sex=p.sex;
+ const KIND={confirmed:'confirmed allergy',suspected:'suspected allergy',intolerance:'intolerance',adverse_reaction:'medicine side effect'};
+ const al=(S.hist||[]).filter(r=>r.kind==='allergy').map(r=>({substance:r.title,kind:KIND[r.cert],severity:r.sev!=='unknown'?r.sev||undefined:undefined,reaction:(r.d||{}).reaction||undefined,source:SRCS[r.src||'user'],since:r.onset||undefined}));
+ (p.allergies||'').split(',').map(x=>x.trim()).filter(Boolean).forEach(x=>{if(!al.some(a=>a.substance.toLowerCase()===x.toLowerCase()))al.push(x)});
+ if(al.length)prof.allergies=al.slice(0,15);else{const a=(p.ans||{}).allergies;if(a==='nka')prof.allergy_status='no known allergies';if(a==='not_assessed')prof.allergy_status='never assessed'}
+ const ST={active:'active',controlled:'controlled',remission:'in remission'};
+ const cs=(S.hist||[]).filter(r=>r.kind==='condition'&&r.status!=='resolved').map(r=>({name:r.title,status:ST[r.status]||'status not recorded',since:r.onset||undefined,source:SRCS[r.src||'user']}));if(cs.length)prof.conditions=cs.slice(0,10);
+ const md=S.meds.filter(m=>!medEnded(m)&&(m.status||'active')==='active').map(m=>({name:m.name,dose:m.dose&&m.dose!=='Not recorded'?doseLine(m):undefined,how_often:medCat(m)==='occasional'?(m.useFreq||'now and then'):freqLabel(m),taken:medCat(m)==='occasional'?'now and then':'regularly',since:m.start||undefined,last_taken:m.lastUsed||undefined,source:m.src&&m.src.doc!=null?'from a prescription the person checked':'self-reported'}));
+ if(md.length)prof.current_medicines=md.slice(0,15);
+ const hit=t=>{const n=nz(String(t||''));return n.length>=3&&toks.some(k=>n.includes(k)||k.includes(n)||n.split(' ').some(w=>w.length>=4&&(k.includes(w)||w.includes(k))))};
+ const TY={past_illness:'past illness',surgery:'surgery',hospitalization:'hospital stay',other_history:'other history',family:'family history',device:'medical device'};
+ const rel=[...(S.hist||[]).filter(r=>TY[r.kind]&&hit(r.title)).map(r=>({type:TY[r.kind],text:r.kind==='family'?`${lbl(RELS,r.cat)}: ${r.title}${(r.d||{}).age?`, diagnosed around age ${r.d.age}`:''}`:r.title+((r.d||{}).discharged?`, discharged ${r.d.discharged}`:''),when:r.onset||undefined,source:SRCS[r.src||'user']})),
+  ...S.meds.filter(m=>medEnded(m)&&hit(m.name)).map(m=>({type:'stopped medicine',text:`${m.name}, stopped${m.stopReason?' ('+m.stopReason+')':''}`,when:m.end||undefined,source:'self-reported'}))];
+ if(rel.length)prof.related_history=rel.slice(0,8);
+ const w=p.wh||{};if(w.shareAI&&whShown(p)){const pg={yes:'pregnant',no:'not pregnant',trying:'trying to conceive'}[w.preg];if(pg)prof.pregnancy=pg}
+ return JSON.parse(JSON.stringify(prof))}   // no empty keys: a value that isn't known is simply absent
 const DOCQ='Explain this document: what it says, the diagnosis, what each medicine or test is for, and anything I should ask my doctor.';
 async function send(q){q=String(q).trim();if(!q&&S.chatDoc&&!S.chatReading)q=DOCQ;if(!q||S.typing||S.chatReading)return;
  if(!S.consent.ai&&!S.sample){const ek=emergencyText(q);S.cerr='';
@@ -1322,7 +1434,7 @@ function homeView(){const p=S.profile,nm=esc((p.name||'').replace(/\s*\(sample\)
  const doseRow=x=>`<li class="dh-dose ${x.st}"><span class="dh-time">${t12(x.t)}</span><div class="min-w-0"><div class="dh-dn">${esc(x.m.name)}${x.m.strength?` <span>${esc(x.m.strength)}</span>`:''}</div><div class="mx-sub">${esc(x.m.amount?amountText(x.m.amount,x.m.unit):x.m.dose)}${x.m.instructions?' · '+esc(x.m.instructions.replace(/;\s*/g,' · ')):''}</div></div>
   <span class="dh-st">${x.st==='taken'?'<span class="mx-st on">Taken</span>':x.st==='skipped'?'<span class="mx-st done">Skipped</span>':x.st==='snoozed'?`<span class="mx-st paused">${esc(x.s.replace('Snoozed until ','Snoozed to '))}</span>`:x.st==='due'?`<button class="btn tl" data-d="${x.k}|Taken" aria-label="Mark ${esc(x.m.name)} at ${t12(x.t)} as taken">Mark taken</button>`:'<span class="mx-sub">Later today</span>'}</span></li>`;
  const asks=[S.reports.some(r=>r.cat==='Lab report')&&'Explain my latest blood report',S.meds.length&&'What medicines am I currently taking?',S.reports.length&&'Summarise my medical history',S.reports.some(r=>r.cat==='Prescription')&&'Help me understand my prescription','How can I improve my sleep?','When should I see a doctor for a headache?'].filter(Boolean).slice(0,4);
- const pdone=PROFILE_KEYS.filter(k=>String(p[k]||'').trim()).length,age=ageOf(p.dob),prof=[['Age',age!=null?age+' years':''],['Gender',genderText(p.gender)],['Blood group',p.blood],['Allergies',p.allergies],['Height',p.height?p.height+' cm':''],['Weight',p.weight?p.weight+' kg':'']];
+ const pdone=PROFILE_KEYS.filter(k=>String(k==='allergies'?hpAllergyText():p[k]||'').trim()).length,age=ageOf(p.dob),prof=[['Age',age!=null?age+' years':''],['Gender',genderText(p.gender)],['Blood group',p.blood],['Allergies',hpAllergyText()],['Height',p.height?p.height+' cm':''],['Weight',p.weight?p.weight+' kg':'']];
  const acts=[...histOf().slice(0,5).map(x=>({at:new Date(x.d+'T'+x.t).toISOString(),t:`${x.s}: ${x.name}`,w:whenAt(new Date(x.d+'T'+x.t).toISOString())})),...(S.vitals||[]).slice().sort((a,b)=>b.at.localeCompare(a.at)).slice(0,4).map(v=>({at:v.at,t:`${VK[v.kind].l} added: ${vText(v)} ${v.unit}`,w:whenAt(v.at)})),...rec.slice(0,3).map(r=>({at:r.date?new Date(r.date+'T00:00').toISOString():'',t:`Record: ${r.title}`,w:r.date?dFmt(r.date):'Date missing'}))].sort((a,b)=>b.at.localeCompare(a.at)).slice(0,6);
  return`<div class="dh-wrap">`+(`<header class="dh-hello"><div><p class="dh-date">${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}</p><h1>${greet()}${nm?', '+nm:''}.</h1><p class="dh-sub">Here’s an overview of your health today.</p></div><div class="mx-hacts"><button class="btn" data-vadd="1">Add reading</button><button class="btn pri" data-add="1">Add health record</button></div></header>`+
  
@@ -1356,7 +1468,7 @@ function chatView(){
  const msgs=S.msgs.map((x,i)=>x.r==='u'?`<div class="flex justify-end"><div class="rounded-2xl rounded-br-md px-4 py-3 text-white max-w-[85%] whitespace-pre-wrap" style="background:var(--navy)">${x.doc?`<div class="text-xs mb-1" style="opacity:.8">📄 ${esc(x.doc)}</div>`:''}${esc(x.t)}</div></div>`:ansView(x,i===S.msgs.length-1)).join('');
  const empty=!S.msgs.length?`<div class="text-center pt-8 pb-2"><h1 class="text-3xl md:text-4xl">What would you like help understanding about your health?</h1><p class="text-[var(--mute)] mt-3 max-w-md mx-auto">Describe a concern or ask a question in your own words. You don’t need any reports.</p>${aiOff()?`<div class="warn max-w-xl mx-auto mt-5 text-left" id="aioff">The AI assistant is switching on soon, once doctors have finished checking its answers. Until then it can’t answer questions. If you describe an emergency, it still shows what to do and to call 112. Your records, medicines and health profile already work and are saved to your account.</div>`:`<div class="flex flex-wrap gap-2 justify-center mt-6">${ex.map(p=>`<button class="chip" data-q="${esc(p)}">${esc(p)}</button>`).join('')}<button class="chip" id="attcam2"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg> Scan a prescription and ask about it</button></div>`}</div>`:'';
  const err=S.cerr?`<div class="${S.cerr==='cancelled'?'warn':'err'}" role="alert">${esc(errText(S.cerr,S.cinfo))}${S.lastQ&&['rate_limited','ai_rate_limited','ai_busy','ai_timeout','ai_error','ai_network','bad_output','network'].includes(S.cerr)?' <button class="underline" data-retry="1">Retry</button>':''}</div>`:'';
- const rec=S.reports.length&&!S.guest?`<label class="flex items-start gap-2 text-xs text-[var(--mute)] max-w-3xl mx-auto mb-2"><input type="checkbox" id="usrec" class="mt-0.5" ${S.useRecords?'checked':''}><span>Use my saved reports and profile in this chat. Sends only matching report values plus your age and allergies, together with your message, to the AI provider. Off by default.</span></label>`:'';
+ const rec=(S.reports.length||(S.hist||[]).length||S.meds.length)&&!S.guest?`<label class="flex items-start gap-2 text-xs text-[var(--mute)] max-w-3xl mx-auto mb-2"><input type="checkbox" id="usrec" class="mt-0.5" ${S.useRecords?'checked':''}><span>Use my saved reports and profile in this chat. Sends your age, allergies, current conditions and current medicines, plus only the history and report values that match your question, together with your message, to the AI provider. Off by default.</span></label>`:'';
  const hist=S.cloud?`<button class="btn" id="histopen">Saved chats</button>`:'';
  const ask=S.aiAsk&&!S.consent.ai?`<div class="card p-4 space-y-3" id="aiask" role="dialog" aria-labelledby="aiaskh"><h2 class="text-lg" id="aiaskh">Use the AI assistant?</h2><p class="text-sm">To answer, Doctine sends what you type in chat, through its server, to its AI provider (Anthropic, in the United States). Your saved reports and profile are not sent unless you tick the box under the chat for that conversation. Chats aren’t kept unless you switch on “Save my chats”.</p><p class="text-sm text-[var(--mute)]">You can switch this off at any time in Settings. Emergencies always get Doctine’s built-in guidance, whatever you choose.</p><div class="flex gap-2 flex-wrap"><button class="btn pri" id="aiallow">Allow and send</button><button class="btn" id="ainot">Not now</button></div></div>`:'';
  if(S.histOpen)return`<div class="h-full overflow-y-auto"><div class="max-w-3xl mx-auto px-5 py-6 space-y-4"><div class="flex justify-between items-center gap-3"><h1 class="text-2xl">Saved chats</h1><button class="btn" id="histclose">Back to chat</button></div>
@@ -1370,14 +1482,309 @@ function chatView(){
 const dobMax=()=>{const l=today(),u=new Date().toISOString().slice(0,10);return l<u?l:u};
 // A date of birth the database will accept. One it would refuse is never sent, so the rest of the profile still saves.
 const dobOk=v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'')&&v>='1900-01-01'&&v<=dobMax();
-function healthView(){
- const p=S.profile,f=(k,l,t='text',x='')=>`<label class="block text-sm"><span class="text-[var(--mute)]">${l}</span><input class="inp mt-1" type="${t}" ${x} data-p="${k}" value="${esc(p[k])}"></label>`;
- const h=+p.height,w=+p.weight,bmi=h>0&&w>0?(w/((h/100)**2)).toFixed(1):'—',age=ageOf(p.dob);
- const tl=[...S.reports].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<li class="flex gap-3"><div class="flex flex-col items-center"><span class="w-3 h-3 rounded-full mt-1.5" style="background:var(--teal)"></span><span class="flex-1 w-px bg-[var(--line)]"></span></div><div class="pb-5"><div class="text-xs text-[var(--mute)]">${esc(r.date)}</div><div class="font-medium">${esc(r.title)}</div><div class="text-sm text-[var(--mute)]">${esc(r.lab||'')}</div></div></li>`).join('');
- return wrap(head('Health profile','Your details and medical timeline.','<button class="btn tl" id="exp">Export my data</button>')+
- `<div class="grid grid-cols-2 md:grid-cols-4 gap-3">${[['Age',age!=null?age+' yrs':'—'],['BMI',bmi],['Blood group',esc(p.blood)||'—'],['Medicines',S.meds.length+' added']].map(([a,b])=>`<div class="card p-4"><div class="text-sm text-[var(--mute)]">${a}</div><div class="serif text-2xl mt-1">${b}</div></div>`).join('')}</div>
- <section class="card p-5"><h2 class="text-xl mb-4">Health profile</h2><div class="grid sm:grid-cols-2 gap-4">${f('name','Full name')}${f('dob','Date of birth','date',`min="1900-01-01" max="${dobMax()}"`)}<label class="block text-sm"><span class="text-[var(--mute)]">Gender</span><select class="inp mt-1" data-p="gender" aria-label="Gender"><option value="" ${p.gender?'':'selected'}>Choose</option>${GENDERS.map(([k,l])=>`<option value="${k}" ${p.gender===k?'selected':''}>${l}</option>`).join('')}</select></label>${f('height','Height (cm)','number','min="30" max="275" step="0.1"')}${f('weight','Weight (kg)','number','min="1" max="500" step="0.1"')}${f('blood','Blood group')}${f('allergies','Allergies')}</div><p class="text-xs text-[var(--mute)] mt-3">Everything here is entered by you. ${S.cloud?'Saved to your account':'Saved in this browser'} when you leave a field.</p></section>
- <section class="card p-5"><h2 class="text-xl mb-4">Medical timeline</h2>${tl?`<ul>${tl}</ul>`:'<p class="text-[var(--mute)]">Saved reports will appear here in date order.</p>'}</section>`)}
+/* ===== Health profile (22 Nov 2026) =====
+   One screen, six sections plus an optional women's health section. Everything is what the person entered or confirmed:
+   Doctine never infers a value, never reads a blank as "no", and never turns user-entered history into something else.
+   Personal details and body & lifestyle are saved with an explicit Save; history records are added, edited and removed one
+   at a time. "Saved" is only shown once the account (or, for a demo account, this browser) has confirmed it. */
+const HP_SECS=[['personal','Personal information','Who you are, and who to call in an emergency.','id'],['body','Body & lifestyle','Measurements, diet, activity, sleep and habits.','body'],
+ ['history','Medical history','Long-term conditions, past illnesses, surgeries and hospital stays.','hist'],['meds','Medications','What you take regularly, now and then, and what you have stopped.','pill'],
+ ['allergy','Allergies & medical devices','What you react to, and devices you use.','shield'],['family','Family history','Conditions in your blood relatives.','fam'],['women','Women’s health','Optional and private. Cycle, pregnancy and menopause.','flower']];
+const HP_ICON={id:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',body:'<path d="M12 3v18M7 7h10M8 21l4-8 4 8"/><circle cx="12" cy="3.2" r="1"/>',hist:'<path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5M12 3v4"/>',
+ pill:'<rect x="3" y="8.5" width="18" height="7" rx="3.5" transform="rotate(-35 12 12)"/><path d="m9.7 8.8 4.6 6.4"/>',shield:'<path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"/><path d="M12 8v5M12 16h.01"/>',
+ fam:'<circle cx="8" cy="8" r="2.6"/><circle cx="16.5" cy="9" r="2.2"/><path d="M3.5 19a4.5 4.5 0 0 1 9 0M13 19a3.6 3.6 0 0 1 7.2 0"/>',flower:'<circle cx="12" cy="10" r="2.5"/><path d="M12 7.5V4M12 16v5M9.5 10H6M18 10h-3.5M8 14l-2 2M16 14l2 2"/>'};
+const hpIcon=k=>`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${HP_ICON[k]||''}</svg>`;
+const BLOODS=['A+','A-','B+','B-','AB+','AB-','O+','O-','Unknown'];
+const SEXES=[['female','Female'],['male','Male'],['intersex','Intersex'],['prefer_not_to_say','Prefer not to say']];
+const YNU=[['yes','Yes'],['no','No'],['unknown','Not sure']];
+const SEV=[['mild','Mild'],['moderate','Moderate'],['severe','Severe'],['unknown','Not sure']];
+const SRC=[['user','Reported by me'],['clinician','Documented by a doctor'],['document','From a saved medical record']];
+const SRC_TXT={user:'Reported by you',clinician:'Documented by a doctor',document:'From a medical record',import:'Imported'};
+const CERT=[['confirmed','Confirmed allergy'],['suspected','Suspected allergy'],['intolerance','Intolerance (not an allergy)'],['adverse_reaction','Reaction to a medicine (side effect)']];
+const ACAT=[['medication','Medicine'],['food','Food'],['environmental','Environmental (pollen, dust…)'],['insect','Insect sting or bite'],['latex','Latex'],['other','Other']];
+const RELS=[['mother','Mother'],['father','Father'],['brother','Brother'],['sister','Sister'],['maternal_grandmother','Maternal grandmother'],['maternal_grandfather','Maternal grandfather'],['paternal_grandmother','Paternal grandmother'],['paternal_grandfather','Paternal grandfather'],['son','Son'],['daughter','Daughter'],['other','Other relative']];
+const OCAT=[['transfusion','Blood transfusion'],['injury','Significant injury or accident'],['transplant','Organ or tissue transplant'],['cancer','Cancer diagnosis or treatment'],['neurological','Neurological history'],['cardiovascular','Heart or circulation history'],['other','Other significant event']];
+const ROUTES=[['oral','By mouth'],['topical','On the skin'],['injection','Injection'],['inhalation','Inhaled'],['other','Other']];
+const lbl=(L,v)=>(L.find(x=>x[0]===v)||[])[1]||'';
+/* Each kind of history record: where it lives, how it is asked about, and its fields.
+   A field is [key, label, type, options]; keys title/status/cat/sev/cert/onset/src/doc are columns, the rest go in details. */
+const RK={
+ condition:{sec:'history',ans:'conditions',head:'Long-term or ongoing conditions',one:'condition',q:'Do you have any long-term or ongoing conditions?',empty:'No long-term conditions added.',
+  f:[['title','Condition','text',{req:1,max:160,ph:'e.g. Hypertension, Type 2 diabetes, Asthma'}],['onset','Diagnosed','when',{}],['status','Current status','seg',{o:[['active','Active'],['controlled','Controlled'],['remission','In remission'],['resolved','Resolved'],['unknown','Not sure']]}],['sev','Severity, if known','seg',{o:SEV}],['clinician','Treating doctor','text',{max:120,opt:1}],['src','Where this comes from','src',{}],['notes','Notes','area',{max:1000,opt:1}]]},
+ past_illness:{sec:'history',ans:'past',head:'Past illnesses',one:'past illness',q:'Any significant illnesses in the past?',empty:'No past illnesses added.',hint:'Only the ones that matter to you or your doctor, such as dengue, malaria, tuberculosis, pneumonia, COVID-19 or hepatitis. Not every cold.',
+  f:[['title','Illness','text',{req:1,max:160,ph:'e.g. Dengue'}],['onset','When','when',{}],['duration','How long it lasted','text',{max:60,opt:1,ph:'e.g. 2 weeks'}],['treatment','Treatment received','text',{max:300,opt:1}],['hospitalized','Needed a hospital stay','seg',{o:YNU}],['status','Now','seg',{o:[['recovered','Fully recovered'],['ongoing_effects','Ongoing effects'],['recurring','Comes back'],['unknown','Not sure']]}],['src','Where this comes from','src',{}],['notes','Notes','area',{max:1000,opt:1}]]},
+ surgery:{sec:'history',ans:'surgery',head:'Surgeries and procedures',one:'surgery',q:'Have you ever had surgery or a procedure?',empty:'No surgeries added.',
+  f:[['title','Surgery or procedure','text',{req:1,max:160,ph:'e.g. Appendix removal'}],['onset','When','when',{}],['reason','Why it was done','text',{max:300,opt:1}],['facility','Hospital or clinic','text',{max:160,opt:1}],['surgeon','Surgeon','text',{max:120,opt:1}],['complications','Complications, if any','text',{max:300,opt:1}],['status','Recovery','seg',{o:[['recovered','Recovered'],['recovering','Still recovering'],['ongoing_effects','Ongoing effects'],['unknown','Not sure']]}],['src','Where this comes from','src',{}],['notes','Notes','area',{max:1000,opt:1}]]},
+ hospitalization:{sec:'history',ans:'hosp',head:'Hospital stays',one:'hospital stay',q:'Have you ever been admitted to hospital?',empty:'No hospital stays added.',
+  f:[['title','Reason for admission','text',{req:1,max:160,ph:'e.g. Dengue fever'}],['onset','Admitted on','date',{}],['discharged','Discharged on','date',{opt:1}],['hospital','Hospital','text',{max:160,opt:1}],['treatment','Treatment received','text',{max:300,opt:1}],['icu','Intensive care (ICU)','seg',{o:YNU}],['complications','Complications','text',{max:300,opt:1}],['src','Where this comes from','src',{}],['notes','Notes','area',{max:1000,opt:1}]]},
+ other_history:{sec:'history',ans:'other',head:'Other important history',one:'item',q:'Anything else important, such as a transfusion, a serious injury or a transplant?',empty:'Nothing else added.',
+  f:[['cat','Type','sel',{o:OCAT,req:1}],['title','What happened','text',{req:1,max:160,ph:'e.g. Blood transfusion after surgery'}],['onset','When','when',{}],['src','Where this comes from','src',{}],['notes','Notes','area',{max:1000,opt:1}]]},
+ allergy:{sec:'allergy',ans:'allergies',head:'Allergies',one:'allergy',q:'Allergies',empty:'No allergies added.',
+  f:[['title','Substance or allergen','text',{req:1,max:160,ph:'e.g. Penicillin, peanuts, pollen'}],['cat','Category','sel',{o:ACAT,req:1}],['cert','What it is','seg',{o:CERT,req:1,col:1}],['reaction','Reaction','text',{max:300,opt:1,ph:'e.g. Hives, swelling, sneezing'}],['sev','Severity','seg',{o:SEV}],['onset','First noticed','when',{}],['confirmed','Confirmed by a doctor or nurse','seg',{o:YNU}],['src','Where this comes from','src',{}],['notes','Notes','area',{max:1000,opt:1}]]},
+ device:{sec:'allergy',ans:'devices',head:'Medical devices',one:'device',q:'Do you use any medical devices?',empty:'No devices added.',hint:'For example a pacemaker, hearing aid, insulin pump, glucose monitor, prosthesis or mobility aid.',
+  f:[['title','Device','text',{req:1,max:160,ph:'e.g. Hearing aid'}],['cat','Type','sel',{o:[['implanted','Implanted'],['external','External'],['wearable','Worn on the body'],['other','Other']]}],['onset','Implanted or started','when',{}],['manufacturer','Manufacturer','text',{max:120,opt:1}],['status','Now','seg',{o:[['in_use','In use'],['removed','No longer used'],['unknown','Not sure']]}],['notes','Notes','area',{max:1000,opt:1}]]},
+ family:{sec:'family',ans:'family',head:'Conditions in your family',one:'family condition',q:'Any conditions in your blood relatives?',empty:'No family history added.',hint:'Doctine records this for you and your doctor. It never works out a risk or a diagnosis from it.',
+  f:[['cat','Relative','sel',{o:RELS,req:1}],['title','Condition','text',{req:1,max:160,ph:'e.g. Type 2 diabetes'}],['age','Age at diagnosis, roughly','text',{max:3,opt:1,num:1,ph:'e.g. 50'}],['status','Relative is','seg',{o:[['living','Living'],['deceased','Deceased'],['unknown','Not sure']]}],['notes','Notes','area',{max:1000,opt:1}]]}};
+const MK={
+ med_occ:{head:'Taken now and then',one:'occasional medicine',ans:'meds_occasional',q:'Do you take any medicines only now and then?',empty:'No occasional medicines added.',hint:'For example paracetamol, ibuprofen, an antacid or an antihistamine.',
+  f:[['name','Medicine','text',{req:1,max:120,ph:'e.g. Paracetamol'}],['strength','Strength','text',{max:60,opt:1,ph:'e.g. 500 mg'}],['dose','Usual amount','text',{max:120,opt:1,ph:'e.g. 1 tablet'}],['reason','What for','text',{max:200,opt:1,ph:'e.g. Headache'}],['useFreq','How often','text',{max:120,opt:1,ph:'e.g. About twice a month'}],['lastUsed','Last taken','date',{opt:1}],['notes','Notes','area',{max:1000,opt:1}]]},
+ med_stop:{head:'Stopped',one:'stopped medicine',empty:'No stopped medicines.',hint:'Kept as history. Doctine never treats a stopped medicine as current.',
+  f:[['name','Medicine','text',{req:1,max:120}],['dose','Dose you took','text',{max:120,opt:1,ph:'e.g. 10 mg once a day'}],['start','Started','date',{opt:1}],['end','Stopped','date',{opt:1}],['stopReason','Why it was stopped','text',{max:300,opt:1}],['stopAdvice','Stopped on a doctor’s advice','seg',{o:YNU}],['notes','Notes','area',{max:1000,opt:1}]]},
+ med_more:{head:'More about this medicine',one:'medicine',
+  f:[['generic','Generic name','text',{max:120,opt:1,ph:'e.g. Metformin hydrochloride'}],['route','How it is taken','seg',{o:ROUTES}],['reason','What it is for','text',{max:200,opt:1}],['prescriber','Prescribed by','text',{max:120,opt:1}],['notes','Notes','area',{max:1000,opt:1}]]}};
+const HP_ANS=[['yes','Yes'],['no','No'],['not_sure','Not sure'],['prefer_not','Prefer not to say']];
+const ALL_ANS=[['yes','I have allergies'],['nka','No known allergies'],['not_assessed','Never been checked'],['prefer_not','Prefer not to say']];
+const hpRecs=k=>(S.hist||[]).filter(r=>r.kind===k);
+const medCat=m=>m.cat==='occasional'?'occasional':'regular';
+const medStopped=m=>medEnded(m);
+const hpNum=v=>{const n=+String(v).replace(',','.');return String(v).trim()!==''&&isFinite(n)?n:null};
+const whenOk=v=>!v||/^\d{4}(-\d{2}(-\d{2})?)?$/.test(v)&&+v.slice(0,4)>=1900&&v.slice(0,10)<=today()&&(v.length<7||+v.slice(5,7)>=1&&+v.slice(5,7)<=12)&&(v.length<10||!isNaN(Date.parse(v)));
+const whenTxt=v=>!v?'':v.length===4?v:v.length===7?new Date(v+'-01T00:00:00').toLocaleDateString('en-GB',{month:'short',year:'numeric'}):dFmt(v);
+const nextHid=()=>{const m=Math.max(Date.now(),...(S.hist||[]).map(r=>+r.id||0),...S.meds.map(m=>+m.id||0))+1;return m};
+const whShown=p=>p.wh&&p.wh.enabled!=null?!!p.wh.enabled:['female','intersex'].includes(p.sex);
+const hpAllergyText=()=>{const al=hpRecs('allergy'),a=(S.profile.ans||{}).allergies;return al.length?al.map(r=>r.title+(r.sev==='severe'&&r.cert!=='intolerance'?' (severe)':'')).join(', '):a==='nka'?'No known allergies':a==='not_assessed'?'Not yet assessed':String(S.profile.allergies||'')};
+const hpSevere=()=>hpRecs('allergy').filter(r=>r.sev==='severe'&&r.cert!=='intolerance');
+const PERSONAL_KEYS=['name','dob','sex','gender','blood','phone','cemail','city','country','ecName','ecRel','ecPhone'];
+/* What the account stores for the profile and medicine details (only values that pass the same checks the database makes). */
+const HP_ANS_KEYS=['conditions','past','surgery','hosp','other','allergies','devices','family','meds_regular','meds_occasional'],HP_ANS_VALS=['yes','no','not_sure','prefer_not','nka','not_assessed'];
+const nt=(v,max)=>{v=String(v??'').trim();return v?v.slice(0,max):null};
+function hpRow(p){const ans={};Object.entries(p.ans||{}).forEach(([k,v])=>{if(HP_ANS_KEYS.includes(k)&&HP_ANS_VALS.includes(v))ans[k]=v});
+ const ph=v=>{v=nt(v,24);return v&&/^\+?[0-9][0-9 ()-]{5,22}$/.test(v)?v:null},num=(v,a,b)=>{const n=+v;return String(v||'').trim()!==''&&n>=a&&n<=b?n:null};
+ return{sex_at_birth:SEXES.some(x=>x[0]===p.sex)?p.sex:null,phone:ph(p.phone),contact_email:p.cemail&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(p.cemail)?nt(p.cemail,254):null,city:nt(p.city,80),country:nt(p.country,80),
+  emergency_name:nt(p.ecName,120),emergency_relationship:nt(p.ecRel,60),emergency_phone:ph(p.ecPhone),units:['metric','imperial'].includes(p.units)?p.units:null,waist_cm:num(p.waist,30,250),
+  measured_on:p.measured&&p.measured<=today()&&p.measured>='1900-01-01'?p.measured:null,lifestyle:p.life&&typeof p.life==='object'?p.life:{},history_answers:ans,womens_health:p.wh&&typeof p.wh==='object'?p.wh:{}}}
+const medHpRow=m=>({category:m.cat==='occasional'?'occasional':'regular',generic_name:nt(m.generic,120),route:ROUTES.some(x=>x[0]===m.route)?m.route:null,reason:nt(m.reason,200),prescriber:nt(m.prescriber,120),
+ last_used:m.lastUsed&&m.lastUsed<=today()?m.lastUsed:null,stop_reason:nt(m.stopReason,300),stopped_on_advice:['yes','no','unknown'].includes(m.stopAdvice)?m.stopAdvice:null,use_frequency:nt(m.useFreq,120),notes:nt(m.notes,1000)});
+
+/* ---- display ---- */
+function hpOverview(){const p=S.profile,age=ageOf(p.dob),conds=hpRecs('condition').filter(r=>['active','controlled',null,undefined,'','unknown'].includes(r.status)),
+ cur=S.meds.filter(m=>!medStopped(m)&&(m.status||'active')!=='completed'),al=hpRecs('allergy'),a=(p.ans||{}).allergies;
+ const pers=[age!=null?age+' years':'',lbl(SEXES,p.sex)&&p.sex!=='prefer_not_to_say'?lbl(SEXES,p.sex):'',p.blood&&p.blood!=='Unknown'?'Blood group '+p.blood:''].filter(Boolean).join(' · ')||'Not added yet';
+ const ups=[p.upd,...(S.hist||[]).map(r=>r.upd)].filter(Boolean).sort();const last=ups.length?ups[ups.length-1]:'';
+ const cell=(t,b,more)=>`<div class="hp-ov"><div class="hp-ovl">${t}</div><div class="hp-ovv">${b}</div>${more?`<div class="hp-ovm">${more}</div>`:''}</div>`;
+ return`<section class="card hp-ovw" aria-label="Profile summary">${cell('You',esc(pers))}${cell('Active conditions',conds.length?esc(conds.slice(0,3).map(r=>r.title).join(', ')):(p.ans||{}).conditions==='no'?'None':'None added',conds.length>3?`+${conds.length-3} more`:'')}
+ ${cell('Current medicines',cur.length?esc(cur.slice(0,3).map(m=>m.name).join(', ')):'None added',cur.length>3?`+${cur.length-3} more`:'')}
+ ${cell('Allergies',al.length?esc(al.slice(0,3).map(r=>r.title).join(', ')):a==='nka'?'No known allergies':a==='not_assessed'?'Not yet assessed':p.allergies?esc(p.allergies):'Not added',al.length>3?`+${al.length-3} more`:'')}
+ ${cell('Last updated',last?esc(new Date(last).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})):'—')}</section>`}
+function hpSevereBanner(){const s=hpSevere();if(!s.length)return'';
+ return`<div class="hp-alert" role="note"><b>Severe allergy${s.length>1?'s':''}:</b> ${s.map(r=>`${esc(r.title)}${r.d&&r.d.reaction?` <span>(${esc(r.d.reaction)})</span>`:''}`).join(' · ')}<div class="hp-alsub">As you recorded it. Tell every doctor, pharmacist and hospital.</div></div>`}
+function hpSaveNote(sec){const s=S.hpSave&&S.hpSave.sec===sec?S.hpSave:null;if(!s)return'';
+ if(s.st==='saving')return`<span class="hp-st" role="status"><span class="dot">●</span> Saving…</span>`;
+ if(s.st==='saved')return`<span class="hp-st ok" role="status">✓ ${esc(s.msg)}</span>`;
+ if(s.st==='sample')return`<span class="hp-st" role="status">Sample account: changes stay on this screen and are not saved.</span>`;
+ return`<span class="hp-st bad" role="alert">${esc(s.msg)} <button type="button" class="mx-link" data-hpretry="${sec}">Try again</button></span>`}
+function hpSecSummary(k){const p=S.profile,a=p.ans||{};
+ if(k==='personal'){const n=PERSONAL_KEYS.filter(x=>String(p[x]||'').trim()).length;return n?`${n} of ${PERSONAL_KEYS.length} details`:'Not started'}
+ if(k==='body'){const l=p.life||{},n=['diet','activity','sleepH','smoking','alcohol'].filter(x=>l[x]).length+(p.height&&p.weight?1:0);return n?'Partly filled in':'Not started'}
+ if(k==='history'){const n=['condition','past_illness','surgery','hospitalization','other_history'].reduce((s,x)=>s+hpRecs(x).length,0);return n?`${n} record${n>1?'s':''}`:['conditions','past','surgery','hosp'].some(x=>a[x])?'Answered':'Not started'}
+ if(k==='meds'){const n=S.meds.length;return n?`${n} medicine${n>1?'s':''}`:'Not started'}
+ if(k==='allergy'){const n=hpRecs('allergy').length;return n?`${n} allerg${n>1?'ies':'y'}`:a.allergies==='nka'?'No known allergies':a.allergies==='not_assessed'?'Not yet assessed':'Not started'}
+ if(k==='family'){const n=hpRecs('family').length;return n?`${n} entr${n>1?'ies':'y'}`:a.family?'Answered':'Not started'}
+ if(k==='women'){const w=p.wh||{};return ['cycleLen','lmp','preg','meno'].some(x=>w[x])?'Partly filled in':'Not started'}}
+function healthView(){S.hpOpen=S.hpOpen||{};const p=S.profile,secs=HP_SECS.filter(([k])=>k!=='women'||whShown(p));
+ const done=secs.filter(([k])=>hpSecSummary(k)!=='Not started').length;
+ return wrap(head('Health profile','Your health details, in one place. Every field is optional: add what you know, when you want.','<button class="btn tl" id="exp">Export my data</button>')+
+ hpSevereBanner()+hpOverview()+
+ `<p class="hp-prog">${done} of ${secs.length} sections started. Leaving something empty is fine; Doctine never reads an empty answer as “no”.</p>
+ <div class="hp-secs">${secs.map(([k,t,s,ic])=>{const open=!!S.hpOpen[k];return`<section class="card hp-sec${open?' open':''}" id="hps-${k}">
+  <h2 class="hp-sh"><button type="button" class="hp-tog" data-hpsec="${k}" aria-expanded="${open}" aria-controls="hpb-${k}"><span class="hp-ic hp-ic-${k}">${hpIcon(ic)}</span><span class="hp-tt"><span class="hp-t">${t}</span><span class="hp-s">${s}</span></span><span class="hp-sum">${esc(hpSecSummary(k))}</span><span class="hp-chev" aria-hidden="true"></span></button></h2>
+  ${open?`<div class="hp-body" id="hpb-${k}">${['history','meds','allergy','family'].includes(k)&&S.hpSave&&S.hpSave.sec==='rec'&&!S.hpEdit?`<div class="hp-secst">${hpSaveNote('rec')}</div>`:''}${({personal:hpPersonal,body:hpBody,history:hpHistory,meds:hpMeds,allergy:hpAllergy,family:hpFamily,women:hpWomen})[k]()}</div>`:''}</section>`}).join('')}</div>
+ <p class="text-xs text-[var(--mute)]">Only you can see this profile. It is used in a Doctine AI chat only when you tick “Use my saved reports and profile” in that chat. You can correct or remove anything here at any time, and deleting your account deletes all of it.</p>
+ <section class="card p-5"><h2 class="text-xl mb-4">Medical timeline</h2>${hpTimeline()}</section>`)}
+function hpTimeline(){const ev=[...S.reports.map(r=>({d:r.date,t:r.title,s:r.lab||r.cat})),...(S.hist||[]).filter(r=>r.onset&&['condition','past_illness','surgery','hospitalization','other_history'].includes(r.kind)).map(r=>({d:r.onset,t:r.title,s:(RK[r.kind]||{}).one?((RK[r.kind].one[0].toUpperCase()+RK[r.kind].one.slice(1))+' · '+SRC_TXT[r.src||'user']):''}))].filter(e=>e.d).sort((a,b)=>b.d.localeCompare(a.d));
+ return ev.length?`<ul>${ev.map(e=>`<li class="flex gap-3"><div class="flex flex-col items-center"><span class="w-3 h-3 rounded-full mt-1.5" style="background:var(--teal)"></span><span class="flex-1 w-px bg-[var(--line)]"></span></div><div class="pb-5"><div class="text-xs text-[var(--mute)]">${esc(whenTxt(e.d))}</div><div class="font-medium">${esc(e.t)}</div><div class="text-sm text-[var(--mute)]">${esc(e.s||'')}</div></div></li>`).join('')}</ul>`:'<p class="text-[var(--mute)]">Saved reports and dated history will appear here in date order.</p>'}
+
+/* ---- form helpers (section forms and record forms share them) ---- */
+let HPFP='x';
+function hpField(k,l,type,o,v,err){o=o||{};const id=`hpf-${HPFP}-${k}`,eid=`hpe-${HPFP}-${k}`,bad=err&&err[k]?` aria-invalid="true" aria-describedby="${eid}"`:'',opt=o.opt||(!o.req&&type!=='seg'&&type!=='src')?' <span class="opt">optional</span>':'',e=err&&err[k]?`<div class="mx-err" id="${eid}">${esc(err[k])}</div>`:'';v=v==null?'':v;
+ if(type==='seg'||type==='src'){const list=type==='src'?SRC:o.o;return`<div class="hp-f${o.col?' wide':''}"><span class="mx-lab" id="${id}">${l}</span><div class="mx-seg${o.col?' hp-col':''}" role="radiogroup" aria-labelledby="${id}">${list.map(([a,b])=>`<label><input type="radio" name="${k}" value="${a}" ${a===v?'checked':''} data-hre${bad}><span class="mx-opt">${esc(b)}</span></label>`).join('')}${v&&!o.req?`<button type="button" class="mx-link" data-hpclear="${k}">Clear</button>`:''}</div>${e}</div>`}
+ if(type==='sel')return`<label class="hp-f"><span class="mx-lab">${l}${opt}</span><select class="inp" name="${k}" id="${id}" data-hre${bad}>${opt?'':''}<option value="">Choose</option>${o.o.map(([a,b])=>`<option value="${esc(a)}" ${a===v?'selected':''}>${esc(b)}</option>`).join('')}</select>${e}</label>`;
+ if(type==='area')return`<label class="hp-f wide"><span class="mx-lab">${l}${opt}</span><textarea class="inp" rows="2" name="${k}" id="${id}" maxlength="${o.max||1000}"${bad}>${esc(v)}</textarea>${e}</label>`;
+ if(type==='date')return`<label class="hp-f"><span class="mx-lab">${l}${opt}</span><input class="inp mx-date" type="date" name="${k}" id="${id}" min="1900-01-01" max="${o.dmax||today()}" value="${esc(v)}"${bad}>${e}</label>`;
+ if(type==='when')return`<label class="hp-f"><span class="mx-lab">${l} <span class="opt">optional · a year, or year and month</span></span><input class="inp" name="${k}" id="${id}" inputmode="numeric" maxlength="10" placeholder="e.g. 2019 or 2019-08" value="${esc(v)}"${bad}>${e}</label>`;
+ return`<label class="hp-f${o.wide?' wide':''}"><span class="mx-lab">${l}${opt}</span><input class="inp${o.big?' mx-name':''}" type="${o.t||'text'}" name="${k}" id="${id}" maxlength="${o.max||120}" ${o.num?'inputmode="numeric"':''} ${o.ac?`autocomplete="${o.ac}"`:'autocomplete="off"'} placeholder="${esc(o.ph||'')}" value="${esc(v)}"${bad}>${e}</label>`}
+function hpAnswer(key,list){const v=(S.profile.ans||{})[key]||'';return`<div class="mx-seg hp-ans" role="radiogroup">${list.map(([a,b])=>`<label><input type="radio" name="ans-${key}" value="${a}" data-hpans="${key}" ${a===v?'checked':''}><span class="mx-opt">${esc(b)}</span></label>`).join('')}</div>`}
+const hpFoot=(sec,dirty,cancel=true)=>`<div class="hp-foot"><div class="hp-fst">${hpSaveNote(sec)||(dirty?'<span class="hp-st warn">Unsaved changes</span>':'')}</div>${cancel?`<button type="button" class="btn" data-hpcancel="${sec}">${dirty?'Discard changes':'Cancel'}</button>`:''}<button class="btn pri" type="submit">Save</button></div>`;
+
+/* ---- A. personal ---- */
+function hpDraft(sec,make){S.hpForm=S.hpForm||{};if(!S.hpForm[sec])S.hpForm[sec]={v:make(),err:{},dirty:false};return S.hpForm[sec]}
+const persDraft=()=>{const p=S.profile;return{name:p.name||'',dob:p.dob||'',sex:p.sex||'',gender:p.gender||'',blood:p.blood||'',phone:p.phone||'',cemail:p.cemail||'',city:p.city||'',country:p.country||'',ecName:p.ecName||'',ecRel:p.ecRel||'',ecPhone:p.ecPhone||'',whOn:p.wh&&p.wh.enabled!=null?(p.wh.enabled?'yes':'no'):''}};
+function hpPersonal(){HPFP='personal';const F=hpDraft('personal',persDraft),v=F.v,er=F.err,f=(k,l,t,o)=>hpField(k,l,t,o,v[k],er);
+ const odd=v.blood&&!BLOODS.includes(v.blood)?[[v.blood,'Saved earlier: '+v.blood]]:[];
+ return`<form id="hpsf-personal" data-sec="personal" class="hp-form" novalidate>
+ <div class="hp-grid">${f('name','Full name','text',{req:1,ac:'name'})}${hpField('dob','Date of birth','date',{opt:1,dmax:dobMax()},v.dob,er)}</div>
+ ${f('sex','Sex assigned at birth','seg',{o:SEXES})}<p class="mx-hint hp-hint">Used only where it matters medically (some test ranges and medicines). Separate from gender.</p>
+ <div class="hp-grid"><label class="hp-f"><span class="mx-lab">Gender <span class="opt">optional</span></span><select class="inp" name="gender" data-hre aria-label="Gender"><option value="">Choose</option>${GENDERS.map(([a,b])=>`<option value="${a}" ${v.gender===a?'selected':''}>${b}</option>`).join('')}</select></label>
+ ${f('blood','Blood group','sel',{o:[...odd,...BLOODS.map(b=>[b,b==='Unknown'?'Don’t know':b])]})}</div>
+ <h3 class="hp-h3">Contact</h3><div class="hp-grid">${f('phone','Phone, with country code','text',{max:24,t:'tel',ac:'tel',ph:'+91 98765 43210'})}${f('cemail','Contact email','text',{max:254,t:'email',ac:'email'})}</div>
+ <p class="mx-hint hp-hint">A contact detail only. You sign in with ${S.email&&!S.sample?esc(S.email):'your account email'}, which this never changes.</p>
+ <div class="hp-grid">${f('city','City','text',{max:80,ac:'address-level2'})}${f('country','Country','text',{max:80,ac:'country-name',ph:'India'})}</div>
+ <h3 class="hp-h3">Emergency contact</h3><div class="hp-grid">${f('ecName','Name','text',{max:120})}${f('ecRel','Relationship','text',{max:60,ph:'e.g. Sister'})}${f('ecPhone','Phone, with country code','text',{max:24,t:'tel',ph:'+91 …'})}</div>
+ <h3 class="hp-h3">Women’s health section</h3>${f('whOn','Show the optional women’s health section','seg',{o:[['yes','Show'],['no','Hide']]})}<p class="mx-hint hp-hint">If you leave this unset, it shows when sex assigned at birth is female or intersex.</p>
+ ${hpFoot('personal',F.dirty)}</form>`}
+/* ---- B. body & lifestyle ---- */
+const LIFE_KEYS=['diet','dietOther','restrict','avoid','prefs','activity','actNote','sleepH','sleepQ','sleepIssues','sleepSched','smoking','smokingD','alcohol','alcoholD','tobacco','tobaccoD','subst','substD','caffeine','caffeineD'];
+const bodyDraft=()=>{const p=S.profile,l=p.life||{},imp=p.units==='imperial',h=+p.height,w=+p.weight,wa=+p.waist;
+ const o={units:p.units||'metric',h:p.height||'',w:p.weight||'',waist:p.waist||'',measured:p.measured||'',hft:'',hin:'',wlb:'',waistin:''};
+ if(imp){if(h>0){const t=h/2.54;o.hft=String(Math.floor(t/12));o.hin=String(Math.round(t%12))}if(w>0)o.wlb=String(Math.round(w*2.20462*10)/10);if(wa>0)o.waistin=String(Math.round(wa/2.54*10)/10)}
+ LIFE_KEYS.forEach(k=>o[k]=l[k]||'');return o};
+function hpConvertUnits(v,from){const r1=x=>String(Math.round(x*10)/10);
+ if(from!=='imperial'&&v.units==='imperial'){const h=hpNum(v.h),w=hpNum(v.w),wa=hpNum(v.waist);if(h){const t=h/2.54;v.hft=String(Math.floor(t/12));v.hin=String(Math.round(t%12))}else{v.hft='';v.hin=''}v.wlb=w?r1(w*2.20462):'';v.waistin=wa?r1(wa/2.54):''}
+ if(from==='imperial'&&v.units!=='imperial'){const ft=hpNum(v.hft),inch=hpNum(v.hin),lb=hpNum(v.wlb),wi=hpNum(v.waistin);v.h=ft!=null||inch!=null?r1(((ft||0)*12+(inch||0))*2.54):'';v.w=lb?r1(lb/2.20462):'';v.waist=wi?r1(wi*2.54):''}}
+function bmiOf(h,w){h=+h;w=+w;return h>=30&&h<=275&&w>=1&&w<=500?Math.round(w/((h/100)**2)*10)/10:null}
+function hpBody(){HPFP='body';const F=hpDraft('body',bodyDraft),v=F.v,er=F.err,f=(k,l,t,o)=>hpField(k,l,t,o,v[k],er),imp=v.units==='imperial';
+ const cm=imp?(hpNum(v.hft)!=null||hpNum(v.hin)!=null?((hpNum(v.hft)||0)*12+(hpNum(v.hin)||0))*2.54:null):hpNum(v.h),kg=imp?(hpNum(v.wlb)!=null?hpNum(v.wlb)/2.20462:null):hpNum(v.w),b=cm&&kg?bmiOf(cm,kg):null;
+ const habit=(k,l,o)=>`<div class="hp-habit">${hpField(k,l,'seg',{o},v[k],er)}${v[k]&&!['never','none','prefer_not'].includes(v[k])?hpField(k+'D','How much or how often','text',{max:160,opt:1},v[k+'D'],er):''}</div>`;
+ const wts=(S.vitals||[]).filter(x=>x.kind==='weight').sort((a,c)=>c.at.localeCompare(a.at)).slice(0,4);
+ return`<form id="hpsf-body" data-sec="body" class="hp-form" novalidate>
+ <h3 class="hp-h3 first">Measurements</h3>${f('units','Units','seg',{o:[['metric','Metric (cm, kg)'],['imperial','Imperial (ft, lb)']],req:1})}
+ <div class="hp-grid">${imp?`<div class="hp-f"><span class="mx-lab">Height <span class="opt">optional</span></span><div class="mx-pair"><input class="inp" name="hft" inputmode="numeric" maxlength="2" aria-label="Height, feet" placeholder="ft" value="${esc(v.hft)}"${er.h?' aria-invalid="true"':''}><input class="inp" name="hin" inputmode="decimal" maxlength="4" aria-label="Height, inches" placeholder="in" value="${esc(v.hin)}"></div>${er.h?`<div class="mx-err">${esc(er.h)}</div>`:''}</div>${f('wlb','Weight (lb)','text',{max:6,num:1})}${f('waistin','Waist (in)','text',{max:5,num:1})}`
+  :`${hpField('h','Height (cm)','text',{max:5,num:1},v.h,er)}${hpField('w','Weight (kg)','text',{max:5,num:1},v.w,er)}${hpField('waist','Waist (cm)','text',{max:5,num:1},v.waist,er)}`}${hpField('measured','Measured on','date',{opt:1},v.measured,er)}</div>
+ ${b?`<p class="mx-note">BMI <b>${b}</b>. BMI is a rough screening number from height and weight. It is not a diagnosis and doesn’t account for muscle, age or build.</p>`:''}
+ ${wts.length?`<p class="mx-hint">Earlier weights are kept in Vitals: ${wts.map(x=>`${x.v} kg on ${esc(dFmt(x.at.slice(0,10)))}`).join(', ')}. A new weight here adds a reading; it never replaces the old ones.</p>`:''}
+ <h3 class="hp-h3">Diet</h3>${f('diet','What you eat','seg',{o:[['vegetarian','Vegetarian'],['vegan','Vegan'],['eggetarian','Eggetarian'],['non_vegetarian','Non-vegetarian'],['pescatarian','Pescatarian'],['other','Other'],['none','No specific pattern']]})}
+ ${v.diet==='other'?f('dietOther','Describe','text',{max:160,opt:1}):''}<div class="hp-grid">${f('restrict','Dietary restrictions','text',{max:200,opt:1,ph:'e.g. Low salt, gluten-free'})}${f('avoid','Foods you avoid','text',{max:200,opt:1})}</div>
+ ${f('prefs','Religious or personal food practices','text',{max:200,opt:1,ph:'Only if you want to share, e.g. fasting days'})}<p class="mx-hint hp-hint">Food allergies go in <button type="button" class="mx-link" data-hpgo="allergy">Allergies</button>, so they are kept with your other allergies.</p>
+ <h3 class="hp-h3">Physical activity</h3>${f('activity','How active you are','seg',{o:[['sedentary','Mostly sitting'],['light','Lightly active'],['moderate','Moderately active'],['very','Very active'],['high','Highly active']]})}
+ ${f('actNote','Type of exercise and how often','text',{max:200,opt:1,ph:'e.g. Walking 30 min, 5 days a week'})}
+ <h3 class="hp-h3">Sleep</h3><div class="hp-grid">${f('sleepH','Usual hours a night','text',{max:4,opt:1,num:1,ph:'e.g. 7'})}${f('sleepSched','Usual sleep times','text',{max:80,opt:1,ph:'e.g. 11 pm – 6:30 am'})}</div>
+ ${f('sleepQ','Sleep quality','seg',{o:[['good','Good'],['fair','Fair'],['poor','Poor'],['varies','Varies']]})}${f('sleepIssues','Common sleep difficulties','text',{max:200,opt:1,ph:'e.g. Waking at night'})}
+ <h3 class="hp-h3">Habits</h3><p class="mx-hint hp-hint">Optional, and only for you and your doctor. Unanswered stays unanswered.</p>
+ ${habit('smoking','Smoking',[['never','Never'],['former','Used to'],['occasional','Sometimes'],['current','Yes, regularly'],['prefer_not','Prefer not to say']])}
+ ${habit('alcohol','Alcohol',[['none','None'],['occasional','Occasionally'],['weekly','Weekly'],['daily','Most days'],['former','Used to'],['prefer_not','Prefer not to say']])}
+ ${habit('tobacco','Other tobacco (chewing, gutka, vaping…)',[['never','Never'],['former','Used to'],['current','Yes'],['prefer_not','Prefer not to say']])}
+ ${habit('subst','Recreational substances',[['none','None'],['occasional','Occasionally'],['regular','Regularly'],['former','Used to'],['prefer_not','Prefer not to say']])}
+ ${habit('caffeine','Tea, coffee and other caffeine',[['none','None'],['low','1–2 cups a day'],['high','3 or more a day'],['prefer_not','Prefer not to say']])}
+ ${hpFoot('body',F.dirty)}</form>`}
+/* ---- women's health ---- */
+const whDraft=()=>{const w=S.profile.wh||{};return{cycleLen:w.cycleLen||'',lmp:w.lmp||'',cycleReg:w.cycleReg||'',preg:w.preg||'',pregHist:w.pregHist||'',meno:w.meno||'',notes:w.notes||'',shareAI:w.shareAI?'yes':'no'}};
+function hpWomen(){HPFP='women';const F=hpDraft('women',whDraft),v=F.v,er=F.err,f=(k,l,t,o)=>hpField(k,l,t,o,v[k],er);
+ return`<form id="hpsf-women" data-sec="women" class="hp-form" novalidate><p class="mx-note">Everything here is optional and visible only to you. It is shared with Doctine AI only if you allow it below.</p>
+ <div class="hp-grid">${f('cycleLen','Usual cycle length (days)','text',{max:3,opt:1,num:1,ph:'e.g. 28'})}${hpField('lmp','First day of last period','date',{opt:1},v.lmp,er)}</div>
+ ${f('cycleReg','Cycle','seg',{o:[['regular','Regular'],['irregular','Irregular'],['none','No periods'],['not_sure','Not sure']]})}
+ ${f('preg','Pregnancy','seg',{o:[['no','Not pregnant'],['yes','Pregnant'],['trying','Trying to conceive'],['not_sure','Not sure'],['prefer_not','Prefer not to say']]})}
+ ${f('pregHist','Past pregnancies, if relevant','text',{max:200,opt:1,ph:'e.g. 2 pregnancies, 2 births'})}
+ ${f('meno','Menopause','seg',{o:[['pre','Not yet'],['peri','Going through it'],['post','After menopause'],['not_sure','Not sure'],['prefer_not','Prefer not to say']]})}
+ ${f('notes','Anything else relevant','area',{max:1000,opt:1})}
+ ${f('shareAI','Include pregnancy status in Doctine AI chats where you share your profile','seg',{o:[['no','No'],['yes','Yes']],req:1})}
+ ${hpFoot('women',F.dirty)}</form>`}
+
+/* ---- record lists ---- */
+function hpRecLine(r){const k=RK[r.kind],d=r.d||{},bits=[];
+ if(r.kind==='allergy'){bits.push(lbl(CERT,r.cert));if(d.reaction)bits.push(d.reaction);if(r.sev&&r.sev!=='unknown')bits.push(lbl(SEV,r.sev));}
+ else if(r.kind==='family'){if(d.age)bits.push('diagnosed around age '+d.age);if(r.status&&r.status!=='unknown')bits.push(r.status==='living'?'living':'deceased')}
+ else{if(r.onset)bits.push(r.kind==='hospitalization'?'Admitted '+whenTxt(r.onset)+(d.discharged?' – '+whenTxt(d.discharged):''):whenTxt(r.onset));
+  const st=(k.f.find(x=>x[0]==='status')||[])[3];if(st&&r.status)bits.push(lbl(st.o,r.status));if(r.sev&&r.sev!=='unknown')bits.push(lbl(SEV,r.sev));if(r.kind==='other_history'&&r.cat)bits.unshift(lbl(OCAT,r.cat))}
+ const doc=r.doc!=null?S.reports.find(x=>x.id===r.doc):null;
+ const del=S.hpDel===String(r.id)?`<div class="hp-confirm" role="alert">Remove this ${esc(k.one)}? Everything else stays. <button type="button" class="btn dg" data-hpdelok="${r.id}">Remove</button><button type="button" class="btn" data-hpdelno>Keep</button></div>`:'';
+ return`<li class="hp-rec${r.kind==='allergy'&&r.sev==='severe'&&r.cert!=='intolerance'?' severe':''}"><div class="hp-rm"><div class="hp-rt">${r.kind==='family'?`<span class="hp-rel">${esc(lbl(RELS,r.cat))}</span> `:''}${esc(r.title)}</div>${bits.length?`<div class="hp-rd">${esc(bits.join(' · '))}</div>`:''}
+ <div class="hp-tags"><span class="tag">${esc(SRC_TXT[r.src||'user'])}</span>${doc?`<span class="tag">Linked to “${esc(doc.title)}”</span>`:''}</div>${del}</div>
+ <div class="hp-ra"><button type="button" class="mx-link" data-hpedit="${r.id}" aria-label="Edit ${esc(r.title)}">Edit</button><button type="button" class="mx-link dg" data-hpdel="${r.id}" aria-label="Remove ${esc(r.title)}">Remove</button></div></li>`}
+function hpRecForm(){HPFP='rec';const E=S.hpEdit,K=RK[E.kind]||MK[E.kind],v=E.v,er=E.err;
+ const fields=K.f.map(([k,l,t,o])=>{if(t==='src')return hpField(k,l,'src',o,v[k],er)+(v.src==='document'?hpField('doc','Which record','sel',{o:S.reports.map(r=>[String(r.id),r.title+(r.date?' · '+dFmt(r.date):'')]),opt:1},v.doc,er)+(S.reports.length?'':'<p class="mx-hint">You have no saved records yet. Add one in Medical records, then link it here.</p>'):'');return hpField(k,l,t,o,v[k],er)}).join('');
+ const dup=E.dup?`<div class="warn" role="alert">${esc(E.dup)} Doctine never merges two entries on its own. Save again to keep both, or change this one.</div>`:'';
+ return`<form id="hprf" class="hp-rform" data-kind="${E.kind}" novalidate><div class="hp-rfh"><h4>${E.id!=null?'Edit':'Add'} ${esc(K.one)}</h4></div>${dup}<div class="hp-grid">${fields}</div>
+ ${hpFoot('rec',E.dirty)}</form>`}
+function hpList(kind){const K=RK[kind],rs=hpRecs(kind),a=K.ans?(S.profile.ans||{})[K.ans]:'',editing=S.hpEdit&&S.hpEdit.kind===kind;
+ const sorted=[...rs].sort((x,y)=>(kind==='allergy'?(y.sev==='severe')-(x.sev==='severe'):0)||(y.onset||'').localeCompare(x.onset||''));
+ const empty=a==='no'?'You said none.':a==='prefer_not'?'You preferred not to say.':a==='not_sure'?'You weren’t sure. Add anything you remember later.':K.empty;
+ return`<div class="hp-sub" id="hpl-${kind}"><div class="hp-subh"><h3>${K.head}</h3>${editing&&S.hpEdit.id==null?'':`<button type="button" class="btn tl" data-hpadd="${kind}">Add ${esc(K.one)}</button>`}</div>
+ ${K.hint?`<p class="mx-hint">${K.hint}</p>`:''}${!rs.length&&K.ans&&kind!=='allergy'?`<div class="hp-q"><span>${K.q}</span>${hpAnswer(K.ans,HP_ANS)}${hpSaveNote('ans-'+K.ans)}</div>`:''}
+ ${editing&&S.hpEdit.id==null?hpRecForm():''}
+ ${sorted.length?`<ul class="hp-recs">${sorted.map(r=>editing&&String(S.hpEdit.id)===String(r.id)?`<li class="hp-rec editing">${hpRecForm()}</li>`:hpRecLine(r)).join('')}</ul>`:(editing&&S.hpEdit.id==null?'':`<p class="hp-empty">${empty}</p>`)}</div>`}
+function hpHistory(){return['condition','past_illness','surgery','hospitalization','other_history'].map(hpList).join('')}
+function hpFamily(){return hpList('family')}
+function hpAllergy(){const p=S.profile,a=(p.ans||{}).allergies,rs=hpRecs('allergy');
+ const legacy=p.allergies&&String(p.allergies).trim()?`<div class="mx-note hp-legacy">From your earlier profile: <b>${esc(p.allergies)}</b>. <button type="button" class="mx-link" data-hplegacy>Add as a detailed allergy</button> <button type="button" class="mx-link" data-hplegclear>${S.hpLegArm?'Tap again to remove this note':'Remove this note'}</button></div>`:'';
+ return`${rs.length?'':`<div class="hp-q"><span>Do you have any allergies?</span>${hpAnswer('allergies',ALL_ANS)}${hpSaveNote('ans-allergies')}</div>`}
+ <p class="mx-hint">${rs.length?'':'“No known allergies” and “never been checked” mean different things to a doctor, so Doctine keeps them apart. '}Confirmed allergies, suspected ones, intolerances and side effects are kept apart too.</p>${legacy}
+ ${hpList('allergy')}${hpList('device')}`}
+/* ---- medicines ---- */
+function hpMedLine(m,grp){const bits=[doseLine(m),grp==='regular'?freqLabel(m):'',m.route?lbl(ROUTES,m.route):'',m.reason?'for '+m.reason:''].filter(Boolean);
+ if(grp==='occasional'){if(m.useFreq)bits.push(m.useFreq);if(m.lastUsed)bits.push('last taken '+dFmt(m.lastUsed))}
+ if(grp==='stopped'){bits.length=0;if(m.dose&&m.dose!=='Not recorded')bits.push(m.dose);bits.push((m.start?dFmt(m.start)+' – ':'')+(m.end?'stopped '+dFmt(m.end):'stopped'));if(m.stopReason)bits.push(m.stopReason);if(m.stopAdvice==='yes')bits.push('on a doctor’s advice')}
+ const del=S.hpDel==='m'+m.id?`<div class="hp-confirm" role="alert">Remove ${esc(m.name)}${grp==='regular'?', its reminders and dose history':''}? <button type="button" class="btn dg" data-hpmdelok="${m.id}">Remove</button><button type="button" class="btn" data-hpdelno>Keep</button></div>`:'';
+ const editing=S.hpEdit&&String(S.hpEdit.id)===String(m.id)&&S.hpEdit.kind.startsWith('med_');
+ if(editing)return`<li class="hp-rec editing">${hpRecForm()}</li>`;
+ return`<li class="hp-rec"><div class="hp-rm"><div class="hp-rt">${esc(m.name)}${m.brand?` <span class="hp-rd">(${esc(m.brand)})</span>`:''}</div>${bits.length?`<div class="hp-rd">${esc(bits.join(' · '))}</div>`:''}
+ <div class="hp-tags"><span class="tag">${m.src&&m.src.doc!=null?'From a prescription, checked by you':'Reported by you'}</span>${m.prescriber?`<span class="tag">Prescribed by ${esc(m.prescriber)}</span>`:''}</div>${del}</div>
+ <div class="hp-ra">${grp==='regular'?`<button type="button" class="mx-link" data-hpmed="med_more|${m.id}">Details</button><button type="button" class="mx-link" data-hpmsched="${m.id}">Dose &amp; schedule</button><button type="button" class="mx-link" data-hpmstop="${m.id}">Mark stopped</button>`:grp==='occasional'?`<button type="button" class="mx-link" data-hpmed="med_occ|${m.id}">Edit</button><button type="button" class="mx-link" data-hpmstop="${m.id}">Mark stopped</button>`:`<button type="button" class="mx-link" data-hpmed="med_stop|${m.id}">Edit</button>`}<button type="button" class="mx-link dg" data-hpmdel="${m.id}">Remove</button></div></li>`}
+function hpMeds(){const reg=S.meds.filter(m=>medCat(m)==='regular'&&!medStopped(m)),occ=S.meds.filter(m=>medCat(m)==='occasional'&&!medStopped(m)),stp=S.meds.filter(medStopped),a=S.profile.ans||{},E=S.hpEdit;
+ const newForm=k=>E&&E.kind===k&&E.id==null?hpRecForm():'';
+ const block=(h,hint,list,grp,addBtn,ansKey,empty)=>`<div class="hp-sub"><div class="hp-subh"><h3>${h}</h3>${addBtn}</div>${hint?`<p class="mx-hint">${hint}</p>`:''}
+  ${!list.length&&ansKey?`<div class="hp-q"><span>${grp==='regular'?'Do you take any medicines regularly?':MK.med_occ.q}</span>${hpAnswer(ansKey,HP_ANS)}${hpSaveNote('ans-'+ansKey)}</div>`:''}${grp==='occasional'?newForm('med_occ'):grp==='stopped'?newForm('med_stop'):''}
+  ${list.length?`<ul class="hp-recs">${list.map(m=>hpMedLine(m,grp)).join('')}</ul>`:`<p class="hp-empty">${a[ansKey]==='no'?'You said none.':empty}</p>`}</div>`;
+ return block('Taken regularly','Doses, schedules and reminders are managed in Medicines. Add details such as what each one is for here.',reg,'regular',`<button type="button" class="btn tl" data-hpmadd>Add medicine</button>`,'meds_regular','No regular medicines added.')+
+  block(MK.med_occ.head,MK.med_occ.hint,occ,'occasional',E&&E.kind==='med_occ'&&E.id==null?'':`<button type="button" class="btn tl" data-hpmed="med_occ|">Add occasional medicine</button>`,'meds_occasional',MK.med_occ.empty)+
+  block(MK.med_stop.head,MK.med_stop.hint,stp,'stopped',E&&E.kind==='med_stop'&&E.id==null?'':`<button type="button" class="btn tl" data-hpmed="med_stop|">Add stopped medicine</button>`,'',MK.med_stop.empty)+
+  `<p class="mx-hint">Doctine never suggests, starts, stops or changes a medicine. Always follow your doctor’s and pharmacist’s instructions.</p>`}
+
+/* ---- capturing, checking and saving ---- */
+function hpCapture(form,into){form.querySelectorAll('input,select,textarea').forEach(x=>{if(!x.name||x.name.startsWith('ans-'))return;if(x.type==='radio'){if(x.checked)into[x.name]=x.value;return}into[x.name]=x.value})}
+const PHONE=/^\+?[0-9][0-9 ()-]{5,22}$/,EMAIL=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+function hpCheckSec(sec,v){const e={},t=k=>String(v[k]||'').trim();
+ if(sec==='personal'){if(!t('name'))e.name='Your name can’t be empty.';if(t('dob')&&!dobOk(t('dob')))e.dob='Enter a real date of birth, not in the future.';
+  ['phone','ecPhone'].forEach(k=>{if(t(k)&&!PHONE.test(t(k)))e[k]='Use digits, with the country code if you like, e.g. +91 98765 43210.'});if(t('cemail')&&!EMAIL.test(t('cemail')))e.cemail='That doesn’t look like an email address.'}
+ if(sec==='body'){const imp=v.units==='imperial',cm=imp?(t('hft')||t('hin')?((hpNum(v.hft)||0)*12+(hpNum(v.hin)||0))*2.54:null):hpNum(v.h),kg=imp?(t('wlb')?hpNum(v.wlb)/2.20462:null):hpNum(v.w),wa=imp?(t('waistin')?hpNum(v.waistin)*2.54:null):hpNum(v.waist);
+  if((imp?(t('hft')||t('hin')):t('h'))&&!(cm>=30&&cm<=275))e[imp?'h':'h']='Height must be between 30 and 275 cm (1–9 ft).';
+  if((imp?t('wlb'):t('w'))&&!(kg>=1&&kg<=500))e[imp?'wlb':'w']='Weight must be between 1 and 500 kg.';
+  if((imp?t('waistin'):t('waist'))&&!(wa>=30&&wa<=250))e[imp?'waistin':'waist']='Waist must be between 30 and 250 cm (12–98 in).';
+  if(t('measured')&&!(t('measured')<=today()&&t('measured')>='1900-01-01'))e.measured='Use a date that isn’t in the future.';
+  if(t('sleepH')&&!(hpNum(v.sleepH)>=0&&hpNum(v.sleepH)<=24))e.sleepH='Hours a night must be between 0 and 24.'}
+ if(sec==='women'){if(t('cycleLen')&&!(hpNum(v.cycleLen)>=10&&hpNum(v.cycleLen)<=120))e.cycleLen='Usually between 21 and 35 days; enter 10–120.';if(t('lmp')&&!(t('lmp')<=today()&&t('lmp')>='1900-01-01'))e.lmp='Use a date that isn’t in the future.'}
+ return e}
+function hpCheckRec(kind,v){const K=RK[kind]||MK[kind],e={};
+ K.f.forEach(([k,l,t,o])=>{const x=String(v[k]==null?'':v[k]).trim();if(o.req&&!x)e[k]=l+' is needed.';if(x&&o.max&&x.length>o.max)e[k]='Keep this under '+o.max+' characters.';
+  if(t==='when'&&x&&!whenOk(x))e[k]='Use a year (2019), a month (2019-08) or a full date, not in the future.';if(t==='date'&&x&&!(x<=today()&&x>='1900-01-01'))e[k]='Use a date that isn’t in the future.';
+  if(o.num&&x&&!(hpNum(x)>=0&&hpNum(x)<=120))e[k]='Enter a number from 0 to 120.'});
+ if(kind==='hospitalization'&&v.onset&&v.discharged&&v.discharged<v.onset)e.discharged='Discharge can’t be before admission.';
+ if(kind==='med_stop'&&v.start&&v.end&&v.end<v.start)e.end='The stop date can’t be before the start date.';
+ return e}
+async function hpCommit(sec,what){persist();
+ if(S.sample){S.hpSave={sec,st:'sample'};render();return true}
+ if(!S.cloud){S.hpSave={sec,st:'saved',msg:'Saved in this browser'};render();return true}
+ if((sec==='rec'||sec.startsWith('ans-'))&&CLOUD.noHist&&what==='hist'){S.hpSave={sec,st:'error',msg:'Medical history can’t be saved to your account yet (the database update is still to come). Your entry is kept on this screen.'};render();return false}
+ S.hpSave={sec,st:'saving'};render();const ok=await cloudSyncNow();
+ S.hpSave=ok?{sec,st:'saved',msg:'Saved to your account'}:{sec,st:'error',msg:'Not saved yet: '+(CLOUD.err||'connection problem')+'.'};render();return ok}
+async function hpSaveSec(sec,form){const F=S.hpForm[sec];hpCapture(form,F.v);F.err=hpCheckSec(sec,F.v);if(Object.keys(F.err).length){render();const x=$(`#hpsf-${sec} [aria-invalid=true]`);if(x){x.focus();x.scrollIntoView({block:'center'})}return}
+ const v=F.v,p=S.profile,t=k=>String(v[k]||'').trim(),now=new Date().toISOString();
+ if(sec==='personal'){PERSONAL_KEYS.forEach(k=>p[k]=t(k));const wh={...(p.wh||{})};if(v.whOn==='yes'||v.whOn==='no')wh.enabled=v.whOn==='yes';else delete wh.enabled;p.wh=wh}
+ if(sec==='body'){const imp=v.units==='imperial',cm=imp?(t('hft')||t('hin')?((hpNum(v.hft)||0)*12+(hpNum(v.hin)||0))*2.54:null):hpNum(v.h),kg=imp?(t('wlb')?hpNum(v.wlb)/2.20462:null):hpNum(v.w),wa=imp?(t('waistin')?hpNum(v.waistin)*2.54:null):hpNum(v.waist);
+  const oldW=p.weight;p.units=v.units;p.height=cm!=null?String(Math.round(cm*10)/10):'';p.weight=kg!=null?String(Math.round(kg*10)/10):'';p.waist=wa!=null?String(Math.round(wa*10)/10):'';p.measured=t('measured');
+  const l={};LIFE_KEYS.forEach(k=>{if(t(k))l[k]=t(k)});['smoking','alcohol','tobacco','subst','caffeine'].forEach(k=>{if(['never','none','prefer_not'].includes(l[k]))delete l[k+'D']});if(l.diet!=='other')delete l.dietOther;p.life=l;
+  // a changed weight is also kept as a dated reading, so the earlier one stays in the history
+  if(p.weight&&p.weight!==oldW&&!S.sample){S.vitals=S.vitals||[];S.vitals.push({id:nextHid(),kind:'weight',v:+p.weight,v2:null,unit:'kg',ctx:'',note:'From health profile',at:p.measured&&p.measured<today()?new Date(p.measured+'T09:00:00').toISOString():now})}}
+ if(sec==='women'){const w={enabled:true};['cycleLen','lmp','cycleReg','preg','pregHist','meno','notes'].forEach(k=>{if(t(k))w[k]=t(k)});w.shareAI=v.shareAI==='yes';p.wh=w}
+ p.upd=now;F.dirty=false;F.err={};const ok=await hpCommit(sec);if(ok)delete S.hpForm[sec];render()}
+function hpOpenRec(kind,id){const K=RK[kind]||MK[kind];let v={};
+ if(kind.startsWith('med_')){const m=id!=null&&id!==''?S.meds.find(x=>String(x.id)===String(id)):null;
+  v=m?{name:m.name,strength:m.strength||'',dose:m.dose==='Not recorded'?'':m.dose||'',reason:m.reason||'',useFreq:m.useFreq||'',lastUsed:m.lastUsed||'',notes:m.notes||'',start:m.start||'',end:m.end||'',stopReason:m.stopReason||'',stopAdvice:m.stopAdvice||'',generic:m.generic||'',route:m.route||'',prescriber:m.prescriber||''}:{src:'user'};
+  if(kind==='med_stop'&&m&&!m.end)v.end=today();S.hpEdit={kind,id:m?m.id:null,v,err:{},dirty:false,stopping:kind==='med_stop'&&m&&!medStopped(m)}}
+ else{const r=id!=null?(S.hist||[]).find(x=>String(x.id)===String(id)):null;
+  if(r){v={title:r.title,status:r.status||'',cat:r.cat||'',sev:r.sev||'',cert:r.cert||'',onset:r.onset||'',src:r.src||'user',doc:r.doc!=null?String(r.doc):'',...(r.d||{})};if(kind==='hospitalization'&&r.d&&r.d.discharged)v.discharged=r.d.discharged}
+  else v={src:'user'};S.hpEdit={kind,id:r?r.id:null,v,err:{},dirty:false}}
+ S.hpOpen=S.hpOpen||{};S.hpOpen[(RK[kind]||{}).sec||'meds']=true;S.hpDel=null;S.hpSave=null;render();const f=$('#hprf input:not([type=radio]),#hprf select');if(f){f.focus();f.closest('#hprf').scrollIntoView({block:'nearest'})}}
+async function hpSaveRec(form){const E=S.hpEdit;if(!E)return;hpCapture(form,E.v);const v=E.v,kind=E.kind,t=k=>String(v[k]==null?'':v[k]).trim();E.err=hpCheckRec(kind,v);
+ if(Object.keys(E.err).length){E.dup=null;render();const x=$('#hprf [aria-invalid=true]');if(x){x.focus();x.scrollIntoView({block:'center'})}return}
+ const now=new Date().toISOString();
+ if(kind.startsWith('med_')){const name=t('name'),same=name&&S.meds.find(m=>String(m.id)!==String(E.id)&&m.name.trim().toLowerCase()===name.toLowerCase()&&!medStopped(m));
+  if(same&&kind!=='med_more'&&!E.dupOk){E.dup=`You already have ${same.name} in your current medicines.`;E.dupOk=true;render();return}
+  let m=E.id!=null?S.meds.find(x=>String(x.id)===String(E.id)):null;
+  if(kind==='med_more'){if(!m)return;Object.assign(m,{generic:t('generic'),route:v.route||'',reason:t('reason'),prescriber:t('prescriber'),notes:t('notes')})}
+  else if(kind==='med_occ'){const rec={name,strength:t('strength'),dose:t('dose')||'Not recorded',reason:t('reason'),useFreq:t('useFreq'),lastUsed:t('lastUsed'),notes:t('notes'),cat:'occasional',freq:'as_needed',times:[],days:[]};
+   if(m)Object.assign(m,rec);else S.meds.push(m={id:nextHid(),status:'active',start:'',end:'',...rec})}
+  else if(kind==='med_stop'){const rec={name,dose:t('dose')||(m&&m.dose)||'Not recorded',start:t('start'),end:t('end'),stopReason:t('stopReason'),stopAdvice:v.stopAdvice||'',notes:t('notes'),status:'completed'};
+   if(m)Object.assign(m,rec);else S.meds.push(m={id:nextHid(),cat:'regular',freq:'as_needed',times:[],days:[],...rec})}
+  m.upd=now}
+ else{const dupe=(S.hist||[]).find(r=>r.kind===kind&&String(r.id)!==String(E.id)&&r.title.trim().toLowerCase()===t('title').toLowerCase()&&(kind!=='family'||r.cat===v.cat));
+  if(dupe&&!E.dupOk){E.dup=`“${dupe.title}” is already in this list.`;E.dupOk=true;render();return}
+  const cols=new Set(['title','status','cat','sev','cert','onset','src','doc']),d={};(RK[kind].f).forEach(([k])=>{if(!cols.has(k)&&t(k))d[k]=t(k)});
+  if(kind==='hospitalization'&&t('discharged'))d.discharged=t('discharged');
+  const rec={kind,title:t('title'),status:v.status||null,cat:v.cat||null,sev:['condition','allergy'].includes(kind)?v.sev||null:null,cert:kind==='allergy'?v.cert:null,onset:t('onset')||null,src:v.src||'user',doc:v.src==='document'&&v.doc?Number(v.doc):null,d,upd:now};
+  S.hist=S.hist||[];const r=E.id!=null?S.hist.find(x=>String(x.id)===String(E.id)):null;if(r)Object.assign(r,rec);else S.hist.push({id:nextHid(),...rec});
+  // adding a record answers the section's question
+  const ak=RK[kind].ans;if(ak&&kind!=='allergy'){S.profile.ans={...(S.profile.ans||{}),[ak]:'yes'}}if(kind==='allergy')S.profile.ans={...(S.profile.ans||{}),allergies:'yes'}}
+ const K=RK[kind]||MK[kind];S.hpEdit=null;const ok=await hpCommit('rec','hist');if(ok)toast((K.one[0].toUpperCase()+K.one.slice(1))+' saved')}
 
 function uploadBox(){const u=S.upload;
  if(S.scanning)return`<div class="card p-5 text-sm" aria-live="polite"><span class="dot">●</span> ${esc(S.scanning)}</div>`;
@@ -1552,11 +1959,18 @@ function medsView(){const e=S.meds.find(x=>x.id==S.medEdit),v=S.medDraft,tz=esc(
  const acts=`<div class="mx-hacts"><button class="btn tl" id="medscan" ${S.scanning?'disabled':''}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.2em"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg> ${S.scanning?'Saving…':'Scan prescription'}</button>${v?'':'<button class="btn pri" id="medadd" data-medadd="1">Add medicine</button>'}</div>`;
  return wrap(head('Medicines','What you take, how much and when. Reminders follow this device’s clock and time zone ('+tz+').'+(aiOff()?' Scanned prescriptions are saved as photos for now, so add each medicine by hand.':''),acts)+
  (ms?`<section class="mx-grp"><div class="mx-scanhd"><h2>From “${esc(ms.title)}” <span>${ms.meds.length}</span></h2><button class="btn" id="msdone">Done</button></div>${ms.meds.length?`<ul class="card mx-list">${ms.meds.map((m,i)=>{const c=CONF[m.confidence]||CONF.low,done=ms.added&&ms.added[i];return`<li class="mx-item"><div class="mx-main"><div class="mx-title"><span class="mx-mname">${esc(m.name)}</span>${m.strength?`<span class="mx-str">${esc(m.strength)}</span>`:''}<span class="rx-cf ${c[1]}">${c[0]}</span></div><div class="mx-line">${esc([m.frequency,m.timing,m.duration].filter(Boolean).join(' · ')||'How to take it wasn’t read')}</div>${m.raw?`<div class="mx-sub">As written: ${esc(m.raw)}</div>`:''}${m.confidence!=='high'&&(m.alternatives||[]).length?`<div class="mx-sub">Could also be: ${esc(m.alternatives.join(', '))}</div>`:''}</div><div class="mx-acts"><button class="btn ${done?'':'tl'}" data-msadd="${i}">${done?'Added':m.confidence==='high'?'Add':'Check and add'}</button></div></li>`}).join('')}</ul><p class="mx-hint">Each one opens in the form for you to check against the prescription before it’s saved.</p>`:'<p class="mx-hint">No medicines were read from it. It’s saved in Medical records.</p>'}</section>`:'')+
- (v?(v.step==='review'?medReview(e,v):medForm(e,v)):'')+medList())}
+ (v||ms?'':alarmPrompt())+(v?(v.step==='review'?medReview(e,v):medForm(e,v)):'')+medList())}
+/* In the phone app: ask for alarms where people add medicines, and say plainly when the phone is stopping them. */
+function alarmPrompt(){if(NATIVE!=='android'||!S.email||S.sample||S.guest||!S.meds.some(m=>(m.status||'active')==='active'&&(m.times||[]).length))return'';
+ const st=(S.alarmStatus||{}).state;
+ if(!alarmsOn())return`<section class="card mx-alarm" aria-labelledby="mxah"><div><h2 id="mxah">Get an alarm when a dose is due</h2><p>Doctine can ring this phone at each dose time, even when the app is closed. Your medicine names stay hidden on the lock screen.</p></div><button class="btn pri" id="alarmenable">Turn on alarms</button></section>`;
+ if(st==='permission_denied')return`<section class="card mx-alarm warnc" role="alert"><div><h2>Alarms can’t ring</h2><p>Notifications are blocked for Doctine. Allow them in your phone’s Settings → Apps → Doctine → Notifications, then come back.</p></div><button class="btn" id="alarmenable">Check again</button></section>`;
+ if(st==='exact_alarm_needed')return`<section class="card mx-alarm warnc" role="alert"><div><h2>Alarms may ring late</h2><p>Android needs the “Alarms &amp; reminders” permission so dose alarms ring on time.</p></div><button class="btn pri" id="alarmexact">Allow on-time alarms</button></section>`;
+ return''}
 function remView(){const d=today(),act=S.meds.filter(m=>isOn(m,d));
  const rows=act.flatMap(m=>m.times.map(t=>({m,t,k:m.id+'@'+t+'@'+d}))).sort((a,b)=>a.t.localeCompare(b.t));
  return wrap(head('Reminders','Today’s schedule.',`<button class="btn tl" id="sim" ${S.meds.length?'':'disabled'}>Test a reminder</button>`)+
- `<div class="warn">Reminders show only while Doctine is open in your browser. The website can’t send phone notifications when it’s closed. A reminder is a schedule you set, not proof a dose was taken.</div>
+ (NATIVE==='android'?`<div class="warn">${alarmsOn()?'Dose alarms are set on this phone and ring even when Doctine is closed.':'Alarms are off on this phone. Turn them on in Settings → Alarms to be reminded when Doctine is closed.'} A reminder is a schedule you set, not proof a dose was taken.</div>`:`<div class="warn">Reminders show only while Doctine is open in your browser. The website can’t send phone notifications when it’s closed. A reminder is a schedule you set, not proof a dose was taken.</div>`)+`
  <div class="space-y-3">${rows.map(({m,t,k})=>{const st=S.doses[k];return`<div class="card p-4 flex items-center justify-between gap-3 flex-wrap"><div class="flex items-center gap-4"><div class="serif text-xl w-16">${esc(t)}</div><div><div class="font-medium">${esc(m.name)}</div><div class="text-sm text-[var(--mute)]">${esc(doseLine(m))}</div></div></div>
  ${st&&!st.startsWith('Snoozed')?`<div class="flex items-center gap-2"><span class="tag">${esc(st)}</span><button class="btn" data-d="${k}|Undo">Undo</button></div>`:`<div class="flex gap-2 items-center">${st?`<span class="tag">${esc(st)}</span>`:''}<button class="btn tl" data-d="${k}|Taken">Taken</button><button class="btn" data-d="${k}|Skipped">Skip</button><button class="btn" data-d="${k}|Snoozed">Snooze 10 min</button></div>`}</div>`}).join('')||'<p class="text-[var(--mute)]">Nothing scheduled today. Add a medicine to create reminders.</p>'}</div>`+histSection())}
 
@@ -1722,7 +2136,7 @@ function bannerHTML(){
  return h}
 const alarmCard=()=>{const a=S.alarmStatus||{},nat=DoctineAlarms.isNative();let st='';
  if(nat){st=a.state==='scheduled'?`<p class="text-sm"><b>${a.count}</b> upcoming dose alarm${a.count===1?'':'s'} set on this ${NATIVE==='macos'?'Mac':'phone'}${a.next?`, the next at ${esc(new Date(a.next).toLocaleString([],{weekday:'short',hour:'2-digit',minute:'2-digit'}))}`:''}. They are re-planned whenever you change a medicine or log a dose.</p>`:a.state==='not_enabled'?'<p class="text-sm">Alarms are off on this device. Turn them on to be reminded of scheduled doses.</p>':a.state==='permission_denied'?`<p class="err">Notifications are blocked for Doctine, so no alarms can ring. Turn them on in ${NATIVE==='macos'?'System Settings → Notifications → Doctine':'your phone’s Settings'}, then tap the button below.</p>`:a.state==='exact_alarm_needed'?'<p class="warn">Android needs the “Alarms &amp; reminders” permission so alarms ring on time. <button class="underline" id="alarmexact">Open that setting</button></p>':'<p class="text-sm text-[var(--mute)]">Alarms are not set yet. Sign in with an account and add a medicine.</p>'}
- return `<p class="text-sm text-[var(--mute)]">${nat?(NATIVE==='macos'?'Dose alarms appear as Mac notifications while Doctine is running (closing the window keeps it running; quitting stops alarms). Whether they show also depends on System Settings → Notifications and Focus. Reminders help you stay organised; they are not medical advice, Doctine cannot see whether a notification was seen, and it does not know if you took the dose.':'This is the phone app. Dose alarms are handed to your phone’s own alarm system, so they can ring when Doctine is closed. Whether they sound still depends on your phone: notification permission, silent mode or Focus, and battery-saver settings. Reminders help you stay organised; they are not medical advice. Doctine cannot see whether an alarm was delivered, and it does not know if you took the dose.'):'In a browser, the alarm rings (sound and vibration) only while this page is open, and the sound needs you to have tapped something on the page first. For alarms that work with the app closed, use the phone app (iPhone or Android).'}</p>${st}<div class="flex items-center gap-3 flex-wrap"><button class="btn" id="alarmtest">Test alarm (5 seconds)</button>${nat?(alarmsOn()?'<button class="btn" id="alarmenable">Check alarms</button><button class="btn" id="alarmoff">Turn off alarms</button>':'<button class="btn pri" id="alarmenable">Turn on alarms</button>'):''}</div>${S.alarmTest?`<p class="text-sm" role="status">${esc(S.alarmTest)}</p>`:''}`};
+ return `<p class="text-sm text-[var(--mute)]">${nat?(NATIVE==='macos'?'Dose alarms appear as Mac notifications while Doctine is running (closing the window keeps it running; quitting stops alarms). Whether they show also depends on System Settings → Notifications and Focus. Reminders help you stay organised; they are not medical advice, Doctine cannot see whether a notification was seen, and it does not know if you took the dose.':'This is the phone app. Dose alarms are handed to your phone’s own alarm system, so they can ring when Doctine is closed. Whether they sound still depends on your phone: notification permission, silent mode or Focus, and battery-saver settings. Reminders help you stay organised; they are not medical advice. Doctine cannot see whether an alarm was delivered, and it does not know if you took the dose.'):'In a browser, the alarm rings (sound and vibration) only while this page is open, and the sound needs you to have tapped something on the page first. For alarms that work with the app closed, use the phone app (iPhone or Android).'}</p>${st}<div class="flex items-center gap-3 flex-wrap"><button class="btn" id="alarmtest">${NATIVE==='android'?'Test alarm (10 seconds)':'Test alarm (5 seconds)'}</button>${nat?(alarmsOn()?'<button class="btn" id="alarmenable">Check alarms</button><button class="btn" id="alarmoff">Turn off alarms</button>':'<button class="btn pri" id="alarmenable">Turn on alarms</button>'):''}</div>${S.alarmTest?`<p class="text-sm" role="status">${esc(S.alarmTest)}</p>`:''}`};
 let _asig='',_at=0;
 const alarmsOn=()=>{try{return localStorage.getItem('doctine:alarms-on')==='1'}catch{return false}};
 function alarmSync(){if(!DoctineAlarms.isNative())return;clearTimeout(_at);_at=setTimeout(async()=>{try{const live=S.email&&!S.sample&&!S.guest&&alarmsOn();const sig=live?JSON.stringify([DoctineAlarms.plan(S.meds,S.doses,new Date()).map(n=>n.id)]):'off';if(sig===_asig)return;_asig=sig;if(!live){await DoctineAlarms.clearNative();S.alarmStatus={state:alarmsOn()?'off':'not_enabled',count:0};return}S.alarmStatus=await DoctineAlarms.syncNative(S.meds,S.doses,new Date());if(S.view==='settings')render()}catch(e){S.alarmStatus={state:'error',count:0}}},500)}
@@ -1743,7 +2157,7 @@ function render(){
  v.innerHTML=V();
  if(fk){const n=v.querySelector(fk);if(n){n.focus({preventScroll:true});if(fsel)try{n.setSelectionRange(fsel[0],fsel[1])}catch{}}}v.style.overflow=S.view==='chat'?'hidden':'';
  if(S.view==='chat'){const m=$('#msgs');if(m)m.scrollTop=S.msgs.length||S.typing?m.scrollHeight:0}persist();alarmSync();hydrateImgs();abObserve()}
-const exportData=()=>({exported_at:new Date().toISOString(),sample:S.sample,profile:S.profile,reports:S.reports,medicines:S.meds,dose_history:S.doses,health_readings:S.vitals||[],chat:S.msgs,consent:S.consent});
+const exportData=()=>({exported_at:new Date().toISOString(),sample:S.sample,profile:S.profile,medical_history:S.hist||[],reports:S.reports,medicines:S.meds,dose_history:S.doses,health_readings:S.vitals||[],chat:S.msgs,consent:S.consent});
 const exportJson=()=>{S.exp=JSON.stringify(exportData(),null,2);go('settings')};
 // A .zip with the data and every original PDF and photo. Files are stored uncompressed (they're already compressed), so no library is needed.
 const ZIP={t:null,crc(u){const t=this.t||(this.t=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})());let c=~0;for(let i=0;i<u.length;i++)c=t[(c^u[i])&255]^(c>>>8);return(~c)>>>0},
@@ -1802,6 +2216,25 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.dataset.del){const dm=S.meds.find(x=>x.id==t.dataset.del);if(!t.dataset.armed){t.dataset.armed='1';t.textContent='Tap again to delete, with its dose history';return}{S.meds=S.meds.filter(m=>m.id!=t.dataset.del);if(S.medEdit==t.dataset.del){S.medEdit=null;S.medDraft=null}toast('Medicine deleted');render()}return}
  if(t.dataset.edit){const m=S.meds.find(x=>x.id==t.dataset.edit);if(!m)return;S.medEdit=m.id;S.medErr=null;S.medDraft=draftFrom(m);render();medFocus();return}
  if(t.dataset.medadd){S.medEdit=null;S.medErr=null;S.medDraft=newDraft();render();medFocus();return}
+ /* health profile */
+ if(t.dataset.hpsec){const k=t.dataset.hpsec;S.hpOpen=S.hpOpen||{};S.hpOpen[k]=!S.hpOpen[k];render();const b=$(`[data-hpsec="${k}"]`);if(b)b.focus();return}
+ if(t.dataset.hpgo){S.hpOpen=S.hpOpen||{};S.hpOpen[t.dataset.hpgo]=true;render();const x=$('#hps-'+t.dataset.hpgo);if(x)x.scrollIntoView({block:'start'});return}
+ if(t.dataset.hpadd){hpOpenRec(t.dataset.hpadd,null);return}
+ if(t.dataset.hpedit){const r=(S.hist||[]).find(x=>String(x.id)===t.dataset.hpedit);if(r)hpOpenRec(r.kind,r.id);return}
+ if(t.dataset.hpmed){const[k,id]=t.dataset.hpmed.split('|');hpOpenRec(k,id||null);return}
+ if(t.dataset.hpmstop){hpOpenRec('med_stop',t.dataset.hpmstop);return}
+ if(t.dataset.hpmsched){const m=S.meds.find(x=>String(x.id)===t.dataset.hpmsched);if(!m)return;S.medEdit=m.id;S.medErr=null;S.medDraft=draftFrom(m);go('medicines');medFocus();return}
+ if(t.dataset.hpmadd!==undefined){S.medEdit=null;S.medErr=null;S.medDraft=newDraft();go('medicines');medFocus();return}
+ if(t.dataset.hpcancel){const sec=t.dataset.hpcancel;if(sec==='rec')S.hpEdit=null;else if(S.hpForm)delete S.hpForm[sec];S.hpSave=null;render();return}
+ if(t.dataset.hpdel){S.hpDel=t.dataset.hpdel;render();const b=$('[data-hpdelok]');if(b)b.focus();return}
+ if(t.dataset.hpmdel){S.hpDel='m'+t.dataset.hpmdel;render();const b=$('[data-hpmdelok]');if(b)b.focus();return}
+ if(t.dataset.hpdelno!==undefined){S.hpDel=null;render();return}
+ if(t.dataset.hpdelok){const id=t.dataset.hpdelok,r=(S.hist||[]).find(x=>String(x.id)===id);S.hist=(S.hist||[]).filter(x=>String(x.id)!==id);S.hpDel=null;if(S.hpEdit&&String(S.hpEdit.id)===id)S.hpEdit=null;if(await hpCommit('rec','hist'))toast((r?r.title:'Record')+' removed');return}
+ if(t.dataset.hpmdelok){const id=t.dataset.hpmdelok,m=S.meds.find(x=>String(x.id)===id);S.meds=S.meds.filter(x=>String(x.id)!==id);S.hpDel=null;if(S.hpEdit&&String(S.hpEdit.id)===id)S.hpEdit=null;if(await hpCommit('rec'))toast((m?m.name:'Medicine')+' removed');return}
+ if(t.dataset.hpretry){hpCommit(t.dataset.hpretry);return}
+ if(t.dataset.hpclear){const f=t.closest('form');const st=f&&(f.id==='hprf'?S.hpEdit:(S.hpForm||{})[f.dataset.sec]);if(!st)return;hpCapture(f,st.v);st.v[t.dataset.hpclear]='';st.dirty=true;render();return}
+ if(t.dataset.hplegacy!==undefined){const txt=String(S.profile.allergies||'');hpOpenRec('allergy',null);if(S.hpEdit){S.hpEdit.v.title=txt.split(',')[0].trim().slice(0,160);S.hpEdit.dirty=true;render()}return}
+ if(t.dataset.hplegclear!==undefined){if(!S.hpLegArm){S.hpLegArm=1;render();return}S.hpLegArm=0;S.profile.allergies='';S.profile.upd=new Date().toISOString();await hpCommit('ans-allergies');return}
  if(t.id==='medback'){S.medDraft.step='form';render();medFocus();return}
  if(t.id==='mtadd'){captureMed();if(S.medDraft.times.length<12)S.medDraft.times.push('');render();const x=document.querySelectorAll('[data-mt]');if(x.length)x[x.length-1].focus();return}
  if(t.dataset.mtrm!==undefined){captureMed();S.medDraft.times.splice(+t.dataset.mtrm,1);if(!S.medDraft.times.length)S.medDraft.times=[''];render();return}
@@ -1842,6 +2275,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.dataset.notice){try{const g=JSON.parse(localStorage.getItem('doctine:notices-dismissed')||'[]');g.push(t.dataset.notice);localStorage.setItem('doctine:notices-dismissed',JSON.stringify(g.slice(-50)))}catch{}return render()}
  if(t.dataset.syncnow){t.disabled=true;await cloudSyncNow();toast(CLOUD.err?'Still not saved. Check your connection.':'Saved to your account.');return render()}
  if(t.dataset.stopalarm){DoctineAlarms.stop();return render()}
+ if(t.id==='alarmtest'&&NATIVE==='android'){const r=await DoctineAlarms.testNative().catch(()=>({state:'error'}));S.alarmTest=r.state==='permission_denied'?'Notifications are blocked for Doctine, so the test can’t ring. Allow notifications for Doctine in your phone’s Settings, then try again.':r.state==='error'?'The test alarm couldn’t be set. Try again.':'A test alarm will ring in 10 seconds. Lock your phone or switch to another app now, to check it rings with Doctine closed.'+(r.state==='exact_alarm_needed'?' Your phone may delay it until you allow “Alarms & reminders” below.':'');S.alarmStatus=S.alarmStatus&&S.alarmStatus.state!=='not_enabled'?S.alarmStatus:(r.state==='exact_alarm_needed'?{state:'exact_alarm_needed',count:0}:S.alarmStatus);return render()}
  if(t.id==='alarmtest'){DoctineAlarms.start(5000);S.alarmTest=DoctineAlarms.audioReady()?'Ringing now. You should hear it and feel a vibration if your device supports it. If you hear nothing, check the volume and silent switch.':'Started, but this browser has not allowed sound yet. Tap anywhere on the page, then press the button again. Vibration works on most Android phones, not on iPhone browsers.';return render()}
  if(t.id==='alarmenable'){try{localStorage.setItem('doctine:alarms-on','1')}catch{}_asig='';S.alarmStatus=await DoctineAlarms.syncNative(S.meds,S.doses);return render()}
  if(t.id==='alarmoff'){try{localStorage.removeItem('doctine:alarms-on')}catch{}_asig='';await DoctineAlarms.clearNative();S.alarmStatus={state:'not_enabled',count:0};toast('Alarms turned off on this device.');return render()}
@@ -1870,6 +2304,8 @@ document.addEventListener('submit',async e=>{e.preventDefault();const id=e.targe
  if(id==='vf'){captureV();const d=S.vDraft,pr=vProblems(d);if(Object.keys(pr).length){S.vErr=pr;render();const f=$('#vf [aria-invalid=true]');if(f)f.focus();return}
   const at=new Date(d.date+'T'+d.time);S.vitals=S.vitals||[];S.vitals.push({id:Date.now(),kind:d.kind,v:+d.v,v2:d.kind==='blood_pressure'?+d.v2:null,unit:VK[d.kind].u,ctx:d.kind==='glucose'?d.ctx:'',note:d.note.trim(),at:at.toISOString()});
   toast(VK[d.kind].l+' saved');S.vDraft=null;S.vErr=null;render();const c=$('#vk-'+d.kind);if(c)c.scrollIntoView({block:'center'});return}
+ if(/^hpsf-/.test(id)){await hpSaveSec(e.target.dataset.sec,e.target);return}
+ if(id==='hprf'){await hpSaveRec(e.target);return}
  if(id==='mf'){const d=S.medDraft;if(!d)return;
   if(e.target.dataset.step==='form'){captureMed();const pr=medProblems(d);if(Object.keys(pr).length){S.medErr=pr;render();const f=$('#mf [aria-invalid=true]');if(f){f.focus();f.scrollIntoView({block:'center'})}return}S.medErr=null;d.step='review';render();const f=$('#mf');if(f)f.scrollIntoView({block:'start'});return}
   if(d.src&&d.src.conf!=='high'&&!F.get('srcok')){$('#merr').innerHTML='<div class="err" role="alert">Tick the box once you’ve checked this medicine against the prescription.</div>';return}
@@ -1913,6 +2349,9 @@ document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='au-pw'&&t.f
  ;
  if(t.dataset.mt!==undefined){S.medDraft.times[+t.dataset.mt]=t.value;return}
  if(t.form&&t.form.id==='vf'){if(t.name!=='kind')captureV();return}
+ if(t.form&&(/^hpsf-/.test(t.form.id)||t.form.id==='hprf')){if(t.dataset.hre!==undefined)return;const st=t.form.id==='hprf'?S.hpEdit:(S.hpForm||{})[t.form.dataset.sec];if(!st)return;hpCapture(t.form,st.v);
+  if(!st.dirty){st.dirty=true;const fs=t.form.querySelector('.hp-fst');if(fs&&!fs.textContent.trim())fs.innerHTML='<span class="hp-st warn">Unsaved changes</span>'}
+  if(st.err&&st.err[t.name]){delete st.err[t.name];t.removeAttribute('aria-invalid');t.removeAttribute('aria-describedby');const m=t.parentElement&&t.parentElement.querySelector('.mx-err');if(m)m.remove()}return}
  if(t.form&&t.form.id==='mf'){if(t.dataset.mre!==undefined)return;captureMed();if(S.medErr&&t.name){const k=t.name==='unit'?'amount':['forN','forU'].includes(t.name)?'end':['interval','first'].includes(t.name)?'mode':t.name;if(S.medErr[k]&&!medProblems(S.medDraft)[k]){delete S.medErr[k];const m=$('#mxe-'+k);if(m)m.remove();t.form.querySelectorAll(`[aria-describedby="mxe-${k}"]`).forEach(x=>{x.removeAttribute('aria-invalid');x.removeAttribute('aria-describedby')})}}return}
  if(t.dataset.uf)S.upload[t.dataset.uf]=t.value;
  if(t.dataset.ur){const[n,k]=t.dataset.ur.split('|');S.upload.rows[+n][k]=t.value}
@@ -1920,6 +2359,10 @@ document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='au-pw'&&t.f
 document.addEventListener('change',e=>{const t=e.target;
  if(t.id==='showpw'){const i=document.querySelector('input[name=pw]');if(i)i.type=t.checked?'text':'password';return}
  if(t.id==='usrec'){S.useRecords=t.checked;return}
+ if(t.dataset.hpans){const k=t.dataset.hpans;S.profile.ans={...(S.profile.ans||{}),[k]:t.value};S.profile.upd=new Date().toISOString();hpCommit('ans-'+k);return}
+ if(t.form&&(/^hpsf-/.test(t.form.id)||t.form.id==='hprf')&&t.dataset.hre!==undefined){const st=t.form.id==='hprf'?S.hpEdit:(S.hpForm||{})[t.form.dataset.sec];if(!st)return;const was=st.v.units;hpCapture(t.form,st.v);st.dirty=true;if(st.dup){st.dup=null;st.dupOk=false}
+  if(t.name==='units'&&was!==st.v.units)hpConvertUnits(st.v,was);
+  const fid=t.form.id,nm=t.name,val=t.value;render();const x=[...document.querySelectorAll(`#${fid} [name="${nm}"]`)].find(y=>y.type!=='radio'||y.value===val);if(x)x.focus();return}
  if(t.form&&t.form.id==='vf'&&t.name==='kind'){captureV();S.vDraft.kind=t.value;S.vErr=null;render();const i=$('#vf [name=v]');if(i)i.focus();return}
  if(t.dataset.mre!==undefined&&t.form&&t.form.id==='mf'){const d=S.medDraft,pf=d._pf,pm=d._pm;captureMed();
   if(d.mode!==pm){const n=MSLOTS[d.mode];if(n){const ts=d.times.filter(Boolean).slice(0,n);while(ts.length<n)ts.push('');d.times=ts}else if(d.mode==='times'||d.mode==='days'){if(!d.times.length)d.times=[''];}}
@@ -1947,5 +2390,13 @@ const openSampleLink=()=>{if(!SAMPLE_LINK)return;try{const q=new URLSearchParams
  if(S.email||S.cloud||S.guest){toast('You’re signed in, so your own account is open. Sign out to explore the sample records.');return}
  if(!S.sample)enter(null,sampleData(),true)};
 initCloud().then(on=>{if(!on&&NATIVE){S.email=null;S.sample=false;S.guest=false;S.auth='noserver';return render()}if(on&&S.email&&!S.cloud&&!S.sample&&!S.guest){DB.session=null;store.set(DB);S={...S,...blank(''),email:null,auth:'login'};render()}openSampleLink()});
-DoctineAlarms.onAction((k,a)=>{if(!S.email||S.sample||S.guest)return;if(a==='taken')S.doses[k]='Taken';else if(a==='snooze'){const x=new Date(Date.now()+6e5);S.doses[k]='Snoozed until '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')}else return;_asig='';render()});
+/* Buttons on a dose notification. When the phone opens Doctine fresh from one, the press arrives before the account has
+   loaded, so it waits here and is applied once the records are in (enter() calls applyAlarmActs). */
+// var, not const: a session restored while the page starts can reach this before this line runs (it then waits for the next call)
+var _alarmActs=_alarmActs||[];
+function applyAlarmActs(){if(!_alarmActs||!S.email||S.sample||S.guest||S.loadingCloud||!_alarmActs.length)return;let ch=false,open=false;
+ while(_alarmActs.length){const[k,a]=_alarmActs.shift();const mid=k.split('@')[0];if(!S.meds.some(m=>String(m.id)===mid))continue;
+  if(a==='taken'){S.doses[k]='Taken';ch=true}else if(a==='snooze'){const x=new Date(Date.now()+6e5);S.doses[k]='Snoozed until '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0');ch=true}else if(a==='tap')open=true}
+ if(ch){_asig='';toast('Dose updated from the alarm.')}if(open&&S.view!=='medicines')go('medicines');else if(ch)render()}
+DoctineAlarms.onAction((k,a)=>{if(!/^[^@]+@\d\d:\d\d@\d{4}-\d\d-\d\d$/.test(k)||_alarmActs.length>50)return;_alarmActs.push([k,a]);applyAlarmActs()});
 </script></body></html>

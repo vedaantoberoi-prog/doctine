@@ -99,6 +99,30 @@ await test("record claims are kept only when they cite a record that was sent", 
   assert.deepEqual(j.record_claims.map((c) => c.source), ["R1"]);
   assert.match(lastReq.body.system, /chose to share/); assert.match(lastReq.body.system, /Penicillin/);
 });
+await test("the health profile reaches the assistant cleaned, labelled by source, with stopped medicines kept as history", async () => {
+  anthropic(200, toolReply("respond", { reply: "Dizziness has many causes.", urgency: "routine" }));
+  await call(chat, "/api/chat", { messages: [user("I have been feeling dizzy recently")], context: { profile: {
+    age: 38, sex: "female", ssn: "123-45-6789",
+    allergies: ["Sulfa", { substance: "Penicillin", kind: "confirmed allergy", severity: "severe", reaction: "Hives", source: "clinician-documented", since: "2009", extra: "x" }, { substance: "", kind: "confirmed allergy" }],
+    conditions: [{ name: "Hypertension", status: "controlled", since: "2021", source: "self-reported" }, { name: "Bad", status: "made-up", since: "yesterday" }],
+    medicines: [{ name: "Amlodipine", dose: "5 mg", how_often: "Once a day", taken: "regularly", since: "2021-03-01", source: "self-reported" }],
+    related_history: [{ type: "stopped medicine", text: "Atenolol, stopped (dizziness)", when: "2024-01-10", source: "self-reported" }, { type: "secret", text: "dropped" }],
+    pregnancy: "pregnant", notes: "<script>x</script>" } } });
+  const sys = lastReq.body.system, ctx = JSON.parse(sys.split("not verified by Doctine):\n")[1].split("\nHow to use the profile")[0]);
+  assert.deepEqual(ctx.profile.allergies, [{ substance: "Sulfa" }, { substance: "Penicillin", kind: "confirmed allergy", severity: "severe", reaction: "Hives", source: "clinician-documented", since: "2009" }]);
+  assert.deepEqual(ctx.profile.conditions[1], { name: "Bad" }, "an unknown status or a vague date is dropped, never guessed");
+  assert.equal(ctx.profile.current_medicines[0].name, "Amlodipine");
+  assert.deepEqual(ctx.profile.related_history, [{ type: "stopped medicine", text: "Atenolol, stopped (dizziness)", when: "2024-01-10", source: "self-reported" }]);
+  assert.equal(ctx.profile.sex_assigned_at_birth, "female"); assert.equal(ctx.profile.pregnancy, "pregnant");
+  assert.ok(!/ssn|123-45|script/.test(JSON.stringify(ctx)), "fields the app doesn't define are not passed on");
+  assert.match(sys, /stopped medicine" is history and must never be treated as current/); assert.match(sys, /ask the person to confirm it is still accurate/);
+  assert.match(sys, /Never fill in a missing value/);
+});
+await test("a chat without shared information says so, and no profile rules are added", async () => {
+  anthropic(200, toolReply("respond", { reply: "Hello.", urgency: "routine" }));
+  await call(chat, "/api/chat", { messages: [user("What is dengue?")] });
+  assert.match(lastReq.body.system, /has not shared any saved records or profile/); assert.doesNotMatch(lastReq.body.system, /How to use the profile/);
+});
 await test("emergency wording forces emergency even if the model says routine", async () => {
   anthropic(200, toolReply("respond", { reply: "Please call 112 now.", urgency: "routine", current_emergency: true }));
   const [, j] = await call(chat, "/api/chat", { messages: [user("my husband suddenly can't move his left arm and his face is drooping")] });

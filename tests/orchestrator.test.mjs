@@ -435,7 +435,7 @@ await test("the policy in the code matches the reviewed manifest", () => {
   assert.equal(manifest.current.hash, POLICY_HASH);
 });
 await test("a changed prompt without a new version is blocked; policy deploys are refused on Friday afternoon", () => {
-  const manifest = JSON.parse(readFileSync(new URL("../docs/ai-policy/manifest.json", import.meta.url), "utf8"));
+  const manifest = { ...JSON.parse(readFileSync(new URL("../docs/ai-policy/manifest.json", import.meta.url), "utf8")), released: null };   // as if this policy were not yet released
   assert.ok(!gate({ manifest, hash: "0000000000000000" }).ok);
   const friday = new Date("2026-11-27T09:00:00Z"), tuesday = new Date("2026-11-24T05:00:00Z");   // 14:30 and 10:30 IST
   assert.ok(!gate({ manifest, deploy: true, now: friday }).ok);

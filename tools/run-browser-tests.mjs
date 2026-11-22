@@ -25,6 +25,7 @@ const SUITES = [
   ["persistence", "tests/browser/persistence.test.mjs", "Supabase simulated with ownership rules"],
   ["profile-save", "tests/browser/profile-save.test.mjs", "saving the health profile: date of birth near midnight IST, and waiting after a failed save"],
   ["reset-password", "tests/browser/reset-password.test.mjs", "forgotten password end to end: the link opens the new-password screen even when signed in; Supabase simulated like supabase-js 2.45.4"],
+  ["alarms-android", "tests/browser/alarms-android.test.mjs", "dose alarms in the Android app: permissions, Android 12+ on-time alarms, test alarm, Taken/Snooze from a notification; Capacitor and Supabase simulated"],
   ["native-bridge", "tests/browser/native-bridge.test.mjs", "the packaged app as the Android app runs it: Capacitor plugins simulated; PKCE, secure session, deep links, back button, alarms opt-in, exports"],
   ["help", "tests/browser/help.test.mjs", "Settings → Help and feedback and What's new; Supabase simulated with ownership rules"],
   ["app", "tests/browser/app.test.mjs", "API responses simulated in the browser"],

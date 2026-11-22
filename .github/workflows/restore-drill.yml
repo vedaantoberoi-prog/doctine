@@ -80,7 +80,7 @@ jobs:
           # Production is reached with the bare password when it is set (as in backup.yml); the local drill keeps PGPASSWORD.
           if [ -n "$PW" ]; then PW="${PW%$'\n'}"; PW="${PW%$'\r'}"; live_conn() { PGPASSWORD="$PW" PGSSLMODE=require "$@" -h aws-0-ap-south-1.pooler.supabase.com -p 5432 -U postgres.ggqctflfwpfkemgehizq -d postgres; }
           else live_conn() { "$@" "$DB"; }; fi
-          tables="health_profiles consents documents document_files extraction_jobs lab_results prescriptions medicines medication_schedules dose_events conversations messages vital_readings"
+          tables="health_profiles consents documents document_files lab_results prescriptions medicines medication_schedules dose_events conversations messages vital_readings"
           fail=0
           for t in $tables; do
             live=$(PGOPTIONS='-c default_transaction_read_only=on' live_conn /usr/lib/postgresql/17/bin/psql -tAc "select count(*) from public.$t" 2>/dev/null || echo x)

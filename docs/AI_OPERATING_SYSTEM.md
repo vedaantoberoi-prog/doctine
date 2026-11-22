@@ -1,8 +1,11 @@
 # Doctine AI operating system: Intelligence Orchestrator (23 Nov 2026)
 
-Status: built and tested on fictional data in the repository (branch `bolt-3d-hero`). **Not deployed. Not applied to any
-database.** The assistant stays switched off for real people until a doctor has reviewed its answers. Nothing here
-claims DPDP, clinical or security compliance; those need their own validation.
+Status (23 Nov 2026, 03:40 IST): **live on staging (5f13ab6) and production (8944f81), switched off.** The switch
+migrations `20261123000000_ai_gateway_flag` and `20261123030000_ai_orchestrator_flag` are applied to both databases
+(hash-checked, with approval); `ai_assistant`, `ai_gateway` and `ai_orchestrator` are all off on production, so
+`/api/assist` answers 503 "switched off" and the chat is unchanged. On staging the two fictional accounts have AI
+consent for testing. The assistant stays switched off for real people until a doctor has reviewed its answers. Nothing
+here claims DPDP, clinical or security compliance; those need their own validation.
 
 It extends the existing system and duplicates none of it: one sign-in (Supabase), one record store, one retrieval
 pipeline (the evidence engine through the Agent Execution Gateway), one admin console, one chat. The orchestrator is a

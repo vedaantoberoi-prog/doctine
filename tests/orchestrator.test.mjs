@@ -288,7 +288,7 @@ await test("2 · unreadable report: listed as having no searchable text, never t
 await test("3 · missing date: the undated value is shown apart and not compared", async () => {
   const r = await ask(world(variant((a) => a.docs.push({ id: nid(), title: "Undated lipid report", date: null, fields: { "LDL Cholesterol": "125 mg/dL" } }))), { message: "compare my ldl cholesterol", share_records: true });
   assert.ok(r.body.answer.sections.undated.some((u) => /125/.test(u.value_text)));
-  assert.match(r.body.answer.text, /Not compared \(ldl cholesterol\): 125.*no date/);
+  assert.match(r.body.answer.text, /Not compared \(LDL cholesterol\): 125.*no date/);
   assert.ok(!/125 mg\/dL on/.test(r.body.answer.sections.records_show.join("\n")));
 });
 await test("4 · inconsistent units: mg/dL and mmol/L are kept apart and never converted", async () => {
@@ -307,7 +307,7 @@ await test("5 · duplicate upload: the same values twice are flagged as a possib
 await test("6 · conflicting values: shown side by side, neither picked; routed to the careful tier", async () => {
   const r = await ask(world(variant((a) => a.docs.push({ id: nid(), title: "Lipid profile (other copy)", date: "2026-05-20", fields: { "LDL Cholesterol": "181 mg/dL (ref < 100)" } }))), { message: Q, share_records: true });
   const c = r.body.answer.sections.conflicts.find((x) => x.test === "ldl cholesterol");
-  assert.ok(c && c.values.length === 2); assert.match(r.body.answer.text, /Conflict \(ldl cholesterol, 2026-05-20\): .*118.* vs .*181|Conflict \(ldl cholesterol, 2026-05-20\): .*181.* vs .*118/);
+  assert.ok(c && c.values.length === 2); assert.match(r.body.answer.text, /Conflict \(LDL cholesterol, 2026-05-20\): .*118.* vs .*181|Conflict \(LDL cholesterol, 2026-05-20\): .*181.* vs .*118/);
   assert.equal(r.body.route.category, "D");
 });
 await test("7 · another person's report: refused before any record is read; ids in the body are ignored", async () => {

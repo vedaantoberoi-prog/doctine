@@ -27,6 +27,9 @@ const REFUSAL = {
   use_chat: "That's a general health question rather than one about your records. The main Doctine assistant answers those.",
   clarify: "Which of your results or reports would you like me to look at? For example: “compare my cholesterol over the last two years”.",
 };
+/** Test names as people know them ("LDL cholesterol", "HbA1c"), for text the person reads. */
+export const label = (t) => String(t || "").replace(/\b(ldl|hdl|vldl|tsh|egfr|crp|alt|ast|alp|t3|t4)\b/g, (x) => x.toUpperCase()).replace(/\bnon hdl\b/gi, "non-HDL").replace(/\bhba1c\b/gi, "HbA1c")
+  .replace(/^(\s*)([a-z])/, (m, w, c) => w + c.toUpperCase());
 const SAFETY_NOTE = "A difference between two results is arithmetic, not a diagnosis. Please talk to your doctor about any change, and don't start, stop or change a medicine because of these numbers.";
 
 /** The deterministic part of every records answer: built by code from the evidence, never by the model. */
@@ -38,12 +41,25 @@ export function compose(inv) {
     missing: inv.missing, safety_note: SAFETY_NOTE };
   const out = [];
   if (inv.sufficiency.verdict === "none") out.push(`I couldn't find matching results in your records${inv.plan.dates.from ? ` between ${inv.plan.dates.from} and ${inv.plan.dates.to}` : ""}. That isn't a normal result: it means nothing was recorded or readable.`);
-  else { out.push("What your records show:"); out.push(...inv.lines); }
-  for (const c of cautions) out.push("Note: " + c);
-  for (const c of inv.conflicts) out.push(`Conflict (${c.test}, ${c.date || "no date"}): ${c.values.map((v) => v.value_text).join(" vs ")}. ${c.note}`);
-  for (const u of undated) out.push(`Not compared (${u.test}): ${u.value_text} [${u.evidence}], because the report has no date.`);
-  for (const u of notCompared) out.push(`Not compared (${u.test}): ${u.value_text} [${u.evidence}], ${u.why}.`);
-  for (const m of inv.missing) out.push(`Missing: ${m.what} (${m.why}).`);
+  else { out.push("What your records show:"); out.push(...inv.lines.map(label)); }
+  for (const c of cautions) out.push("Note: " + label(c));
+  for (const c of inv.conflicts) out.push(`Conflict (${label(c.test)}, ${c.date || "no date"}): ${c.values.map((v) => v.value_text).join(" vs ")}. ${c.note}`);
+  for (const u of undated) out.push(`Not compared (${label(u.test)}): ${u.value_text} [${u.evidence}], because the report has no date.`);
+  for (const u of notCompared) out.push(`Not compared (${label(u.test)}): ${u.value_text} [${u.evidence}], ${u.why}.`);
+  // tests never found in the period are one calm line, not a list of "missing" items
+  const never = inv.missing.filter((m) => /no result recorded/.test(m.why)).map((m) => label(m.what).replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase()));
+  if (never.length && inv.sufficiency.verdict !== "none") out.push(`Not found in your records for this period: ${never.join(", ")}. That doesn't mean they are normal; they may not have been tested.`);
+  const partly = [], other = [];
+  for (const m of inv.missing.filter((m) => !/no result recorded/.test(m.why))) {
+    const x = /^not in (\d+) lab report/.exec(m.why);
+    if (x) partly.push(`${label(m.what).replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase())} (${x[1]} report${x[1] === "1" ? "" : "s"})`);
+    else if (m.what === "documents without searchable text") other.push(`${m.documents.length === 1 ? "1 document couldn't" : m.documents.length + " documents couldn't"} be read (no readable text or results), so ${m.documents.length === 1 ? "it isn't" : "they aren't"} included above: ${m.documents.join(", ")}.`);
+    else if (m.what === "text that tried to give instructions") other.push(`Some text in ${m.documents.join(", ")} looked like instructions to the AI. It was left out and treated only as document content.`);
+    else if (m.what === "document text") other.push("Only your saved results were searched; the text of your documents isn't searchable yet.");
+    else other.push(`${label(m.what).replace(/^./, (c) => c.toUpperCase())}: ${m.why}.`);
+  }
+  if (partly.length) out.push(`Not measured in some of your lab reports from this period: ${partly.join(", ")}.`);
+  out.push(...other);
   if (inv.sufficiency.verdict !== "none") out.push(SAFETY_NOTE);
   return { sections, text: out.join("\n") };
 }

@@ -113,6 +113,19 @@ select pg_temp.expect((public.admin_users(:support, null, 'profile_complete', nu
   and (public.admin_users(:support, null, 'profile_incomplete', null, 1, 100, null, null)->>'total')::int = (public.admin_users(:support, null, null, null, 1, 100, null, null)->>'total')::int, 'accounts can be filtered by complete or incomplete profile');
 select pg_temp.expect((public.admin_users(:support, null, null, 'profile_desc', 1, 1, null, null)->'rows'->0->>'id') = 'b0000000-0000-0000-0000-000000000001', 'accounts can be sorted by profile completion');
 select pg_temp.denied('select private.profile_completion(null::public.health_profiles, null)', 'profile completion is not callable from outside');
+-- the complete health profile (20261122000000/010000): a structured allergy, or an explicit "no known allergies", counts
+reset role;
+insert into public.health_profiles (user_id, history_answers) values ('b0000000-0000-0000-0000-000000000002', '{"allergies":"nka"}')
+  on conflict (user_id) do update set history_answers = excluded.history_answers;
+insert into public.health_records (user_id, client_id, kind, title, category, certainty, severity) values ('b0000000-0000-0000-0000-000000000001', 7001, 'allergy', 'SECRET-HISTORY', 'medication', 'confirmed', 'severe');
+set role service_role;
+select pg_temp.expect((public.admin_user(:support, :ravi)->'profile'->'fields'->>'allergies')::boolean, 'answering "no known allergies" counts as answered in profile completion');
+select pg_temp.expect((public.admin_user(:support, :ravi)->'usage'->>'profile_saved')::boolean and (public.admin_user(:support, :ravi)->'adoption'->>'profile')::boolean,
+  'an account whose only detail is a history answer counts as having saved profile details');
+select pg_temp.expect((select t->>'purpose' like 'Medical history:%' and t->>'area' = 'Health data' from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t where t->>'table' = 'health_records'),
+  'the database overview describes the medical-history table');
+select pg_temp.expect(not exists (select 1 from jsonb_array_elements(public.admin_data_overview(:owner, now() - interval '30 days', now() + interval '1 hour')->'tables') t where t->>'table' in ('health_records', 'health_record_changes', 'vital_readings') and t->>'purpose' = 'Not described yet'),
+  'every health table in the overview has a description');
 -- no health information leaves the database through any admin function
 do $$ declare blob text; begin
   blob := concat_ws(' ', public.admin_users('a0000000-0000-0000-0000-000000000001', null, null, null, 1, 100, null, null),

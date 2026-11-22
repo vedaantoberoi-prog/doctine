@@ -1,0 +1,92 @@
+# Doctine · nightly encrypted database backup (production Supabase).
+#
+# Why: the Supabase Free plan has no backups at all. This keeps 30 days of nightly copies.
+# This repository is PUBLIC, so every backup is encrypted (AES-256) before it leaves the runner.
+# Only someone holding BACKUP_PASSPHRASE can read it. Nothing is printed to the log.
+#
+# Needs two repository secrets (Settings → Secrets and variables → Actions). Add them yourself:
+#   SUPABASE_DB_PASSWORD  the production database password, pasted as it is (Supabase → Database → Settings).
+#                         The job connects through the session pooler (port 5432) with it; symbols are fine.
+#                         (Older alternative: SUPABASE_DB_URL, a full session-pooler URI. The password wins if both are set.)
+#   BACKUP_PASSPHRASE     a long random passphrase (at least 32 characters) kept in your password manager
+# Until both are set, the job FAILS (red), so a missing backup can't hide behind a green tick.
+#
+# Covers: all tables (public), accounts (auth) and file records (storage metadata).
+# Not covered: the uploaded files' bytes in the storage bucket (see docs/BACKUP_RESTORE.md).
+name: Nightly backup
+on:
+  schedule: [{ cron: "40 20 * * *" }] # 02:10 IST
+  workflow_dispatch:
+permissions: { contents: read }
+concurrency: { group: backup, cancel-in-progress: false }
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check the secrets are set
+        id: cfg
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+          PW: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if { [ -z "$DB" ] && [ -z "$PW" ]; } || [ -z "$PASS" ]; then
+            echo "::error::NO BACKUP WAS MADE: add the SUPABASE_DB_PASSWORD and BACKUP_PASSPHRASE repository secrets (see the top of backup.yml)."
+            echo "No backup was made: the SUPABASE_DB_PASSWORD and BACKUP_PASSPHRASE secrets are missing." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          if [ "${#PASS}" -lt 32 ]; then echo "::error::BACKUP_PASSPHRASE must be at least 32 characters (the repository is public)."; exit 1; fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - name: Install pg_dump 17
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get -qq update && sudo apt-get -qq install -y postgresql-client-17 >/dev/null
+      - name: Dump, encrypt and check
+        if: steps.cfg.outputs.ready == 'true'
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+          PW: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          # Prefer the bare password: libpq reads it from PGPASSWORD, so no address to assemble or escape.
+          conn="$DB"
+          if [ -n "$PW" ]; then
+            PW="${PW%$'\n'}"; PW="${PW%$'\r'}"
+            export PGHOST=aws-0-ap-south-1.pooler.supabase.com PGPORT=5432 PGUSER=postgres.ggqctflfwpfkemgehizq \
+                   PGDATABASE=postgres PGSSLMODE=require PGPASSWORD="$PW"
+            conn=""
+          fi
+          stamp=$(date -u +%Y-%m-%dT%H%MZ)
+          mkdir -p out
+          /usr/lib/postgresql/17/bin/pg_dump ${conn:+"$conn"} -Fc --no-owner --no-privileges \
+            --schema=public --schema=auth --schema=storage -f "$RUNNER_TEMP/db.dump" 2> "$RUNNER_TEMP/err" \
+            || { e="$RUNNER_TEMP/err"; why="unknown reason"
+                 grep -qi 'password authentication failed' "$e" && why="wrong database password (SUPABASE_DB_PASSWORD)"
+                 grep -qi 'tenant or user not found' "$e" && why="wrong user or project in SUPABASE_DB_URL"
+                 grep -qiE 'could not translate host|name or service not known' "$e" && why="the host in SUPABASE_DB_URL could not be found"
+                 grep -qiE 'invalid (connection|URI)|invalid integer value|missing \"=\"' "$e" && why="SUPABASE_DB_URL is not a valid address (a symbol in the password may need removing)"
+                 grep -qiE 'timeout|could not connect|connection refused|network is unreachable' "$e" && why="the database could not be reached"
+                 grep -qi 'server version mismatch' "$e" && why="pg_dump and server versions differ"
+                 grep -qi 'permission denied' "$e" && why="permission denied on some object"
+                 grep -qi 'prepared statement' "$e" && why="transaction pooler used; use port 5432"
+                 shred -u "$e"; echo "::error::pg_dump failed: $why (other details withheld from this public log)"; exit 1; }
+          n=$(/usr/lib/postgresql/17/bin/pg_restore --list "$RUNNER_TEMP/db.dump" | grep -c "TABLE DATA" || true)
+          [ "$n" -ge 13 ] || { echo "::error::backup looks incomplete ($n tables with data entries)"; exit 1; }
+          printf %s "$PASS" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 --s2k-digest-algo SHA512 --s2k-count 65011712 \
+            -o "out/doctine-db-$stamp.dump.gpg" "$RUNNER_TEMP/db.dump"
+          # prove the encrypted copy opens and is a valid dump, then remove every plain copy
+          printf %s "$PASS" | gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 0 -d "out/doctine-db-$stamp.dump.gpg" \
+            | /usr/lib/postgresql/17/bin/pg_restore --list > /dev/null
+          shred -u "$RUNNER_TEMP/db.dump" "$RUNNER_TEMP/err"
+          echo "Backup $stamp: $n tables, $(du -h out/*.gpg | cut -f1) encrypted." >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep for 30 days
+        if: steps.cfg.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with: { name: doctine-db-backup, path: out/, retention-days: 30, if-no-files-found: error }

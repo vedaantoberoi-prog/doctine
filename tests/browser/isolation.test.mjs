@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { addMed } from "./med-helper.mjs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8766";
 import { readFileSync } from "node:fs";
 const fake = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
@@ -70,7 +71,7 @@ check("sign-out warns when messages aren't saved, and cancelling keeps you signe
 pg.on("dialog", (d) => d.accept());
 // records being saved when the account switches: nothing of B's sign-in carries A's data
 await signOut(); await signIn("a@example.com"); await pg.evaluate(() => { window.__delay = { medicines: 1500, medication_schedules: 1500 }; });
-await pg.evaluate("go('medicines')"); await pg.fill("#mf [name=name]", "A-med Levothyroxine"); await pg.fill("#mf [name=dose]", "50 mcg"); await pg.click("#mf button.pri"); await W(900);
+await pg.evaluate("go('medicines')"); await addMed(pg, { name: "A-med Levothyroxine", strength: ["50", "mcg"], wait: 900 });
 await signOut(); await signIn("b@example.com"); await pg.evaluate(() => { window.__delay = {}; }); await W(2500);
 const w3 = await pg.evaluate(() => window.__writes);
 check("records: nothing of A's is written under B's sign-in after switching mid-save", !w3.some((x) => x.session === B && JSON.stringify(x.rows).includes("A-med")));

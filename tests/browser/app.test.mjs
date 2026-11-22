@@ -19,7 +19,7 @@ check("browser-demo account created when Supabase isn't configured", await pg.ev
 const navKeys = await pg.$$eval("#nav [data-nav]", (e) => e.map((x) => x.dataset.nav));
 check("the menu lists only working sections: no Family, which isn't built yet", !navKeys.includes("family") && navKeys.includes("medicines") && navKeys.includes("reminders"), navKeys.join(","));
 check("menu icons are drawn as line icons, not emoji", await pg.$$eval("#nav [data-nav]", (e) => e.every((x) => x.querySelector("svg") && !/\p{Extended_Pictographic}/u.test(x.textContent))));
-check("home shows how much of the health profile is filled in, with a link to finish it", (await pg.textContent("#profcard")).includes("1 of 6 details added") && (await pg.$("#profcard [data-nav=health]")) !== null);
+check("home shows how much of the health profile is filled in, with a link to finish it", (await pg.textContent("#profcard")).includes("1 of 7 details added") && (await pg.$("#profcard [data-nav=health]")) !== null);
 // A/B: chat without any reports, then a follow-up
 // the AI assistant is a separate permission, off by default: an emergency still gets built-in guidance with nothing sent,
 // and anything else asks first
@@ -53,9 +53,12 @@ check("uncertain medicine is labelled and offers 'Check and add'", btn.trim() ==
 await pg.click("[data-msadd='0']"); await pg.waitForTimeout(200);
 check("form explains the uncertainty and shows the line as written", (await pg.textContent("#mf")).includes("wasn’t sure") && (await pg.textContent("#mf")).includes("Mon[?]-LC"));
 check("times are prefilled from 0-0-1", JSON.stringify(await pg.evaluate("S.medDraft.times")) === '["21:00"]');
+check("the amount per dose comes from 0-0-1 and stays separate from the strength", await pg.evaluate("S.medDraft.amount==='1'&&S.medDraft.mode==='once'"));
+await pg.selectOption("#mf [name=unit]", "tablet"); await pg.click("#mf button.pri"); await pg.waitForTimeout(200);
+check("Review shows a summary before anything is saved", await pg.evaluate("S.meds.length===0&&S.medDraft.step==='review'") && (await pg.textContent("#mf")).includes("1 tablet each time") && (await pg.textContent("#mf")).includes("9:00 PM"));
 await pg.click("#mf button.pri"); await pg.waitForTimeout(200);
 check("an uncertain medicine cannot be saved without confirming it was checked", await pg.evaluate("S.meds.length===0") && (await pg.textContent("#merr")).includes("Tick the box"));
-await pg.check("input[name=srcok]"); await pg.fill("#mf [name=dose]", "1 tablet at night"); await pg.click("#mf button.pri"); await pg.waitForTimeout(200);
+await pg.check("input[name=srcok]"); await pg.click("#mf button.pri"); await pg.waitForTimeout(200);
 const med = await pg.evaluate("S.meds[0]");
 check("after confirming, it saves with a link to its source prescription", med && med.src && med.src.raw === "Tab Mon[?]-LC 0-0-1" && med.src.conf === "medium" && (await pg.textContent("#view")).includes("as written: Tab Mon[?]-LC"));
 // scanned record keeps original + cleaned pages, and shows what was read
@@ -65,14 +68,16 @@ await pg.evaluate("go('reports')"); await pg.waitForTimeout(300);
 check("scanned record shows what was read, with confidence and unreadable parts", (await pg.textContent("#view")).includes("What Doctine read") && (await pg.textContent("#view")).includes("Couldn’t read: line 3"));
 check("lab result from the scan is saved as a field", await pg.evaluate("S.reports[0].fields.Hb==='11.4 g/dL (ref 12-15.5)'"));
 check("the scanned record is marked as read automatically, with a button to check it", (await pg.textContent("#view")).includes("Read automatically · not yet checked") && (await pg.textContent("[data-redit]")).trim() === "Check details");
-check("the menu names say what each area is", JSON.stringify(await pg.$$eval("#nav [data-nav]", (e) => e.map((x) => x.textContent.trim()))) === JSON.stringify(["Overview", "My Health", "Medical records", "Medicines", "Reminders", "AI Assistant", "About", "Settings"]));
+check("the menu names say what each area is", JSON.stringify(await pg.$$eval("#nav [data-nav]", (e) => e.map((x) => x.textContent.trim()))) === JSON.stringify(["My Health", "Medicines", "Reminders", "Vitals", "Medical records", "Health profile", "Doctine AI", "Settings", "About"]));
 await pg.click("[data-vs]"); await pg.waitForTimeout(300); await pg.click(".scanov [data-k=orig]"); await pg.waitForTimeout(400);
 check("viewer can switch to the original photo", await pg.evaluate("(()=>{const i=document.querySelector('.scanov img');return !!(i&&i.src.startsWith('blob:'))})()"));
 await pg.click(".scanov [data-k=x]");
 // choosing "Don't send" keeps the photo in a record and sends nothing to the AI
 { const before = scanCalls; await pg.evaluate("go('reports')"); await pg.evaluate(`(async()=>{const f=await ${photo};quickScan(false,null,[f])})()`);
-  await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]"); await pg.click("[data-ai='0']"); await pg.waitForTimeout(600);
-  check("choosing 'Don't send' saves the photo as a record and sends nothing to the AI", scanCalls === before && /Add its details with Edit/.test(await pg.textContent("#toast")), String(scanCalls - before));
+  await pg.waitForSelector(".scanov [data-x=done]", { timeout: 15000 }); await pg.click(".scanov [data-x=done]"); await pg.waitForSelector("[data-ai]"); await pg.click("[data-ai='0']");
+  // wait for the confirmation itself (a fixed 600 ms wait failed about 1 run in 4 when saving took longer)
+  const saidSo = await pg.waitForFunction(() => /Add its details with Edit/.test(document.getElementById("toast").textContent), null, { timeout: 5000 }).then(() => true, () => false);
+  check("choosing 'Don't send' saves the photo as a record and sends nothing to the AI", scanCalls === before && saidSo, String(scanCalls - before));
   await pg.evaluate("S.reports=S.reports.filter(r=>!/^Scan/.test(r.title)||r.scan);render()"); }
 // reading lab lines from a text PDF: Indian number formats, printed high/low marks, and lines it can't read
 { const r = await pg.evaluate(() => parseText(["Total Leucocyte Count 7,800 cells/cumm 4000 - 11000\nPlatelets 1,50,000 /cumm 1,50,000 - 4,10,000\nGlucose 210 H mg/dL 70 - 100\nTSH 0.12 mIU/L L 0.27 - 4.20\nUrine Volume 1.5 L 0.8 - 2.0\nHemoglobin 13,1 g/dL 12,0 - 15,5\nPotassium 6.1 L 3.5 - 5.1"]));

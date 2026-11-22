@@ -83,6 +83,7 @@ validated first.
 | `tests/run-db-tests.sh` (real PostgreSQL) | all suites passed, including the new switch checks |
 | Switch migration rollback (throw-away PostgreSQL) | applies, rolls back, reapplies |
 | Browser suites (`node tools/run-browser-tests.mjs`) | 725 / 725 passed, including the new `assist` suite (11) and the admin "AI infrastructure" page |
+| Staging replay (`tools/staging-assist-replay.mjs`, rows read from staging as fictional account A with row security, rolled back) | refused without consent (the staging account has no `ai_chat` consent row); with consent, completes; found and fixed: a provider exception failed the request instead of degrading |
 | `npm run eval:rag` | retrieval metrics unchanged; proof of concept 18 / 18 |
 
 Load: 40 concurrent requests in-process with the stand-in model, p95 ≈ 70 ms inside the orchestrator. This measures our

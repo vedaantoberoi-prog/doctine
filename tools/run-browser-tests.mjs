@@ -38,6 +38,7 @@ const SUITES = [
   ["admin", "tests/browser/admin.test.mjs", "the internal admin console page; /api/admin simulated with the database's role table"],
   ["admin-shapes", "tests/browser/admin-shapes.test.mjs", "every admin page, drawer and dialog with data shaped like the real database output, empty and busy, 320-1440 px"],
   ["website", "tests/browser/website.test.mjs", "the doctine.com website: shared layout, links, honest labels, 320px to desktop"],
+  ["website-csp", "tests/browser/website-csp.test.mjs", "every doctine.com page and the 3D scene under the website's own Content-Security-Policy"],
 ];
 const results = [];
 for (const [name, file, kind] of SUITES) {

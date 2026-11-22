@@ -7,7 +7,7 @@ The public website at https://doctine.com: static pages (`index.html`, `about/`,
 | What | Where |
 |---|---|
 | Website (this folder) | Cloudflare Pages project `doctine-website` (https://doctine-website.pages.dev), domains `doctine.com` and `www.doctine.com` |
-| App, production | Cloudflare Pages project `doctine-app` (production branch `app-release`), domain `app.doctine.com` |
+| App, production | Cloudflare Pages project `doctine-app-direct` (Direct Upload), domain `app.doctine.com`; the old Git-connected `doctine-app` is retired (forwarding page only) |
 | App, staging | Netlify site `doctine-staging`, https://doctine-staging.netlify.app |
 
 DNS for doctine.com is managed at **Cloudflare** (nameservers `etta.ns.cloudflare.com` and `west.ns.cloudflare.com`, set at Hostinger, where the domain stays registered). `doctine.com` and `www` point to the Cloudflare Pages project (proxied); `app` is a proxied CNAME to the `doctine-app` Pages project; the MX, Google verification and `subdomain-owner-verification` records must stay.

@@ -13,6 +13,9 @@
  */
 import { observations, compareSeries, timeline, testKey, matchesQuery } from "./labs.mjs";
 import { GatewayError } from "./db.mjs";
+import { investigate } from "../evidence/investigate.mjs";
+import { understand } from "../evidence/query.mjs";
+import { bm25 } from "../evidence/rank.mjs";
 
 const DATE = { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$", description: "YYYY-MM-DD" };
 const SRC = { user: "self_reported", clinician: "clinician_documented", document: "from_document", import: "self_reported" };
@@ -245,6 +248,56 @@ export const CAPABILITIES = [
         unconfirmed_lab_values: lab.obs.filter((o) => o.verification === "ai_extracted_unconfirmed").length,
         medicines_without_reason: meds.filter((m) => m.status !== "completed" && !(m.end_date && m.end_date < t) && !m.reason).length,
       };
+    },
+  },
+  {
+    name: "investigate_records", domain: "evidence",
+    description: "The full evidence pipeline for one question about the person's own records: understands the question (everyday words to the lab tests and terms that may be relevant), searches structured results and the document text index together, links each lab value to the page it is written on where page text exists, keeps conflicting values side by side, lists what is missing, and says whether the evidence is sufficient. Returns citable evidence items (E1, E2, …) and factual lines; it does not interpret.",
+    keywords: ["investigate", "evidence", "compare", "changed", "trend", "history", "how is my", "how are my", "kidney", "kidneys", "sugar", "cholesterol", "liver", "thyroid", "my reports", "my records", "find every mention", "first time", "summary"],
+    input: { type: "object", properties: { question: { type: "string", maxLength: 500 }, from: DATE, to: DATE }, additionalProperties: false },
+    output: "{ plan, sufficiency: { verdict, note }, series: [...lab groups with evidence ids], passages: [ids], conflicts, missing, lines: [factual sentences with [E#] citations], evidence: [{ id, kind, document_id, document_title, document_type, page, section, original_text, structured, date, verification, retrieval, relevance }], telemetry }",
+    examples: [{ args: { question: "Compare my historical cholesterol results and show me how they have changed" }, note: "Build the reply only from `lines` and `evidence`, citing [E#]. If sufficiency is 'partial' or 'none', say so. Show every conflict. A difference is not a diagnosis." }],
+    async run({ db }, { question, from, to }) {
+      if (!question) throw new GatewayError("bad_args", "investigate_records needs a question.");
+      return investigate({ db }, { question, from, to });
+    },
+  },
+  {
+    name: "search_medical_records", domain: "evidence",
+    description: "Search the text of the person's documents (lab rows, prescription lines, diagnoses, page text) by words or phrases, ranked by contextual BM25 with everyday words expanded to the relevant terms. Returns passages with document, date, page and how sure the reading is.",
+    keywords: ["search", "find", "mention", "mentioned", "written", "says", "word", "where", "documents say"],
+    input: { type: "object", properties: { query: { type: "string", maxLength: 200 }, limit: { type: "integer", minimum: 1, maximum: 30, default: 10 } }, additionalProperties: false },
+    output: "{ terms, results: [{ chunk_id, document_id, document_title, date, page, section, text, verification, score }] }",
+    examples: [{ args: { query: "dyslipidaemia" } }],
+    async run({ db }, { query, limit = 10 }) {
+      const plan = understand(query || "");
+      const [chunks, docs] = await Promise.all([db.select("document_chunks", { columns: "id,document_id,page,kind,section,parent_key,content,context,verification", limit: 3000 }).catch((e) => { if (e.code === "not_available") return null; throw e; }),
+        db.select("documents", { columns: "id,title,document_date" })]);
+      if (!chunks) return { terms: plan.terms, results: [], note: "The document index isn't available on this database yet." };
+      const byId = new Map(docs.map((d) => [d.id, d]));
+      return { terms: plan.terms, results: bm25(chunks, plan.terms.length ? plan.terms : [query || ""]).slice(0, limit).map((r) => ({ chunk_id: r.chunk.id, document_id: r.chunk.document_id,
+        document_title: (byId.get(r.chunk.document_id) || {}).title || null, date: (byId.get(r.chunk.document_id) || {}).document_date || null, page: r.chunk.page ?? null, section: r.chunk.section,
+        text: r.chunk.content, verification: r.chunk.verification, score: +r.score.toFixed(3), matched: r.matched })) };
+    },
+  },
+  {
+    name: "retrieve_source_evidence", domain: "evidence",
+    description: "Open one evidence passage in its surroundings: the whole section or page it belongs to (all its sibling pieces in order), with the document's details, so a value can be read with its full table or page.",
+    keywords: ["source", "original", "page", "open", "show me where", "context", "whole table"],
+    input: { type: "object", properties: { chunk_id: { type: "string", pattern: "^[0-9a-f-]{36}$", description: "chunk_id from investigate_records or search_medical_records" } }, additionalProperties: false },
+    output: "{ document: { id, title, type, date, provider }, section, page, pieces: [{ position, text, verification }] }",
+    examples: [{ args: { chunk_id: "00000000-0000-4000-8000-000000000000" }, note: "Use only ids returned by the other evidence tools." }],
+    async run({ db }, { chunk_id }) {
+      if (!chunk_id) throw new GatewayError("bad_args", "retrieve_source_evidence needs a chunk_id.");
+      const got = await db.select("document_chunks", { columns: "id,document_id,page,section,parent_key", filters: [["id", "eq", chunk_id]], limit: 1 }).catch((e) => { if (e.code === "not_available") return null; throw e; });
+      if (!got) return { found: false, note: "The document index isn't available on this database yet." };
+      const [c] = got;
+      if (!c) return { found: false, note: "No such passage in this person's records." };
+      const [sib, docs] = await Promise.all([db.select("document_chunks", { columns: "position,content,verification", filters: [["parent_key", "eq", c.parent_key]], order: "position.asc", limit: 200 }),
+        db.select("documents", { columns: "id,title,category,document_date,provider", filters: [["id", "eq", c.document_id]], limit: 1 })]);
+      const d = docs[0] || {};
+      return { found: true, document: { id: d.id, title: d.title, type: d.category, date: d.document_date || null, provider: d.provider || null }, section: c.section, page: c.page ?? null,
+        pieces: sib.map((x) => ({ position: x.position, text: x.content, verification: x.verification })) };
     },
   },
 ];

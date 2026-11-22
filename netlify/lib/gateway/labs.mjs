@@ -39,6 +39,16 @@ const ALIASES = [
   ["vitamin b12", ["b12", "vit b12", "cyanocobalamin"]],
   ["platelet count", ["platelets", "plt"]],
   ["white blood cells", ["wbc", "tlc", "total leucocyte count", "total leukocyte count", "wbc count"]],
+  ["egfr", ["estimated gfr", "e gfr", "estimated glomerular filtration rate"]],
+  ["urea", ["blood urea", "serum urea"]],
+  ["blood urea nitrogen", ["bun", "urea nitrogen"]],
+  ["alt", ["sgpt", "alanine aminotransferase", "alt sgpt", "sgpt alt"]],
+  ["ast", ["sgot", "aspartate aminotransferase", "ast sgot", "sgot ast"]],
+  ["alkaline phosphatase", ["alp"]],
+  ["total bilirubin", ["bilirubin total", "serum bilirubin", "s bilirubin"]],
+  ["free t4", ["ft4", "free thyroxine"]],
+  ["vldl cholesterol", ["vldl"]],
+  ["random blood glucose", ["rbs", "random blood sugar", "glucose random"]],
 ];
 const ALIAS = new Map();
 for (const [main, others] of ALIASES) { ALIAS.set(main, main); for (const o of others) ALIAS.set(o, main); }
@@ -117,6 +127,21 @@ export function observations(docs, labRows) {
       verification: r.origin === "user_entered" ? "entered_by_person" : "ai_extracted_unconfirmed",
       origin: r.origin || "ai_extracted", confidence: r.confidence || null, flag: r.flag || "",
     }));
+  }
+  return out;
+}
+/** AI readings hidden because the person confirmed the same test in the same report, where the numbers differ. */
+export function shadowedDisagreements(docs, labRows) {
+  const out = [];
+  for (const r of labRows) {
+    const d = docs.find((x) => x.id === r.document_id);
+    if (!d || d.category !== "Lab report" || !d.fields) continue;
+    const k = testKey(r.test).key;
+    const hit = Object.entries(d.fields).find(([n]) => testKey(n).key === k);
+    if (!hit) continue;
+    const a = parseValue(hit[1]), b = parseValue(r.value, r.unit, r.reference_range);
+    if (a.numeric && b.numeric && unitKey(a.unit) === unitKey(b.unit) && a.number !== b.number)
+      out.push({ test: k, document_id: d.id, date: d.document_date || null, confirmed: hit[1], ai_reading: [r.value, r.unit].filter(Boolean).join(" ") });
   }
   return out;
 }

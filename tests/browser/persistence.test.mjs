@@ -53,11 +53,22 @@ const d1 = (await pg.evaluate(() => window.__sbdb.tables.documents))[0];
 check("once checked, the record says so and the account stores it, with the AI reading unchanged", (await pg.textContent("#view")).includes("Details checked by you") && d1.source === "manual" && JSON.stringify(d1.extraction) === ex0, d1.source);
 // a text-PDF report: the values the person confirms are saved, and the original PDF is kept beside them
 await pg.evaluate(() => { const f = new File(["%PDF-1.4\n% Doctine test report\n"], "cbc.pdf", { type: "application/pdf" });
-  S.upload = { name: f.name, status: "review", rows: [{ k: "Hemoglobin", v: "13.1 g/dL (ref 12–15.5)" }], title: "Complete blood count", date: "2026-10-30", lab: "City Lab", cat: "Lab report", text: "", warns: [], img: null, file: f }; go("reports"); });
+  S.upload = { name: f.name, status: "review", rows: [{ k: "Hemoglobin", v: "13.1 g/dL (ref 12–15.5)" }], title: "Complete blood count", date: "2026-10-30", lab: "City Lab", cat: "Lab report", text: "", warns: [], img: null, file: f,
+    pages: ["CITY LAB\nCOMPLETE BLOOD COUNT\nHemoglobin 13.1 g/dL 12-15.5", "Page two: end of report"] }; go("reports"); });
 await pg.waitForTimeout(100); await pg.click("#ucf"); await pg.waitForTimeout(1600);
 const pdfRec = await pg.evaluate("S.reports.find(r=>r.title==='Complete blood count')");
 const pdfFile = (await pg.evaluate(() => window.__sbdb.tables.document_files || [])).find((f) => f.content_type === "application/pdf");
 check("a confirmed PDF report keeps its original PDF, stored in the person's private folder", pdfRec && pdfRec.orig === "pdf" && pdfFile && pdfFile.kind === "original" && pdfFile.storage_path.startsWith(pdfFile.user_id + "/"), JSON.stringify(pdfFile));
+{ const pages = await pg.evaluate(() => window.__sbdb.tables.document_pages || []), doc = (await pg.evaluate(() => window.__sbdb.tables.documents)).find((d) => d.title === "Complete blood count");
+  check("the PDF's page text is stored in the account, page by page, for search and page citations", pages.length === 2 && pages.every((p) => p.document_id === doc.id && p.user_id === doc.user_id && p.source === "pdf_text") && pages.some((p) => p.page === 1 && p.text.includes("Hemoglobin 13.1")), JSON.stringify(pages).slice(0, 200));
+  check("...and not kept in the browser's saved state (only a count)", pdfRec && pdfRec.ptext === 2 && !("pages" in pdfRec)); }
+{ await pg.evaluate(() => { window.__missingTables = ["document_pages"]; const f = new File(["%PDF-1.4\n% second\n"], "lft.pdf", { type: "application/pdf" });
+    S.upload = { name: f.name, status: "review", rows: [{ k: "ALT", v: "30 U/L (ref 7–40)" }], title: "Liver function", date: "2026-10-31", lab: "City Lab", cat: "Lab report", text: "", warns: [], img: null, file: f, pages: ["LIVER FUNCTION\nALT 30 U/L 7-40"] }; go("reports"); });
+  await pg.waitForTimeout(100); await pg.click("#ucf"); await pg.waitForTimeout(1600);
+  const docs = await pg.evaluate(() => window.__sbdb.tables.documents), st = await pg.evaluate(() => ({ err: CLOUD.err, noPages: CLOUD.noPages }));
+  check("on a database without the page-text table, the report still saves and nothing fails", docs.some((d) => d.title === "Liver function") && !st.err && st.noPages === true, JSON.stringify(st));
+  await pg.evaluate(() => { window.__missingTables = []; S.reports = S.reports.filter((r) => r.title !== "Liver function"); persist(); }); await pg.waitForTimeout(1600);
+  check("...and deleting that report removes it from the account again", !(await pg.evaluate(() => window.__sbdb.tables.documents)).some((d) => d.title === "Liver function")); }
 check("the record says the original PDF is kept and offers to open it", (await pg.textContent("#view")).includes("Original PDF kept") && (await pg.$(`[data-opdf="${pdfRec && pdfRec.id}"]`)) !== null);
 check("medicines, weekly schedule and paused status saved", t1.medicines?.length === 4 && t1.medication_schedules.some((s) => s.frequency === "weekly" && s.days_of_week.join() === "0") && t1.medicines.some((m) => m.status === "paused"));
 check("dose history saved", t1.dose_events?.length === 2);

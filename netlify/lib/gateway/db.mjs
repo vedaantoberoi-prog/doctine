@@ -47,5 +47,20 @@ export function userDb({ base, anon, token, fetchImpl = fetch, timeoutMs = 4000 
     rows += data.length;
     return data;
   }
-  return { select, stats: () => ({ calls, rows }) };
+  /** A read-only database function, called as the person (row security applies inside it). */
+  async function rpc(fn, args) {
+    if (!/^[a-z_]+$/.test(fn)) throw new GatewayError("bad_query", "Invalid function.", 500);
+    const ac = new AbortController(); const t = setTimeout(() => ac.abort(), timeoutMs);
+    let r;
+    try { r = await fetchImpl(`${base}/rest/v1/rpc/${fn}`, { method: "POST", headers: { apikey: anon, authorization: `Bearer ${token}`, "content-type": "application/json", accept: "application/json" }, body: JSON.stringify(args), signal: ac.signal }); }
+    catch { throw new GatewayError("unavailable", "Your records couldn't be reached. Please try again.", 503); }
+    finally { clearTimeout(t); }
+    calls++;
+    if (r.status === 401 || r.status === 403) throw new GatewayError("unauthorized", "Please sign in again.", 401);
+    if (r.status === 404) throw new GatewayError("not_available", `This search isn't available on this database yet (${fn}).`, 501);
+    if (!r.ok) throw new GatewayError("unavailable", "Your records couldn't be reached. Please try again.", 503);
+    const data = await r.json(); if (Array.isArray(data)) rows += data.length;
+    return data;
+  }
+  return { select, rpc, stats: () => ({ calls, rows }) };
 }

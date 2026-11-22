@@ -21,7 +21,7 @@ const TASKS = [...BASE,
     plan: { steps: [{ id: "c", call: "compare_lab_results", args: { test: "hba1c" } }], return: [{ step: "c", path: "series" }] } },
   { id: 12, name: "Asked if a value is normal", ds: "r10", q: "is my CRP normal?", calls: [["compare_lab_results", { test: "c-reactive protein" }]],
     plan: { steps: [{ id: "c", call: "compare_lab_results", args: { test: "c-reactive protein" } }], return: [{ step: "c", path: "series" }] } }];
-import { gatewayTools, conventionalTools, runTool, DATA_RULES } from "../netlify/lib/gateway/tools.mjs";
+import { gatewayTools, conventionalTools, runTool, DATA_RULES, ANSWER_RULES } from "../netlify/lib/gateway/tools.mjs";
 import { searchCapabilities } from "../netlify/lib/gateway/registry.mjs";
 import { anthropicUrl } from "../netlify/lib/ai.mjs";
 
@@ -36,6 +36,7 @@ if (!MOCK && !process.env.ANTHROPIC_API_KEY) { console.error("bench-live: ANTHRO
 if (!MOCK && !(PIN > 0 && POUT > 0)) { console.error(`bench-live: no price known for ${MODEL}; set BENCH_PRICE_IN and BENCH_PRICE_OUT.`); process.exit(2); }
 
 const SYSTEM = `You are Doctine's health-records assistant answering the signed-in person about THEIR OWN records, which you reach only through your tools. Use the tools; never invent a value. ${DATA_RULES}
+${ANSWER_RULES}
 Answer in plain language, cite each value's report and date, say what is missing or unconfirmed, and suggest questions for their doctor where useful. No diagnosis, no medicine changes.`;
 
 const FIND = { name: "find_tools", description: "Find which Doctine record tools exist for a request. Returns tool names; they become callable on your next turn.", input_schema: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } };

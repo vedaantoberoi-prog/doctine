@@ -5,8 +5,10 @@
 # Only someone holding BACKUP_PASSPHRASE can read it. Nothing is printed to the log.
 #
 # Needs two repository secrets (Settings → Secrets and variables → Actions). Add them yourself:
-#   SUPABASE_DB_URL    Supabase → Connect → "Session pooler" URI, with the database password filled in
-#   BACKUP_PASSPHRASE  a long random passphrase (at least 32 characters) kept in your password manager
+#   SUPABASE_DB_PASSWORD  the production database password, pasted as it is (Supabase → Database → Settings).
+#                         The job connects through the session pooler (port 5432) with it; symbols are fine.
+#                         (Older alternative: SUPABASE_DB_URL, a full session-pooler URI. The password wins if both are set.)
+#   BACKUP_PASSPHRASE     a long random passphrase (at least 32 characters) kept in your password manager
 # Until both are set, the job FAILS (red), so a missing backup can't hide behind a green tick.
 #
 # Covers: all tables (public), accounts (auth) and file records (storage metadata).
@@ -26,11 +28,12 @@ jobs:
         id: cfg
         env:
           DB: ${{ secrets.SUPABASE_DB_URL }}
+          PW: ${{ secrets.SUPABASE_DB_PASSWORD }}
           PASS: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
-          if [ -z "$DB" ] || [ -z "$PASS" ]; then
-            echo "::error::NO BACKUP WAS MADE: add the SUPABASE_DB_URL and BACKUP_PASSPHRASE repository secrets (see the top of backup.yml)."
-            echo "No backup was made: the SUPABASE_DB_URL and BACKUP_PASSPHRASE secrets are missing." >> "$GITHUB_STEP_SUMMARY"
+          if { [ -z "$DB" ] && [ -z "$PW" ]; } || [ -z "$PASS" ]; then
+            echo "::error::NO BACKUP WAS MADE: add the SUPABASE_DB_PASSWORD and BACKUP_PASSPHRASE repository secrets (see the top of backup.yml)."
+            echo "No backup was made: the SUPABASE_DB_PASSWORD and BACKUP_PASSPHRASE secrets are missing." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
           if [ "${#PASS}" -lt 32 ]; then echo "::error::BACKUP_PASSPHRASE must be at least 32 characters (the repository is public)."; exit 1; fi
@@ -46,16 +49,25 @@ jobs:
         if: steps.cfg.outputs.ready == 'true'
         env:
           DB: ${{ secrets.SUPABASE_DB_URL }}
+          PW: ${{ secrets.SUPABASE_DB_PASSWORD }}
           PASS: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
           set -euo pipefail
           umask 077
+          # Prefer the bare password: libpq reads it from PGPASSWORD, so no address to assemble or escape.
+          conn="$DB"
+          if [ -n "$PW" ]; then
+            PW="${PW%$'\n'}"; PW="${PW%$'\r'}"
+            export PGHOST=aws-0-ap-south-1.pooler.supabase.com PGPORT=5432 PGUSER=postgres.ggqctflfwpfkemgehizq \
+                   PGDATABASE=postgres PGSSLMODE=require PGPASSWORD="$PW"
+            conn=""
+          fi
           stamp=$(date -u +%Y-%m-%dT%H%MZ)
           mkdir -p out
-          /usr/lib/postgresql/17/bin/pg_dump "$DB" -Fc --no-owner --no-privileges \
+          /usr/lib/postgresql/17/bin/pg_dump ${conn:+"$conn"} -Fc --no-owner --no-privileges \
             --schema=public --schema=auth --schema=storage -f "$RUNNER_TEMP/db.dump" 2> "$RUNNER_TEMP/err" \
             || { e="$RUNNER_TEMP/err"; why="unknown reason"
-                 grep -qi 'password authentication failed' "$e" && why="wrong database password in SUPABASE_DB_URL"
+                 grep -qi 'password authentication failed' "$e" && why="wrong database password (SUPABASE_DB_PASSWORD)"
                  grep -qi 'tenant or user not found' "$e" && why="wrong user or project in SUPABASE_DB_URL"
                  grep -qiE 'could not translate host|name or service not known' "$e" && why="the host in SUPABASE_DB_URL could not be found"
                  grep -qiE 'invalid (connection|URI)|invalid integer value|missing \"=\"' "$e" && why="SUPABASE_DB_URL is not a valid address (a symbol in the password may need removing)"

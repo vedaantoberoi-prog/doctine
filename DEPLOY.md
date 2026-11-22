@@ -352,8 +352,10 @@ The same app and server functions also run on Cloudflare Pages (free plan, comme
 
 GitHub was unavailable from 7 to about 11 November 2026, so production moved off Git builds. GitHub works again (CI, the
 Apps builds, nightly backup and uptime checks all run), but production deliberately stays a manual, approved upload.
-app.doctine.com is served by the Cloudflare Pages project **`doctine-app-direct`** (Direct Upload). The Git-connected project `doctine-app` still
-exists, without the domain, as a fallback.
+app.doctine.com is served by the Cloudflare Pages project **`doctine-app-direct`** (Direct Upload). The old Git-connected project
+`doctine-app` was **retired on 22 Nov 2026**: it had kept serving the 7 Nov app against production. Its variables (including the
+server key) were removed, its old production deployments deleted and automatic builds turned off; the `app-release` branch now
+holds only a page forwarding doctine-app.pages.dev to app.doctine.com (kept so nobody else can claim that address).
 
 **Release:**
 1. `npm run build:direct` — runs the server tests, stamps the commit, bundles the server into `_worker.js`, runs

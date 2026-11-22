@@ -494,6 +494,7 @@ window.DOCTINE_API = window.DOCTINE_API || ''; // set at the top of the page ins
           if (st && st.indexOf('Snoozed') !== 0) continue;                 // already taken or skipped
           var hm = (st && st.indexOf('Snoozed until ') === 0 ? st.slice(-5) : t).split(':').map(Number);
           var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hm[0], hm[1], 0, 0);
+          if (st && hm[0] * 60 + hm[1] + 720 < (+t.slice(0, 2)) * 60 + (+t.slice(3, 5))) at = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1, hm[0], hm[1], 0, 0); // snoozed past midnight
           if (at <= now) continue;
           var id = hash(k + (st ? '|s' : '')); while (ids[id]) id = (id + 1) % 2147483647 || 1; ids[id] = 1;
           var ins = String(m.instructions || '').split(/[.\n]/)[0].trim().slice(0, 60);

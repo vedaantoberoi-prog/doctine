@@ -120,9 +120,14 @@ check("'Check again' after allowing them re-sets the alarms", (await pending()).
 const keys = (await pending()).filter((n) => n.extra).map((n) => n.extra.key);
 await pg.evaluate((k) => window.__fire("localNotificationActionPerformed", { actionId: "taken", notification: { extra: { key: k } } }), keys[0]); await W(1500);
 check("'Taken' on a notification marks that dose taken and removes its alarm", (await pg.evaluate((k) => S.doses[k], keys[0])) === "Taken" && !(await pending()).some((n) => n.extra && n.extra.key === keys[0]));
-await pg.evaluate((k) => window.__fire("localNotificationActionPerformed", { actionId: "snooze", notification: { extra: { key: k } } }), keys[1]); await W(1500);
-const sn = await pg.evaluate((k) => S.doses[k], keys[1]), sp = (await pending()).find((n) => n.extra && n.extra.key === keys[1]);
+// the notification being snoozed is for a dose today (keys[1] may already be tomorrow's late in the evening)
+const snk = await pg.evaluate((k) => k.replace(/@[0-9-]+$/, "@" + today()), keys[1]);
+await pg.evaluate((k) => window.__fire("localNotificationActionPerformed", { actionId: "snooze", notification: { extra: { key: k } } }), snk); await W(1500);
+const sn = await pg.evaluate((k) => S.doses[k], snk), sp = (await pending()).find((n) => n.extra && n.extra.key === snk);
 check("'Snooze 10 min' sets a new alarm about 10 minutes from now", /^Snoozed until \d\d:\d\d$/.test(sn || "") && !!sp && Math.abs(Date.parse(sp.at) - Date.now() - 6e5) < 90e3, sn);
+{ const r = await pg.evaluate(() => { const m = { id: 9, name: "Late", times: ["23:55"], freq: "daily", start: "2026-01-01", status: "active" }, d = "2026-03-10";
+    const pl = DoctineAlarms.plan([m], { ["9@23:55@" + d]: "Snoozed until 00:05" }, new Date(2026, 2, 10, 23, 57), { days: 1 }); return pl.length ? pl[0].at.toString() : ""; });
+  check("a dose snoozed past midnight still rings, just after midnight the next day", /Mar 11 2026 00:05/.test(r), r); }
 await pg.evaluate((k) => window.__fire("localNotificationActionPerformed", { actionId: "taken", notification: { extra: { key: "not-a-dose" } } }), null); await W(300);
 check("a press with a malformed or unknown dose is ignored", (await pg.evaluate(() => Object.keys(S.doses).every((k) => /^\d+@\d\d:\d\d@\d{4}-\d\d-\d\d$/.test(k)))));
 await W(2500); // let the changes reach the (simulated) database

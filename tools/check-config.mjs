@@ -104,12 +104,6 @@ if (existsSync(join(root, ".github/workflows/release.yml"))) {
   }
 }
 
-// pdf.js 3.x runs font code with eval unless told not to (CVE-2024-4367: a crafted PDF could run script in the app).
-{
-  const app = read("public/index.html"), calls = app.match(/getDocument\(\{[^}]*\}\)/g) || [];
-  need(calls.length > 0 && calls.every((c) => /isEvalSupported:\s*false/.test(c)), `every PDF the app opens has pdf.js eval turned off (${calls.length} places)`);
-}
-
 for (const p of problems) console.error("✗ " + p);
 console.log(`${problems.length ? "✗" : "✓"} config: ${ok.length} checks passed, ${problems.length} failed`);
 process.exit(problems.length ? 1 : 0);

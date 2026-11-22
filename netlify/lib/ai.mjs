@@ -68,9 +68,8 @@ export function providerError(status, text, model) {
  * One Claude call. With `tool`, the model must answer through that tool and the tool input is returned.
  * Returns {input} | {text} | {error, ...}. Never throws.
  */
-export async function callClaude({ key, model }, { system, messages, tool, maxTokens = 1500, timeoutMs = TIME_LIMIT_MS, fetchImpl = fetch, signal }) {
+export async function callClaude({ key, model }, { system, messages, tool, maxTokens = 1500, timeoutMs = TIME_LIMIT_MS, fetchImpl = fetch }) {
   const ac = new AbortController();
-  if (signal) { if (signal.aborted) return { error: "cancelled" }; signal.addEventListener("abort", () => ac.abort(), { once: true }); }
   const timer = setTimeout(() => ac.abort(), timeoutMs);
   let res;
   try {
@@ -85,7 +84,7 @@ export async function callClaude({ key, model }, { system, messages, tool, maxTo
     });
   } catch (e) {
     clearTimeout(timer);
-    return { error: signal && signal.aborted ? "cancelled" : e.name === "AbortError" ? "ai_timeout" : "ai_network" };
+    return { error: e.name === "AbortError" ? "ai_timeout" : "ai_network" };
   }
   clearTimeout(timer);
   if (!res.ok) {
@@ -99,9 +98,9 @@ export async function callClaude({ key, model }, { system, messages, tool, maxTo
   if (!j || !Array.isArray(j.content)) return { error: "bad_output" };
   if (tool) {
     const t = j.content.find((c) => c.type === "tool_use" && c.name === tool.name);
-    return t ? { input: t.input, stop: j.stop_reason, usage: j.usage } : { error: "bad_output", usage: j.usage };
+    return t ? { input: t.input, stop: j.stop_reason } : { error: "bad_output" };
   }
-  return { text: j.content.filter((c) => c.type === "text").map((c) => c.text).join(""), usage: j.usage };
+  return { text: j.content.filter((c) => c.type === "text").map((c) => c.text).join("") };
 }
 
 /* Small, strict coercion helpers: model output and request bodies are never trusted. */

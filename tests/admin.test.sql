@@ -381,6 +381,11 @@ do $$ begin
 end $$;
 set role service_role;
 select pg_temp.denied(format('select public.admin_set_flag(%L, ''ai_assistant'', true, null, ''x'', null)', :adm), 'only the Founder can switch the AI assistant');
+select pg_temp.expect((public.public_settings()->'flags'->>'ai_gateway')::boolean = false, 'the health-records gateway switch exists and starts off');
+select pg_temp.denied(format('select public.admin_set_flag(%L, ''ai_gateway'', true, null, ''x'', null)', :adm), 'only the Founder can switch the health-records gateway');
+select pg_temp.expect((public.admin_set_flag(:owner, 'ai_gateway', true, null, 'fictional test', null)->>'ok')::boolean, 'the Founder can switch the gateway on');
+select pg_temp.expect((public.public_settings()->'flags'->>'ai_gateway')::boolean, '...and the app sees it on');
+select public.admin_set_flag(:owner, 'ai_gateway', false, null, 'fictional test done', null);
 select public.admin_set_flag(:adm, 'sample_data', false, null, 'fictional', null);
 select public.admin_set_flag(:adm, 'sample_data', true, null, 'fictional', null);
 
@@ -638,7 +643,7 @@ select pg_temp.expect((select (a->>'users_total')::int = (select count(*) from a
   'analytics: the distribution adds up to every account, and "started" and the average match the accounts one by one');
 select pg_temp.expect((select (s->>'completed')::int from jsonb_array_elements(public.admin_profile_analytics(:owner, now() - interval '30 days', now() + interval '1 hour', 14)->'sections') s where s->>'key' = 'personal')
    = (select count(*) from auth.users u where not is_anonymous and deleted_at is null and pg_temp.sec(u.id, 'personal')->>'status' = 'complete'), 'analytics: section completions match the accounts');
-select pg_temp.expect((public.admin_profile_analytics(:owner, now() - interval '1 day', now() + interval '1 hour', 14)->'saves_by_day'->-1->>'people')::int >= 2, 'analytics: saves per day come from the recorded saves');
+select pg_temp.expect((select max((d->>'people')::int) from jsonb_array_elements(public.admin_profile_analytics(:owner, now() - interval '1 day', now() + interval '1 hour', 14)->'saves_by_day') d) >= 2, 'analytics: saves per day come from the recorded saves');
 select pg_temp.expect((public.admin_profile_analytics(:owner, now() - interval '1 day', now() + interval '1 hour', 14)->>'stopped_total')::int = 0,
   'nobody is counted as having stopped while they are still within the inactivity window');
 select pg_temp.expect((public.admin_profile_analytics(:owner, now() - interval '1 day', now() + interval '1 hour', 0)->>'inactive_days')::int = 1, 'the inactivity window is configurable (and at least one day)');

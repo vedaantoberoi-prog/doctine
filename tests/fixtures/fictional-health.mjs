@@ -55,7 +55,7 @@ export function makeRecords({ uid, reports = 10, seed = 7, extraDocs = 0 } = {})
     documents.push({ id: id("x", j), user_id: uid, title: `Fictional ${["discharge summary", "X-ray report", "consultation note", "vaccination card"][j % 4]} ${j + 1}`,
       category: j % 4 === 1 ? "Imaging" : "Other", document_date: t.toISOString().slice(0, 10), provider: `Imaginary Hospital ${j % 7}`, fields: {}, page_count: 1 + (j % 4) });
   }
-  const health_profiles = [{ user_id: uid, date_of_birth: "1980-06-15", sex_at_birth: "female", gender: "woman", blood_group: "B+", height_cm: 162, weight_kg: 64,
+  const health_profiles = [{ user_id: uid, date_of_birth: "1980-06-15", sex_at_birth: "female", gender: "female", blood_group: "B+", height_cm: 162, weight_kg: 64,
     phone: "+91 90000 00000", contact_email: "fictional@example.test", emergency_name: "Fictional Contact", emergency_phone: "+91 90000 00001",
     allergies: null, history_answers: { allergies: "yes", devices: "no", conditions: "yes", family: "yes", meds_regular: "yes" }, lifestyle: {}, updated_at: "2026-11-01T10:00:00Z" }];
   const health_records = [

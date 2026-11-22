@@ -1,6 +1,6 @@
 /**
  * Doctine · runs the app's server functions on Cloudflare Pages (the same code Netlify runs, from netlify/functions).
- * /api/config, /api/account, /api/chat, /api/scan, /api/admin, /api/events, /api/monitor and /api/errors are routed to their handlers; Cloudflare's settings are copied into
+ * /api/config, /api/account, /api/chat, /api/scan, /api/admin, /api/events, /api/monitor, /api/errors and /api/gateway are routed to their handlers; Cloudflare's settings are copied into
  * process.env, where the handlers read them; the visitor's IP comes from Cloudflare's cf-connecting-ip header.
  * Needs the nodejs_compat compatibility flag (wrangler.toml), for process and node:crypto.
  */
@@ -12,10 +12,11 @@ import admin from "../../netlify/functions/admin.mjs";
 import events from "../../netlify/functions/events.mjs";
 import monitor from "../../netlify/functions/monitor.mjs";
 import errors from "../../netlify/functions/errors.mjs";
+import gateway from "../../netlify/functions/gateway.mjs";
 import { reportServerError } from "../../netlify/lib/monitor.mjs";
 import { corsFor } from "../../netlify/lib/cors.mjs";
 
-const ROUTES = { config, account, chat, scan, admin, events, monitor, errors };
+const ROUTES = { config, account, chat, scan, admin, events, monitor, errors, gateway };
 const notFound = () => new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 
 export async function onRequest({ request, env, params }) {

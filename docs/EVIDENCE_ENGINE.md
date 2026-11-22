@@ -1,7 +1,7 @@
 # Doctine medical evidence engine (23 Nov 2026)
 
-Status: built and tested on fictional data; **not applied to staging or production** (the migration waits for your
-review, as the brief requires). The assistant stays switched off. Nothing here sends health data to any new provider.
+Status: built and tested on fictional data. **Applied to staging on 23 Nov 2026** (hash-checked) and verified there;
+**not applied to production** yet. The assistant stays switched off. Nothing here sends health data to any new provider.
 
 ## 1. Audit: what existed
 
@@ -101,6 +101,14 @@ clinician review. The live harness (`tools/bench-live.mjs`) and review pack are 
 production with approval; existing documents are indexed by the migration itself. 4. Deploy the app (saves page text).
 Rollback: `supabase/rollback/20261123010000_evidence_index_down.sql` (removes the index and kept page text; documents,
 AI readings and results are untouched). The app keeps working without the table (tested).
+
+## Staging verification (23 Nov 2026)
+
+On the staging database, as the fictional accounts with row security on: all 11 of person A's existing documents were
+indexed by the migration (39 pieces: 38 lab rows, 1 prescription line) and all show as searchable; person A sees 0
+pieces of anyone else and person B sees none of A's; the phrase search for "ldl cholesterol" finds 7 pieces.
+In a rolled-back probe: new page text was indexed with its page, a corrected value replaced the old piece, person B
+could not add page text to A's document, and deleting the document left 0 pieces.
 
 ## 8. Per deliverable
 

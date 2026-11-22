@@ -142,8 +142,11 @@ export async function assist(input, deps) {
         let note = "";
         for (let attempt = 0; attempt <= (POLICY.limits.retries.GENERATING_RESPONSE || 0); attempt++) {
           run.checkLive();
-          const r = await provider.call(rt.model, { system: POLICY.prompts.orchestrator_system, messages: [{ role: "user", content: pkg + note }], tool: EXPLAIN_TOOL,
-            maxTokens: POLICY.limits.max_output_tokens, timeoutMs: POLICY.limits.stage_ms.GENERATING_RESPONSE - 1000, signal });
+          let r;
+          try { r = await provider.call(rt.model, { system: POLICY.prompts.orchestrator_system, messages: [{ role: "user", content: pkg + note }], tool: EXPLAIN_TOOL,
+            maxTokens: POLICY.limits.max_output_tokens, timeoutMs: POLICY.limits.stage_ms.GENERATING_RESPONSE - 1000, signal }); }
+          catch { r = { error: signal && signal.aborted ? "cancelled" : "provider_threw" }; }   // a provider failing in any way never fails the request
+          r = r && typeof r === "object" ? r : { error: "bad_output" };
           if (r.usage && budget) { const u = budget.record(envelope.subject, rt.model, r.usage, env); usage = { tokens_in: usage.tokens_in + u.tokens_in, tokens_out: usage.tokens_out + u.tokens_out, cost_usd: u.cost_usd == null ? usage.cost_usd : +((usage.cost_usd || 0) + u.cost_usd).toFixed(6) }; }
           if (r.error === "cancelled" || (signal && signal.aborted)) throw new RunError("cancelled", "The request was cancelled.");
           if (r.error && r.error !== "bad_output") { degraded = UNAVAILABLE.has(r.error) ? "provider_unavailable" : "provider_error"; run.note({ error: r.error }); return { explanation: null }; }

@@ -338,6 +338,8 @@ await test("9 · provider unavailable: the facts are still given, labelled; neve
     assert.equal(r.status, 200); assert.equal(r.body.route.degraded, "provider_unavailable", err); assert.equal(r.body.route.model, null);
     assert.equal(r.provider.calls.length, 1, "no second call to a cheaper model"); assert.match(r.body.answer.text, /142 mg\/dL/); assert.equal(r.body.answer.sections.explanation, null);
   }
+  const threw = await ask(world(), { message: Q, share_records: true }, { provider: fakeProvider(() => { throw new Error("socket hang up"); }) });
+  assert.equal(threw.status, 200); assert.equal(threw.body.route.degraded, "provider_error"); assert.match(threw.body.answer.text, /142 mg\/dL/);
   const none = await ask(world(), { message: Q, share_records: true }, { provider: { name: "anthropic", configured: false, call: async () => assert.fail("called") } });
   assert.equal(none.body.route.degraded, "provider_not_configured");
 });

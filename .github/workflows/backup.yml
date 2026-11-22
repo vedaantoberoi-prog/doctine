@@ -54,7 +54,16 @@ jobs:
           mkdir -p out
           /usr/lib/postgresql/17/bin/pg_dump "$DB" -Fc --no-owner --no-privileges \
             --schema=public --schema=auth --schema=storage -f "$RUNNER_TEMP/db.dump" 2> "$RUNNER_TEMP/err" \
-            || { echo "::error::pg_dump failed (details withheld from this public log)"; exit 1; }
+            || { e="$RUNNER_TEMP/err"; why="unknown reason"
+                 grep -qi 'password authentication failed' "$e" && why="wrong database password in SUPABASE_DB_URL"
+                 grep -qi 'tenant or user not found' "$e" && why="wrong user or project in SUPABASE_DB_URL"
+                 grep -qiE 'could not translate host|name or service not known' "$e" && why="the host in SUPABASE_DB_URL could not be found"
+                 grep -qiE 'invalid (connection|URI)|invalid integer value|missing \"=\"' "$e" && why="SUPABASE_DB_URL is not a valid address (a symbol in the password may need removing)"
+                 grep -qiE 'timeout|could not connect|connection refused|network is unreachable' "$e" && why="the database could not be reached"
+                 grep -qi 'server version mismatch' "$e" && why="pg_dump and server versions differ"
+                 grep -qi 'permission denied' "$e" && why="permission denied on some object"
+                 grep -qi 'prepared statement' "$e" && why="transaction pooler used; use port 5432"
+                 shred -u "$e"; echo "::error::pg_dump failed: $why (other details withheld from this public log)"; exit 1; }
           n=$(/usr/lib/postgresql/17/bin/pg_restore --list "$RUNNER_TEMP/db.dump" | grep -c "TABLE DATA" || true)
           [ "$n" -ge 13 ] || { echo "::error::backup looks incomplete ($n tables with data entries)"; exit 1; }
           printf %s "$PASS" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \

@@ -6,6 +6,7 @@
  */
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
+import { editProfile, addRecord } from "./med-helper.mjs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8766";
 const fakeSrc = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
 const results = [], errs = [];
@@ -28,6 +29,8 @@ const consents = (pg) => pg.evaluate("(()=>{const u=window.__sbdb.users['priya.g
 // Google not switched on for this site: no button, so nobody is sent to an error page
 let { ctx, pg } = await device(false);
 check("no Google button when the site hasn't switched Google on", (await pg.$("#google")) === null);
+check("with real accounts, the sign-in screen offers no guest chat (the assistant answers signed-in accounts only)", (await pg.$("#guest")) === null && (await pg.$("#samp")) !== null);
+check("the sign-in screen has visible field labels, a Show/Hide password control and the brand panel copy", (await pg.$("label[for=au-email]")) !== null && (await pg.$("label[for=au-pw]")) !== null && (await pg.$("#pwtoggle[aria-pressed=false]")) !== null && (await pg.textContent(".au-art")).includes("Your health has a history."));
 await ctx.close();
 
 ({ ctx, pg } = await device(true));
@@ -43,21 +46,27 @@ await pg.check("#gack"); await Promise.all([pg.waitForNavigation({ timeout: 1000
 const calls = await oauthCalls(pg);
 check("it asks Supabase for Google, returning to this page", calls.length === 1 && calls[0].provider === "google" && calls[0].redirectTo === BASE + "/index.html", JSON.stringify(calls));
 check("back from Google, the person is in their Doctine account", await pg.evaluate("S.cloud===true&&CLOUD.email==='priya.google@example.com'") && (await pg.textContent("#who")).includes("Doctine account"));
-check("the agreement is recorded once, as for an email sign-up", JSON.stringify(await consents(pg)) === JSON.stringify(["ai_chat=true", "cloud_storage=true"]), JSON.stringify(await consents(pg)));
+check("the agreement is recorded once, as for an email sign-up", JSON.stringify(await consents(pg)) === JSON.stringify(["cloud_storage=true"]), JSON.stringify(await consents(pg)));
+check("signing up doesn't switch on the AI assistant: that's a separate choice, off by default", await pg.evaluate("S.consent.ai===false") && !/AI provider/.test(await pg.evaluate("document.body.innerText")));
 
 // records go into the account and survive a reload
-await pg.evaluate("go('health')"); for (const [k, v] of [["blood", "O+"], ["allergies", "Penicillin"]]) { await pg.fill(`[data-p=${k}]`, v); await pg.dispatchEvent(`[data-p=${k}]`, "change"); }
-await pg.waitForTimeout(2500);
-const saved = await pg.evaluate("window.__sbdb.tables.health_profiles?.find(p=>p.user_id===CLOUD.uid)");
-check("health details are saved to the database under this account", saved && saved.blood_group === "O+" && saved.allergies === "Penicillin");
+await editProfile(pg, "personal", { blood: "O+" }, { wait: 1500 });
+await addRecord(pg, "allergy", { title: "Penicillin", cat: "medication", cert: "confirmed", sev: "severe" }, { wait: 1500 });
+const saved = await pg.evaluate("window.__sbdb.tables.health_profiles?.find(p=>p.user_id===CLOUD.uid)"), savedAl = await pg.evaluate("(window.__sbdb.tables.health_records||[]).find(r=>r.user_id===CLOUD.uid&&r.kind==='allergy')");
+check("health details are saved to the database under this account", saved && saved.blood_group === "O+" && savedAl && savedAl.title === "Penicillin" && savedAl.severity === "severe");
 await pg.reload(); await pg.waitForTimeout(1200);
-check("still signed in after a reload, with the details still there", await pg.evaluate("S.cloud&&S.profile.blood==='O+'&&S.profile.allergies==='Penicillin'"));
+check("still signed in after a reload, with the details still there", await pg.evaluate("S.cloud&&S.profile.blood==='O+'&&S.hist.some(r=>r.kind==='allergy'&&r.title==='Penicillin'&&r.sev==='severe')"));
 
 // a later choice is never overwritten by signing in again
-await pg.evaluate("(()=>{const c=window.__sbdb.tables.consents.find(c=>c.user_id===CLOUD.uid&&c.kind==='ai_chat');c.granted=false;localStorage.setItem('__sbdb',JSON.stringify(window.__sbdb))})()");
+await pg.evaluate("(()=>{const c=window.__sbdb.tables.consents.find(c=>c.user_id===CLOUD.uid&&c.kind==='cloud_storage');c.granted=false;localStorage.setItem('__sbdb',JSON.stringify(window.__sbdb))})()");
 await pg.evaluate("document.querySelector('#out').click()"); await pg.waitForTimeout(500);
 await pg.check("#gack"); await Promise.all([pg.waitForNavigation({ timeout: 10000 }), pg.click("#google")]); await pg.waitForTimeout(900);
-check("signing in with Google again keeps a choice the person changed later", JSON.stringify(await consents(pg)) === JSON.stringify(["ai_chat=false", "cloud_storage=true"]), JSON.stringify(await consents(pg)));
+check("signing in with Google again keeps a choice the person changed later", JSON.stringify(await consents(pg)) === JSON.stringify(["cloud_storage=false"]), JSON.stringify(await consents(pg)));
+// an AI permission recorded under the old, bundled sign-up agreement (before it became its own choice) doesn't count
+await pg.evaluate("(()=>{window.__sbdb.tables.consents.push({user_id:CLOUD.uid,kind:'ai_chat',granted:true,updated_at:'2026-11-05T10:00:00Z'});localStorage.setItem('__sbdb',JSON.stringify(window.__sbdb))})()");
+await pg.evaluate("document.querySelector('#out').click()"); await pg.waitForTimeout(500);
+await pg.check("#gack"); await Promise.all([pg.waitForNavigation({ timeout: 10000 }), pg.click("#google")]); await pg.waitForTimeout(900);
+check("an AI permission from the old bundled sign-up agreement isn't treated as permission", await pg.evaluate("S.consent.ai===false"));
 check("signing in again opens the same account, not a new one", await pg.evaluate("Object.keys(window.__sbdb.users).length===1&&S.profile.blood==='O+'"));
 
 // failures are explained
@@ -79,8 +88,8 @@ await pg.evaluate("go('chat')"); await pg.waitForTimeout(150);
 check("with the AI not switched on yet, chat says so before anyone asks, and still mentions 112", (await pg.$("#aioff")) !== null && /switching on soon/.test(await pg.textContent("#aioff")) && /112/.test(await pg.textContent("#aioff")) && (await pg.$("[data-q]")) === null);
 await pg.evaluate("go('reports')"); await pg.waitForTimeout(100);
 check("…and scanning says pages are saved as photos for now", (await pg.textContent("#view")).includes("Saved as a photo. Automatic reading switches on soon."));
-await pg.evaluate("go('health')"); await pg.waitForTimeout(100);
-check("the health profile says it saves to the account, not this browser", (await pg.textContent("#view")).includes("Saved to your account when you leave a field") && !(await pg.textContent("#view")).includes("Saved in this browser"));
+await editProfile(pg, "personal", { city: "Pune" }, { wait: 1200 });
+check("the health profile says it saved to the account, not this browser", (await pg.textContent("#hps-personal")).includes("Saved to your account") && !(await pg.textContent("#view")).includes("Saved in this browser"));
 await pg.evaluate("go('settings')"); await pg.waitForTimeout(100);
 check("no 'demo' wording left in a real account's settings or reminders", !/this demo/i.test(await pg.textContent("#view")) && await pg.evaluate("go('reminders'),!/this demo|Simulate/i.test(document.querySelector('#view').textContent)"));
 await ctx.close();

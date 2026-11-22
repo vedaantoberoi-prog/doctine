@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { addMed } from "./med-helper.mjs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8766";
 import { readFileSync } from "node:fs";
 const fake = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
@@ -16,7 +17,7 @@ const register = async (name, email) => { await pg.click("[data-auth=register]")
 const signIn = async (email) => { await pg.fill("input[name=email]", email); await pg.fill("input[name=pw]", "secret123"); await pg.click("#lf button.pri"); await W(700); };
 const signOut = async () => { await pg.evaluate("document.getElementById('out').click()"); await W(400); };
 const historyOnSetting = async () => { await pg.evaluate("go('settings')"); const c = await pg.$("[data-c=history]"); if (c && !(await c.isChecked())) await pg.check("[data-c=history]"); await W(900); };
-const say = async (t) => { await pg.evaluate("go('chat')"); await pg.fill("#ci", t); await pg.click("#cf button.pri"); await W(600); };
+const say = async (t) => { await pg.evaluate("go('chat')"); await pg.fill("#ci", t); await pg.click("#cf button.pri"); if (await pg.$("#aiallow")) await pg.click("#aiallow"); await W(600); };
 const uidOf = (email) => pg.evaluate((e) => window.__sbdb.users[e].user.id, email);
 
 // 1. A saves successfully
@@ -42,7 +43,7 @@ check("7. no request under B used A's conversation", !w.some((x) => x.session ==
 check("A's unsent message was not saved anywhere (it was discarded at sign-out, with a warning)", !(await pg.evaluate(() => JSON.stringify(window.__sbdb.tables.messages || []).includes("A-secret"))));
 // switch while a save is in flight
 await signOut(); await signIn("a@example.com"); await pg.evaluate(() => { window.__delay = { conversations: 1200, messages: 1200 }; });
-await pg.evaluate("go('chat')"); await pg.fill("#ci", "A-inflight: my pregnancy test"); await pg.click("#cf button.pri"); await W(150);
+await pg.evaluate("go('chat')"); await pg.fill("#ci", "A-inflight: my pregnancy test"); await pg.click("#cf button.pri"); if (await pg.$("#aiallow")) await pg.click("#aiallow"); await W(150);
 await signOut(); await signIn("b@example.com"); await pg.evaluate(() => { window.__delay = {}; }); await say("B-second: sleep tips"); await W(2500);
 const w2 = await pg.evaluate(() => window.__writes);
 check("in-flight: nothing of A's is sent under B's sign-in after switching", !w2.some((x) => x.session === B && JSON.stringify(x.rows).includes("A-")));
@@ -51,7 +52,7 @@ check("in-flight: B's account still holds only B's messages", bRows.every((c) =>
 const aConvIds = await pg.evaluate((a) => (window.__sbdb.tables.conversations || []).filter((c) => c.user_id === a).map((c) => c.id), A);
 check("in-flight: B never writes into one of A's conversations", !w2.some((x) => x.session === B && x.table === "messages" && x.rows.some((r) => aConvIds.includes(r.conversation_id))));
 // "saved" is shown only once Supabase confirms
-await pg.evaluate(() => { window.__delay = { messages: 1500 }; }); await pg.evaluate("go('chat')"); await pg.fill("#ci", "B-third: vitamin D"); await pg.click("#cf button.pri"); await W(500);
+await pg.evaluate(() => { window.__delay = { messages: 1500 }; }); await pg.evaluate("go('chat')"); await pg.fill("#ci", "B-third: vitamin D"); await pg.click("#cf button.pri"); if (await pg.$("#aiallow")) await pg.click("#aiallow"); await W(500);
 check("while the save is in progress, the chat says 'Saving…', not 'saved'", (await pg.textContent("#view")).includes("Saving this chat"));
 await W(1800); check("after Supabase confirms, the chat says it is saved", (await pg.textContent("#view")).includes("This chat is saved in your Doctine account"));
 await pg.evaluate(() => { window.__delay = {}; });
@@ -70,7 +71,7 @@ check("sign-out warns when messages aren't saved, and cancelling keeps you signe
 pg.on("dialog", (d) => d.accept());
 // records being saved when the account switches: nothing of B's sign-in carries A's data
 await signOut(); await signIn("a@example.com"); await pg.evaluate(() => { window.__delay = { medicines: 1500, medication_schedules: 1500 }; });
-await pg.evaluate("go('medicines')"); await pg.fill("#mf [name=name]", "A-med Levothyroxine"); await pg.fill("#mf [name=dose]", "50 mcg"); await pg.click("#mf button.pri"); await W(900);
+await pg.evaluate("go('medicines')"); await addMed(pg, { name: "A-med Levothyroxine", strength: ["50", "mcg"], wait: 900 });
 await signOut(); await signIn("b@example.com"); await pg.evaluate(() => { window.__delay = {}; }); await W(2500);
 const w3 = await pg.evaluate(() => window.__writes);
 check("records: nothing of A's is written under B's sign-in after switching mid-save", !w3.some((x) => x.session === B && JSON.stringify(x.rows).includes("A-med")));

@@ -1,0 +1,43 @@
+# Doctine · live gateway benchmark (tools/bench-live.mjs) on FICTIONAL data, with a hard spending cap.
+# Runs only when someone pushes to the branch `bench-live` or starts it by hand. Needs the repository secret
+# ANTHROPIC_API_KEY (Settings → Secrets and variables → Actions). The key is never printed or saved; results are an artifact.
+name: Gateway benchmark (live)
+on:
+  push:
+    branches: [bench-live]
+  workflow_dispatch:
+    inputs:
+      max_usd: { description: "Spending cap in US$", default: "5", required: true }
+      runs: { description: "Repetitions (1-5)", default: "1", required: true }
+permissions:
+  contents: read
+concurrency: { group: bench-live, cancel-in-progress: false }
+jobs:
+  bench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Check the key is configured
+        env: { ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}" }
+        run: '[ -n "$ANTHROPIC_API_KEY" ] || { echo "::error::Add the repository secret ANTHROPIC_API_KEY to run the live benchmark."; exit 1; }'
+      - name: Mock run (no cost) must pass first
+        run: node tools/bench-live.mjs --mock
+      - name: Live run on fictional data
+        env:
+          ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
+          BENCH_MODEL: claude-sonnet-5-5
+          BENCH_MAX_USD: "${{ github.event.inputs.max_usd || '5' }}"
+          BENCH_RUNS: "${{ github.event.inputs.runs || '1' }}"
+        run: node tools/bench-live.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-live
+          path: |
+            reports/bench-live-*.json
+            docs/GATEWAY_BENCHMARK_LIVE.md
+          if-no-files-found: warn
+          retention-days: 30

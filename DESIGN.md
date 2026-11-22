@@ -34,6 +34,7 @@ No gradients, no bright greens or saturated blues. Red is reserved for emergenci
 
 - **Fraunces** (500/600, optical sizing): page and section headlines only.
 - **Instrument Sans** (400/500/600): everything else, including card titles (`h3`) and all product UI.
+- Both are served by the sites themselves (`website/assets/fonts/`, `public/fonts/`; SIL Open Font License 1.1), never from Google Fonts, so no third party sees a visit. Latin and Latin Extended subsets.
 - Numbers in records use `font-variant-numeric: tabular-nums` (`.num`).
 - Scale: h1 `clamp(2.35rem, 6vw, 4rem)`, h2 `clamp(1.75rem, 3.4vw, 2.5rem)`, h3 1.25rem, body 1.0625rem/1.62,
   small .9375rem, eyebrow .8125rem uppercase +.09em.

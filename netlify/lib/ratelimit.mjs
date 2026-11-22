@@ -12,6 +12,7 @@
  * That is best-effort only (each function instance counts separately) and is reported as mode "local".
  * Set RATE_LIMIT_REQUIRE_SHARED=true to refuse AI requests instead when the shared limiter is unavailable.
  */
+import { serviceHeaders } from "./supabase-keys.mjs";
 import { createHmac, createHash, timingSafeEqual } from "node:crypto";
 import { limited as localLimited, clientIp } from "./ai.mjs";
 
@@ -25,6 +26,12 @@ export function limitsFor(route, who, env = process.env) {
     scan: { user: [["1h", o("1H", 30), 3600], ["1d", o("1D", 150), 86400]], ip: [["1h", o("1H", 8), 3600], ["1d", o("1D", 30), 86400]] },
     explain: { user: [["10m", o("10M", 40), 600]], ip: [["10m", o("10M", 15), 600]] },
     account: { user: [["1h", o("1H", 5), 3600]], ip: [["1h", o("1H", 10), 3600]] },
+    admin: { user: [["10m", o("10M", 600), 600]], ip: [["10m", o("10M", 30), 600]] },
+    monitor: { user: [["10m", o("10M", 20), 600]], ip: [["10m", o("10M", 20), 600]] },
+    errors: { user: [["10m", o("10M", 30), 600]], ip: [["10m", o("10M", 30), 600]] },
+    events: { user: [["10m", o("10M", 300), 600]], ip: [["10m", o("10M", 60), 600]] },
+    gateway: { user: [["10m", o("10M", 120), 600], ["1d", o("1D", 1000), 86400]], ip: [["10m", o("10M", 30), 600]] },
+    assist: { user: [["10m", o("10M", 30), 600], ["1d", o("1D", 200), 86400]], ip: [["10m", o("10M", 10), 600]] },
     test: { user: [["10m", 10, 600]], ip: [["10m", 10, 600]] },
     eval: { eval: [["1h", o("1H", 300), 3600]] },
   };
@@ -61,7 +68,7 @@ async function sharedHit(bucket, subject, limit, windowSec, env, fetchImpl) {
   try {
     const r = await fetchImpl(`${base}/rest/v1/rpc/rate_limit_hit`, {
       method: "POST", signal: ac.signal,
-      headers: { apikey: key, authorization: `Bearer ${key}`, "content-type": "application/json" },
+      headers: serviceHeaders(key, { "content-type": "application/json" }),
       body: JSON.stringify({ p_bucket: bucket, p_subject: subject, p_limit: limit, p_window_seconds: windowSec }),
     });
     if (!r.ok) throw new Error("limiter " + r.status);

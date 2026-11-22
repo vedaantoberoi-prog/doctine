@@ -7,10 +7,8 @@
 <meta name="description" content="Why Doctine exists, what it does today, and the connected health information platform it is building towards.">
 <meta name="theme-color" content="#101C2B">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/fonts/fonts.css?v=41d2c6e670">
+<link rel="stylesheet" href="/assets/site.css?v=08522cc764">
 <link rel="canonical" href="https://doctine.com/about/">
 <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
 <meta property="og:site_name" content="Doctine">
@@ -88,8 +86,8 @@
     <div class="grid two">
       <div><h3>Say only what's true</h3><p class="muted small">We describe features as available only when they work. Anything else is labelled as in development or planned.</p></div>
       <div><h3>The record belongs to the person</h3><p class="muted small">Your records are private to your account, and you can take them with you or delete them at any time.</p></div>
-      <div><h3>Careful with AI</h3><p class="muted small">AI explanations are tested against safety cases and reviewed by doctors before release. They support medical care; they never replace it.</p></div>
-      <div><h3>India first</h3><p class="muted small">Built for Indian prescriptions, lab reports and emergency services, with your data stored in India.</p></div>
+      <div><h3>Careful with AI</h3><p class="muted small">AI explanations must pass our safety test cases and be reviewed by doctors before release. Until then, they stay switched off. They support medical care; they never replace it.</p></div>
+      <div><h3>India first</h3><p class="muted small">Built for Indian prescriptions, lab reports and emergency services, with your records stored in India.</p></div>
     </div>
   </div></section>
 
@@ -108,7 +106,7 @@
     <div><h2>The company</h2></div>
     <div>
       <p>Doctine is operated by Doctine Private Limited, India. We're an early-stage company and the product is in its first public release.</p>
-      <p style="margin:0">Questions, feedback or partnership enquiries: <a href="mailto:support@doctine.com">support@doctine.com</a>.</p>
+      <p style="margin:0">Questions, feedback or partnership enquiries: <!--email_off--><a href="mailto:support@doctine.com">support@doctine.com</a><!--/email_off-->.</p>
     </div>
   </div></section>
 
@@ -123,7 +121,7 @@
       </div>
       <div>
         <h2>Product</h2>
-        <ul><li><a href="/#platform">Platform</a></li><li><a href="/app-preview/">Sample preview</a></li><li><a href="https://app.doctine.com/">Sign in</a></li></ul>
+        <ul><li><a href="/#platform">Platform</a></li><li><a href="https://app.doctine.com/?sample=1">Sample records</a></li><li><a href="https://app.doctine.com/">Sign in</a></li></ul>
       </div>
       <div>
         <h2>Company</h2>
@@ -136,9 +134,16 @@
     </div>
     <div class="foot-safety">
       <span><strong>In a medical emergency, call 112.</strong> Mental-health support: Tele-MANAS, <strong>14416</strong>.</span>
-      <span>© 2026 Doctine Private Limited</span>
+      <span>© 2026 Doctine</span>
     </div>
   </div>
 </footer>
+<script>
+  // Menu: Escape closes it and returns focus to the button; choosing a link closes it.
+  document.querySelectorAll('details.menu').forEach((m) => {
+    m.addEventListener('keydown', (e) => { if (e.key === 'Escape' && m.open) { m.open = false; m.querySelector('summary').focus(); } });
+    m.querySelectorAll('.panel a').forEach((a) => a.addEventListener('click', () => { m.open = false; }));
+  });
+</script>
 </body>
 </html>

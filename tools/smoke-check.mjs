@@ -34,6 +34,7 @@ await check(`/api/config reports environment "${expectEnv}" and only public sett
   const r = await get("/api/config"); must(r.ok, "HTTP " + r.status); const raw = await r.text(); cfg = JSON.parse(raw);
   must(cfg.environment === expectEnv, `environment is "${cfg.environment}"`);
   must(!/service_role|SERVICE_ROLE|sk-ant-/.test(raw), "secret material in /api/config");
+  if (cfg.supabaseAnonKey) must(!/^sb_secret_/.test(cfg.supabaseAnonKey), "a secret key is being served as the public key");
   if (cfg.supabaseAnonKey) { const role = JSON.parse(Buffer.from(cfg.supabaseAnonKey.split(".")[1] || "", "base64url").toString() || "{}").role; must(!role || role === "anon", "the public key is not an anon key (role " + role + ")"); }
   return `accounts: ${cfg.accounts}`;
 });

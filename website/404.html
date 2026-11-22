@@ -7,10 +7,8 @@
 <meta name="description" content="This page does not exist.">
 <meta name="theme-color" content="#101C2B">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/fonts/fonts.css?v=41d2c6e670">
+<link rel="stylesheet" href="/assets/site.css?v=08522cc764">
 <meta name="robots" content="noindex">
 </head>
 <body>
@@ -69,7 +67,7 @@
       </div>
       <div>
         <h2>Product</h2>
-        <ul><li><a href="/#platform">Platform</a></li><li><a href="/app-preview/">Sample preview</a></li><li><a href="https://app.doctine.com/">Sign in</a></li></ul>
+        <ul><li><a href="/#platform">Platform</a></li><li><a href="https://app.doctine.com/?sample=1">Sample records</a></li><li><a href="https://app.doctine.com/">Sign in</a></li></ul>
       </div>
       <div>
         <h2>Company</h2>
@@ -82,9 +80,16 @@
     </div>
     <div class="foot-safety">
       <span><strong>In a medical emergency, call 112.</strong> Mental-health support: Tele-MANAS, <strong>14416</strong>.</span>
-      <span>© 2026 Doctine Private Limited</span>
+      <span>© 2026 Doctine</span>
     </div>
   </div>
 </footer>
+<script>
+  // Menu: Escape closes it and returns focus to the button; choosing a link closes it.
+  document.querySelectorAll('details.menu').forEach((m) => {
+    m.addEventListener('keydown', (e) => { if (e.key === 'Escape' && m.open) { m.open = false; m.querySelector('summary').focus(); } });
+    m.querySelectorAll('.panel a').forEach((a) => a.addEventListener('click', () => { m.open = false; }));
+  });
+</script>
 </body>
 </html>

@@ -68,9 +68,15 @@ Netlify → **Site configuration → Environment variables**. Set the scope to i
 | `ANTHROPIC_API_KEY` | chat and scanning | console.anthropic.com → API keys. Add credit under Billing. |
 | `AI_MODEL` (optional) | chat model | A Claude model id. Default `claude-sonnet-5-5`. |
 | `AI_SCAN_MODEL` (optional) | scanning model | Defaults to `AI_MODEL` if that's a Claude model. |
+| `AI_MODEL_LIGHT`, `AI_MODEL_HIGH` (optional) | records assistant routing (/api/assist) | Category B and D models of the orchestrator; defaults `claude-haiku-5-5` and `claude-opus-5-5`. Category C uses `AI_MODEL`. A model that can't be reached is never replaced by a weaker one. |
+| `AI_PRICES` (optional) | cost accounting | JSON of US$ per million tokens, e.g. `{"claude-haiku-5-5":[1,5]}`. Without a price, tokens are counted and cost is shown as unknown (never guessed). |
+| `ORCHESTRATOR_SECRET` (optional, server only) | confirmations | Signs confirmation tokens for actions that change something (level 2-3 tools). None are enabled yet; without it such actions are refused. Generate a long random value; never put it in the browser. |
 | `SUPABASE_URL` | accounts and storage | Supabase → Project settings → API → Project URL |
 | `SUPABASE_ANON_KEY` | accounts and storage | Same page → `anon` `public` key. Safe in browsers; the database rules protect data. |
-| `SUPABASE_SERVICE_ROLE_KEY` | account deletion and shared rate limits | Same page → `service_role` key. **Secret: it bypasses row-level security, so it can read every person's health records.** Set it only as a Netlify environment variable. Never put it in the website or any browser code, never commit it, and never print it or include it in logs (application logs, CI logs or support messages). |
+| `SUPABASE_SERVICE_ROLE_KEY` | account deletion, shared rate limits, the admin console (/admin) and platform switches | Same page → `service_role` key. **Secret: it bypasses row-level security, so it can read every person's health records.** Set it only as a Netlify environment variable. Never put it in the website or any browser code, never commit it, and never print it or include it in logs (application logs, CI logs or support messages). |
+| `ADMIN_REQUIRE_MFA` | optional, admin console | `true` makes every admin use two-step sign-in (aal2) before the console opens. Without it, two-step sign-in is required only for admins who have set it up. See docs/ADMIN_CONSOLE.md. |
+| `RESEND_API_KEY`, `ALERT_EMAIL_TO`, `ALERT_EMAIL_FROM` | optional, alert emails | When all three are set, new admin-console alerts are emailed through Resend (`ALERT_EMAIL_TO` may list several addresses, comma-separated; `ALERT_EMAIL_FROM` must be on a domain verified in Resend). `RESEND_API_KEY` is a secret. Without them, the GitHub uptime workflow fails on new alerts, so GitHub emails the owner. |
+| `CF_PAGES_COMMIT_SHA` | set by Cloudflare | The commit being served; stamped into version.json and server error reports. Do not set it yourself. |
 | `RATE_LIMIT_SECRET` (required on staging and production) | rate limits | `openssl rand -hex 32`. Used to hash user ids and IP addresses before they're counted. If it is unset, the code falls back to the service-role key. Don't rely on that: it ties two secrets together, and rotating the service-role key would reset every counter. |
 | `AI_DAILY_REQUEST_CAP` (optional) | spending protection | Maximum AI requests per day across everyone (chat + scanning). Default 3000. |
 | `RATE_LIMIT_REQUIRE_SHARED` (optional) | spending protection | `true` refuses AI requests while the shared limiter can't be reached, instead of falling back to per-instance limits. Emergency messages still get fixed 112 guidance. |
@@ -344,3 +350,61 @@ The same app and server functions also run on Cloudflare Pages (free plan, comme
   - `ANTHROPIC_API_KEY` (secret), only once the medical evaluation and clinician sign-off are done. Without it, chat and scanning say the assistant isn't available yet, and emergencies still get the fixed 112 guidance.
   - Never set `EVAL_ACCESS_TOKEN` here.
 
+
+## 16. Deploying the app by drag and drop (current production setup, since 9 November 2026)
+
+GitHub was unavailable from 7 to about 11 November 2026, so production moved off Git builds. GitHub works again (CI, the
+Apps builds, nightly backup and uptime checks all run), but production deliberately stays a manual, approved upload.
+app.doctine.com is served by the Cloudflare Pages project **`doctine-app-direct`** (Direct Upload). The old Git-connected project
+`doctine-app` was **retired on 22 Nov 2026**: it had kept serving the 7 Nov app against production. Its variables (including the
+server key) were removed, its old production deployments deleted and automatic builds turned off; the `app-release` branch now
+holds only a page forwarding doctine-app.pages.dev to app.doctine.com (kept so nobody else can claim that address).
+
+**Release:**
+1. `npm run build:direct` — runs the server tests, stamps the commit, bundles the server into `_worker.js`, runs
+   `tests/worker.test.mjs` against it, and writes `dist/doctine-app.zip`.
+2. Cloudflare → Workers & Pages → `doctine-app-direct` → Create deployment → drag in **`doctine-app.zip`**
+   (29 files as of 12 Nov 2026, including `_worker.js`, `_routes.json`, `native.js` and `admin/`) → Production → Save and deploy.
+3. Check `https://app.doctine.com/version.json` shows the new commit.
+
+**Supabase keys (since 9 November 2026):** production uses Supabase's new keys — `SUPABASE_ANON_KEY` holds the
+**publishable** key (`sb_publishable_…`, public) and `SUPABASE_SERVICE_ROLE_KEY` holds the **secret** key (`sb_secret_…`).
+The code also accepts the legacy JWT keys. `/api/config` refuses to publish anything but a public key. The legacy
+keys are still enabled in Supabase; the retired `doctine-app` project no longer uses them, so they can be turned off once nothing else does.
+
+**Project settings (already set):** compatibility flag `nodejs_compat`; variables `DOCTINE_ENV`, `SUPABASE_URL`,
+`SUPABASE_ANON_KEY`, `AUTH_GOOGLE`, `RATE_LIMIT_REQUIRE_SHARED`, `AI_DAILY_REQUEST_CAP` (text) and
+`SUPABASE_SERVICE_ROLE_KEY`, `RATE_LIMIT_SECRET` (secrets). Changes to variables apply only to the next upload; a
+Direct Upload deployment can't be "retried", so upload the zip again.
+
+**Rollback:** Deployments → an earlier deployment → Rollback (in `doctine-app-direct`).
+
+**Don't** upload the complete project package by mistake: only `doctine-app.zip` belongs here. A wrong upload makes
+its files public at that deployment's address; delete that deployment.
+
+**Website:** Cloudflare Pages project `doctine-website` (Direct Upload). `node tools/build-website.mjs` writes
+`dist/doctine-website.zip`; upload it the same way. App updates don't need a website upload: the website's sample link opens the
+real app (`app.doctine.com/?sample=1`).
+
+**CI:** the workflows in `.github/workflows/` run again on GitHub (CI on every push; `apps.yml` for Android/Mac; on `main`:
+nightly backup, uptime, staging). Staging deploys to Netlify fail since 11 Nov (Netlify credits). Still run the local
+checks in section 17 before each upload.
+
+## 17. Checks to run before an upload
+
+```
+npm test                                  # syntax, config, secret scan, server, grader, gates, tools
+node tests/hermetic.test.mjs              # server tests with a deployed site's settings present
+node tools/run-browser-tests.mjs          # all browser suites (AI and Supabase simulated)
+bash tests/run-db-tests.sh                # migrations + RLS on a throw-away PostgreSQL 15+
+gitleaks git --redact --no-banner --exit-code 1 .   # history scan (v8.21.2, sha256 pinned in ci.yml)
+```
+
+To get the release table, set `REPORT_DIR=<folder>` while running these (and `tools/run-step.mjs` for the quality and
+security steps, as in `ci.yml`), then `REPORT_DIR=<folder> node tools/release-report.mjs`.
+
+**The consent release (branch `audit-2026-11-09`):** `AI_CONSENT_FROM` in `public/index.html` sets the earliest time an
+AI permission counts. Grants recorded before it (the old sign-up bundled AI permission) are ignored, so everyone is
+asked again. It must be **on or before the moment this version goes live**, or a person who allows the AI in the new
+version could be asked again. Set it to the actual release time when uploading, rebuild the preview, and update the
+privacy policy's "Last updated" date to match.

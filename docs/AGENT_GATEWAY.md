@@ -36,7 +36,7 @@ A persistent audit table is planned with the agent integration.
 ## Deploy and roll back
 
 Deployed with the app (`npm run build:direct`, Cloudflare upload). With the flag off the route answers 503 and reads
-nothing. Roll back by switching the flag off, or by redeploying the previous app build; there is no database change.
+nothing. Roll back by switching the flag off, or by redeploying the previous app build; the switch migration has its own rollback file.
 
 ## Staging verification (23 Nov 2026)
 

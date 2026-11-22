@@ -1,7 +1,8 @@
 # Doctine medical evidence engine (23 Nov 2026)
 
-Status: built and tested on fictional data. **Applied to staging on 23 Nov 2026** (hash-checked) and verified there;
-**not applied to production** yet. The assistant stays switched off. Nothing here sends health data to any new provider.
+Status: built and tested on fictional data. **Applied to staging and production on 23 Nov 2026** (hash-checked, with approval), and the app
+that saves PDF page text is live (commit 45d42fb). Production's 2 existing documents have no values, AI reading or page
+text, so they show as not searchable; new PDF uploads are indexed with their pages. The gateway stays switched off. The assistant stays switched off. Nothing here sends health data to any new provider.
 
 ## 1. Audit: what existed
 

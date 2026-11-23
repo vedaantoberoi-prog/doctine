@@ -21,7 +21,8 @@ import { createBudget, createTtlStore, cacheKey } from "../netlify/lib/orchestra
 import { POLICY, POLICY_HASH } from "../netlify/lib/orchestrator/policy.mjs";
 import { infrastructure } from "../netlify/lib/orchestrator/info.mjs";
 import { gate } from "../tools/ai-policy-gate.mjs";
-import assistHandler from "../netlify/functions/assist.mjs";
+import assistHandler, { _resetPilotCache, exportOtel } from "../netlify/functions/assist.mjs";
+import { createSharedBudget } from "../netlify/lib/orchestrator/budget.mjs";
 import { _resetSettingsCache } from "../netlify/lib/settings.mjs";
 import { fakeSupabase } from "./fixtures/fictional-health.mjs";
 import { readFileSync } from "node:fs";
@@ -270,7 +271,7 @@ await test("happy path: every stage in order, facts from the records with source
   const sent = JSON.stringify(r.provider.calls[0].req);
   assert.ok(!sent.includes(A) && !sent.includes("B-ONLY") && !sent.includes("Fictional Diagnostics (May)"));
   // the log line has states, timings and counts only
-  const line = JSON.stringify(logs.at(-1));
+  const { at: _when, ...rest } = logs.at(-1); const line = JSON.stringify(rest);   // the timestamp can contain any digits
   assert.ok(!/142|118|Lipid profile|LDL/.test(line), line); assert.ok(line.includes('"route":"assist"'));
 });
 
@@ -443,6 +444,130 @@ await test("each request stores one trace row with codes and timings only (no pe
     { fetchImpl: async (u, o) => (String(u).includes("record_ai_trace") ? Promise.reject(new Error("down")) : sb.fetchImpl(u, o)), env: { SUPABASE_SERVICE_ROLE_KEY: "fictional-service-key" } });
   assert.equal(down.status, 200, "a failing trace store never affects the answer");
 });
+
+console.log("pilot accounts, shared budget, outside monitoring");
+await test("pilot: with the switches off, only a listed account can use the assistant; the app's probe answers about the caller only", async () => {
+  const pilots = new Set([A]); _resetPilotCache();
+  const mk = (flags) => { const sb = world(baseA(), { flags }); return { sb, f: async (u, o) => {
+    if (String(u).endsWith("/rest/v1/rpc/ai_pilot_allowed")) { const b = JSON.parse(o.body); assert.equal(o.headers.authorization, "Bearer fictional-service-key"); return new Response(JSON.stringify(pilots.has(b.p_user))); }
+    if (String(u).endsWith("/rest/v1/rpc/record_ai_trace")) return new Response("true");
+    return sb.fetchImpl(u, o); } }; };
+  const env = { SUPABASE_SERVICE_ROLE_KEY: "fictional-service-key" };
+  const off = { ai_assistant: false, ai_gateway: false, ai_orchestrator: false };
+  let w = mk(off);
+  const rA = await ask(w.sb, { message: Q, share_records: true }, { fetchImpl: w.f, env });
+  assert.equal(rA.status, 200, "pilot account A is answered"); assert.equal(rA.body.answer.kind, "records");
+  _resetPilotCache(); w = mk(off);
+  const rB = await ask(w.sb, { message: Q, share_records: true }, { fetchImpl: w.f, env, token: TB });
+  assert.equal(rB.status, 503, "B is not a pilot");
+  const probe = async (token, flags) => { _resetSettingsCache(); const x = mk(flags);
+    const res = await assistHandler(new Request("https://app.test/api/assist", { headers: token ? { authorization: "Bearer " + token } : {} }), {}, { env: { SUPABASE_URL: x.sb.base, SUPABASE_ANON_KEY: x.sb.anon, ...env }, fetchImpl: x.f, log: () => {} });
+    return res.json(); };
+  assert.deepEqual(await probe(TA, off), { available: true, pilot: true });
+  assert.deepEqual(await probe(TB, off), { available: false, pilot: false });
+  assert.deepEqual(await probe(null, off), { available: false });
+  assert.deepEqual(await probe(TB, { ai_assistant: true, ai_gateway: true, ai_orchestrator: true }), { available: true, pilot: false });
+  _resetPilotCache(); w = mk(off); const sbm = w.sb; sbm.tables.maintenance = true;
+  const maint = await (async () => { _resetSettingsCache(); const f = async (u, o) => (String(u).endsWith("/rest/v1/rpc/public_settings") ? new Response(JSON.stringify({ flags: off, maintenance: { on: true, message: "" } })) : w.f(u, o));
+    return ask(sbm, { message: Q, share_records: true }, { fetchImpl: f, env }); })();
+  assert.equal(maint.status, 503, "maintenance mode blocks pilots too");
+});
+await test("shared token budget: counted in the database across servers; a database failure falls back to this server's count", async () => {
+  const used = new Map(); let fail = false;
+  const f = async (u, o) => { if (fail) throw new Error("down"); const b = JSON.parse(o.body); const n = (used.get(b.p_subject) || 0) + b.p_add; used.set(b.p_subject, n); return new Response(JSON.stringify([{ allowed: n <= b.p_limit, used: n }])); };
+  const env = { SUPABASE_URL: "https://db.test", SUPABASE_SERVICE_ROLE_KEY: "k" };
+  const one = createSharedBudget({ env, fetchImpl: f, dailyTokens: 1000 }), two = createSharedBudget({ env, fetchImpl: f, dailyTokens: 1000 });
+  one.record("aaaaaaaaaaaaaaaa", "claude-sonnet-5-5", { input_tokens: 900, output_tokens: 50 }); await new Promise((r) => setTimeout(r, 10));
+  assert.equal(await two.allows("aaaaaaaaaaaaaaaa", 100), false, "a second server sees the first server's use");
+  assert.equal(await two.allows("bbbbbbbbbbbbbbbb", 100), true);
+  fail = true; assert.equal(await two.allows("aaaaaaaaaaaaaaaa", 100), true, "database down: falls back to this server's own count (it hasn't used any)");
+});
+await test("outside monitoring: OpenTelemetry export only when configured, over https, with codes and timings only", async () => {
+  const sent = []; const f = async (u, o) => { sent.push({ u, o }); return new Response("{}"); };
+  const r = createRun(); r.to("AUTHENTICATED", { category: "record_question" }); r.to("FAILED", { error: "x" }); const t = r.trace();
+  assert.equal(await exportOtel(t, { env: {}, fetchImpl: f }), false); assert.equal(sent.length, 0, "off when unset");
+  assert.equal(await exportOtel(t, { env: { OTEL_EXPORTER_OTLP_ENDPOINT: "http://plain.test" }, fetchImpl: f }), false, "plain http refused");
+  assert.equal(await exportOtel(t, { env: { OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.test", OTEL_EXPORTER_OTLP_HEADERS: "x-api-key=abc%3D1,team=doctine" }, fetchImpl: f }), true);
+  assert.equal(sent[0].u, "https://otel.test/v1/traces"); assert.equal(sent[0].o.headers["x-api-key"], "abc=1");
+  const body = JSON.parse(sent[0].o.body); assert.equal(body.resourceSpans[0].scopeSpans[0].spans.length, 3);
+  const sb = world(); const got = [];
+  const cap = async (u, o) => { if (String(u).startsWith("https://otel.test")) { got.push(o.body); return new Response("{}"); } return sb.fetchImpl(u, o); };
+  const res = await ask(sb, { message: Q, share_records: true }, { fetchImpl: cap, env: { OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.test" } });
+  assert.equal(res.status, 200); assert.equal(got.length, 1);
+  const spans = JSON.parse(got[0]).resourceSpans[0].scopeSpans[0].spans.map((x) => ({ name: x.name, attributes: x.attributes }));   // ids and timestamps are random digits
+  assert.ok(!/142|118|cholesterol|Lipid|a1110000/i.test(JSON.stringify(spans)), "no values or identities exported");
+});
+
+console.log("assistant actions: a reminder proposed, confirmed in the app, verified (never written by the server)");
+{
+  const medsA = () => ({ medicines: [
+      { id: "m0000000-0000-4000-8000-000000000001", user_id: A, client_id: 101, name: "Atorvastatin", dose: "10 mg", status: "active" },
+      { id: "m0000000-0000-4000-8000-000000000002", user_id: A, client_id: 102, name: "Metformin", dose: "500 mg", status: "active" },
+      { id: "m0000000-0000-4000-8000-000000000003", user_id: A, client_id: 103, name: "Paracetamol", dose: "650 mg", status: "active" }],
+    medication_schedules: [
+      { id: "s1", user_id: A, medicine_id: "m0000000-0000-4000-8000-000000000001", frequency: "daily", times: ["08:00"] },
+      { id: "s2", user_id: A, medicine_id: "m0000000-0000-4000-8000-000000000002", frequency: "daily", times: ["08:00", "20:00"] }] });   // paracetamol: as needed
+  const on = { ai_assistant: true, ai_gateway: true, ai_orchestrator: true, ai_actions: true };
+  const act = (flags = on, secret = "fictional-confirmation-secret-0123456789") => {
+    const sb = world(baseA(), { flags }); Object.assign(sb.tables, (() => { const m = medsA(); return { medicines: m.medicines, medication_schedules: m.medication_schedules }; })());
+    const writes = [];
+    const f = async (u, o) => { if (String(u).includes("/rest/v1/rpc/record_ai_trace")) return new Response("true");
+      if (o && o.method && o.method !== "GET" && !String(u).includes("/rpc/")) writes.push(o.method + " " + u);
+      return sb.fetchImpl(u, o); };
+    const env = { SUPABASE_SERVICE_ROLE_KEY: "fictional-service-key", ...(secret ? { ORCHESTRATOR_SECRET: secret } : {}) };
+    const stores = freshStores(); stores.nonces = { used: new Set(), done: new Map() };
+    return { sb, writes, go: (body, o = {}) => ask(sb, body, { fetchImpl: f, env, stores, ...o }) };
+  };
+  await test("switched off: a reminder request is politely refused", async () => {
+    const w = act({ ...on, ai_actions: false });
+    const r = await w.go({ message: "remind me to take my atorvastatin at 9pm", share_records: true });
+    assert.equal(r.body.answer.code, "action_not_available");
+  });
+  await test("switched on without a signing secret: refused as not set up (fail closed)", async () => {
+    const w = act(on, null);
+    const r = await w.go({ message: "remind me to take my atorvastatin at 9pm", share_records: true });
+    assert.equal(r.body.answer.code, "actions_not_set_up");
+  });
+  await test("proposal: the right medicine and time, a signed confirmation, AWAITING_CONFIRMATION, and nothing written", async () => {
+    const w = act();
+    const r = await w.go({ message: "please remind me to take my atorvastatin at 9pm", share_records: true });
+    assert.equal(r.status, 200); assert.equal(r.body.answer.kind, "proposal"); assert.equal(r.body.state, "AWAITING_CONFIRMATION");
+    const pr = r.body.answer.proposal;
+    assert.deepEqual([pr.action, pr.medicine_client_id, pr.time, pr.time_label], ["add_reminder", "101", "21:00", "9:00 pm"]);
+    assert.ok(pr.confirmation.split(".").length === 6); assert.equal(r.body.answer.text, "Add a 9:00 pm reminder for Atorvastatin (10 mg)?");
+    assert.deepEqual(w.writes, [], "the server wrote nothing");
+    assert.ok(!JSON.stringify(r.body).includes(A), "no account id in the reply");
+  });
+  await test("unclear requests get a question back, not a guess", async () => {
+    const w = act();
+    assert.equal((await w.go({ message: "remind me to take my tablets at 9pm", share_records: true })).body.answer.code, "which_medicine");
+    assert.equal((await w.go({ message: "remind me to take atorvastatin", share_records: true })).body.answer.code, "no_time");
+    assert.equal((await w.go({ message: "remind me to take paracetamol at 9pm", share_records: true })).body.answer.code, "as_needed");
+    assert.equal((await w.go({ message: "remind me about metformin at 8pm", share_records: true })).body.answer.code, "already_set");
+    assert.equal((await w.go({ message: "remind me to take my atorvastatin at 9pm", share_records: false })).body.answer.code, "share_not_chosen");
+  });
+  await test("confirm: approved once for exactly what was proposed; other people, altered details and forged tokens are refused", async () => {
+    const w = act();
+    const pr = (await w.go({ message: "remind me to take my atorvastatin at 9pm", share_records: true })).body.answer.proposal;
+    const conf = (x, o) => w.go({ confirm: { action: "add_reminder", medicine_client_id: pr.medicine_client_id, time: pr.time, token: pr.confirmation, ...x } }, o);
+    assert.equal((await conf({ time: "22:00" })).body.answer.kind, "refusal", "altered time");
+    assert.equal((await conf({}, { token: TB })).body.answer.kind, "refusal", "another person");
+    assert.equal((await conf({ token: pr.confirmation.slice(0, -3) + "abc" })).body.answer.kind, "refusal", "forged");
+    const ok = await conf({});
+    assert.equal(ok.body.answer.kind, "approved"); assert.deepEqual([ok.body.answer.apply.medicine_client_id, ok.body.answer.apply.time], ["101", "21:00"]);
+    assert.deepEqual(ok.body.trace.path.slice(-4), ["EXECUTING", "VERIFYING", "GENERATING_RESPONSE", "COMPLETED"]);
+    const again = await conf({}); assert.ok(again.body.answer.kind !== "approved" || again.body.answer.apply.time === "21:00", "a replay never approves anything different");
+    assert.deepEqual(w.writes, [], "still nothing written by the server");
+  });
+  await test("verify: reads the saved schedule back (as the person) after the app saves", async () => {
+    const w = act();
+    const v = (o) => w.go({ verify: { action: "add_reminder", medicine_client_id: "101", time: "21:00" } }, o);
+    assert.equal((await v()).body.answer.verified, false, "not saved yet");
+    w.sb.tables.medication_schedules.find((x) => x.id === "s1").times.push("21:00");
+    assert.equal((await v()).body.answer.verified, true, "saved by the app");
+    assert.equal((await v({ token: TB })).body.answer.verified, false, "another person can't see A's schedule");
+  });
+}
 
 console.log("policy versioning and release gate");
 await test("the policy in the code matches the reviewed manifest", () => {

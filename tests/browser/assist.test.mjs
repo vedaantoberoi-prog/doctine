@@ -17,14 +17,16 @@ const ASSIST = { state: "COMPLETED", route: { category: "C", model: "claude-sonn
     sections: { explanation: "Your LDL is lower than before [E1][E2].", doctor_questions: ["Is this change meaningful for me?"], safety_note: "A difference between two results is arithmetic, not a diagnosis." } },
   evidence: [{ id: "E1", document_title: "Fictional lipid profile", date: "2024-12-10", page: 2, verification: "confirmed_by_person" }, { id: "E2", document_title: "Fictional lipid profile (May)", date: "2026-05-20", page: null, verification: "ai_extracted_unconfirmed" }] };
 
-async function device(features, assistBody = ASSIST) {
+async function device(features, assistBody = ASSIST, probe = { available: false }, confirmBody = null) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
   await ctx.addInitScript({ content: fakeSrc });
   const pg = await ctx.newPage(); pg.on("pageerror", (e) => errs.push(e.message));
   const calls = [];
   await pg.route("**/*", async (r) => { const u = r.request().url();
     if (u.endsWith("/api/config")) return r.fulfill({ contentType: "application/json", body: JSON.stringify({ supabaseUrl: "https://x.supabase.co", supabaseAnonKey: "anon", accounts: "supabase", aiAvailable: true, features }) });
-    if (u.endsWith("/api/assist")) { calls.push({ api: "assist", body: JSON.parse(r.request().postData() || "{}"), auth: r.request().headers().authorization || "" }); return r.fulfill({ contentType: "application/json", body: JSON.stringify(assistBody) }); }
+    if (u.endsWith("/api/assist") && r.request().method() === "GET") { calls.push({ api: "probe", auth: r.request().headers().authorization || "" }); return r.fulfill({ contentType: "application/json", body: JSON.stringify(probe) }); }
+    if (u.endsWith("/api/assist")) { const b = JSON.parse(r.request().postData() || "{}"); calls.push({ api: b.confirm ? "confirm" : b.verify ? "verify" : "assist", body: b, auth: r.request().headers().authorization || "" });
+      return r.fulfill({ contentType: "application/json", body: JSON.stringify(b.confirm && confirmBody ? confirmBody : b.verify ? { answer: { kind: "verified", verified: true } } : assistBody) }); }
     if (u.endsWith("/api/chat")) { calls.push({ api: "chat" }); return r.fulfill({ contentType: "application/json", body: JSON.stringify({ reply: "General answer from the chat assistant.", urgency: "routine", sections: [], state: null }) }); }
     if (u.startsWith(BASE)) return r.continue(); return r.abort(); });
   await pg.goto(BASE + "/index.html"); await pg.waitForTimeout(700);
@@ -56,7 +58,8 @@ const ask = async (pg, q) => { await pg.evaluate((q) => send(q), q); await pg.wa
 {
   const { ctx, pg, calls } = await device({ ai_assistant: true, ai_gateway: true });
   await ask(pg, "compare my cholesterol levels over the last two years");
-  check("with the orchestrator switched off, the chat is unchanged (/api/chat only)", calls.length === 1 && calls[0].api === "chat");
+  const sent = calls.filter((c) => c.api !== "probe");
+  check("with the orchestrator switched off (and not a pilot), the chat is unchanged (/api/chat only)", sent.length === 1 && sent[0].api === "chat");
   await ctx.close();
 }
 {
@@ -64,6 +67,50 @@ const ask = async (pg, q) => { await pg.evaluate((q) => send(q), q); await pg.wa
   await pg.evaluate(() => { S.useRecords = false; });
   await ask(pg, "compare my cholesterol levels over the last two years");
   check("without “Use my saved reports”, records are not requested (/api/chat only)", calls.length === 1 && calls[0].api === "chat");
+  await ctx.close();
+}
+{
+  const { ctx, pg, calls } = await device({ ai_assistant: false, ai_gateway: false, ai_orchestrator: false }, ASSIST, { available: true, pilot: true });
+  await pg.waitForTimeout(800);
+  const p = calls.find((c) => c.api === "probe");
+  check("with the assistant off for everyone, the app asks once whether this account is a pilot (signed in)", !!p && /^Bearer /.test(p.auth));
+  const text = await ask(pg, "compare my cholesterol levels over the last two years");
+  check("a pilot account's records question goes to /api/assist and is answered", calls.some((c) => c.api === "assist") && text.includes("What your records show"));
+  await ctx.close();
+}
+{
+  const { ctx, pg, calls } = await device({ ai_assistant: false, ai_gateway: false, ai_orchestrator: false }, ASSIST, { available: false, pilot: false });
+  await pg.waitForTimeout(800);
+  await ask(pg, "compare my cholesterol levels over the last two years");
+  check("an account that isn't a pilot never sends a records question to /api/assist", calls.some((c) => c.api === "probe") && !calls.some((c) => c.api === "assist"));
+  await ctx.close();
+}
+{
+  const PROPOSAL = { state: "AWAITING_CONFIRMATION", route: { category: "A" }, answer: { kind: "proposal", text: "Add a 9:00 pm reminder for Atorvastatin (10 mg)?",
+    proposal: { action: "add_reminder", medicine_client_id: "101", medicine_name: "Atorvastatin", time: "21:00", time_label: "9:00 pm", confirmation: "a.b.c.d.e.f", expires_at: "2026-11-23T12:00:00Z" } } };
+  const APPROVED = { state: "COMPLETED", answer: { kind: "approved", text: "Approved.", apply: { approved: true, action: "add_reminder", medicine_client_id: "101", medicine_name: "Atorvastatin", time: "21:00" } } };
+  const { ctx, pg, calls } = await device({ ai_assistant: true, ai_gateway: true, ai_orchestrator: true, ai_actions: true }, PROPOSAL, { available: false }, APPROVED);
+  await pg.evaluate(() => { S.meds.push({ id: 101, name: "Atorvastatin", strength: "10 mg", form: "tablet", amount: "1", unit: "tablet", dose: "1 tablet", status: "active", freq: "daily", days: [], times: ["08:00"], start: "2026-11-01", end: "" }); });
+  const text = await ask(pg, "remind me to take my atorvastatin at 9pm");
+  check("a reminder request shows the proposal with Review and save / Not now", text.includes("Add a 9:00 pm reminder for Atorvastatin") && !!(await pg.$("[data-aiok]")) && !!(await pg.$("[data-ainot]")));
+  await pg.click("[data-aiok]"); await pg.waitForTimeout(600);
+  const c = calls.find((x) => x.api === "confirm");
+  check("Review and save sends the signed confirmation for exactly the proposed change", !!c && c.body.confirm.token === "a.b.c.d.e.f" && c.body.confirm.time === "21:00" && c.body.confirm.medicine_client_id === "101");
+  const st = await pg.evaluate(() => ({ view: S.view, edit: S.medEdit, draft: S.medDraft && S.medDraft.times, mode: S.medDraft && S.medDraft.mode, saved: S.meds.find((m) => m.id === 101).times, form: !!document.querySelector("#mf") }));
+  check("the app opens its own medicine editor with 9:00 pm added to the draft (once a day becomes twice a day)", st.view === "medicines" && st.edit === 101 && JSON.stringify(st.draft) === JSON.stringify(["08:00", "21:00"]) && st.form && st.mode === "twice");
+  check("nothing is saved until the person presses Save", JSON.stringify(st.saved) === JSON.stringify(["08:00"]));
+  await pg.evaluate(async () => { S.meds.find((m) => m.id === 101).times = ["08:00", "21:00"]; await checkPendingAction(); });
+  await pg.waitForTimeout(300);
+  check("after the save, the app asks the server to verify it", calls.some((x) => x.api === "verify" && x.body.verify.time === "21:00" && x.body.verify.medicine_client_id === "101"));
+  await ctx.close();
+}
+{
+  const PROPOSAL = { state: "AWAITING_CONFIRMATION", answer: { kind: "proposal", text: "Add a 9:00 pm reminder for Atorvastatin?", proposal: { action: "add_reminder", medicine_client_id: "101", medicine_name: "Atorvastatin", time: "21:00", time_label: "9:00 pm", confirmation: "a.b.c.d.e.f" } } };
+  const { ctx, pg, calls } = await device({ ai_assistant: true, ai_gateway: true, ai_orchestrator: true, ai_actions: true }, PROPOSAL);
+  await ask(pg, "remind me to take my atorvastatin at 9pm");
+  await pg.click("[data-ainot]"); await pg.waitForTimeout(300);
+  const t2 = await pg.evaluate(() => document.body.innerText);
+  check("Not now changes nothing and sends nothing", t2.includes("Not changed.") && !calls.some((x) => x.api === "confirm"));
   await ctx.close();
 }
 check("no page errors", errs.length === 0, errs.slice(0, 3).join(" | "));

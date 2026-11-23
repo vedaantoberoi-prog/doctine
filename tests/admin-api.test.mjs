@@ -57,6 +57,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (url.endsWith("/rpc/monitor_run")) return new Response(JSON.stringify({ opened: 1, open: 1, to_notify: [{ id: "c0000000-0000-0000-0000-000000000001", severity: "critical", message: "Database failed its last two checks", opened_at: new Date().toISOString() }] }));
   if (url.endsWith("/rpc/monitor_mark_notified")) return new Response("null");
   if (url.endsWith("/rpc/report_error")) return new Response("true");
+  if (url.endsWith("/rpc/admin_ai_pilot")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ pilots: [], max: 10, got: { action: body.p_action, email: body.p_email, reason: body.p_reason } })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/rpc/admin_ai_traces")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ days: body.p_days, total: 0 })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/rpc/admin_incidents")) return ROLES[body.p_actor] === "founder" ? new Response("[]") : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/version.json") || url.endsWith("/auth/v1/health") || url.includes("/storage/v1/bucket/") || url.endsWith("/rpc/public_settings")) return new Response("{}");
@@ -223,6 +224,11 @@ await test("AI infrastructure page: configuration only, behind health.view; no k
   const tr = await read(await post(admin, tok("owner"), { action: "ai_traces", days: 999 }, "10.3.0.3"));
   assert.equal(tr.status, 200); assert.equal(tr.j.data.available, true); assert.equal(tr.j.data.days, 30, "window capped");
   assert.equal((await read(await post(admin, tok("analyst"), { action: "ai_traces" }, "10.3.0.4"))).status, 403);
+  const pl = await read(await post(admin, tok("owner"), { action: "ai_pilot", op: "add", email: "pilot@example.test", reason: "fictional pilot" }, "10.3.0.5"));
+  assert.equal(pl.status, 200); assert.deepEqual(pl.j.data.got, { action: "add", email: "pilot@example.test", reason: "fictional pilot" });
+  const ls = await read(await post(admin, tok("owner"), { action: "ai_pilot", op: "drop table" }, "10.3.0.6"));
+  assert.equal(ls.j.data.got.action, "list", "unknown operations become a harmless list");
+  assert.equal((await read(await post(admin, tok("analyst"), { action: "ai_pilot", op: "add", email: "x@example.test", reason: "x" }, "10.3.0.7"))).status, 403);
 });
 
 console.log(failed ? `${passed} admin server tests passed, ${failed} FAILED` : `${passed} admin server tests passed`);

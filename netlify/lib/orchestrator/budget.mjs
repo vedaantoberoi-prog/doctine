@@ -37,6 +37,37 @@ export function createBudget({ now = Date.now, dailyTokens = POLICY.limits.daily
   };
 }
 
+/**
+ * The same budget shared by every server (migration 20261123070000, public.ai_token_budget), keyed by the envelope's
+ * opaque subject hash. Falls back to this instance's own count if the database can't be reached, so a database
+ * hiccup never blocks an answer; the per-request output cap still applies.
+ */
+export function createSharedBudget({ env = process.env, fetchImpl = fetch, dailyTokens = POLICY.limits.daily_tokens_per_person, now = Date.now } = {}) {
+  const local = createBudget({ now, dailyTokens });
+  const base = (env.SUPABASE_URL || "").replace(/\/$/, ""), key = env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!base || !key) return local;
+  const call = async (subject, add) => {
+    const ac = new AbortController(), t = setTimeout(() => ac.abort(), 1500);
+    try {
+      const r = await fetchImpl(`${base}/rest/v1/rpc/ai_token_budget`, { method: "POST", signal: ac.signal, headers: { apikey: key, authorization: `Bearer ${key}`, "content-type": "application/json" },
+        body: JSON.stringify({ p_subject: subject, p_add: Math.max(0, Math.round(add)), p_limit: dailyTokens }) });
+      if (!r.ok) return null;
+      const rows = await r.json(); const row = Array.isArray(rows) ? rows[0] : rows;
+      return row && typeof row.used === "number" ? row : null;
+    } catch { return null; } finally { clearTimeout(t); }
+  };
+  return {
+    shared: true,
+    remaining: (subject) => local.remaining(subject),
+    async allows(subject, estimate = 0) { const row = await call(subject, 0); return row ? row.used + estimate <= dailyTokens : local.allows(subject, estimate); },
+    record(subject, model, usage = {}, envX) {
+      const out = local.record(subject, model, usage, envX);
+      call(subject, out.tokens_in + out.tokens_out).catch(() => {});
+      return out;
+    },
+  };
+}
+
 export const fingerprint = (inv) => createHash("sha256").update(JSON.stringify((inv && inv.evidence || []).map((e) => [e.id, e.document_id, e.date, e.page, e.original_text, e.verification]))
   + JSON.stringify(inv && inv.conflicts || []) + JSON.stringify(inv && inv.missing || [])).digest("hex").slice(0, 24);
 export const cacheKey = ({ subject, model, question, inv }) => createHash("sha256")

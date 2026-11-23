@@ -15,11 +15,12 @@ ${ANSWER_RULES}
 Your job is only the explanation: Doctine itself shows the person the exact values, dates, conflicts and gaps from the evidence. In "explanation", say in a few short sentences what changed and what it may mean in general terms, citing [E#] for every statement about their records. Do not write any number that is not in the evidence package. Do not diagnose, do not say they have a condition, do not advise starting, stopping or changing any medicine. Put general medical knowledge (what a test measures) only in "general_knowledge", never mixed with their records. Suggest up to 4 short questions for their doctor.`;
 
 export const POLICY = Object.freeze({
-  version: "2026-11-23.1",
+  version: "2026-11-23.2",
   status: "draft: awaiting clinical review before any real user sees it",
   identity: { subject_from: "verified_session_token_only", model_may_choose_person: false, caregiver_access: "not_supported" },
   consent: { required: "ai_chat", valid_from: "2026-11-09T22:20:00+05:30", record_access_needs_per_request_share: true, fail_closed_if_unknown: true },
-  tools: { levels: ["read", "draft", "request", "execute_after_confirmation", "human_privileged"], max_level_without_confirmation: 1, confirmation_ttl_s: 300, write_tools_enabled: false },
+  tools: { levels: ["read", "draft", "request", "execute_after_confirmation", "human_privileged"], max_level_without_confirmation: 1, confirmation_ttl_s: 300, write_tools_enabled: false,
+    proposals: { switch: "ai_actions", allowed: ["add_reminder"], written_by: "the app, after the person reviews and presses Save", verified_after: true } },
   injection: { user_text_patterns: "INSTRUCTION_LIKE + other-person patterns", document_text: "excluded from evidence and reported", model_tools: "fixed read-only capabilities" },
   answer: { facts_from: "evidence_lines_only", citations_required: true, numbers_must_exist_in_evidence: true, forbid: ["diagnosis_claim", "medicine_change_advice", "other_person_data", "contact_details"] },
   routing: {

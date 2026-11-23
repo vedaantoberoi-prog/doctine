@@ -1,6 +1,6 @@
 # Assistant actions: design (23 Nov 2026)
 
-Status: **design only, no code switched on.** It answers one question: how can the records assistant do things
+Status (23 Nov 2026, evening): **the first action (a reminder time for a medicine already listed) is built and tested, behind the `ai_actions` switch, which is off.** It also needs `ORCHESTRATOR_SECRET` on the server (not set anywhere yet) and a doctor's review of the wording. Originally: design only. It answers one question: how can the records assistant do things
 (set a reminder, add a medicine from a prescription, share a report with a doctor) without breaking the app's own
 syncing of people's records, and without the AI ever acting on its own. The confirmation machinery it relies on is
 built and tested (`netlify/lib/orchestrator/tools.mjs`); no action tool is registered.
@@ -85,3 +85,18 @@ Why this shape:
 
 - Whether share links are wanted at all, and for how long they should work.
 - Whether any action should be available before the doctor review of answers (suggested: no).
+
+## 6. What was built (23 Nov 2026)
+
+- Server (`netlify/lib/orchestrator/actions.mjs`, `orchestrate.mjs`): "remind me … at 9 pm" is classified as an
+  `add_reminder` proposal; the server reads the person's medicines and schedules (as the person), matches the medicine,
+  checks the time (not already set, not "when needed", at most 12), and returns a proposal with a signed, single-use,
+  5-minute confirmation (state AWAITING_CONFIRMATION). Unclear requests get a question back. Nothing is written.
+- Confirm (`{confirm: …}`): token, person, medicine and time re-checked; returns `approved` with the exact change.
+- App: a card with **Review and save** / **Not now**; on approval the app opens its own medicine editor with the time
+  added (once a day becomes twice a day, and so on) and the person presses Save; after the next successful sync the app
+  asks the server to verify (`{verify: …}`), which reads the schedule back as the person.
+- Policy 2026-11-23.2 records this; the switch `ai_actions` is in migration `20261123070000_ai_pilot_budget`.
+- Tests: 6 server tests (switch off, no secret, proposal, unclear requests, confirm with forged / altered / other-person
+  tokens, verify) and 6 browser checks (card, confirmation sent, editor opened with the time, nothing saved before Save,
+  verification after the save, "Not now").

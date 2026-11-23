@@ -478,7 +478,7 @@ const VIEWS = {};
 /* AI infrastructure: configuration of the Intelligence Orchestrator only (lib/orchestrator/info.mjs). No health data. */
 VIEWS.ai = async (v, seq) => {
   v.innerHTML = skel(200);
-  const [d, tr] = await Promise.all([api("ai_infrastructure"), api("ai_traces", { days: 7 }).catch(() => ({ available: false }))]);
+  const [d, tr, pl] = await Promise.all([api("ai_infrastructure"), api("ai_traces", { days: 7 }).catch(() => ({ available: false })), can("ai.manage") ? api("ai_pilot", { op: "list" }).catch(() => null) : null]);
   if (stale(seq)) return;
   const dl = (rows) => `<dl class="dl" style="grid-template-columns:1fr auto;gap:5px 8px">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>`;
   const onoff = (b) => (b ? `<span class="st good">On</span>` : `<span class="st none">Off</span>`);
@@ -499,6 +499,11 @@ VIEWS.ai = async (v, seq) => {
     </div>
     <div class="card"><div class="tbl-wrap" style="border-top:0;max-height:320px"><table><thead><tr><th>When</th><th>State</th><th>Outcome</th><th>Route</th><th>Time</th><th>Tokens</th></tr></thead><tbody>${(tr.recent || []).map((r) =>
       `<tr><td>${esc(new Date(r.at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }))}</td><td>${esc(r.state)}</td><td>${esc(r.outcome || "")}${r.degraded ? ` <span class="st warn">${esc(r.degraded)}</span>` : ""}</td><td>${esc(r.route_category || "")} <span class="mono muted">${esc(r.model || "")}</span></td><td>${n(r.ms)} ms</td><td>${n((r.tokens_in || 0) + (r.tokens_out || 0))}</td></tr>`).join("")}</tbody></table></div></div>`}
+  ${pl ? `${section("Pilot accounts", "The records assistant works for these accounts even while it is switched off for everyone else. Founder only; every change is audited.")}
+  <div class="card"><div class="card-b">${pl.pilots.length ? `<table><thead><tr><th>Account</th><th>Added</th><th>Reason</th><th></th></tr></thead><tbody>${pl.pilots.map((p) =>
+    `<tr><td>${esc(p.email)}</td><td>${esc(new Date(p.added_at).toLocaleDateString("en-IN", { dateStyle: "medium" }))}</td><td>${esc(p.note || "")}</td><td><button class="btn sm" data-pilot-remove="${esc(p.email)}">Remove</button></td></tr>`).join("")}</tbody></table>` : `<p class="muted">No pilot accounts.</p>`}
+    ${pl.pilots.length < pl.max ? `<form id="pilot-add" class="row" style="margin-top:10px;gap:8px"><input type="email" name="email" placeholder="Account email" required style="flex:1;min-width:0"><button class="btn">Add pilot account</button></form>` : ""}
+    <p class="hint">Use test accounts. Pilot accounts get the assistant's answers from their own records; without an AI key there is no AI explanation.</p></div></div>` : ""}
   ${section("Model routing", esc(d.fallback))}
   <div class="card"><div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Category</th><th>Model</th><th>Used for</th><th>Price known</th></tr></thead><tbody>${d.routing.map((r) => `<tr><td><b>${esc(r.category)}</b> ${esc(r.name)}</td><td class="mono">${r.model ? esc(r.model) : `<span class="muted">no model</span>`}</td><td>${esc(r.when)}</td><td>${r.price_known == null ? "—" : r.price_known ? "Yes" : `<span class="muted">No: tokens counted, cost not</span>`}</td></tr>`).join("")}</tbody></table></div></div>
   ${section("Tools", "What the assistant can run, and at what permission level")}
@@ -510,6 +515,15 @@ VIEWS.ai = async (v, seq) => {
     ${card("Limits", "Per request and per person", dl([["Message length", n(d.limits.message_chars) + " characters"], ["Whole request", n(d.limits.request_ms) + " ms"], ["Answer tokens", n(d.limits.max_output_tokens)], ["Tokens per person per day", n(d.limits.daily_tokens_per_person)], ["Answer cache", n(d.limits.cache_ttl_s) + " s, per person"]]))}
     ${card("Traces and release gate", "", `<p>${esc(d.observability.traces)}</p><p class="hint">${esc(d.release_gate)}</p>`)}
   </div>`;
+  const f = $("#pilot-add", v);
+  if (f) f.onsubmit = async (e) => { e.preventDefault(); const email = f.email.value.trim(); if (!email) return;
+    const r = await confirmBox(`Add ${esc(email)} as a pilot account?`, "The records assistant will work for this account even while it is switched off for everyone else.", { reason: true, button: "Add" });
+    if (r === null) return;
+    try { await api("ai_pilot", { op: "add", email, reason: r }); toast("Pilot account added."); await VIEWS.ai(v, A.seq); } catch (er) { toast(er.code === "not_found" ? "No account with that email." : ERR[er.code] || "Not added.", true); } };
+  $$("[data-pilot-remove]", v).forEach((b) => b.onclick = async () => { const email = b.dataset.pilotRemove;
+    const r = await confirmBox(`Remove ${esc(email)} from the pilot?`, "The assistant will be switched off for this account again.", { reason: true, danger: true, button: "Remove" });
+    if (r === null) return;
+    try { await api("ai_pilot", { op: "remove", email, reason: r }); toast("Removed."); await VIEWS.ai(v, A.seq); } catch (er) { toast(ERR[er.code] || "Not removed.", true); } });
 };
 
 /* Dashboard */
@@ -1049,6 +1063,7 @@ VIEWS.alerts = async (v, seq) => {
 
 /* Feature switches */
 const FLAG_INFO = {
+  ai_actions: { label: "Assistant can propose actions", on: "The records assistant may propose a reminder time for a medicine already listed. Nothing is saved until the person reviews it in the medicine editor and presses Save; the app does the saving.", off: "Requests like \"remind me…\" get a polite refusal.", deps: "The orchestrated assistant, a server ORCHESTRATOR_SECRET, and a doctor's review of the wording.", layer: "Backend (server refuses)", sensitive: true },
   ai_orchestrator: { label: "Orchestrated records assistant", on: "Signed-in people who consent and tick “Use my saved reports” get answers from /api/assist: their own records retrieved and checked by the server, facts shown with sources, and an AI explanation that is validated before it is shown.", off: "/api/assist refuses every request. The chat assistant is unchanged.", deps: "The AI assistant and gateway switches must also be on, plus a doctor's review of its answers.", layer: "Backend (server refuses)", sensitive: true },
   ai_gateway: { label: "Health-records gateway (read-only)", on: "Signed-in people can query their own records through /api/gateway: lab history, medicines, allergies, history. Read-only; the database limits each person to their own rows.", off: "The gateway refuses every request. Nothing else changes.", deps: "Nothing extra. The assistant does not use it until it is connected and the AI switch is on.", layer: "Backend (server refuses)", sensitive: true },
   ai_assistant: { label: "AI assistant and AI document reading", on: "People who give consent can chat with the assistant and send photos for AI reading through the server.", off: "The server refuses all AI requests. Emergency guidance still works. Nothing is sent to the AI provider.", deps: "An AI provider key on the server, user consent, legal review and the provider agreement.", layer: "Backend (server refuses) and app (hides the assistant)", sensitive: true },
@@ -1071,8 +1086,8 @@ VIEWS.flags = async (v, seq) => {
   v.innerHTML = `<p class="lead">Each switch changes what Doctine actually does, at the layer shown. Every change needs a reason, is recorded in the audit log, and is confirmed against the live app.</p>
   <div class="grid cols-2">${flags.map((f) => { const i = FLAG_INFO[f.key] || { label: f.key, on: "", off: "", deps: "", layer: "" };
     return `<section class="card flag" data-flag="${esc(f.key)}"><div><h3>${esc(i.label)} ${i.sensitive ? `<span class="st warn">Sensitive</span>` : ""}</h3><div class="row" style="margin-top:4px">${f.enabled ? `<span class="st good">On</span>` : `<span class="st none">Off</span>`}<span class="muted" style="font-size:12px">${f.updated_by ? `changed by ${esc(f.updated_by)} ` : ""}${f.updated_at ? ago(f.updated_at) : "never changed"}</span></div><div id="prop-${esc(f.key)}" style="margin-top:6px"></div></div>
-      <button class="switch" role="switch" aria-checked="${f.enabled}" aria-label="${esc(i.label)}" data-k="${esc(f.key)}" ${can(f.key === "ai_assistant" || f.key === "ai_gateway" || f.key === "ai_orchestrator" ? "ai.manage" : "flags.manage") ? "" : "disabled"}></button>
-      ${f.key === "ai_assistant" || f.key === "ai_gateway" || f.key === "ai_orchestrator" ? `<p class="hint" style="grid-column:1/-1;margin:0">Founder only. Never switched on automatically.</p>` : ""}
+      <button class="switch" role="switch" aria-checked="${f.enabled}" aria-label="${esc(i.label)}" data-k="${esc(f.key)}" ${can(f.key === "ai_assistant" || f.key === "ai_gateway" || f.key === "ai_orchestrator" || f.key === "ai_actions" ? "ai.manage" : "flags.manage") ? "" : "disabled"}></button>
+      ${f.key === "ai_assistant" || f.key === "ai_gateway" || f.key === "ai_orchestrator" || f.key === "ai_actions" ? `<p class="hint" style="grid-column:1/-1;margin:0">Founder only. Never switched on automatically.</p>` : ""}
       <div class="grid2"><div><b>When on</b>${esc(i.on)}</div><div><b>When off</b>${esc(i.off)}</div><div><b>Depends on</b>${esc(i.deps)}</div><div><b>Enforced by</b>${esc(i.layer)}</div></div></section>`; }).join("")}</div>
   ${can("flags.manage") ? "" : `<p class="hint" style="margin-top:10px">Your permissions show switches but do not change them.</p>`}`;
   $$(".switch[data-k]", v).forEach((b) => b.onclick = async () => {

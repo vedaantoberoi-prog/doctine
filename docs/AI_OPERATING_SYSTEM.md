@@ -1,6 +1,6 @@
 # Doctine AI operating system: Intelligence Orchestrator (23 Nov 2026)
 
-Status (23 Nov 2026, 03:40 IST): **live on staging (5f13ab6) and production (8944f81), switched off.** The switch
+Status (23 Nov 2026, 03:40 IST): **live on staging (52d635f) and production (bf73340), switched off.** Stored traces (`20261123050000_ai_traces`) are applied to both databases. The switch
 migrations `20261123000000_ai_gateway_flag` and `20261123030000_ai_orchestrator_flag` are applied to both databases
 (hash-checked, with approval); `ai_assistant`, `ai_gateway` and `ai_orchestrator` are all off on production, so
 `/api/assist` answers 503 "switched off" and the chat is unchanged. On staging the two fictional accounts have AI
@@ -89,9 +89,15 @@ validated first.
 | Staging replay (`tools/staging-assist-replay.mjs`, rows read from staging as fictional account A with row security, rolled back) | refused without consent (the staging account has no `ai_chat` consent row); with consent, completes; found and fixed: a provider exception failed the request instead of degrading |
 | `npm run eval:rag` | retrieval metrics unchanged; proof of concept 18 / 18 |
 
-Load: 40 concurrent requests in-process with the stand-in model, p95 ≈ 70 ms inside the orchestrator. This measures our
-overhead only, not Supabase or Anthropic latency; a staging load test is still needed for real numbers. Targets to hold
-there: p95 orchestration overhead < 300 ms, p95 end-to-end < 12 s with the model, 0 cross-person reads.
+Load, measured on staging (23 Nov 2026, `staging-load.yml` run 45148818494, commit 52d635f, no AI provider configured, 30
+requests at 1, 5 and 10 at a time, one throw-away synthetic account created and deleted): **30 / 30 answered
+correctly**; end-to-end p50 about 4.5 s, p95 6.1–9.2 s; inside the orchestrator p50 about 2.0 s, p95 2.1–3.7 s.
+The stored traces show why: each step with one database call takes about 400 ms (sign-in check 416, consents 375,
+verification 379, retrieval 939 for two rounds), while Doctine's own logic takes under 10 ms. Both databases are in
+Mumbai (ap-south-1); staging's Netlify functions run far from it. Production runs on Cloudflare near people in India,
+so its round trips should be much shorter, but that is not measured yet. Change made: the consent lookup now runs
+alongside the sign-in check (one round trip less). Further option: move staging's functions to an Indian region.
+The earlier in-process figure (p95 about 70 ms) measured Doctine's logic only.
 
 ## 5. Not done, and why
 

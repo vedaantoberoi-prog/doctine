@@ -1,6 +1,6 @@
 # Doctine AI operating system: Intelligence Orchestrator (23 Nov 2026)
 
-Status (23 Nov 2026, 03:40 IST): **live on staging (5f13ab6) and production (8944f81), switched off.** The switch
+Status (23 Nov 2026, 03:40 IST): **live on staging (52d635f) and production (bf73340), switched off.** Stored traces (`20261123050000_ai_traces`) are applied to both databases. The switch
 migrations `20261123000000_ai_gateway_flag` and `20261123030000_ai_orchestrator_flag` are applied to both databases
 (hash-checked, with approval); `ai_assistant`, `ai_gateway` and `ai_orchestrator` are all off on production, so
 `/api/assist` answers 503 "switched off" and the chat is unchanged. On staging the two fictional accounts have AI

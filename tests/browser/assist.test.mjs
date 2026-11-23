@@ -17,13 +17,14 @@ const ASSIST = { state: "COMPLETED", route: { category: "C", model: "claude-sonn
     sections: { explanation: "Your LDL is lower than before [E1][E2].", doctor_questions: ["Is this change meaningful for me?"], safety_note: "A difference between two results is arithmetic, not a diagnosis." } },
   evidence: [{ id: "E1", document_title: "Fictional lipid profile", date: "2024-12-10", page: 2, verification: "confirmed_by_person" }, { id: "E2", document_title: "Fictional lipid profile (May)", date: "2026-05-20", page: null, verification: "ai_extracted_unconfirmed" }] };
 
-async function device(features, assistBody = ASSIST) {
+async function device(features, assistBody = ASSIST, probe = { available: false }) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
   await ctx.addInitScript({ content: fakeSrc });
   const pg = await ctx.newPage(); pg.on("pageerror", (e) => errs.push(e.message));
   const calls = [];
   await pg.route("**/*", async (r) => { const u = r.request().url();
     if (u.endsWith("/api/config")) return r.fulfill({ contentType: "application/json", body: JSON.stringify({ supabaseUrl: "https://x.supabase.co", supabaseAnonKey: "anon", accounts: "supabase", aiAvailable: true, features }) });
+    if (u.endsWith("/api/assist") && r.request().method() === "GET") { calls.push({ api: "probe", auth: r.request().headers().authorization || "" }); return r.fulfill({ contentType: "application/json", body: JSON.stringify(probe) }); }
     if (u.endsWith("/api/assist")) { calls.push({ api: "assist", body: JSON.parse(r.request().postData() || "{}"), auth: r.request().headers().authorization || "" }); return r.fulfill({ contentType: "application/json", body: JSON.stringify(assistBody) }); }
     if (u.endsWith("/api/chat")) { calls.push({ api: "chat" }); return r.fulfill({ contentType: "application/json", body: JSON.stringify({ reply: "General answer from the chat assistant.", urgency: "routine", sections: [], state: null }) }); }
     if (u.startsWith(BASE)) return r.continue(); return r.abort(); });
@@ -56,7 +57,8 @@ const ask = async (pg, q) => { await pg.evaluate((q) => send(q), q); await pg.wa
 {
   const { ctx, pg, calls } = await device({ ai_assistant: true, ai_gateway: true });
   await ask(pg, "compare my cholesterol levels over the last two years");
-  check("with the orchestrator switched off, the chat is unchanged (/api/chat only)", calls.length === 1 && calls[0].api === "chat");
+  const sent = calls.filter((c) => c.api !== "probe");
+  check("with the orchestrator switched off (and not a pilot), the chat is unchanged (/api/chat only)", sent.length === 1 && sent[0].api === "chat");
   await ctx.close();
 }
 {
@@ -64,6 +66,22 @@ const ask = async (pg, q) => { await pg.evaluate((q) => send(q), q); await pg.wa
   await pg.evaluate(() => { S.useRecords = false; });
   await ask(pg, "compare my cholesterol levels over the last two years");
   check("without “Use my saved reports”, records are not requested (/api/chat only)", calls.length === 1 && calls[0].api === "chat");
+  await ctx.close();
+}
+{
+  const { ctx, pg, calls } = await device({ ai_assistant: false, ai_gateway: false, ai_orchestrator: false }, ASSIST, { available: true, pilot: true });
+  await pg.waitForTimeout(800);
+  const p = calls.find((c) => c.api === "probe");
+  check("with the assistant off for everyone, the app asks once whether this account is a pilot (signed in)", !!p && /^Bearer /.test(p.auth));
+  const text = await ask(pg, "compare my cholesterol levels over the last two years");
+  check("a pilot account's records question goes to /api/assist and is answered", calls.some((c) => c.api === "assist") && text.includes("What your records show"));
+  await ctx.close();
+}
+{
+  const { ctx, pg, calls } = await device({ ai_assistant: false, ai_gateway: false, ai_orchestrator: false }, ASSIST, { available: false, pilot: false });
+  await pg.waitForTimeout(800);
+  await ask(pg, "compare my cholesterol levels over the last two years");
+  check("an account that isn't a pilot never sends a records question to /api/assist", calls.some((c) => c.api === "probe") && !calls.some((c) => c.api === "assist"));
   await ctx.close();
 }
 check("no page errors", errs.length === 0, errs.slice(0, 3).join(" | "));

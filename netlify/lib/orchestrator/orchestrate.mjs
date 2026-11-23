@@ -91,6 +91,7 @@ export async function assist(input, deps) {
     log({ at: new Date(now()).toISOString(), route: "assist", who: envelope ? envelope.subject : null, state: trace.state, path: trace.path, outcome, category: cls && cls.category,
       route_category: rt && rt.category, model: rt && rt.model, degraded, ...usage, cache: cacheState, ms: trace.total_ms, retries: run.retries, policy_version: POLICY.version,
       spans: trace.spans.map((s) => [s.name, s.ms]) });
+    if (typeof deps.onTrace === "function") { try { deps.onTrace(trace); } catch { /* exporting a trace never breaks a request */ } }
     const { _raw, ...pub } = trace;
     return { status, body: { ...body, state: trace.state, request_id: reqId, policy_version: PROMPT_VERSION, trace: pub } };
   };
@@ -149,7 +150,7 @@ export async function assist(input, deps) {
       const gen = await run.stage("GENERATING_RESPONSE", async () => {
         if (rt.category === "A") return { explanation: null };
         if (!provider || !provider.configured) { degraded = "provider_not_configured"; return { explanation: null }; }
-        if (budget && !budget.allows(envelope.subject, 6000)) { degraded = "daily_budget_reached"; return { explanation: null }; }
+        if (budget && !(await budget.allows(envelope.subject, 6000))) { degraded = "daily_budget_reached"; return { explanation: null }; }
         const key = cache && cacheKey({ subject: envelope.subject, model: rt.model, question: msg, inv });
         const hit = key && cache.get(key);
         if (hit) { cacheState = "hit"; return hit; }

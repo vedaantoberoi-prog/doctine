@@ -21,7 +21,8 @@ import { createBudget, createTtlStore, cacheKey } from "../netlify/lib/orchestra
 import { POLICY, POLICY_HASH } from "../netlify/lib/orchestrator/policy.mjs";
 import { infrastructure } from "../netlify/lib/orchestrator/info.mjs";
 import { gate } from "../tools/ai-policy-gate.mjs";
-import assistHandler from "../netlify/functions/assist.mjs";
+import assistHandler, { _resetPilotCache, exportOtel } from "../netlify/functions/assist.mjs";
+import { createSharedBudget } from "../netlify/lib/orchestrator/budget.mjs";
 import { _resetSettingsCache } from "../netlify/lib/settings.mjs";
 import { fakeSupabase } from "./fixtures/fictional-health.mjs";
 import { readFileSync } from "node:fs";
@@ -270,7 +271,7 @@ await test("happy path: every stage in order, facts from the records with source
   const sent = JSON.stringify(r.provider.calls[0].req);
   assert.ok(!sent.includes(A) && !sent.includes("B-ONLY") && !sent.includes("Fictional Diagnostics (May)"));
   // the log line has states, timings and counts only
-  const line = JSON.stringify(logs.at(-1));
+  const { at: _when, ...rest } = logs.at(-1); const line = JSON.stringify(rest);   // the timestamp can contain any digits
   assert.ok(!/142|118|Lipid profile|LDL/.test(line), line); assert.ok(line.includes('"route":"assist"'));
 });
 
@@ -442,6 +443,57 @@ await test("each request stores one trace row with codes and timings only (no pe
   const down = await ask(world(baseA(), { flags: { ai_assistant: true, ai_gateway: true, ai_orchestrator: true } }), { message: Q, share_records: true },
     { fetchImpl: async (u, o) => (String(u).includes("record_ai_trace") ? Promise.reject(new Error("down")) : sb.fetchImpl(u, o)), env: { SUPABASE_SERVICE_ROLE_KEY: "fictional-service-key" } });
   assert.equal(down.status, 200, "a failing trace store never affects the answer");
+});
+
+console.log("pilot accounts, shared budget, outside monitoring");
+await test("pilot: with the switches off, only a listed account can use the assistant; the app's probe answers about the caller only", async () => {
+  const pilots = new Set([A]); _resetPilotCache();
+  const mk = (flags) => { const sb = world(baseA(), { flags }); return { sb, f: async (u, o) => {
+    if (String(u).endsWith("/rest/v1/rpc/ai_pilot_allowed")) { const b = JSON.parse(o.body); assert.equal(o.headers.authorization, "Bearer fictional-service-key"); return new Response(JSON.stringify(pilots.has(b.p_user))); }
+    if (String(u).endsWith("/rest/v1/rpc/record_ai_trace")) return new Response("true");
+    return sb.fetchImpl(u, o); } }; };
+  const env = { SUPABASE_SERVICE_ROLE_KEY: "fictional-service-key" };
+  const off = { ai_assistant: false, ai_gateway: false, ai_orchestrator: false };
+  let w = mk(off);
+  const rA = await ask(w.sb, { message: Q, share_records: true }, { fetchImpl: w.f, env });
+  assert.equal(rA.status, 200, "pilot account A is answered"); assert.equal(rA.body.answer.kind, "records");
+  _resetPilotCache(); w = mk(off);
+  const rB = await ask(w.sb, { message: Q, share_records: true }, { fetchImpl: w.f, env, token: TB });
+  assert.equal(rB.status, 503, "B is not a pilot");
+  const probe = async (token, flags) => { _resetSettingsCache(); const x = mk(flags);
+    const res = await assistHandler(new Request("https://app.test/api/assist", { headers: token ? { authorization: "Bearer " + token } : {} }), {}, { env: { SUPABASE_URL: x.sb.base, SUPABASE_ANON_KEY: x.sb.anon, ...env }, fetchImpl: x.f, log: () => {} });
+    return res.json(); };
+  assert.deepEqual(await probe(TA, off), { available: true, pilot: true });
+  assert.deepEqual(await probe(TB, off), { available: false, pilot: false });
+  assert.deepEqual(await probe(null, off), { available: false });
+  assert.deepEqual(await probe(TB, { ai_assistant: true, ai_gateway: true, ai_orchestrator: true }), { available: true, pilot: false });
+  _resetPilotCache(); w = mk(off); const sbm = w.sb; sbm.tables.maintenance = true;
+  const maint = await (async () => { _resetSettingsCache(); const f = async (u, o) => (String(u).endsWith("/rest/v1/rpc/public_settings") ? new Response(JSON.stringify({ flags: off, maintenance: { on: true, message: "" } })) : w.f(u, o));
+    return ask(sbm, { message: Q, share_records: true }, { fetchImpl: f, env }); })();
+  assert.equal(maint.status, 503, "maintenance mode blocks pilots too");
+});
+await test("shared token budget: counted in the database across servers; a database failure falls back to this server's count", async () => {
+  const used = new Map(); let fail = false;
+  const f = async (u, o) => { if (fail) throw new Error("down"); const b = JSON.parse(o.body); const n = (used.get(b.p_subject) || 0) + b.p_add; used.set(b.p_subject, n); return new Response(JSON.stringify([{ allowed: n <= b.p_limit, used: n }])); };
+  const env = { SUPABASE_URL: "https://db.test", SUPABASE_SERVICE_ROLE_KEY: "k" };
+  const one = createSharedBudget({ env, fetchImpl: f, dailyTokens: 1000 }), two = createSharedBudget({ env, fetchImpl: f, dailyTokens: 1000 });
+  one.record("aaaaaaaaaaaaaaaa", "claude-sonnet-5-5", { input_tokens: 900, output_tokens: 50 }); await new Promise((r) => setTimeout(r, 10));
+  assert.equal(await two.allows("aaaaaaaaaaaaaaaa", 100), false, "a second server sees the first server's use");
+  assert.equal(await two.allows("bbbbbbbbbbbbbbbb", 100), true);
+  fail = true; assert.equal(await two.allows("aaaaaaaaaaaaaaaa", 100), true, "database down: falls back to this server's own count (it hasn't used any)");
+});
+await test("outside monitoring: OpenTelemetry export only when configured, over https, with codes and timings only", async () => {
+  const sent = []; const f = async (u, o) => { sent.push({ u, o }); return new Response("{}"); };
+  const r = createRun(); r.to("AUTHENTICATED", { category: "record_question" }); r.to("FAILED", { error: "x" }); const t = r.trace();
+  assert.equal(await exportOtel(t, { env: {}, fetchImpl: f }), false); assert.equal(sent.length, 0, "off when unset");
+  assert.equal(await exportOtel(t, { env: { OTEL_EXPORTER_OTLP_ENDPOINT: "http://plain.test" }, fetchImpl: f }), false, "plain http refused");
+  assert.equal(await exportOtel(t, { env: { OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.test", OTEL_EXPORTER_OTLP_HEADERS: "x-api-key=abc%3D1,team=doctine" }, fetchImpl: f }), true);
+  assert.equal(sent[0].u, "https://otel.test/v1/traces"); assert.equal(sent[0].o.headers["x-api-key"], "abc=1");
+  const body = JSON.parse(sent[0].o.body); assert.equal(body.resourceSpans[0].scopeSpans[0].spans.length, 3);
+  const sb = world(); const got = [];
+  const cap = async (u, o) => { if (String(u).startsWith("https://otel.test")) { got.push(o.body); return new Response("{}"); } return sb.fetchImpl(u, o); };
+  const res = await ask(sb, { message: Q, share_records: true }, { fetchImpl: cap, env: { OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.test" } });
+  assert.equal(res.status, 200); assert.equal(got.length, 1); assert.ok(!/142|cholesterol|Lipid|a1110000/i.test(got[0]), "no values or identities exported");
 });
 
 console.log("policy versioning and release gate");

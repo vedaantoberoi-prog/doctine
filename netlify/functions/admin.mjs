@@ -206,6 +206,9 @@ const ACTIONS = {
   // stored assistant traces (codes, timings, tokens; no person or content); the function checks health.view
   ai_traces: async (uid, b) => { try { return { available: true, ...(await rpc("admin_ai_traces", { p_actor: uid, p_days: Math.min(30, Math.max(1, parseInt(b.days, 10) || 7)) })) }; }
     catch (e) { if (e.status === 503) { await rpc("admin_incidents", { p_actor: uid }); return { available: false }; } throw e; } },
+  // pilot accounts for the records assistant (Founder only; add/remove audited with a reason)
+  ai_pilot: async (uid, b, rid) => { const act = ["list", "add", "remove"].includes(b.op) ? b.op : "list";
+    return rpc("admin_ai_pilot", { p_actor: uid, p_action: act, p_email: act === "list" ? null : s(b.email, 200), p_reason: act === "list" ? null : s(b.reason, 500), p_request: rid }); },
   ai_infrastructure: async (uid) => { await rpc("admin_incidents", { p_actor: uid }); const st = await getSettings({ fresh: true }); return infrastructure({ flags: st.flags }); },
   errors: (uid, b) => rpc("admin_errors", { p_actor: uid, p_status: s(b.status, 20) || null }),
   error: (uid, b) => { if (!/^[0-9a-f]{32}$/.test(b.id || "")) throw httpError(400, "invalid_id"); return rpc("admin_error", { p_actor: uid, p_fp: b.id }); },

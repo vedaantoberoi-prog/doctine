@@ -977,9 +977,15 @@ async function googleSignIn(){
  try{if(NATIVE&&window.DoctineNative){const{data,error}=await CLOUD.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:AUTH_CB,skipBrowserRedirect:true}});if(error||!data||!data.url)throw error||new Error('no url');await DoctineNative.openAuthUrl(data.url);if(b)b.disabled=false;return}
   const{error}=await CLOUD.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)throw error}
  catch{try{sessionStorage.removeItem('doctine:google-consent')}catch{}if(b)b.disabled=false;say('Google sign-in isn’t available right now. Try again, or use email and password.')}}
+/* Pilot accounts: while the records assistant is switched off for everyone, the Founder can switch it on for a few named
+   accounts. After sign-in the app asks /api/assist whether this account may use it (the answer is only about this person). */
+async function assistProbe(ep){try{for(let i=0;i<40&&(S.loadingCloud||!S.cloud)&&CLOUD.epoch===ep;i++)await new Promise(r=>setTimeout(r,500));if(CLOUD.epoch!==ep||!S.cloud)return;
+ if(CLOUD.features&&CLOUD.features.ai_orchestrator===true)return;const ah=await authHeaders();if(!ah.Authorization&&!ah.authorization)return;
+ const r=await fetch(API+'/api/assist',{headers:ah});const j=await r.json().catch(()=>null);if(CLOUD.epoch!==ep||!j||j.available!==true)return;
+ CLOUD.assistPilot=true;CLOUD.ai=true;render()}catch{}}
 async function cloudEnter(user){
  if(CLOUD.recovering)return;
- const sb=CLOUD.sb;CLOUD.epoch++;CLOUD.uid=user.id;CLOUD.email=user.email;resetCloudState();resetHistory();S.loadingCloud=true;const ep=CLOUD.epoch;
+ const sb=CLOUD.sb;CLOUD.epoch++;CLOUD.uid=user.id;CLOUD.email=user.email;CLOUD.assistPilot=false;resetCloudState();resetHistory();S.loadingCloud=true;const ep=CLOUD.epoch;assistProbe(ep);
  try{
   let gc=false;try{gc=sessionStorage.getItem('doctine:google-consent')==='1';sessionStorage.removeItem('doctine:google-consent')}catch{}
   if(gc||(user.user_metadata||{}).agreed_at)await sb.from('consents').upsert([{user_id:user.id,kind:'cloud_storage',granted:true}],{onConflict:'user_id,kind',ignoreDuplicates:true});
@@ -1186,7 +1192,7 @@ async function send(q){q=String(q).trim();if(!q&&S.chatDoc&&!S.chatReading)q=DOC
   let r=null,j=null;
   /* Records questions go through the orchestrated path (/api/assist) when its switch is on and the person has chosen to
      share their reports for this chat; anything it doesn't answer (general questions) falls through to /api/chat. */
-  if(!S.chatDoc&&S.useRecords&&S.cloud&&CLOUD.features&&CLOUD.features.ai_orchestrator===true){
+  if(!S.chatDoc&&S.useRecords&&S.cloud&&(CLOUD.assistPilot||(CLOUD.features&&CLOUD.features.ai_orchestrator===true))){
    try{const ra=await fetch(API+'/api/assist',{method:'POST',headers:{'Content-Type':'application/json',...ah},body:JSON.stringify({message:q.slice(0,2000),share_records:true,request_id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2))}),signal:ac.signal});
    let ja=null;try{ja=await ra.json()}catch{}
    if(ra.ok&&ja&&ja.answer&&ja.answer.kind!=='redirect'){r=ra;j=assistReply(ja)}}catch(e){if(e.name==='AbortError')throw e}}

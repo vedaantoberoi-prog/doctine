@@ -95,11 +95,11 @@ there: p95 orchestration overhead < 300 ms, p95 end-to-end < 12 s with the model
 
 ## 5. Not done, and why
 
-- **Write actions** (reminders, sharing): the confirmation framework is built and tested, but no write tool is enabled:
-  writing from the server would race the app's own sync of the person's records. Needs a design for that first.
+- **Write actions** (reminders, sharing): designed in `docs/ASSISTANT_ACTIONS_DESIGN.md` (the assistant proposes, the person
+  confirms, the app writes); the confirmation machinery is built and tested; no action is enabled.
 - **Live model evaluation**: needs the `ANTHROPIC_API_KEY` repository secret (you add it) and a doctor to score answers
   (`docs/medical-review/gateway-review-pack.md`). The policy is marked draft until then.
-- **Traces in a store**: traces are JSON log lines in the OpenTelemetry shape; no collector is configured.
+- **Traces in a store**: done (migration `20261123050000_ai_traces`): one row per request with codes, timings, tokens and cost, no person or content, kept 30 days, shown on the admin "AI infrastructure" page. No external OpenTelemetry collector is configured.
 - **Caregiver access, other providers, embeddings**: each is a privacy decision for you.
 
 ## 6. Turning it on (needs your approval at each step)

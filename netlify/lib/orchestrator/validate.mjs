@@ -73,6 +73,9 @@ export function validateExplanation(out, inv, { question = "" } = {}) {
   const pool = allowedNumbers(inv, question);
   const stray = [...records.replace(/\[E\d+\]/g, "").matchAll(NUM)].map((m) => m[0]).filter((n) => !pool.has(n) && !pool.has(n.replace(",", ".")) && !ALWAYS_OK.has(n));
   if (stray.length) v.push("number_not_in_evidence");
+  // a percentage must be a percentage in the evidence (e.g. HbA1c 5.8 %), not a number borrowed from another measure
+  const pctIn = new Set([...JSON.stringify([inv.evidence, inv.lines]).matchAll(/(\d+(?:[.,]\d+)?)\s*%/g)].map((m) => m[1].replace(",", ".")));
+  if ([...records.matchAll(/(\d+(?:[.,]\d+)?)\s*(%|per ?cent)/gi)].some((m) => !pctIn.has(m[1].replace(",", ".")))) v.push("percentage_not_in_evidence");
   const all = [records, out.general_knowledge || ""].join("\n");
   if (DIAGNOSIS.test(all)) v.push("diagnosis_claim");
   if (MED_ADVICE.test(all)) v.push("medicine_change_advice");

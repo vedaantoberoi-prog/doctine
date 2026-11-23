@@ -21,6 +21,10 @@ export const ROLES = Object.freeze({ patient: { may: ["read_own_records", "draft
 export async function authenticate({ token, base, anon, fetchImpl = fetch, signal }) {
   if (!token || !base || !anon) return null;
   let uid = null, aal = null;
+  // The consent lookup starts alongside the sign-in check (saves one database round trip). Row security limits it to the
+  // token's owner, and it is only used if the sign-in check succeeds.
+  const db = userDb({ base, anon, token, fetchImpl });
+  const consentRows = db.select("consents", { columns: "kind,granted,updated_at" }).catch((e) => ({ failed: e }));
   try {
     const r = await fetchImpl(`${base}/auth/v1/user`, { headers: { apikey: anon, authorization: `Bearer ${token}` }, signal });
     if (r.ok) { const u = await r.json(); uid = u && typeof u.id === "string" && UUID.test(u.id) ? u.id : null; }
@@ -28,8 +32,9 @@ export async function authenticate({ token, base, anon, fetchImpl = fetch, signa
   if (!uid) return null;
   try { aal = JSON.parse(Buffer.from(token.split(".")[1] || "", "base64url").toString()).aal || null; } catch { aal = null; }
   const envelope = { subject: createHash("sha256").update("assist:" + uid).digest("hex").slice(0, 16), role: "patient", aal, consents: null, purpose: null,
-    db: userDb({ base, anon, token, fetchImpl }) };
+    db };
   Object.defineProperty(envelope, "uid", { value: uid, enumerable: false });
+  Object.defineProperty(envelope, "_consentRows", { value: consentRows, enumerable: false });
   Object.defineProperty(envelope, "db", { value: envelope.db, enumerable: false });
   return envelope;
 }
@@ -38,7 +43,8 @@ export async function authenticate({ token, base, anon, fetchImpl = fetch, signa
 export async function loadConsents(envelope) {
   const from = Date.parse(POLICY.consent.valid_from);
   try {
-    const rows = await envelope.db.select("consents", { columns: "kind,granted,updated_at" });
+    const rows = envelope._consentRows ? await envelope._consentRows : await envelope.db.select("consents", { columns: "kind,granted,updated_at" });
+    if (!Array.isArray(rows)) throw (rows && rows.failed) || new Error("consents unavailable");
     const by = Object.fromEntries(rows.map((r) => [r.kind, r]));
     const ai = by.ai_chat;
     envelope.consents = { ai_chat: !!(ai && ai.granted === true && Date.parse(ai.updated_at) >= from), source: "database" };

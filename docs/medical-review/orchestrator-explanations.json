@@ -1,0 +1,39 @@
+{
+  "_note": "AI explanations for the clinician review pack, written by Claude (claude-opus-5-5) in a development session on 23 Nov 2026 in the role of Doctine's records assistant, under policy 2026-11-23.1, from the minimised evidence only. Each one is checked by validateExplanation() exactly like a live model's output before it is included. FICTIONAL data.",
+  "S1": {
+    "explanation": "Your LDL cholesterol was 142 mg/dL in December 2024 [E4], 131 mg/dL in June 2025 [E5] and 118 mg/dL in May 2026 [E6], so each result was lower than the one before. Your total cholesterol went down in the same way, from 220 to 190 mg/dL [E7][E9], and your HDL cholesterol went up a little, from 44 to 50 mg/dL [E1][E3]. The latest LDL value is still above the range printed on that report (< 100) [E6]. The June 2025 values come from a different laboratory and were read by AI from the report without being checked against the paper [E5], so treat that middle point with some caution.",
+    "general_knowledge": "LDL is often called 'bad' cholesterol and HDL 'good' cholesterol. What counts as a good target depends on a person's overall heart risk, which only a doctor can judge.",
+    "doctor_questions": ["My LDL has come down over the last two years but is still above the report's range. What target is right for me?", "Should I repeat the lipid test, and when?"],
+    "cited": ["E1", "E3", "E4", "E5", "E6", "E7", "E9"]
+  },
+  "S3": {
+    "explanation": "Across the three readable reports, your LDL cholesterol went from 142 to 118 mg/dL [E4][E6] and your total cholesterol from 220 to 190 mg/dL [E7][E9], while HDL rose from 44 to 50 mg/dL [E1][E3]. One document couldn't be read at all, so anything it contains isn't part of this comparison. If it was a lipid report, uploading a clearer copy would let Doctine include it.",
+    "doctor_questions": ["Can you check the report I couldn't upload clearly, in case it changes the picture?"],
+    "cited": ["E1", "E3", "E4", "E6", "E7", "E9"]
+  },
+  "S4": {
+    "explanation": "Your dated LDL results went from 142 mg/dL [E1] to 131 mg/dL [E2] to 118 mg/dL [E3], each lower than the last. There is also an LDL result of 125 mg/dL [E4] on a report with no date, so Doctine can't tell where it fits in time and has left it out of the comparison. If you know roughly when that test was done, adding the date to the report would let it be included.",
+    "doctor_questions": ["I have an undated LDL result of 125 mg/dL. Does it matter when it was taken?"],
+    "cited": ["E1", "E2", "E3", "E4"]
+  },
+  "S5": {
+    "explanation": "Your total cholesterol results in mg/dL went from 220 [E1] to 205 [E2] to 190 [E3]. One report gives total cholesterol in a different unit, mmol/L (5.1 mmol/L) [E4], so it can't be placed on the same line without converting it, and Doctine never converts units. Your LDL went from 142 to 118 mg/dL over the same period [E8][E10].",
+    "general_knowledge": "Cholesterol can be reported in mg/dL or mmol/L; laboratories in India usually use mg/dL. A doctor or the laboratory can tell you how the two compare.",
+    "doctor_questions": ["One of my reports uses mmol/L. How does 5.1 mmol/L compare with my other results?"],
+    "cited": ["E1", "E2", "E3", "E4", "E8", "E10"]
+  },
+  "S6": {
+    "explanation": "Your LDL cholesterol went from 142 mg/dL [E1] to 131 mg/dL [E2] to 118 mg/dL [E3]. The May 2026 result of 118 mg/dL appears twice [E3][E4], with the same date and value in two documents, which most likely means the same report was uploaded twice. It is counted once, not as a change. You may want to delete the extra copy.",
+    "cited": ["E1", "E2", "E3", "E4"]
+  },
+  "S7": {
+    "explanation": "Two documents dated May 2026 give different LDL values: 118 mg/dL [E3] and 181 mg/dL [E4]. Doctine can't tell which is right, so neither is used to describe a trend from that date. Before May 2026, your LDL went from 142 mg/dL [E1] to 131 mg/dL [E2]. It would help to check both reports, or ask the laboratory, which value is correct.",
+    "doctor_questions": ["Two of my reports from the same date show LDL 118 and 181 mg/dL. Which one should we go by?"],
+    "cited": ["E1", "E2", "E3", "E4"]
+  },
+  "S8": {
+    "explanation": "Your LDL cholesterol went from 142 mg/dL in December 2024 [E4] to 118 mg/dL in May 2026 [E6], and HDL from 44 to 50 mg/dL [E1][E3]. One of your documents contained text that looked like instructions to an AI. It was not followed and was left out; only the results above were used.",
+    "doctor_questions": ["My LDL is lower than it was but still above the report's range. What should I aim for?"],
+    "cited": ["E1", "E3", "E4", "E6"]
+  }
+}

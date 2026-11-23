@@ -216,6 +216,7 @@ await test("unknown citations, invented numbers, diagnoses, medicine advice and 
     [{ explanation: "Call the lab on 98765 43210 [E1].", cited: ["E1"] }, "contact_details_or_ids"],
     [{ explanation: "Lower [E1].", cited: ["E1"], secret_field: 1 }, "unexpected_fields"],
     [{ explanation: "No citations here.", cited: [] }, "no_citations"],
+    [{ explanation: "It fell by 24 mg/dL [E1], so your risk is about 24% lower.", cited: ["E1"] }, "percentage_not_in_evidence"],
   ];
   for (const [out, v] of bad) assert.ok(validateExplanation(out, sampleInv).violations.includes(v), v + " → " + JSON.stringify(validateExplanation(out, sampleInv)));
   assert.ok(!validateExplanation("text", sampleInv).ok);

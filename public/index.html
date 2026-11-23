@@ -981,8 +981,8 @@ async function googleSignIn(){
    accounts. After sign-in the app asks /api/assist whether this account may use it (the answer is only about this person). */
 async function assistProbe(ep){try{for(let i=0;i<40&&(S.loadingCloud||!S.cloud)&&CLOUD.epoch===ep;i++)await new Promise(r=>setTimeout(r,500));if(CLOUD.epoch!==ep||!S.cloud)return;
  if(CLOUD.features&&CLOUD.features.ai_orchestrator===true)return;const ah=await authHeaders();if(!ah.Authorization&&!ah.authorization)return;
- const r=await fetch(API+'/api/assist',{headers:ah});const j=await r.json().catch(()=>null);if(CLOUD.epoch!==ep||!j||j.available!==true)return;
- CLOUD.assistPilot=true;CLOUD.ai=true;render()}catch{}}
+ const r=await fetch(API+'/api/assist',{headers:ah});const j=await r.json().catch(()=>null);if(CLOUD.epoch!==ep||!j||j.available!==true||j.pilot!==true)return;
+ if(CLOUD.assistPilot&&CLOUD.ai)return;CLOUD.assistPilot=true;CLOUD.ai=true;render()}catch{}}
 async function cloudEnter(user){
  if(CLOUD.recovering)return;
  const sb=CLOUD.sb;CLOUD.epoch++;CLOUD.uid=user.id;CLOUD.email=user.email;CLOUD.assistPilot=false;resetCloudState();resetHistory();S.loadingCloud=true;const ep=CLOUD.epoch;assistProbe(ep);
@@ -1087,7 +1087,7 @@ async function cloudSync(){
     const{data,error}=await step(sb.from('health_records').upsert({user_id:uid,client_id:r.id,kind:r.kind,title:String(r.title).slice(0,160),status:r.status||null,category:r.cat||null,severity:r.sev||null,certainty:r.cert||null,onset:r.onset||null,details:dd,source:['user','clinician','document','import'].includes(r.src)?r.src:'user',source_document_id:doc},{onConflict:'user_id,client_id'}).select('id').single());
     if(error){if(/health_records/i.test(String(error.message||''))&&/exist|schema cache|not find/i.test(String(error.message||''))){CLOUD.noHist=true;break}throw error}CLOUD.ids.hist[r.id]=data.id;was.hist[r.id]=now.hist[r.id]}
    if(!CLOUD.noHist)for(const id of Object.keys(was.hist))if(!(id in now.hist)){const{error}=await step(sb.from('health_records').delete().eq('client_id',id));if(error)throw error;delete CLOUD.ids.hist[id];delete was.hist[id]}}
-  CLOUD.snap=was;CLOUD.err='';CLOUD.lastOk=Date.now();CLOUD.dirty=JSON.stringify({...(CLOUD.noVitals?{...snapshot(S),vitals:was.vitals}:snapshot(S)),...(CLOUD.noHist?{hist:was.hist}:{})})!==JSON.stringify(was);
+  CLOUD.snap=was;CLOUD.err='';CLOUD.lastOk=Date.now();setTimeout(checkPendingAction,0);CLOUD.dirty=JSON.stringify({...(CLOUD.noVitals?{...snapshot(S),vitals:was.vitals}:snapshot(S)),...(CLOUD.noHist?{hist:was.hist}:{})})!==JSON.stringify(was);
  }catch(e){if(e===ABORT||CLOUD.epoch!==ep){CLOUD.busy=false;return}   // the person signed out or switched: touch nothing of the new sign-in
   CLOUD.snap=was;cloudFail('Saving',e);if(!cloudSync.warned){cloudSync.warned=1;toast('Your latest changes couldn’t be saved to your account. Doctine will keep trying; don’t close this page yet.')}clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(cloudSync,15000)}
  finally{if(CLOUD.epoch!==ep)return;CLOUD.busy=false;if(!CLOUD.err)cloudSync.warned=0;if(S.view==='settings'){const el=$('#syncst');if(el)el.textContent=syncText()}const bn=$('#banner');if(bn&&S.cloud){const h=bannerHTML();if(S._bh!==h){S._bh=h;bn.innerHTML=h}}if(CLOUD.again||(CLOUD.dirty&&!CLOUD.err)){CLOUD.again=false;cloudQueue()}}} // after a failure, wait for the retry timer (or a new change) instead of retrying at once
@@ -1164,8 +1164,27 @@ function profileCtx(p,toks){const prof={},age=ageOf(p.dob),SRCS={user:'self-repo
  const w=p.wh||{};if(w.shareAI&&whShown(p)){const pg={yes:'pregnant',no:'not pregnant',trying:'trying to conceive'}[w.preg];if(pg)prof.pregnancy=pg}
  return JSON.parse(JSON.stringify(prof))}   // no empty keys: a value that isn't known is simply absent
 const DOCQ='Explain this document: what it says, the diagnosis, what each medicine or test is for, and anything I should ask my doctor.';
+/* Actions the assistant may propose (switch ai_actions; docs/ASSISTANT_ACTIONS_DESIGN.md). The assistant only proposes; the
+   server approves a signed, single-use confirmation; the APP then opens its own medicine editor with the new time added,
+   the person checks it and presses Save, and the normal save and sync do the writing. After the next successful sync the
+   app asks the server to verify the reminder is saved. */
+const AIPROP={};
+async function confirmProposal(k){const pr=AIPROP[k];if(!pr||pr.busy||pr.done)return;pr.busy=true;render();
+ try{const ah=await authHeaders();const r=await fetch(API+'/api/assist',{method:'POST',headers:{'Content-Type':'application/json',...ah},body:JSON.stringify({confirm:{action:pr.action,medicine_client_id:pr.medicine_client_id,time:pr.time,token:pr.confirmation}})});
+  const j=await r.json().catch(()=>null);const a=j&&j.answer;
+  if(!r.ok||!a||a.kind!=='approved'||!a.apply){pr.done='refused';pr.msg=(a&&a.text)||'That couldn’t be done right now. Please try again.';return}
+  const m=S.meds.find(x=>String(x.id)===String(a.apply.medicine_client_id));
+  if(!m){pr.done='refused';pr.msg='That medicine isn’t in your list on this device.';return}
+  const d=draftFrom(m);if(d.mode==='interval'||d.mode==='prn'){pr.done='refused';pr.msg=m.name+' is set to '+(d.mode==='prn'?'“only when needed”':'“every few hours”')+', so a fixed time can’t be added here. You can change it in Medicines.';return}
+  S.medEdit=m.id;S.medErr=null;S.medDraft=d;if(!d.times.includes(a.apply.time)){d.times=d.times.filter(Boolean);d.times.push(a.apply.time);d.times.sort()}if(MSLOTS[d.mode])d.mode=({1:'once',2:'twice',3:'thrice'})[d.times.length]||'times'
+  S.pendingAction={id:String(m.id),time:a.apply.time,at:Date.now()};pr.done='approved';go('medicines');medFocus();toast('Check the new '+(pr.time_label||a.apply.time)+' time, then press Save')}
+ catch{pr.done='refused';pr.msg='That couldn’t be done right now. Please try again.'}finally{pr.busy=false;render()}}
+async function checkPendingAction(){const p=S.pendingAction;if(!p||!S.cloud)return;if(Date.now()-p.at>3600e3){S.pendingAction=null;return}
+ const m=S.meds.find(x=>String(x.id)===p.id);if(!m||!(m.times||[]).includes(p.time))return;S.pendingAction=null;
+ try{const ah=await authHeaders();await fetch(API+'/api/assist',{method:'POST',headers:{'Content-Type':'application/json',...ah},body:JSON.stringify({verify:{action:'add_reminder',medicine_client_id:p.id,time:p.time}})})}catch{}}
 /* An /api/assist answer in the chat's reply shape. Facts come from the server's evidence; the AI explanation is its own section. */
 function assistReply(ja){const a=ja.answer,sec=a.sections||{},ev=Array.isArray(ja.evidence)?ja.evidence:[];
+ if(a.kind==='proposal'&&a.proposal){const k='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);const pr={...a.proposal,key:k};AIPROP[k]=pr;return{reply:String(a.text||''),urgency:'routine',sections:[],record_claims:[],proposal:pr,state:S.cstate||null,assist:{state:ja.state,route:'A'}}}
  if(a.kind!=='records')return{reply:String(a.text||''),urgency:a.urgency==='emergency'?'emergency':'routine',sections:[],record_claims:[],state:S.cstate||null,assist:{state:ja.state,route:ja.route&&ja.route.category}};
  const facts=String(a.text||'').split('\n\nWhat this may mean')[0].replace(/^What your records show:\n/,'').split('\n').filter(l=>l.trim()&&l.trim()!==String(sec.safety_note||'').trim()).map(l=>l.replace(/\b(ldl|hdl|vldl|tsh|egfr)\b/g,x=>x.toUpperCase()).replace(/\bhba1c\b/g,'HbA1c').replace(/^(\s*)([a-z])/,(m,w,c)=>w+c.toUpperCase())).join('\n');
  const used=new Set((facts+' '+(sec.explanation||'')).match(/E\d+/g)||[]);
@@ -1489,8 +1508,9 @@ function ansView(x,last){const p=x.p,em=p.urgency==='emergency';if(p.ai_unavaila
  ${claims?`<section><h3 class="text-xs font-semibold text-[var(--tealtx)]">FROM YOUR SAVED REPORTS</h3><ul class="mt-1 space-y-2 text-sm">${claims}</ul></section>`:''}
  ${p.uncertainty?`<div class="warn"><b>What this can’t tell you:</b> ${esc(p.uncertainty)}</div>`:''}
  ${p.safety_note?`<div class="warn">${esc(p.safety_note)}</div>`:''}
+ ${p.proposal?(p.proposal.done==='approved'?`<p class="text-sm"><b>Opened in your medicines.</b> Check the new time and press Save.</p>`:p.proposal.done==='refused'?`<div class="warn">${esc(p.proposal.msg||'Not changed.')}</div>`:p.proposal.done==='dismissed'?`<p class="text-sm text-[var(--mute)]">Not changed.</p>`:`<div class="flex flex-wrap gap-2"><button class="btn pri" data-aiok="${esc(p.proposal.key)}" ${p.proposal.busy?'disabled':''}>${p.proposal.busy?'Checking…':'Review and save'}</button><button class="btn" data-ainot="${esc(p.proposal.key)}">Not now</button></div><p class="text-xs text-[var(--mute)]">Nothing changes until you check it in your medicine list and press Save.</p>`):''}
  ${(p.sources||[]).length?`<section><h3 class="text-xs font-semibold text-[var(--tealtx)]">SOURCES</h3><ul class="mt-1 space-y-1 text-sm">${p.sources.filter(x=>/^https:\/\//.test(x.url||'')).map(x=>`<li><a class="underline" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a> <span class="text-xs text-[var(--mute)]">${esc(x.publisher)}${x.published?' · '+esc(x.published):''}</span></li>`).join('')}</ul></section>`:''}
- <p class="text-xs text-[var(--mute)]">${p.safety==='rule'||p.safety==='model'?'Emergency guidance triggered by Doctine’s safety checks.':(p.assist&&p.assist.records?'Values and dates come from your saved reports (listed under Sources). Only the explanation is written by the AI.':(p.sources||[]).length?'':'From the AI model’s general knowledge. Doctine has not attached medical sources to this answer.')}</p></div>
+ <p class="text-xs text-[var(--mute)]">${p.safety==='rule'||p.safety==='model'?'Emergency guidance triggered by Doctine’s safety checks.':(p.proposal?'Prepared by Doctine from your medicine list.':p.assist&&p.assist.records?'Values and dates come from your saved reports (listed under Sources). Only the explanation is written by the AI.':(p.sources||[]).length?'':'From the AI model’s general knowledge. Doctine has not attached medical sources to this answer.')}</p></div>
  ${last&&!em&&p.question?`<div class="card p-3 text-sm"><b>${esc(p.question)}</b>${(p.options||[]).length?`<div class="flex flex-wrap gap-2 mt-2">${p.options.map(o=>`<button class="chip" data-q="${esc(o)}">${esc(o)}</button>`).join('')}</div>`:''}<div class="text-xs text-[var(--mute)] mt-2">Or type your own answer, or ask something else.</div></div>`:''}</div>`}
 function chatView(){
  const ex=['Why do I get headaches every morning?','How can I improve my sleep?','When should I see a doctor for back pain?','What’s the difference between viral and bacterial infections?'];
@@ -2245,6 +2265,8 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.dataset.redit){const r=S.reports.find(x=>x.id==t.dataset.redit);if(r){S.upload={name:r.title,status:'review',rows:Object.entries(r.fields).map(([k,v])=>({k,v})),title:r.title,date:r.date||'',lab:r.lab||'',cat:r.cat,text:'',warns:[r.scan&&!r.checked?'These details were read automatically from the photo. Compare each one with the original (tap a page to open it), correct anything wrong, then confirm. Confirming marks them as checked by you.':'You are editing a saved report. Changes apply when you confirm.'],img:null,editId:r.id,hash:r.hash,dup:''};S.q='';S.view='reports';render();const v=$('#view');if(v)v.scrollTop=0}return}
  if(t.dataset.rdel){if(t.closest('.mx-menu')&&!t.dataset.armed){t.dataset.armed='1';t.textContent='Tap again to delete for good';return}if(t.closest('.mx-menu')||confirm('Delete this report?')){const r=S.reports.find(x=>x.id==t.dataset.rdel);if(r){for(let i=0;i<(r.imgs||0);i++){IMG.del(`scan:${r.id}:${i}`);IMG.del(`orig:${r.id}:${i}`)}if(r.orig==='pdf')IMG.del(`orig:${r.id}:0`);if(r.ptext)IMG.del(`pages:${r.id}`)}S.reports=S.reports.filter(r=>r.id!=t.dataset.rdel);render()}return}
  if(t.dataset.del){const dm=S.meds.find(x=>x.id==t.dataset.del);if(!t.dataset.armed){t.dataset.armed='1';t.textContent='Tap again to delete, with its dose history';return}{S.meds=S.meds.filter(m=>m.id!=t.dataset.del);if(S.medEdit==t.dataset.del){S.medEdit=null;S.medDraft=null}toast('Medicine deleted');render()}return}
+ if(t.dataset.aiok){confirmProposal(t.dataset.aiok);return}
+ if(t.dataset.ainot){const pr=AIPROP[t.dataset.ainot];if(pr&&!pr.done){pr.done='dismissed';render()}return}
  if(t.dataset.edit){const m=S.meds.find(x=>x.id==t.dataset.edit);if(!m)return;S.medEdit=m.id;S.medErr=null;S.medDraft=draftFrom(m);render();medFocus();return}
  if(t.dataset.medadd){S.medEdit=null;S.medErr=null;S.medDraft=newDraft();render();medFocus();return}
  /* health profile */

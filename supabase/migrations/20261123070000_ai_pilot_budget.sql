@@ -1,4 +1,4 @@
--- Doctine · pilot accounts and a shared daily token budget for the records assistant (23 Nov 2026).
+-- Doctine · pilot accounts, a shared daily token budget and the ai_actions switch for the records assistant (23 Nov 2026).
 -- Lets the Founder switch the assistant (/api/assist) on for a few named accounts (at most 10) while it stays off for
 -- everyone else. Nothing about health data changes. Founder-only (ai.manage), every change audited with a reason.
 -- A deleted account leaves the list automatically.
@@ -65,3 +65,29 @@ begin
 end $$;
 revoke all on function public.ai_token_budget(text, int, int) from public, anon, authenticated;
 grant execute on function public.ai_token_budget(text, int, int) to service_role;
+
+-- The ai_actions switch (off): lets the assistant PROPOSE actions (first: a reminder time for a medicine already listed),
+-- which the person confirms and the app itself saves (docs/ASSISTANT_ACTIONS_DESIGN.md). Founder-only, like the other AI switches.
+alter table private.feature_flags drop constraint if exists feature_flags_key_check;
+alter table private.feature_flags add constraint feature_flags_key_check
+  check (key in ('registrations', 'document_upload', 'pdf_reading', 'sample_data', 'ai_assistant', 'ai_gateway', 'ai_orchestrator', 'ai_actions', 'maintenance'));
+insert into private.feature_flags (key, enabled) values ('ai_actions', false) on conflict (key) do nothing;
+
+-- The AI switches are Founder-only; other switches need flags.manage; maintenance its own permission.
+create or replace function public.admin_set_flag(p_actor uuid, p_key text, p_enabled boolean, p_message text, p_reason text, p_request text) returns jsonb
+language plpgsql security definer set search_path = pg_catalog, private, public as $$
+declare r text; old jsonb;
+begin
+  r := private.require(p_actor, case when p_key = 'maintenance' then 'maintenance.manage' when p_key in ('ai_assistant', 'ai_gateway', 'ai_orchestrator', 'ai_actions') then 'ai.manage' else 'flags.manage' end);
+  if coalesce(trim(p_reason), '') = '' then raise exception 'a reason is required' using errcode = '22023'; end if;
+  select jsonb_build_object('enabled', enabled, 'value', value) into old from private.feature_flags where key = p_key for update;
+  if old is null then raise exception 'no such switch' using errcode = 'P0002'; end if;
+  update private.feature_flags set enabled = p_enabled, updated_at = now(), updated_by = p_actor,
+    value = case when p_key = 'maintenance' then jsonb_build_object('message', left(coalesce(nullif(trim(p_message), ''), value->>'message', ''), 300)) else value end
+  where key = p_key;
+  perform private.audit(p_actor, r, case when p_key = 'maintenance' then 'maintenance.set' else 'flag.set' end, 'flag', p_key, p_reason, old,
+    (select jsonb_build_object('enabled', enabled, 'value', value) from private.feature_flags where key = p_key), 'ok', p_request);
+  return jsonb_build_object('ok', true);
+end $$;
+revoke all on function public.admin_set_flag(uuid, text, boolean, text, text, text) from public, anon, authenticated;
+grant execute on function public.admin_set_flag(uuid, text, boolean, text, text, text) to service_role;

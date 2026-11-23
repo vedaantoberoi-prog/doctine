@@ -15,6 +15,7 @@ import { getSettings } from "../lib/settings.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { authenticate } from "../lib/orchestrator/identity.mjs";
 import { createToolGateway } from "../lib/orchestrator/tools.mjs";
+import { reminderTool } from "../lib/orchestrator/actions.mjs";
 import { anthropicProvider } from "../lib/orchestrator/router.mjs";
 import { createBudget, createSharedBudget, createTtlStore } from "../lib/orchestrator/budget.mjs";
 import { assist } from "../lib/orchestrator/orchestrate.mjs";
@@ -23,7 +24,7 @@ import { POLICY } from "../lib/orchestrator/policy.mjs";
 
 const MAX_BODY = 6_000;
 // per warm instance; see budget.mjs
-const shared = { budget: createBudget(), cache: createTtlStore(), idem: createTtlStore({ ttlMs: 10 * 60_000 }) };
+const shared = { budget: createBudget(), cache: createTtlStore(), idem: createTtlStore({ ttlMs: 10 * 60_000 }), nonces: { used: new Set(), done: new Map() } };
 
 export async function orchestratorOn(env = process.env, fetchImpl = fetch) {
   const st = await getSettings({ env, fetchImpl });
@@ -104,9 +105,15 @@ export default async function handler(req, context, { env = process.env, fetchIm
   const body = parsed.body && typeof parsed.body === "object" ? parsed.body : {};
 
   const auditLines = [], pending = [];
-  const r = await assist({ message: body.message, share_records: body.share_records === true, request_id: body.request_id, today }, {
+  // actions the assistant may propose (switch ai_actions; docs/ASSISTANT_ACTIONS_DESIGN.md)
+  const stx = await getSettings({ env, fetchImpl });
+  const actionsEnabled = stx.flags.ai_actions === true;
+  if (stores.nonces && stores.nonces.used.size > 5000) { stores.nonces.used.clear(); stores.nonces.done.clear(); }
+  const pick = (o) => (o && typeof o === "object" && !Array.isArray(o) ? { action: String(o.action || ""), medicine_client_id: String(o.medicine_client_id || "").slice(0, 20), time: String(o.time || "").slice(0, 5), token: String(o.token || "").slice(0, 400) } : undefined);
+  const r = await assist({ message: body.message, share_records: body.share_records === true, request_id: body.request_id, today, confirm: pick(body.confirm), verify: pick(body.verify) }, {
+    actionsEnabled,
     authenticate: () => authenticate({ token, base, anon, fetchImpl, signal: req.signal }),
-    tools: createToolGateway({ audit: (a) => auditLines.push(a) }),
+    tools: createToolGateway({ audit: (a) => auditLines.push(a), secret: env.ORCHESTRATOR_SECRET || "", extra: actionsEnabled ? [reminderTool()] : [], nonces: stores.nonces }),
     provider: provider || anthropicProvider({ key: env.ANTHROPIC_API_KEY || env.AI_API_KEY || "", fetchImpl }),
     budget: stores === shared ? (stores.sharedBudget ||= createSharedBudget({ env, fetchImpl })) : stores.budget, cache: stores.cache, idem: stores.idem, env, signal: req.signal,
     onTrace: (trace) => { const p = exportOtel(trace, { env, fetchImpl }); if (context && typeof context.waitUntil === "function") context.waitUntil(p); else pending.push(p); },

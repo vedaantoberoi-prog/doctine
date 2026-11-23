@@ -23,12 +23,14 @@ const IDENTITY_KEY = /^(user|patient|person|owner|account|subject|member|profile
 const stable = (v) => Array.isArray(v) ? `[${v.map(stable).join(",")}]` : v && typeof v === "object" ? `{${Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + stable(v[k])).join(",")}}` : JSON.stringify(v ?? null);
 const argsHash = (a) => createHash("sha256").update(stable(a)).digest("hex").slice(0, 24);
 
-export function createToolGateway({ secret = process.env.ORCHESTRATOR_SECRET || "", extra = [], now = Date.now, audit = () => {} } = {}) {
+export function createToolGateway({ secret = process.env.ORCHESTRATOR_SECRET || "", extra = [], now = Date.now, audit = () => {}, nonces = null } = {}) {
   const tools = new Map();
   for (const [name, cap] of BY_NAME) tools.set(name, { name, level: LEVEL.READ, input: cap.input, run: (ctx, args) => cap.run({ db: ctx.db }, args), validate: (args) => validateArgs(cap, args) });
   for (const t of extra) tools.set(t.name, { validate: (a) => a, ...t });
-  const used = new Set();                                  // single-use confirmation nonces (per instance; a shared store is needed across instances)
-  const done = new Map();                                  // idempotency: nonce → result
+  // single-use confirmation nonces and their results; pass `nonces` to keep them across requests on this server.
+  // Across servers a replay is still harmless for the only action (a second identical reminder is refused as already set).
+  const used = (nonces && nonces.used) || new Set();
+  const done = (nonces && nonces.done) || new Map();
 
   function sign(payload) { return createHmac("sha256", secret).update(payload).digest("base64url"); }
   function confirmationFor(envelope, name, args) {

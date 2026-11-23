@@ -493,8 +493,81 @@ await test("outside monitoring: OpenTelemetry export only when configured, over 
   const sb = world(); const got = [];
   const cap = async (u, o) => { if (String(u).startsWith("https://otel.test")) { got.push(o.body); return new Response("{}"); } return sb.fetchImpl(u, o); };
   const res = await ask(sb, { message: Q, share_records: true }, { fetchImpl: cap, env: { OTEL_EXPORTER_OTLP_ENDPOINT: "https://otel.test" } });
-  assert.equal(res.status, 200); assert.equal(got.length, 1); assert.ok(!/142|cholesterol|Lipid|a1110000/i.test(got[0]), "no values or identities exported");
+  assert.equal(res.status, 200); assert.equal(got.length, 1);
+  const spans = JSON.parse(got[0]).resourceSpans[0].scopeSpans[0].spans.map((x) => ({ name: x.name, attributes: x.attributes }));   // ids and timestamps are random digits
+  assert.ok(!/142|118|cholesterol|Lipid|a1110000/i.test(JSON.stringify(spans)), "no values or identities exported");
 });
+
+console.log("assistant actions: a reminder proposed, confirmed in the app, verified (never written by the server)");
+{
+  const medsA = () => ({ medicines: [
+      { id: "m0000000-0000-4000-8000-000000000001", user_id: A, client_id: 101, name: "Atorvastatin", dose: "10 mg", status: "active" },
+      { id: "m0000000-0000-4000-8000-000000000002", user_id: A, client_id: 102, name: "Metformin", dose: "500 mg", status: "active" },
+      { id: "m0000000-0000-4000-8000-000000000003", user_id: A, client_id: 103, name: "Paracetamol", dose: "650 mg", status: "active" }],
+    medication_schedules: [
+      { id: "s1", user_id: A, medicine_id: "m0000000-0000-4000-8000-000000000001", frequency: "daily", times: ["08:00"] },
+      { id: "s2", user_id: A, medicine_id: "m0000000-0000-4000-8000-000000000002", frequency: "daily", times: ["08:00", "20:00"] }] });   // paracetamol: as needed
+  const on = { ai_assistant: true, ai_gateway: true, ai_orchestrator: true, ai_actions: true };
+  const act = (flags = on, secret = "fictional-confirmation-secret-0123456789") => {
+    const sb = world(baseA(), { flags }); Object.assign(sb.tables, (() => { const m = medsA(); return { medicines: m.medicines, medication_schedules: m.medication_schedules }; })());
+    const writes = [];
+    const f = async (u, o) => { if (String(u).includes("/rest/v1/rpc/record_ai_trace")) return new Response("true");
+      if (o && o.method && o.method !== "GET" && !String(u).includes("/rpc/")) writes.push(o.method + " " + u);
+      return sb.fetchImpl(u, o); };
+    const env = { SUPABASE_SERVICE_ROLE_KEY: "fictional-service-key", ...(secret ? { ORCHESTRATOR_SECRET: secret } : {}) };
+    const stores = freshStores(); stores.nonces = { used: new Set(), done: new Map() };
+    return { sb, writes, go: (body, o = {}) => ask(sb, body, { fetchImpl: f, env, stores, ...o }) };
+  };
+  await test("switched off: a reminder request is politely refused", async () => {
+    const w = act({ ...on, ai_actions: false });
+    const r = await w.go({ message: "remind me to take my atorvastatin at 9pm", share_records: true });
+    assert.equal(r.body.answer.code, "action_not_available");
+  });
+  await test("switched on without a signing secret: refused as not set up (fail closed)", async () => {
+    const w = act(on, null);
+    const r = await w.go({ message: "remind me to take my atorvastatin at 9pm", share_records: true });
+    assert.equal(r.body.answer.code, "actions_not_set_up");
+  });
+  await test("proposal: the right medicine and time, a signed confirmation, AWAITING_CONFIRMATION, and nothing written", async () => {
+    const w = act();
+    const r = await w.go({ message: "please remind me to take my atorvastatin at 9pm", share_records: true });
+    assert.equal(r.status, 200); assert.equal(r.body.answer.kind, "proposal"); assert.equal(r.body.state, "AWAITING_CONFIRMATION");
+    const pr = r.body.answer.proposal;
+    assert.deepEqual([pr.action, pr.medicine_client_id, pr.time, pr.time_label], ["add_reminder", "101", "21:00", "9:00 pm"]);
+    assert.ok(pr.confirmation.split(".").length === 6); assert.equal(r.body.answer.text, "Add a 9:00 pm reminder for Atorvastatin (10 mg)?");
+    assert.deepEqual(w.writes, [], "the server wrote nothing");
+    assert.ok(!JSON.stringify(r.body).includes(A), "no account id in the reply");
+  });
+  await test("unclear requests get a question back, not a guess", async () => {
+    const w = act();
+    assert.equal((await w.go({ message: "remind me to take my tablets at 9pm", share_records: true })).body.answer.code, "which_medicine");
+    assert.equal((await w.go({ message: "remind me to take atorvastatin", share_records: true })).body.answer.code, "no_time");
+    assert.equal((await w.go({ message: "remind me to take paracetamol at 9pm", share_records: true })).body.answer.code, "as_needed");
+    assert.equal((await w.go({ message: "remind me about metformin at 8pm", share_records: true })).body.answer.code, "already_set");
+    assert.equal((await w.go({ message: "remind me to take my atorvastatin at 9pm", share_records: false })).body.answer.code, "share_not_chosen");
+  });
+  await test("confirm: approved once for exactly what was proposed; other people, altered details and forged tokens are refused", async () => {
+    const w = act();
+    const pr = (await w.go({ message: "remind me to take my atorvastatin at 9pm", share_records: true })).body.answer.proposal;
+    const conf = (x, o) => w.go({ confirm: { action: "add_reminder", medicine_client_id: pr.medicine_client_id, time: pr.time, token: pr.confirmation, ...x } }, o);
+    assert.equal((await conf({ time: "22:00" })).body.answer.kind, "refusal", "altered time");
+    assert.equal((await conf({}, { token: TB })).body.answer.kind, "refusal", "another person");
+    assert.equal((await conf({ token: pr.confirmation.slice(0, -3) + "abc" })).body.answer.kind, "refusal", "forged");
+    const ok = await conf({});
+    assert.equal(ok.body.answer.kind, "approved"); assert.deepEqual([ok.body.answer.apply.medicine_client_id, ok.body.answer.apply.time], ["101", "21:00"]);
+    assert.deepEqual(ok.body.trace.path.slice(-4), ["EXECUTING", "VERIFYING", "GENERATING_RESPONSE", "COMPLETED"]);
+    const again = await conf({}); assert.ok(again.body.answer.kind !== "approved" || again.body.answer.apply.time === "21:00", "a replay never approves anything different");
+    assert.deepEqual(w.writes, [], "still nothing written by the server");
+  });
+  await test("verify: reads the saved schedule back (as the person) after the app saves", async () => {
+    const w = act();
+    const v = (o) => w.go({ verify: { action: "add_reminder", medicine_client_id: "101", time: "21:00" } }, o);
+    assert.equal((await v()).body.answer.verified, false, "not saved yet");
+    w.sb.tables.medication_schedules.find((x) => x.id === "s1").times.push("21:00");
+    assert.equal((await v()).body.answer.verified, true, "saved by the app");
+    assert.equal((await v({ token: TB })).body.answer.verified, false, "another person can't see A's schedule");
+  });
+}
 
 console.log("policy versioning and release gate");
 await test("the policy in the code matches the reviewed manifest", () => {

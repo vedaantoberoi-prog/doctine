@@ -17,6 +17,7 @@ import { loadConsents, decide } from "./identity.mjs";
 import { route, UNAVAILABLE } from "./router.mjs";
 import { minimiseEvidence, validateExplanation, EXPLAIN_TOOL, mask } from "./validate.mjs";
 import { cacheKey } from "./budget.mjs";
+import { medicinesWithSchedules, matchMedicine, checkReminder, verifyReminder, label12 } from "./actions.mjs";
 
 const REFUSAL = {
   other_person: "I can only read the records in your own signed-in account. I can't look up anyone else's reports, even with their name or an ID.",
@@ -98,7 +99,8 @@ export async function assist(input, deps) {
   const reply = (kind, text, extra = {}) => ({ answer: { kind, text, ...extra } });
 
   try {
-    if (!msg || msg.length > POLICY.limits.message_chars) { outcome = "bad_request"; run.to("FAILED", { error: "bad_request" }); return done(400, { error: "bad_request", message: "Send a message of up to 2,000 characters." }); }
+    const actionReq = input && (input.confirm || input.verify) && typeof (input.confirm || input.verify) === "object" ? (input.confirm ? { kind: "confirm", ...input.confirm } : { kind: "verify", ...input.verify }) : null;
+    if (!actionReq && (!msg || msg.length > POLICY.limits.message_chars)) { outcome = "bad_request"; run.to("FAILED", { error: "bad_request" }); return done(400, { error: "bad_request", message: "Send a message of up to 2,000 characters." }); }
 
     envelope = await run.stage("AUTHENTICATED", () => deps.authenticate());
     if (!envelope) { outcome = "unauthorized"; run.to("FAILED", { error: "unauthorized" }); return done(401, { error: "unauthorized", message: "Please sign in again." }); }
@@ -109,7 +111,59 @@ export async function assist(input, deps) {
     let settle; if (idemKey && idem) idem.set(idemKey, new Promise((r) => (settle = r)));
     const finish = (status, body) => { const out = done(status, body); if (settle) settle(out); if (status !== 200 && idemKey && idem) idem.delete(idemKey); return out; };   // only successful answers are replayed
 
+    const fixed = async (kind, text, extra = {}) => { await run.stage("GENERATING_RESPONSE", () => null); run.finish("COMPLETED"); rt = rt || { category: "A", reason: "fixed text" }; return finish(200, { ...reply(kind, text, extra), route: rt }); };
+
+    // proposal: read the person's medicines, check the request, and return a signed confirmation. Nothing is written.
+    async function proposeReminder() {
+      rt = { category: "A", reason: "action proposals are fixed text" };
+      const meds = await run.stage("RETRIEVING", () => medicinesWithSchedules(envelope.db));
+      const plan = await run.stage("PLANNING", () => {
+        if (!meds.length) return { clarify: "You don't have any current medicines listed yet. Add the medicine in Medicines first.", code: "no_medicines" };
+        const mm = matchMedicine(meds, msg);
+        if (!mm.medicine) return { clarify: mm.reason === "several" ? `Which medicine do you mean: ${mm.names.join(", ")}?` : `I couldn't tell which medicine you mean. Your current medicines: ${mm.names.join(", ")}.`, code: "which_medicine" };
+        const c = checkReminder(meds, mm.medicine.client_id, cls.time);
+        return c.ok ? { medicine: mm.medicine, time: cls.time } : { clarify: c.message, code: c.code };
+      });
+      if (plan.clarify) { outcome = "clarify"; return fixed("clarify", plan.clarify, { code: plan.code }); }
+      const r = await tools.execute(envelope, "add_reminder", { medicine_client_id: String(plan.medicine.client_id), time: plan.time });
+      if (r.status !== "confirmation_required") { outcome = "denied"; return fixed("refusal", REFUSAL.actions_not_set_up, { code: "actions_not_set_up" }); }
+      outcome = "proposed"; run.to("AWAITING_CONFIRMATION", { tool: "add_reminder", status: "proposed" });
+      const m = plan.medicine;
+      return finish(200, { ...reply("proposal", `Add a ${label12(plan.time)} reminder for ${m.name}${m.dose ? ` (${m.dose})` : ""}?`,
+        { proposal: { action: "add_reminder", medicine_client_id: String(m.client_id), medicine_name: m.name, time: plan.time, time_label: label12(plan.time), confirmation: r.confirmation.token, expires_at: r.confirmation.expires_at } }), route: rt });
+    }
+
+    // confirm (the person tapped "Review and save") or verify (the app reports it saved)
+    async function actionStep(a) {
+      rt = { category: "A", reason: "action steps are fixed text" };
+      cls = await run.stage("CLASSIFIED", () => ({ category: a.kind === "confirm" ? "action_confirm" : "action_verify", risk: 2, needs_records: true }));
+      run.note({ category: cls.category, risk: 2 });
+      await run.stage("CONTEXT_RESOLVED", () => loadConsents(envelope));
+      const ok = await run.stage("PERMISSION_CHECKED", () => deps.actionsEnabled === true && envelope.consents.ai_chat === true && a.action === "add_reminder");
+      if (!ok) { outcome = "denied"; return fixed("refusal", deps.actionsEnabled === true ? REFUSAL.consent_required : REFUSAL.action_not_available, { code: deps.actionsEnabled === true ? "consent_required" : "action_not_available" }); }
+      const args = { medicine_client_id: String(a.medicine_client_id || ""), time: String(a.time || "") };
+      if (a.kind === "verify") {
+        const v = await run.stage("VERIFYING", () => verifyReminder(envelope.db, args.medicine_client_id, args.time));
+        outcome = v ? "action_verified" : "action_not_found";
+        return fixed("verified", v ? `Saved: the ${/^([01]\d|2[0-3]):[0-5]\d$/.test(args.time) ? label12(args.time) : ""} reminder is in your records.` : "The new reminder isn't in your saved records yet. It may still be syncing.", { verified: v });
+      }
+      const r = await run.stage("EXECUTING", () => tools.execute(envelope, "add_reminder", args, { confirmation: String(a.token || "") }));
+      run.note({ tool: "add_reminder", status: r.status, error: r.error });
+      if (r.status !== "done") {
+        outcome = "action_refused";
+        const why = r.error === "confirmation_expired" ? "That suggestion has expired. Please ask again." : String(r.error || "").startsWith("confirmation_") ? "That confirmation isn't valid. Please ask again."
+          : r.error === "confirmations_not_configured" ? REFUSAL.actions_not_set_up
+          : (checkReminder(await medicinesWithSchedules(envelope.db), args.medicine_client_id, args.time).message || "That change can't be made now.");
+        await run.stage("VERIFYING", () => null);
+        return fixed("refusal", why, { code: r.error || "refused" });
+      }
+      await run.stage("VERIFYING", () => true);       // the medicine was re-checked while approving
+      outcome = "action_approved";
+      return fixed("approved", `Approved. Your medicine list will open with the ${label12(args.time)} time added for ${r.result.medicine_name}. Check it and press Save.`, { apply: r.result });
+    }
+
     try {
+      if (actionReq) return await actionStep(actionReq);
       cls = await run.stage("CLASSIFIED", () => classify(msg, { today: input.today }));
       run.note({ category: cls.category, risk: cls.risk });
       if (cls.category === "emergency") {
@@ -120,8 +174,9 @@ export async function assist(input, deps) {
 
       await run.stage("CONTEXT_RESOLVED", () => loadConsents(envelope));
       run.note({ consent: envelope.consents.ai_chat ? "ai_chat" : "none" });
-      const perm = await run.stage("PERMISSION_CHECKED", () => decide(envelope, cls, { shareRecords: input.share_records === true }));
+      const perm = await run.stage("PERMISSION_CHECKED", () => decide(envelope, cls, { shareRecords: input.share_records === true, actionsEnabled: deps.actionsEnabled === true }));
       run.note({ outcome: perm.allowed ? "allowed" : perm.code, purpose: perm.purpose });
+      if (perm.allowed && cls.action === "add_reminder") return await proposeReminder();
       if (!perm.allowed || cls.category !== "record_question") {
         const code = !perm.allowed ? perm.code : cls.category === "general_health" ? "use_chat" : "clarify";
         outcome = !perm.allowed ? "denied" : code; rt = { category: "A", reason: "fixed text" };

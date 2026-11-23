@@ -55,16 +55,17 @@ export async function loadConsents(envelope) {
 }
 
 /** The permission decision for one classified request. Returns { allowed, purpose, reason, code }. */
-export function decide(envelope, cls, { shareRecords }) {
+export function decide(envelope, cls, { shareRecords, actionsEnabled = false }) {
   if (!envelope || !ROLES[envelope.role]) return { allowed: false, code: "no_role", reason: "not signed in" };
   if (cls.category === "other_person") return { allowed: false, code: "other_person", reason: "Only your own records can be read here." };
   if (cls.category === "injection") return { allowed: false, code: "injection", reason: "Instructions that change how the assistant works are ignored." };
-  if (cls.category === "action_request") return { allowed: false, code: "action_not_available", reason: "The assistant can't change, send or book anything yet." };
+  // the one action the assistant may propose (switch ai_actions); every other action is refused
+  if (cls.category === "action_request" && !(cls.action === "add_reminder" && actionsEnabled)) return { allowed: false, code: "action_not_available", reason: "The assistant can't change, send or book anything yet." };
   if (!envelope.consents || !envelope.consents.ai_chat) return { allowed: false, code: "consent_required", reason: "AI assistant consent is not on." };
   if (cls.needs_records) {
     if (shareRecords !== true) return { allowed: false, code: "share_not_chosen", reason: "Records are used only when you choose to share them for this conversation." };
     if (!ROLES[envelope.role].may.includes("read_own_records")) return { allowed: false, code: "role", reason: "not permitted" };
-    return { allowed: true, purpose: "explain_own_records" };
+    return { allowed: true, purpose: cls.category === "action_request" ? "propose_action" : "explain_own_records" };
   }
   return { allowed: true, purpose: cls.category === "general_health" ? "general_information" : "clarify" };
 }

@@ -478,7 +478,7 @@ const VIEWS = {};
 /* AI infrastructure: configuration of the Intelligence Orchestrator only (lib/orchestrator/info.mjs). No health data. */
 VIEWS.ai = async (v, seq) => {
   v.innerHTML = skel(200);
-  const d = await api("ai_infrastructure");
+  const [d, tr] = await Promise.all([api("ai_infrastructure"), api("ai_traces", { days: 7 }).catch(() => ({ available: false }))]);
   if (stale(seq)) return;
   const dl = (rows) => `<dl class="dl" style="grid-template-columns:1fr auto;gap:5px 8px">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>`;
   const onoff = (b) => (b ? `<span class="st good">On</span>` : `<span class="st none">Off</span>`);
@@ -489,6 +489,16 @@ VIEWS.ai = async (v, seq) => {
     ${card("Switches", esc(d.switches.note), dl([["AI assistant", onoff(d.switches.ai_assistant)], ["Records gateway", onoff(d.switches.ai_gateway)], ["Orchestrated assistant", onoff(d.switches.ai_orchestrator)]]))}
     ${card("Provider", "The key itself is never shown", dl([["Provider", esc(d.provider.name)], ["Key on the server", d.provider.key_configured ? `<span class="st good">Configured</span>` : `<span class="st none">Not configured</span>`], ["Write tools", d.write_tools_enabled ? `<span class="st warn">Enabled</span>` : `<span class="st none">None enabled</span>`]]))}
   </div>
+  ${section("Last 7 days", tr.available ? "One row per request to the records assistant: outcome, route, timing, tokens. No person, question or record is stored." : "")}
+  ${!tr.available ? `<div class="card"><div class="card-b"><p class="muted">Request traces aren't stored on this site yet (migration 20261123050000_ai_traces). Traces are still written to the server logs.</p></div></div>`
+    : !tr.total ? `<div class="card"><div class="card-b"><p class="muted">No requests in the last 7 days. The assistant is ${d.switches.ai_orchestrator ? "on" : "switched off"}.</p></div></div>`
+    : `<div class="grid cols-3">
+      ${card("Requests", "", dl([["Total", n(tr.total)], ["Completed", n((tr.by_state || {}).COMPLETED || 0)], ["Failed", n((tr.by_state || {}).FAILED || 0)], ["Cancelled", n((tr.by_state || {}).ABORTED || 0)], ["Emergency guidance", n((tr.by_state || {}).ESCALATED || 0)]]))}
+      ${card("Time inside Doctine", "Whole request, including the AI", dl([["Median", tr.ms_p50 == null ? "—" : n(tr.ms_p50) + " ms"], ["95th percentile", tr.ms_p95 == null ? "—" : n(tr.ms_p95) + " ms"], ["Answers from cache", n(tr.cache_hits)]]))}
+      ${card("Tokens and cost", tr.rows_without_price ? `${n(tr.rows_without_price)} request(s) used a model without a configured price` : "", dl([["Tokens in", n(tr.tokens_in)], ["Tokens out", n(tr.tokens_out)], ["Cost", tr.cost_usd == null ? "unknown" : "US$" + Number(tr.cost_usd).toFixed(4)]]))}
+    </div>
+    <div class="card"><div class="tbl-wrap" style="border-top:0;max-height:320px"><table><thead><tr><th>When</th><th>State</th><th>Outcome</th><th>Route</th><th>Time</th><th>Tokens</th></tr></thead><tbody>${(tr.recent || []).map((r) =>
+      `<tr><td>${esc(new Date(r.at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }))}</td><td>${esc(r.state)}</td><td>${esc(r.outcome || "")}${r.degraded ? ` <span class="st warn">${esc(r.degraded)}</span>` : ""}</td><td>${esc(r.route_category || "")} <span class="mono muted">${esc(r.model || "")}</span></td><td>${n(r.ms)} ms</td><td>${n((r.tokens_in || 0) + (r.tokens_out || 0))}</td></tr>`).join("")}</tbody></table></div></div>`}
   ${section("Model routing", esc(d.fallback))}
   <div class="card"><div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Category</th><th>Model</th><th>Used for</th><th>Price known</th></tr></thead><tbody>${d.routing.map((r) => `<tr><td><b>${esc(r.category)}</b> ${esc(r.name)}</td><td class="mono">${r.model ? esc(r.model) : `<span class="muted">no model</span>`}</td><td>${esc(r.when)}</td><td>${r.price_known == null ? "—" : r.price_known ? "Yes" : `<span class="muted">No: tokens counted, cost not</span>`}</td></tr>`).join("")}</tbody></table></div></div>
   ${section("Tools", "What the assistant can run, and at what permission level")}

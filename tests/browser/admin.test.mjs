@@ -41,7 +41,7 @@ const PSECTIONS = (now) => { const secs = [
 const NEEDS = { overview: "dashboard.view", series: "analytics.view", funnel: "analytics.view", retention: "analytics.view", adoption: "analytics.view", adoption_trend: "analytics.view", engagement: "analytics.view", profile_analytics: "analytics.view", activity: "dashboard.view", search: "dashboard.view",
   users: "users.view", user: "users.view", user_suspend: "users.suspend", user_restore: "users.suspend", user_revoke_sessions: "users.suspend", user_reset_password: "users.reset_password", user_note: "users.notes",
   documents: "documents.view", flags: "flags.view", set_flag: "flags.manage", set_maintenance: "maintenance.manage", announcements: "dashboard.view", announcement_save: "content.edit", incidents: "health.view",
-  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view", ai_infrastructure: "health.view",
+  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view", ai_infrastructure: "health.view", ai_traces: "health.view",
   data_overview: "data.view", perm_catalog: "dashboard.view", invite: "team.manage", invite_revoke: "team.manage", member_set: "team.manage", session: "dashboard.view", page_denied: "dashboard.view", product_overview: "dashboard.view",
   support_list: "support.view", support_item: "support.view", support_update: "support.view", support_message: "support.respond", feedback: "feedback.view", feedback_update: "feedback.manage",
   work: "bugs.view|feedback.view", work_save: "bugs.manage|feedback.manage", content: "content.view|releases.view", content_save: "content.edit",
@@ -97,6 +97,9 @@ function data(action, body) {
     flags: [{ key: "ai_assistant", enabled: false, value: {}, updated_at: null }, { key: "document_upload", enabled: true, value: {}, updated_at: null }, { key: "maintenance", enabled: false, value: {}, updated_at: null, on_now: false }],
     set_flag: { ok: true }, set_maintenance: { ok: true, on_now: !!body.enabled },
     ai_infrastructure: AI_INFO,
+    ai_traces: { available: true, days: 7, total: 3, by_state: { COMPLETED: 2, FAILED: 1 }, by_outcome: { completed: 2, retrieval_failed: 1 }, by_route: { C: 2, A: 1 }, degraded: {},
+      ms_p50: 1840, ms_p95: 4120, tokens_in: 3600, tokens_out: 320, cost_usd: 0.0104, rows_without_price: 0, cache_hits: 1, per_day: [],
+      recent: [{ at: "2026-11-23T08:00:00Z", state: "COMPLETED", outcome: "completed", route_category: "C", model: "claude-sonnet-5-5", ms: 1840, tokens_in: 1800, tokens_out: 160 }] },
     health: { checks: [{ target: "app", name: "App", ok: true, status: 200, ms: 80, checked_at: iso(now) }, { target: "database", name: "DB", ok: true, status: 200, ms: 90, checked_at: iso(now) }, { target: "auth", name: "Auth", ok: false, status: null, ms: 5000, error: "timeout", checked_at: iso(now) }, { target: "storage", name: "Storage", ok: true, status: 200, ms: 4200, checked_at: iso(now) }],
       ai_state: "not_configured", config: { environment: "staging", supabase: true, ai_key: false, email_provider: false, alert_email_to: false, admin_mfa_required: false, rate_limit_secret: true, google_sign_in: false, release: "abc" } },
     uptime: { days: 7, bucket_hours: 6, since: iso(now - 864e5), last_round: iso(now - 300e3), rounds_24h: 20, recent: [{ at: iso(now), target: "app", ok: true, status: 200, ms: 100 }],
@@ -349,7 +352,8 @@ check("health: uptime history, response time, failed checks and recent checks", 
 const hc = log.calls.filter((c) => c.action === "health").length; await pg.click("#rc"); await settle(pg);
 check("the Re-check button runs the checks again", log.calls.filter((c) => c.action === "health").length === hc + 1);
 await go(pg, "#/ai", "table");
-{ const t = await text(pg, "#view"); check("AI infrastructure: policy version, switches, routing, tools and states; configuration only", t.includes(AI_INFO.policy.version) && t.includes("Model routing") && t.includes("investigate_records") && t.includes("PERMISSION_CHECKED") && /Not configured/.test(t) && !/mg\/dL/.test(t)); }
+{ const t = await text(pg, "#view"); check("AI infrastructure: policy version, switches, routing, tools and states; configuration only", t.includes(AI_INFO.policy.version) && t.includes("Model routing") && t.includes("investigate_records") && t.includes("PERMISSION_CHECKED") && /Not configured/.test(t) && !/mg\/dL/.test(t));
+  check("AI infrastructure: stored traces shown as totals, timings and cost (no person or content)", t.includes("95th percentile") && t.includes("4,120 ms") && t.includes("US$0.0104") && t.includes("claude-sonnet-5-5")); }
 
 // audit, settings
 await go(pg, "#/audit", "#af");

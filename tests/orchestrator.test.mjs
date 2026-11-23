@@ -288,7 +288,7 @@ await test("2 · unreadable report: listed as having no searchable text, never t
 await test("3 · missing date: the undated value is shown apart and not compared", async () => {
   const r = await ask(world(variant((a) => a.docs.push({ id: nid(), title: "Undated lipid report", date: null, fields: { "LDL Cholesterol": "125 mg/dL" } }))), { message: "compare my ldl cholesterol", share_records: true });
   assert.ok(r.body.answer.sections.undated.some((u) => /125/.test(u.value_text)));
-  assert.match(r.body.answer.text, /Not compared \(ldl cholesterol\): 125.*no date/);
+  assert.match(r.body.answer.text, /Not compared \(LDL cholesterol\): 125.*no date/);
   assert.ok(!/125 mg\/dL on/.test(r.body.answer.sections.records_show.join("\n")));
 });
 await test("4 · inconsistent units: mg/dL and mmol/L are kept apart and never converted", async () => {
@@ -307,7 +307,7 @@ await test("5 · duplicate upload: the same values twice are flagged as a possib
 await test("6 · conflicting values: shown side by side, neither picked; routed to the careful tier", async () => {
   const r = await ask(world(variant((a) => a.docs.push({ id: nid(), title: "Lipid profile (other copy)", date: "2026-05-20", fields: { "LDL Cholesterol": "181 mg/dL (ref < 100)" } }))), { message: Q, share_records: true });
   const c = r.body.answer.sections.conflicts.find((x) => x.test === "ldl cholesterol");
-  assert.ok(c && c.values.length === 2); assert.match(r.body.answer.text, /Conflict \(ldl cholesterol, 2026-05-20\): .*118.* vs .*181|Conflict \(ldl cholesterol, 2026-05-20\): .*181.* vs .*118/);
+  assert.ok(c && c.values.length === 2); assert.match(r.body.answer.text, /Conflict \(LDL cholesterol, 2026-05-20\): .*118.* vs .*181|Conflict \(LDL cholesterol, 2026-05-20\): .*181.* vs .*118/);
   assert.equal(r.body.route.category, "D");
 });
 await test("7 · another person's report: refused before any record is read; ids in the body are ignored", async () => {
@@ -428,6 +428,21 @@ await test("a person over their daily token budget gets the facts without a mode
   assert.equal(r.body.route.degraded, "daily_budget_reached"); assert.equal(r.provider.calls.length, 0); assert.match(r.body.answer.text, /142 mg\/dL/);
 });
 
+await test("each request stores one trace row with codes and timings only (no person, question, title or value)", async () => {
+  const sb = world(baseA(), { flags: { ai_assistant: true, ai_gateway: true, ai_orchestrator: true } }); const sent = [];
+  const capture = async (u, o) => { if (String(u).endsWith("/rest/v1/rpc/record_ai_trace")) { sent.push({ body: JSON.parse(o.body), auth: o.headers.authorization }); return new Response("true"); } return sb.fetchImpl(u, o); };
+  const r = await ask(sb, { message: Q, share_records: true }, { fetchImpl: capture, env: { SUPABASE_SERVICE_ROLE_KEY: "fictional-service-key", CF_PAGES_COMMIT_SHA: "8944f8124dfa" } });
+  assert.equal(r.status, 200); assert.equal(sent.length, 1);
+  const p = sent[0].body.p; assert.equal(p.state, "COMPLETED"); assert.equal(p.route_category, "C"); assert.equal(p.release, "8944f8124dfa"); assert.ok(p.ms >= 0 && p.spans.length >= 8);
+  assert.equal(sent[0].auth, "Bearer fictional-service-key");
+  const text = JSON.stringify(p); assert.ok(!/142|118|cholesterol|Lipid|Fictional|a1110000|token-person/i.test(text), text);
+  const none = []; await ask(world(), { message: Q, share_records: true }, { fetchImpl: async (u, o) => { if (String(u).includes("record_ai_trace")) none.push(1); return world().fetchImpl(u, o); } });
+  assert.equal(none.length, 0, "without the server key nothing is sent");
+  const down = await ask(world(baseA(), { flags: { ai_assistant: true, ai_gateway: true, ai_orchestrator: true } }), { message: Q, share_records: true },
+    { fetchImpl: async (u, o) => (String(u).includes("record_ai_trace") ? Promise.reject(new Error("down")) : sb.fetchImpl(u, o)), env: { SUPABASE_SERVICE_ROLE_KEY: "fictional-service-key" } });
+  assert.equal(down.status, 200, "a failing trace store never affects the answer");
+});
+
 console.log("policy versioning and release gate");
 await test("the policy in the code matches the reviewed manifest", () => {
   const manifest = JSON.parse(readFileSync(new URL("../docs/ai-policy/manifest.json", import.meta.url), "utf8"));
@@ -435,7 +450,7 @@ await test("the policy in the code matches the reviewed manifest", () => {
   assert.equal(manifest.current.hash, POLICY_HASH);
 });
 await test("a changed prompt without a new version is blocked; policy deploys are refused on Friday afternoon", () => {
-  const manifest = JSON.parse(readFileSync(new URL("../docs/ai-policy/manifest.json", import.meta.url), "utf8"));
+  const manifest = { ...JSON.parse(readFileSync(new URL("../docs/ai-policy/manifest.json", import.meta.url), "utf8")), released: null };   // as if this policy were not yet released
   assert.ok(!gate({ manifest, hash: "0000000000000000" }).ok);
   const friday = new Date("2026-11-27T09:00:00Z"), tuesday = new Date("2026-11-24T05:00:00Z");   // 14:30 and 10:30 IST
   assert.ok(!gate({ manifest, deploy: true, now: friday }).ok);

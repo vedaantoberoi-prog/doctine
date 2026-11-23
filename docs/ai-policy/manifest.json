@@ -1,8 +1,23 @@
 {
   "note": "The AI policy (netlify/lib/orchestrator/policy.mjs) as reviewed. tools/ai-policy-gate.mjs fails when the code's policy hash differs from `current`, so every rule or prompt change needs a new version and a changelog entry here. `released` is the policy last deployed to production; a deploy that changes it is refused from Friday 12:00 to Sunday (IST) unless AI_POLICY_WINDOW_OVERRIDE gives a reason.",
-  "current": { "version": "2026-11-23.1", "hash": "e894dcd5719d9d36" },
-  "released": null,
+  "current": {
+    "version": "2026-11-23.1",
+    "hash": "e894dcd5719d9d36"
+  },
+  "released": {
+    "version": "2026-11-23.1",
+    "hash": "e894dcd5719d9d36",
+    "date": "2026-11-23",
+    "commit": "8944f81",
+    "note": "deployed to production with every AI switch off"
+  },
   "history": [
-    { "version": "2026-11-23.1", "hash": "e894dcd5719d9d36", "date": "2026-11-23", "change": "First orchestrator policy: identity from the session, consent + per-request sharing, read-only tools, evidence-only facts, validated explanations, routing A-D with no silent downgrade.", "clinical_review": "pending" }
+    {
+      "version": "2026-11-23.1",
+      "hash": "e894dcd5719d9d36",
+      "date": "2026-11-23",
+      "change": "First orchestrator policy: identity from the session, consent + per-request sharing, read-only tools, evidence-only facts, validated explanations, routing A-D with no silent downgrade.",
+      "clinical_review": "pending"
+    }
   ]
 }

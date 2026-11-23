@@ -20,7 +20,7 @@ import { corsFor } from "../../netlify/lib/cors.mjs";
 const ROUTES = { config, account, chat, scan, admin, events, monitor, errors, gateway, assist };
 const notFound = () => new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 
-export async function onRequest({ request, env, params }) {
+export async function onRequest({ request, env, params, waitUntil }) {
   for (const [k, v] of Object.entries(env || {})) if (typeof v === "string") process.env[k] = v;
   const name = [].concat(params && params.path || [])[0];
   const handler = Object.prototype.hasOwnProperty.call(ROUTES, name) ? ROUTES[name] : null;
@@ -29,7 +29,7 @@ export async function onRequest({ request, env, params }) {
   const cors = corsFor(request.headers.get("origin"), name);
   if (request.method === "OPTIONS") return new Response(null, { status: cors ? 204 : 403, headers: { ...(cors || {}), "cache-control": "no-store" } });
   let res;
-  try { res = await handler(request, { ip: request.headers.get("cf-connecting-ip") || undefined }); }
+  try { res = await handler(request, { ip: request.headers.get("cf-connecting-ip") || undefined, waitUntil: typeof waitUntil === "function" ? waitUntil : undefined }); }
   catch (e) { // an unhandled server error: recorded for the error tracker (kind and place only), then a plain 500
     await reportServerError("/api/" + name, e);
     return new Response(JSON.stringify({ error: "server_error" }), { status: 500, headers: { "content-type": "application/json", "cache-control": "no-store" } });

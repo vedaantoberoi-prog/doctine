@@ -1,8 +1,11 @@
 # Doctine AI operating system: Intelligence Orchestrator (23 Nov 2026)
 
-Status: built and tested on fictional data in the repository (branch `bolt-3d-hero`). **Not deployed. Not applied to any
-database.** The assistant stays switched off for real people until a doctor has reviewed its answers. Nothing here
-claims DPDP, clinical or security compliance; those need their own validation.
+Status (23 Nov 2026, 03:40 IST): **live on staging (5f13ab6) and production (8944f81), switched off.** The switch
+migrations `20261123000000_ai_gateway_flag` and `20261123030000_ai_orchestrator_flag` are applied to both databases
+(hash-checked, with approval); `ai_assistant`, `ai_gateway` and `ai_orchestrator` are all off on production, so
+`/api/assist` answers 503 "switched off" and the chat is unchanged. On staging the two fictional accounts have AI
+consent for testing. The assistant stays switched off for real people until a doctor has reviewed its answers. Nothing
+here claims DPDP, clinical or security compliance; those need their own validation.
 
 It extends the existing system and duplicates none of it: one sign-in (Supabase), one record store, one retrieval
 pipeline (the evidence engine through the Agent Execution Gateway), one admin console, one chat. The orchestrator is a
@@ -92,11 +95,11 @@ there: p95 orchestration overhead < 300 ms, p95 end-to-end < 12 s with the model
 
 ## 5. Not done, and why
 
-- **Write actions** (reminders, sharing): the confirmation framework is built and tested, but no write tool is enabled:
-  writing from the server would race the app's own sync of the person's records. Needs a design for that first.
+- **Write actions** (reminders, sharing): designed in `docs/ASSISTANT_ACTIONS_DESIGN.md` (the assistant proposes, the person
+  confirms, the app writes); the confirmation machinery is built and tested; no action is enabled.
 - **Live model evaluation**: needs the `ANTHROPIC_API_KEY` repository secret (you add it) and a doctor to score answers
   (`docs/medical-review/gateway-review-pack.md`). The policy is marked draft until then.
-- **Traces in a store**: traces are JSON log lines in the OpenTelemetry shape; no collector is configured.
+- **Traces in a store**: done (migration `20261123050000_ai_traces`): one row per request with codes, timings, tokens and cost, no person or content, kept 30 days, shown on the admin "AI infrastructure" page. No external OpenTelemetry collector is configured.
 - **Caregiver access, other providers, embeddings**: each is a privacy decision for you.
 
 ## 6. Turning it on (needs your approval at each step)

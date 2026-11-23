@@ -1,0 +1,30 @@
+name: Staging load test (records assistant)
+# Manual only. Runs tools/staging-load.mjs against the staging site: one throw-away synthetic account, created and
+# deleted in the run; refuses production. The assistant must be switched on on STAGING for it to run.
+on:
+  workflow_dispatch:
+    inputs:
+      steps: { description: "Concurrency levels", default: "1,5,10", required: false }
+      per_step: { description: "Requests per level", default: "10", required: false }
+permissions: { contents: read }
+concurrency: { group: staging-load, cancel-in-progress: false }
+jobs:
+  load:
+    runs-on: ubuntu-24.04
+    environment: staging
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Load test /api/assist on staging
+        env:
+          SITE_URL: ${{ vars.STAGING_URL }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          LOAD_STEPS: ${{ inputs.steps }}
+          LOAD_PER_STEP: ${{ inputs.per_step }}
+          REPORT_DIR: reports
+        run: node tools/staging-load.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: staging-load, path: reports/staging-load.json, retention-days: 30 }

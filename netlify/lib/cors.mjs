@@ -7,7 +7,7 @@
  * read from another origin). The admin console and the monitor are never reachable cross-origin.
  */
 export const APP_ORIGINS = Object.freeze(["https://localhost", "tauri://localhost"]);
-const OPEN_ROUTES = new Set(["config", "account", "events", "errors", "chat", "scan"]);
+const OPEN_ROUTES = new Set(["config", "account", "events", "errors", "chat", "scan", "guardian"]);
 
 /** CORS headers for this request, or null when the origin or route isn't allowed (then the browser blocks the reply). */
 export function corsFor(origin, route) {

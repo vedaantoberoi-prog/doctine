@@ -28,6 +28,7 @@ h1,h2,h3,.serif{font-family:var(--serif);font-weight:500;letter-spacing:-.012em;
 .tag{font-size:.75rem;font-weight:600;border-radius:999px;padding:.12rem .55rem;background:var(--tealbg);color:var(--tealtx)}.tag.prov-auto{background:var(--warnbg);color:var(--warntx)}.tag.prov-photo{background:var(--hover);color:var(--mute)}
 .warn{background:var(--warnbg);border:1px solid var(--warnbd);color:var(--warntx);border-radius:14px;padding:.6rem .85rem;font-size:.82rem}
 .err{background:var(--errbg);border:1px solid var(--errbd);color:var(--errtx);border-radius:12px;padding:.55rem .75rem;font-size:.85rem}
+.g-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem 1rem;padding:.7rem 0;border-top:1px solid var(--line)}.g-list>.g-row:first-child{border-top:0}.g-row>div:first-child{min-width:0;flex:1 1 14rem}.g-sos{font-size:1.2rem;padding:1rem 2.5rem;min-width:min(16rem,100%)}
 .dot{animation:b 1s infinite}@keyframes b{50%{opacity:.25}}
 @media(prefers-reduced-motion:reduce){.dot{animation:none}}
 .scanov{position:fixed;inset:0;z-index:60;background:#0b1420;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(12px,env(safe-area-inset-left,0px))}
@@ -590,11 +591,11 @@ const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const isOn=(m,d)=>(m.status||'active')==='active'&&d>=m.start&&(!m.end||d<=m.end)&&((m.freq||'daily')==='daily'||(m.days||[]).includes(new Date(d+'T00:00:00').getDay()));
 const LOGO='<svg viewBox="0 0 32 32" width="36" height="36" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#101C2B"/><path d="M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z" fill="none" stroke="#F3F1EB" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="7.6" r="2.3" fill="#8DB5AE"/></svg>';
-const NAV=[['home','My Health','home','Overview'],['medicines','Medicines','meds','Health'],['reminders','Reminders','clock','Health'],['vitals','Vitals','health','Health'],['reports','Medical records','reports','Health'],['health','Health profile','profile','Health'],['chat','Doctine AI','chat','AI'],['settings','Settings','settings','Account'],['about','About','about','Account']];
+const NAV=[['home','My Health','home','Overview'],['medicines','Medicines','meds','Health'],['reminders','Reminders','clock','Health'],['vitals','Vitals','health','Health'],['reports','Medical records','reports','Health'],['health','Health profile','profile','Health'],['chat','Doctine AI','chat','AI'],['guardian','Guardian','shield','Safety'],['settings','Settings','settings','Account'],['about','About','about','Account']];
 const VIEWS=NAV.map(n=>n[0]);
 const hashView=()=>{const h=(location.hash||'').slice(1);return VIEWS.includes(h)?h:''};
 let wantView=hashView(); // the screen in the address when the page loaded; opened once sign-in finishes
-const NAVI=(()=>{const P={home:'<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/>',chat:'<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V15h0a2.5 2.5 0 0 1-2-2.5z"/>',health:'<path d="M3.5 12h4l2-4.5 3.5 9 2-4.5h5.5"/>',profile:'<circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c.9-3.4 3.6-5.2 7-5.2s6.1 1.8 7 5.2"/>',reports:'<path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/>',meds:'<rect x="3.5" y="9" width="17" height="6" rx="3"/><path d="M12 9v6"/>',clock:'<circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 1.5M9.5 3.5h5"/>',about:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M6 18l1.4-1.4M16.6 7.4 18 6"/>'};const o={};for(const k in P)o[k]=`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]}</svg>`;return o})();
+const NAVI=(()=>{const P={home:'<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/>',chat:'<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V15h0a2.5 2.5 0 0 1-2-2.5z"/>',health:'<path d="M3.5 12h4l2-4.5 3.5 9 2-4.5h5.5"/>',profile:'<circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c.9-3.4 3.6-5.2 7-5.2s6.1 1.8 7 5.2"/>',reports:'<path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/>',meds:'<rect x="3.5" y="9" width="17" height="6" rx="3"/><path d="M12 9v6"/>',clock:'<circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 1.5M9.5 3.5h5"/>',about:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',shield:'<path d="M12 3.5 5 6.5v5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9v-5z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M6 18l1.4-1.4M16.6 7.4 18 6"/>'};const o={};for(const k in P)o[k]=`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]}</svg>`;return o})();
 /* ---- demo storage: this browser only ---- */
 const KEY='doctine:v2';
 (()=>{try{ // one-time carry-over from the previous app name; old entries are left untouched
@@ -648,6 +649,128 @@ const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.remove('hidden')
    Only plain screen names are written or cleared, never a sign-in link's hash. */
 const setHash=x=>{try{const want=x===true?'#about':typeof x==='string'&&x!=='home'&&VIEWS.includes(x)?'#'+x:'',cur=location.hash;if(cur===want||(cur&&cur!=='#'&&!VIEWS.includes(cur.slice(1))))return;history.replaceState(null,'',want||location.pathname+location.search)}catch{}};
 const go=v=>{S.view=v;setHash(v);closeNav();render();if(v==='about'){const w=$('#view');if(w)w.scrollTop=0}};
+/* Guardian (switch `guardian`, /api/guardian, docs/GUARDIAN.md). Signed-in accounts only. In this web app Guardian
+   detects nothing by itself: it offers a manual SOS, check-ins, trusted contacts and an honest status of what works.
+   Alerts are not sent automatically yet (no messaging provider); the screen says so and shows how to reach people.
+   Requests that fail for lack of network are kept on this device and sent again (each has its own id, so a resend
+   never creates a second alert). */
+const G={uid:null,data:null,loading:false,err:'',note:'',busy:'',form:null,sos:null,offset:0,tick:null,poll:null,cap:{},sentTimeout:{},shared:{}};
+const gShown=()=>!!(S.cloud&&CLOUD.features&&CLOUD.features.guardian===true);
+const gId=()=>{try{return crypto.randomUUID()}catch{const h=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,'0')).join('');return`${h.slice(0,8)}-${h.slice(8,12)}-4${h.slice(13,16)}-a${h.slice(17,20)}-${h.slice(20,32)}`}};
+const gQ={k:()=>'dct_gq_'+(CLOUD.uid||'none'),get(){try{return JSON.parse(localStorage.getItem(this.k())||'[]')}catch{return[]}},set(a){try{a.length?localStorage.setItem(this.k(),JSON.stringify(a.slice(-20))):localStorage.removeItem(this.k())}catch{}}};
+async function gApi(body){const ah=await authHeaders();if(!ah.Authorization)throw Object.assign(new Error('Please sign in again.'),{status:401});
+ const r=await fetch(API+'/api/guardian',body?{method:'POST',headers:{'Content-Type':'application/json',...ah},body:JSON.stringify(body)}:{headers:ah});
+ const j=await r.json().catch(()=>null);if(!r.ok)throw Object.assign(new Error((j&&j.message)||'Guardian couldn’t be reached.'),{code:j&&j.error,status:r.status});return j}
+/* Sends a request; when the network is down it is kept on this device and sent later. Returns the reply or null. */
+async function gSend(body){try{return await gApi(body)}catch(e){if(e.status)throw e;const q=gQ.get();q.push({body,at:Date.now()});gQ.set(q);G.note='You’re offline. This is saved on this device and will be sent when you’re back online. If you need help now, call 112.';return null}}
+async function gFlush(){const q=gQ.get();if(!q.length)return;const left=[];for(const it of q){try{await gApi(it.body)}catch(e){if(!e.status)left.push(it)}}gQ.set(left);if(!left.length)G.note=''}
+async function gLoad(quiet){if(!gShown())return;if(G.uid!==CLOUD.uid)Object.assign(G,{uid:CLOUD.uid,data:null,err:'',note:'',form:null,sos:null,sentTimeout:{},shared:{}});if(!quiet){G.loading=true;if(S.view==='guardian')render()}
+ try{await gFlush();const j=await gApi();if(G.uid!==CLOUD.uid)return;G.data=j;G.offset=Date.parse(j.server_time)-Date.now();G.err='';G.lastOk=Date.now()}
+ catch(e){G.err=e.status===503?'Guardian isn’t available on this site right now.':e.status?e.message:'You’re offline, so Guardian can’t update. In an emergency, call 112.'}
+ finally{G.loading=false;await gCaps();gTimers();if(S.view==='guardian'||gAsk())render()}}
+async function gCaps(){const c={online:navigator.onLine,platform:NATIVE?'Android app':'Web browser'};
+ try{c.loc=navigator.geolocation?(navigator.permissions?(await navigator.permissions.query({name:'geolocation'})).state:'prompt'):'unsupported'}catch{c.loc='unknown'}
+ c.notif=typeof Notification==='undefined'?'unsupported':Notification.permission;
+ try{if(navigator.getBattery){const b=await navigator.getBattery();c.battery=Math.round(b.level*100);c.charging=b.charging}}catch{}
+ G.cap=c}
+const gOpen=()=>(G.data&&G.data.open)||[];
+const gAsk=()=>gOpen().find(i=>['SUSPECTED_EVENT','CHECKING_IN','POSSIBLE_EMERGENCY','HIGH_CONFIDENCE_EVENT'].includes(i.state));
+const gLeft=i=>i&&i.checkin_deadline?Math.max(0,Math.ceil((Date.parse(i.checkin_deadline)-(Date.now()+G.offset))/1000)):null;
+function gTimers(){const need=gOpen().length>0||!!G.sos;
+ if(need&&!G.tick)G.tick=setInterval(()=>{if(G.sos){const s=Math.ceil((G.sos.until-Date.now())/1000);const el=$('#gsoscd');if(el)el.textContent=String(Math.max(0,s));if(s<=0){G.sos=null;gSOS();return}}
+   const a=gAsk();if(a&&a.state==='CHECKING_IN'){const l=gLeft(a);document.querySelectorAll('[data-gcd]').forEach(e=>e.textContent=l+' s');if(l===0&&!G.sentTimeout[a.id]){G.sentTimeout[a.id]=1;gAnswer(a.id,'timeout')}}},1000);
+ if(!need&&G.tick){clearInterval(G.tick);G.tick=null}
+ if(gOpen().length&&!G.poll)G.poll=setInterval(()=>{if(document.visibilityState==='visible')gLoad(true)},8000);
+ if(!gOpen().length&&G.poll){clearInterval(G.poll);G.poll=null}}
+function gLocate(){return new Promise(res=>{if(!(G.data&&G.data.settings.share_location)||!navigator.geolocation)return res(null);
+ navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude,accuracy_m:p.coords.accuracy,at:new Date(p.timestamp).toISOString()}),()=>res(null),{enableHighAccuracy:true,timeout:6000,maximumAge:60000})})}
+async function gSOS(test){G.busy='sos';render();
+ try{const location=await gLocate();const ev={event_id:gId(),event_type:'sos',source:test?'test':'app_button',observed_at:new Date().toISOString(),confidence:1,location};if(test)ev.test=true;
+  const r=await gSend({action:'report',event:ev});if(r){toast(test?'Test alert created. No one was contacted.':r.incident&&r.incident.state==='FAILED_TO_DELIVER'?'Alert raised, but Doctine couldn’t message your contacts. Call them now.':'Alert raised.');await gLoad(true)}}
+ catch(e){G.err=e.message}finally{G.busy='';render()}}
+async function gAnswer(id,answer){G.busy=answer;render();try{await gSend({action:'respond',incident_id:id,answer});await gLoad(true)}catch(e){G.err=e.message}finally{G.busy='';render()}}
+async function gDo(body,msg){G.busy=body.action;render();try{const r=await gSend(body);if(r&&msg)toast(msg);await gLoad(true);return r}catch(e){G.err=e.message;render();return null}finally{G.busy=''}}
+const G_STATE={SUSPECTED_EVENT:'Checking what happened',CHECKING_IN:'Waiting for your answer',POSSIBLE_EMERGENCY:'No answer yet',USER_CONFIRMED:'You asked for help',HIGH_CONFIDENCE_EVENT:'Likely event',ESCALATING:'Trying to alert your contacts',CONTACT_ACKNOWLEDGED:'A contact is on it',FAILED_TO_DELIVER:'Doctine could not alert your contacts',RESOLVED:'Resolved',CANCELLED:'Cancelled'};
+const G_TYPE={sos:'SOS',voice_distress:'Voice request for help',fall:'Possible fall',road_incident:'Possible road incident',missed_checkin:'Missed check-in',wearable_alert:'Watch health alert',inactivity:'No movement'};
+const G_DEL={pending:'Waiting',not_configured:'Not sent: automatic messages aren’t set up yet',user_initiated:'You opened a message to them (Doctine can’t see whether it was sent)',sent:'Accepted by the messaging service, not yet confirmed',delivered:'Delivered to their phone',failed:'Not delivered',acknowledged:'They pressed “I’m on it”'};
+const gTel=p=>'tel:'+String(p).replace(/[^\d+]/g,'');
+function gBanner(){if(!gShown()||S.view==='guardian')return'';const a=gAsk(),o=gOpen()[0];if(!a&&!o)return'';const i=a||o;
+ return`<div class="err m-3 flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>Guardian: ${a?'are you OK?':esc(G_STATE[i.state]||'')}</b> ${esc(G_TYPE[i.event_type]||'')}${a&&a.state==='CHECKING_IN'?` · <span data-gcd>${gLeft(a)} s</span> left to answer`:''}</span><span class="flex flex-wrap gap-2">${a?`<button class="btn" data-gans="ok" data-gi="${i.id}">I’m OK</button><button class="btn pri" data-gans="help" data-gi="${i.id}">I need help</button>`:''}<button class="btn" data-nav="guardian">Open Guardian</button></span></div>`}
+function gCapRows(){const d=G.data||{},s=d.settings||{},c=G.cap||{};
+ const st=(t,k)=>`<span class="tag" style="${k==='ok'?'':k==='bad'?'background:var(--errbg,#fde8e8);color:var(--errtx,#8a1c1c)':'background:var(--warnbg);color:var(--warntx)'}">${t}</span>`;
+ const rows=[
+  ['Guardian',s.enabled?st('Active','ok'):st('Off','warn'),s.enabled?'Manual SOS and check-ins work.':'Switch it on below.'],
+  ['Everyday mode',s.enabled?st('Limited','warn'):st('Monitoring paused','warn'),'Only what you start yourself. Nothing is detected automatically in this app yet.'],
+  ['Journey mode',st('Not built yet','warn'),'Crash detection during a journey needs the Doctine phone app’s native features, which aren’t built yet.'],
+  ['Fall detection',st('Device unsupported','warn'),'Needs a supported watch and approval from Apple or Google. Not available yet.'],
+  ['Wearable',st('Not connected','warn'),'Watch and health-app connections aren’t built yet.'],
+  ['Alerts to contacts',d.delivery&&d.delivery.live?st('Active','ok'):st('Not connected','bad'),d.delivery&&d.delivery.live?'Messages are sent automatically.':'Doctine can’t send messages yet. In an alert you’ll be shown how to call or message your contacts yourself.'],
+  ['“I’m on it” links',d.contact_links?st('Active','ok'):st('Not set up','warn'),d.contact_links?'Contacts can confirm they’ve seen your alert.':'Contacts can’t confirm through Doctine yet; call them to check.'],
+  ['Location',c.loc==='granted'?(s.share_location?st('Active','ok'):st('Not shared','warn')):c.loc==='denied'?st('Permission required','bad'):c.loc==='unsupported'?st('Device unsupported','warn'):st('Permission required','warn'),s.share_location?'Your location is attached to an alert (only then).':'Not attached to alerts. You can turn this on below.'],
+  ['Running in the background',st(NATIVE?'Not built yet':'Device unsupported','warn'),'A web page can’t watch for events when it is closed. Keep this open during a check-in.'],
+  ['Notifications',c.notif==='granted'?st('Active','ok'):c.notif==='unsupported'?st('Device unsupported','warn'):st('Permission required','warn'),'Used for reminders; Guardian alerts show on this screen.'],
+  ['Network',c.online?st('Active','ok'):st('Network unavailable','bad'),c.online?(G.lastOk?'Last update '+new Date(G.lastOk).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'Not updated yet'):'Alerts are kept on this device and sent when you’re back online.'],
+ ];
+ if(c.battery!=null)rows.push(['Battery',c.battery<15&&!c.charging?st(c.battery+'%','bad'):st(c.battery+'%'+(c.charging?' · charging':''),'ok'),c.battery<15&&!c.charging?'Low battery: charge your phone.':'']);
+ return rows.map(([a,b,n])=>`<li class="g-row"><div><div class="font-semibold">${a}</div>${n?`<div class="mx-sub">${n}</div>`:''}</div><div>${b}</div></li>`).join('')}
+function gIncident(i){const contacts=(G.data&&G.data.contacts)||[],ask=['SUSPECTED_EVENT','CHECKING_IN','POSSIBLE_EMERGENCY','HIGH_CONFIDENCE_EVENT'].includes(i.state),told=['ESCALATING','FAILED_TO_DELIVER','CONTACT_ACKNOWLEDGED','USER_CONFIRMED'].includes(i.state);
+ const dels=(i.deliveries||[]).filter(d=>d.kind==='alert');
+ return`<section class="card p-5 g-inc" aria-live="polite"><div class="flex flex-wrap items-start justify-between gap-2"><div><h2 class="text-xl">${esc(G_TYPE[i.event_type]||'Alert')}${i.test?' <span class="tag">Test</span>':''}</h2><p class="mx-sub">Started ${esc(new Date(i.opened_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))} · ${esc(G_STATE[i.state]||i.state)}</p></div><a class="btn pri" href="tel:112">Call 112</a></div>
+ ${ask?`<div class="warn mt-3"><b>Are you OK?</b>${i.state==='CHECKING_IN'?` If you don’t answer in <b data-gcd>${gLeft(i)} s</b>, Doctine will treat it as no answer.`:''}<div class="flex flex-wrap gap-2 mt-2"><button class="btn" data-gans="ok" data-gi="${i.id}" ${G.busy?'disabled':''}>I’m OK</button><button class="btn pri" data-gans="help" data-gi="${i.id}" ${G.busy?'disabled':''}>I need help</button></div></div>`:''}
+ ${i.state==='FAILED_TO_DELIVER'?`<div class="err mt-3"><b>Doctine could not alert your contacts automatically.</b> ${i.test?'This is a test, so no one was contacted.':'Please call or message them yourself now, using the buttons below.'}</div>`:''}
+ ${i.state==='CONTACT_ACKNOWLEDGED'?`<div class="mt-3 au-ok" role="status">A contact has seen your alert and said they’re on it.</div>`:''}
+ ${told||i.state==='FAILED_TO_DELIVER'?`<h3 class="mt-4 font-semibold">Your trusted contacts</h3>${contacts.length?`<ul class="g-list">${contacts.map(c=>{const ds=(i.deliveries||[]).filter(d=>d.contact_id===c.id);const best=ds.find(d=>d.status==='acknowledged')||ds.find(d=>d.status==='user_initiated')||ds[0];
+   return`<li class="g-row"><div><div class="font-semibold">${esc(c.name)}${c.relationship?` <span class="mx-sub">· ${esc(c.relationship)}</span>`:''}</div><div class="mx-sub">${best?esc(G_DEL[best.status]||best.status):'Not contacted'}</div></div><div class="flex flex-wrap gap-2"><a class="btn" href="${esc(gTel(c.phone))}">Call</a><button class="btn" data-gshare="${c.id}" data-gi="${i.id}" ${i.test?'disabled title="Not for test alerts"':''}>Message</button></div></li>`}).join('')}</ul>`:`<p class="mx-sub">You haven’t added any trusted contacts yet.</p>`}`:''}
+ ${G.shared[i.id]?`<div class="mt-3"><p class="mx-sub">If your message app didn’t open, copy this message:</p><textarea class="inp w-full mt-1" rows="3" readonly id="gmsg">${esc(G.shared[i.id])}</textarea></div>`:''}
+ <div class="flex flex-wrap gap-2 mt-4">${i.state==='FAILED_TO_DELIVER'&&!i.test?`<button class="btn" data-gretry="${i.id}" ${G.busy?'disabled':''}>Try alerting again</button>`:''}${!ask?`<button class="btn" data-gans="ok" data-gi="${i.id}" ${G.busy?'disabled':''}>I’m safe now</button>`:''}${told||i.state==='FAILED_TO_DELIVER'?`<button class="btn" data-gresolve="${i.id}" ${G.busy?'disabled':''}>Close this alert</button>`:''}</div>
+ ${dels.length?`<details class="mt-3"><summary class="mx-sub">What happened</summary><ul class="mx-sub mt-1">${(i.transitions||[]).map(t=>`<li>${esc(new Date(t.at).toLocaleTimeString())}: ${esc(G_STATE[t.to]||t.to)}</li>`).join('')}</ul></details>`:''}</section>`}
+function guardianView(){
+ if(!S.cloud)return`<section class="card p-5"><h1 class="text-2xl">Guardian</h1><p class="mx-sub mt-2">Guardian needs a Doctine account. For emergencies in India call 112.</p></section>`;
+ if(!gShown())return`<section class="card p-5"><h1 class="text-2xl">Guardian</h1><p class="mx-sub mt-2">Guardian isn’t available yet. For emergencies in India call 112.</p></section>`;
+ if(!G.data&&!G.err){if(!G.loading)setTimeout(()=>gLoad(),0);return`<section class="card p-5"><h1 class="text-2xl">Guardian</h1><p class="mx-sub mt-2">Loading…</p></section>`}
+ const d=G.data||{settings:{},contacts:[],open:[],recent:[]},s=d.settings||{},contacts=d.contacts||[];
+ const overall=!G.data?'Unavailable':!s.enabled?'Off':!G.cap.online?'Network unavailable':'Limited';
+ const pe=S.profile||{},hasEc=pe.ecName&&pe.ecPhone&&!contacts.some(c=>String(c.phone).replace(/\D/g,'').endsWith(String(pe.ecPhone).replace(/\D/g,'').slice(-10)));
+ const f=G.form;
+ return`<div class="space-y-4 max-w-3xl mx-auto">
+ <section class="card p-5"><div class="flex flex-wrap items-start justify-between gap-3"><div><h1 class="text-2xl">Guardian</h1><p class="mx-sub mt-1">Ask your trusted contacts for help in one tap. Guardian status: <b>${overall}</b>.</p></div><a class="btn" href="tel:112">Call 112</a></div>
+ <p class="text-sm mt-3">What it does now: an SOS button, “Are you OK?” check-ins and your list of trusted contacts. What it doesn’t do yet: detect falls or crashes, run when this app is closed, or send messages for you. It is not an emergency service: in an emergency, call 112.</p>
+ ${G.err?`<div class="err mt-3">${esc(G.err)}</div>`:''}${G.note?`<div class="warn mt-3">${esc(G.note)}</div>`:''}</section>
+ ${gOpen().map(gIncident).join('')}
+ ${s.enabled?`<section class="card p-5 text-center">${G.sos?`<p class="text-lg font-semibold">Raising an alert in <span id="gsoscd">${Math.max(0,Math.ceil((G.sos.until-Date.now())/1000))}</span> s</p><div class="flex justify-center gap-2 mt-3"><button class="btn" id="gsoscancel">Cancel</button><button class="btn pri" id="gsosnow">Send now</button></div>`:`<button class="btn pri g-sos" id="gsos" ${G.busy==='sos'?'disabled':''}>${G.busy==='sos'?'Raising alert…':'SOS: get help'}</button><p class="mx-sub mt-2">You’ll have 5 seconds to cancel. ${d.delivery&&d.delivery.live?'Your trusted contacts are then alerted.':'Doctine then shows you who to call; it can’t message them for you yet.'}</p><button class="mx-link mt-1" id="gtest">Try a test alert (no one is contacted)</button>`}</section>`:''}
+ <section class="card p-5"><h2 class="text-xl">Settings</h2>
+  <label class="flex items-start gap-3 mt-3"><input type="checkbox" class="w-5 h-5 mt-1" data-gset="enabled" ${s.enabled?'checked':''}><span><b>Use Guardian</b><br><span class="mx-sub">Shows the SOS button and check-ins on this account.</span></span></label>
+  <label class="flex items-start gap-3 mt-3"><input type="checkbox" class="w-5 h-5 mt-1" data-gset="share_location" ${s.share_location?'checked':''}><span><b>Attach my location to an alert</b><br><span class="mx-sub">Only when an alert is raised, never in between. Erased 30 days after the alert closes.</span></span></label></section>
+ <section class="card p-5"><div class="flex flex-wrap items-center justify-between gap-2"><h2 class="text-xl">Trusted contacts</h2><span class="mx-sub">${contacts.length} of ${d.max_contacts||5}</span></div>
+  <p class="mx-sub mt-1">People you’d want told if something happens. Doctine won’t message anyone automatically until messaging is set up and they’ve agreed; for now they show as “not verified”.</p>
+  ${contacts.length?`<ul class="g-list mt-3">${contacts.map(c=>`<li class="g-row"><div><div class="font-semibold">${esc(c.name)}${c.relationship?` <span class="mx-sub">· ${esc(c.relationship)}</span>`:''}</div><div class="mx-sub">${esc(c.phone)} · ${c.status==='verified'?'Verified':'Not verified'} · order ${c.priority}</div></div><div class="flex gap-2"><button class="btn" data-gedit="${c.id}">Edit</button><button class="btn" data-gdel="${c.id}">Remove</button></div></li>`).join('')}</ul>`:''}
+  ${hasEc&&!f?`<button class="btn mt-3" id="gimport">Add ${esc(pe.ecName)} from your health profile</button>`:''}
+  ${f?`<form id="gcf" class="mt-3 grid gap-3" style="grid-template-columns:repeat(auto-fit,minmax(12rem,1fr))"><label class="text-sm">Name<input class="inp w-full mt-1" name="name" required maxlength="80" value="${esc(f.name||'')}"></label><label class="text-sm">Phone, with country code<input class="inp w-full mt-1" name="phone" required maxlength="24" inputmode="tel" placeholder="+91 98765 43210" value="${esc(f.phone||'')}"></label><label class="text-sm">Relationship<input class="inp w-full mt-1" name="relationship" maxlength="40" value="${esc(f.relationship||'')}"></label><label class="text-sm">Order to contact<select class="inp w-full mt-1" name="priority">${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===(f.priority||1)?'selected':''}>${n}${n===1?' (first)':''}</option>`).join('')}</select></label><div class="flex gap-2 items-end"><button class="btn pri" type="submit" ${G.busy==='contact_save'?'disabled':''}>Save contact</button><button class="btn" type="button" id="gcfcancel">Cancel</button></div></form>`:contacts.length<(d.max_contacts||5)?`<button class="btn mt-3" id="gadd">Add a trusted contact</button>`:''}</section>
+ <section class="card p-5"><h2 class="text-xl">What works on this device</h2><ul class="g-list mt-2">${gCapRows()}</ul></section>
+ ${(d.recent||[]).length?`<section class="card p-5"><h2 class="text-xl">Past alerts</h2><ul class="g-list mt-2">${d.recent.map(i=>`<li class="g-row"><div><div class="font-semibold">${esc(G_TYPE[i.event_type]||'Alert')}${i.test?' <span class="tag">Test</span>':''}</div><div class="mx-sub">${esc(new Date(i.opened_at).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}))}</div></div><div class="mx-sub">${esc(G_STATE[i.state]||i.state)}</div></li>`).join('')}</ul></section>`:''}
+ </div>`}
+async function gClick(t){
+ if(t.id==='gsos'){G.sos={until:Date.now()+5000};gTimers();render();return true}
+ if(t.id==='gsoscancel'){G.sos=null;toast('Cancelled. No alert was raised.');render();return true}
+ if(t.id==='gsosnow'){G.sos=null;gSOS();return true}
+ if(t.id==='gtest'){gSOS(true);return true}
+ if(t.dataset.gans){gAnswer(t.dataset.gi,t.dataset.gans);return true}
+ if(t.dataset.gretry){gDo({action:'retry',incident_id:t.dataset.gretry});return true}
+ if(t.dataset.gresolve){gDo({action:'resolve',incident_id:t.dataset.gresolve},'Alert closed.');return true}
+ if(t.id==='gadd'){G.form={priority:1};render();return true}
+ if(t.id==='gcfcancel'){G.form=null;render();return true}
+ if(t.id==='gimport'){const pe=S.profile||{};G.form={name:pe.ecName||'',phone:pe.ecPhone||'',relationship:pe.ecRel||'',priority:1};render();return true}
+ if(t.dataset.gedit){const c=((G.data&&G.data.contacts)||[]).find(x=>x.id===t.dataset.gedit);if(c){G.form={...c}}render();return true}
+ if(t.dataset.gdel){const c=((G.data&&G.data.contacts)||[]).find(x=>x.id===t.dataset.gdel);if(c&&confirm(`Remove ${c.name} from your trusted contacts?`))gDo({action:'contact_delete',id:c.id},'Contact removed.');return true}
+ if(t.dataset.gshare){const r=await gDo({action:'share',incident_id:t.dataset.gi,contact_id:t.dataset.gshare,name:(S.profile&&S.profile.name)||''});
+  if(r&&r.message){G.shared[t.dataset.gi]=r.message;render();const ph=String(r.phone).replace(/[^\d+]/g,'');try{location.href=`sms:${ph}?&body=${encodeURIComponent(r.message)}`}catch{}}return true}
+ return false}
+async function gChange(t){if(!t.dataset||!t.dataset.gset)return false;const k=t.dataset.gset;
+ if(k==='share_location'&&t.checked&&navigator.geolocation){navigator.geolocation.getCurrentPosition(()=>{},()=>{},{timeout:5000})}
+ await gDo({action:'settings',[k]:t.checked},k==='enabled'?(t.checked?'Guardian is on.':'Guardian is off.'):'Saved.');return true}
+async function gSubmit(F){const c={name:String(F.get('name')||'').trim(),phone:String(F.get('phone')||'').trim(),relationship:String(F.get('relationship')||'').trim(),priority:Number(F.get('priority'))||1};
+ if(G.form&&G.form.id)c.id=G.form.id;const r=await gDo({action:'contact_save',contact:c},'Contact saved.');if(r)G.form=null;render()}
+addEventListener('online',()=>{if(gShown())gLoad(true)});addEventListener('offline',()=>{if(gShown()){G.cap.online=false;if(S.view==='guardian')render()}});
 const closeNav=()=>{$('#side').classList.add('-translate-x-full');$('#scrim').classList.add('hidden')};
 $('#burger').onclick=()=>{$('#side').classList.remove('-translate-x-full');$('#scrim').classList.remove('hidden')};$('#scrim').onclick=closeNav;
 $('#out').onclick=async()=>{if(S.cloud){const n=unsavedCount();if(n&&!confirm('Some of your changes or chat messages haven’t been saved to your account yet. If you sign out now, they will be lost. Sign out anyway?'))return;closeNav();leaveCloud();await CLOUD.sb.auth.signOut().catch(()=>{});return}DB.session=null;store.set(DB);S={...S,...blank(''),email:null,sample:false,guest:false,auth:'login',cstate:null,cerr:'',useRecords:false};closeNav();render()};
@@ -1087,7 +1210,7 @@ async function cloudSync(){
     const{data,error}=await step(sb.from('health_records').upsert({user_id:uid,client_id:r.id,kind:r.kind,title:String(r.title).slice(0,160),status:r.status||null,category:r.cat||null,severity:r.sev||null,certainty:r.cert||null,onset:r.onset||null,details:dd,source:['user','clinician','document','import'].includes(r.src)?r.src:'user',source_document_id:doc},{onConflict:'user_id,client_id'}).select('id').single());
     if(error){if(/health_records/i.test(String(error.message||''))&&/exist|schema cache|not find/i.test(String(error.message||''))){CLOUD.noHist=true;break}throw error}CLOUD.ids.hist[r.id]=data.id;was.hist[r.id]=now.hist[r.id]}
    if(!CLOUD.noHist)for(const id of Object.keys(was.hist))if(!(id in now.hist)){const{error}=await step(sb.from('health_records').delete().eq('client_id',id));if(error)throw error;delete CLOUD.ids.hist[id];delete was.hist[id]}}
-  CLOUD.snap=was;CLOUD.err='';CLOUD.lastOk=Date.now();setTimeout(checkPendingAction,0);CLOUD.dirty=JSON.stringify({...(CLOUD.noVitals?{...snapshot(S),vitals:was.vitals}:snapshot(S)),...(CLOUD.noHist?{hist:was.hist}:{})})!==JSON.stringify(was);
+  CLOUD.snap=was;CLOUD.err='';CLOUD.lastOk=Date.now();setTimeout(checkPendingAction,0);setTimeout(()=>{if(gShown()&&!G.data&&!G.loading)gLoad(true)},0);CLOUD.dirty=JSON.stringify({...(CLOUD.noVitals?{...snapshot(S),vitals:was.vitals}:snapshot(S)),...(CLOUD.noHist?{hist:was.hist}:{})})!==JSON.stringify(was);
  }catch(e){if(e===ABORT||CLOUD.epoch!==ep){CLOUD.busy=false;return}   // the person signed out or switched: touch nothing of the new sign-in
   CLOUD.snap=was;cloudFail('Saving',e);if(!cloudSync.warned){cloudSync.warned=1;toast('Your latest changes couldn’t be saved to your account. Doctine will keep trying; don’t close this page yet.')}clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(cloudSync,15000)}
  finally{if(CLOUD.epoch!==ep)return;CLOUD.busy=false;if(!CLOUD.err)cloudSync.warned=0;if(S.view==='settings'){const el=$('#syncst');if(el)el.textContent=syncText()}const bn=$('#banner');if(bn&&S.cloud){const h=bannerHTML();if(S._bh!==h){S._bh=h;bn.innerHTML=h}}if(CLOUD.again||(CLOUD.dirty&&!CLOUD.err)){CLOUD.again=false;cloudQueue()}}} // after a failure, wait for the retry timer (or a new change) instead of retrying at once
@@ -2177,7 +2300,7 @@ function noticesHTML(){if(!CLOUD.on)return'';let h='';
  for(const n of CLOUD.notices||[])if(n&&n.id&&!gone.includes(n.id))h+=`<div class="${n.kind==='maintenance'?'warn':'card'} m-3 p-3 flex items-start justify-between gap-3" role="status"><span><b>${esc(n.title)}</b>${n.body?' '+esc(n.body):''}</span><button class="btn" data-notice="${esc(n.id)}" aria-label="Dismiss this notice">Dismiss</button></div>`;
  return h}
 function bannerHTML(){
- let h=noticesHTML()+(S.cloud&&CLOUD.err?`<div class="err m-3 flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>Some changes aren’t saved to your account yet.</b> ${esc(CLOUD.err)}. Doctine keeps retrying; don’t close this page.</span><button class="btn" data-syncnow="1">Try again now</button></div>`:'');
+ let h=gBanner()+noticesHTML()+(S.cloud&&CLOUD.err?`<div class="err m-3 flex flex-wrap items-center justify-between gap-2" role="alert"><span><b>Some changes aren’t saved to your account yet.</b> ${esc(CLOUD.err)}. Doctine keeps retrying; don’t close this page.</span><button class="btn" data-syncnow="1">Try again now</button></div>`:'');
  h+=S.email&&!S.cloud&&!S.sample&&!S.guest&&(S.view==='home'||S.view==='reports')?'<div class="warn m-3">Demo account: saved only in this browser on this device, not in a Doctine account.</div>':'';
  h+=S.guest?'<div class="warn m-3">You’re not signed in. Nothing here is saved. If you allow the AI assistant, your messages go to an AI provider through this site’s server.</div>':S.sample?'<div class="warn m-3">Sample data (fictional). Changes are not saved. Create an account to start with your own empty profile.</div>':'';
  dueNow().slice(0,2).forEach(({m,t,k})=>{h+=`<div class="m-3 card p-3 flex flex-wrap items-center justify-between gap-2" role="alert"><div><b>Time for ${esc(m.name)}</b> <span class="text-sm text-[var(--mute)]">${esc(doseLine(m))} · scheduled ${esc(t)}.<span class="dnote">${alarmNote()}</span></span></div><div class="flex gap-2"><button class="btn tl" data-d="${k}|Taken">Taken</button><button class="btn" data-d="${k}|Skipped">Skip</button><button class="btn" data-d="${k}|Snoozed">Snooze 10 min</button></div></div>`});
@@ -2199,11 +2322,11 @@ async function notify(title,body){try{if(!('Notification' in window)||Notificati
 function render(){
  const authed=S.email||S.sample||S.guest;$('#auth').classList.toggle('hidden',!!authed);$('#app').classList.toggle('hidden',!authed);
  if(!authed){const hv=hashView();if(hv&&hv!=='about')setHash(false);$('#auth').innerHTML=authView();abObserve();return}
- $('#nav').innerHTML=NAV.map(([k,l,i,g],n)=>`${!n||NAV[n-1][3]!==g?`<div class="navg">${g}</div>`:''}<button class="nav ${S.view===k?'on':''}" data-nav="${k}" ${S.view===k?'aria-current="page"':''}><span class="navi">${NAVI[i]||''}</span>${l}</button>`).join('');
+ const NV=NAV.filter(n=>n[0]!=='guardian'||gShown());$('#nav').innerHTML=NV.map(([k,l,i,g],n)=>`${!n||NV[n-1][3]!==g?`<div class="navg">${g}</div>`:''}<button class="nav ${S.view===k?'on':''}" data-nav="${k}" ${S.view===k?'aria-current="page"':''}><span class="navi">${NAVI[i]||''}</span>${l}</button>`).join('');
  const tb=$('#tabbar');if(tb)tb.innerHTML=[['home','My Health','home'],['medicines','Medicines','meds'],['reports','Records','reports'],['chat','Doctine AI','chat']].map(([k,l,i])=>`<button data-nav="${k}" class="${S.view===k?'on':''}" ${S.view===k?'aria-current="page"':''}><span class="navi">${NAVI[i]||''}</span>${l}</button>`).join('')+`<button id="tbmore" class="${['home','medicines','reports','chat'].includes(S.view)?'':'on'}" aria-label="More: vitals, reminders, profile, settings"><span class="navi"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg></span>More</button>`;
  $('#ttl').textContent=(NAV.find(n=>n[0]===S.view)||[,S.view==='family'?'Family':''])[1];$('#who').innerHTML=S.sample?'Sample data':S.guest?'Not signed in':`${esc(S.email)}<span class="tag" style="display:inline-block;margin-top:.25rem;${S.cloud?'':'background:var(--warnbg);color:var(--warntx)'}">${S.cloud?'Doctine account':'Demo · this browser only'}</span>`;
  $('#banner').innerHTML=bannerHTML();
- const V={home:homeView,chat:chatView,health:healthView,vitals:vitalsView,reports:reportsView,medicines:medsView,reminders:remView,family:soon,about:aboutView,settings:setView}[S.view]||homeView;
+ const V={home:homeView,chat:chatView,health:healthView,vitals:vitalsView,reports:reportsView,medicines:medsView,reminders:remView,guardian:guardianView,family:soon,about:aboutView,settings:setView}[S.view]||homeView;
  const v=$('#view'),ae=document.activeElement,fk=ae&&v.contains(ae)&&(ae.id?'#'+CSS.escape(ae.id):['p','uf','mt'].map(k=>ae.dataset&&ae.dataset[k]!==undefined?`[data-${k}="${CSS.escape(ae.dataset[k])}"]`:'').find(Boolean)),fsel=fk&&typeof ae.selectionStart==='number'?[ae.selectionStart,ae.selectionEnd]:null;
  v.innerHTML=V();
  if(fk){const n=v.querySelector(fk);if(n){n.focus({preventScroll:true});if(fsel)try{n.setSelectionRange(fsel[0],fsel[1])}catch{}}}v.style.overflow=S.view==='chat'?'hidden':'';
@@ -2244,6 +2367,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='google')return googleSignIn();if(t.id==='guest')return enter(null,blank('Guest'),false,true);
  if(t.id==='samp')return enter(null,sampleData(),true);
  if(t.id==='erase'){if(confirm('Erase all demo accounts stored in this browser?')){DB={users:{}};store.set(DB);toast('Demo accounts erased.');S.auth='register';render()}return}
+ if(await gClick(t))return;
  if(t.dataset.nav)return go(t.dataset.nav);
  if(t.id==='aiallow'){S.consent.ai=true;persist();const q=S.aiAsk;S.aiAsk=null;toast('AI assistant switched on. You can switch it off in Settings.');return send(q)}
  if(t.id==='ainot'){S.aiAsk=null;return render()}
@@ -2351,6 +2475,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
   const rec={title:u.title.trim(),cat:u.cat,date:u.date,lab:u.lab.trim(),fields,hash:u.hash};const ed=S.reports.find(x=>x.id===u.editId);if(ed){Object.assign(ed,rec);if(ed.scan&&!ed.checked)ed.checked=true;toast(ed.scan?'Details checked and saved':'Report updated')}else{const id=Date.now(),pdf=u.file&&(u.file.type==='application/pdf'||/\.pdf$/i.test(u.file.name))?u.file:null;if(pdf){try{await IMG.put(`orig:${id}:0`,new Blob([pdf],{type:'application/pdf'}));rec.orig='pdf'}catch{toast('The original PDF couldn’t be kept in this browser; the values you confirmed are saved.')}}if(u.pages&&u.pages.some(t=>t.trim())){try{await IMG.put(`pages:${id}`,new Blob([JSON.stringify(u.pages)],{type:'application/json'}));rec.ptext=u.pages.length}catch{}}S.reports.unshift({id,...rec});toast('Report saved')}S.upload=null;S.q='';render()}
 });
 document.addEventListener('submit',async e=>{e.preventDefault();const id=e.target.id,F=new FormData(e.target);
+ if(id==='gcf')return gSubmit(F);
  if(id==='hs'){S.q=String(F.get('hq')).trim();if(S.q)track('search_performed',{scope:'home'},'search:'+today());return go('reports')}
  if(id==='cf'){const i=$('#ci'),v=i.value;i.value='';send(v)}
  if(id==='hask'){const v=String(F.get('haq')||'').trim();if(!v)return;go('chat');send(v);return}
@@ -2410,6 +2535,7 @@ document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='au-pw'&&t.f
  if(t.dataset.ur){const[n,k]=t.dataset.ur.split('|');S.upload.rows[+n][k]=t.value}
  if(t.id==='sq'){S.q=t.value;if(S.q.trim().length>1)track('search_performed',{scope:'records'},'search:'+today());const p=t.selectionStart;render();const n=$('#sq');n.focus();n.setSelectionRange(p,p)}});
 document.addEventListener('change',e=>{const t=e.target;
+ if(t.dataset&&t.dataset.gset){gChange(t);return}
  if(t.id==='showpw'){const i=document.querySelector('input[name=pw]');if(i)i.type=t.checked?'text':'password';return}
  if(t.id==='usrec'){S.useRecords=t.checked;return}
  if(t.dataset.hpans){const k=t.dataset.hpans;S.profile.ans={...(S.profile.ans||{}),[k]:t.value};S.profile.upd=new Date().toISOString();hpCommit('ans-'+k);return}

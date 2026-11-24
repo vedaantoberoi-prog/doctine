@@ -201,6 +201,21 @@ end $$;
 create or replace function public.guardian_contact_delete(p_user uuid, p_id uuid) returns boolean language sql security definer set search_path = pg_catalog, private, public as $$
   with d as (delete from private.guardian_contacts where id = p_id and user_id = p_user returning 1) select exists (select 1 from d) $$;
 
+-- For a contact's consent link: the contact's name, number and status only (never anything about the person).
+create or replace function public.guardian_contact_for_consent(p_contact uuid) returns jsonb language sql stable security definer set search_path = pg_catalog, private, public as $$
+  select jsonb_build_object('id', id, 'name', name, 'phone', phone, 'status', status) from private.guardian_contacts where id = p_contact $$;
+
+-- The contact agreed ('verified') or declined. Only while the number is still the one the link was made for.
+create or replace function public.guardian_contact_set_consent(p_contact uuid, p_phone text, p_status text) returns jsonb language plpgsql security definer set search_path = pg_catalog, private, public as $$
+declare row private.guardian_contacts;
+begin
+  if p_status not in ('verified', 'declined') then raise exception 'invalid consent' using errcode = '22023'; end if;
+  update private.guardian_contacts set status = p_status, verified_at = case when p_status = 'verified' then now() end, updated_at = now()
+  where id = p_contact and phone = p_phone returning * into row;
+  if row.id is null then raise exception 'no such contact' using errcode = 'P0002'; end if;
+  return jsonb_build_object('id', row.id, 'status', row.status);
+end $$;
+
 create or replace function public.guardian_incident_by_event(p_user uuid, p_event uuid) returns jsonb language sql stable security definer set search_path = pg_catalog, private, public as $$
   select private.guardian_incident_json(incident_id) from private.guardian_event_ids where user_id = p_user and event_id = p_event $$;
 
@@ -338,7 +353,8 @@ do $$ declare f text; begin
     'guardian_incident_by_event(uuid, uuid)', 'guardian_incidents_open(uuid)', 'guardian_incidents_recent(uuid, int)', 'guardian_incident_get(uuid, uuid)', 'guardian_incident_for_contact(uuid, uuid)',
     'guardian_incident_insert(uuid, jsonb, text, jsonb)', 'guardian_incident_transition(uuid, uuid, text, text, jsonb, jsonb)', 'guardian_incident_evidence(uuid, uuid, jsonb, jsonb)',
     'guardian_incident_note(uuid, uuid, jsonb)', 'guardian_delivery_upsert(uuid, uuid, jsonb)', 'guardian_deliveries(uuid, uuid)', 'guardian_mark_ack(uuid, uuid, uuid)',
-    'guardian_transitions(uuid, uuid)', 'guardian_status_event(uuid, jsonb)', 'guardian_purge()', 'admin_guardian_summary(uuid)'] loop
+    'guardian_transitions(uuid, uuid)', 'guardian_status_event(uuid, jsonb)', 'guardian_purge()', 'admin_guardian_summary(uuid)',
+    'guardian_contact_for_consent(uuid)', 'guardian_contact_set_consent(uuid, text, text)'] loop
     execute format('revoke all on function public.%s from public, anon, authenticated', f);
     execute format('grant execute on function public.%s to service_role', f);
   end loop;

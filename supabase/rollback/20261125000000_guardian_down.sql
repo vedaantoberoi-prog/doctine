@@ -6,7 +6,8 @@ do $$ declare f text; begin
     'guardian_incident_by_event(uuid, uuid)', 'guardian_incidents_open(uuid)', 'guardian_incidents_recent(uuid, int)', 'guardian_incident_get(uuid, uuid)', 'guardian_incident_for_contact(uuid, uuid)',
     'guardian_incident_insert(uuid, jsonb, text, jsonb)', 'guardian_incident_transition(uuid, uuid, text, text, jsonb, jsonb)', 'guardian_incident_evidence(uuid, uuid, jsonb, jsonb)',
     'guardian_incident_note(uuid, uuid, jsonb)', 'guardian_delivery_upsert(uuid, uuid, jsonb)', 'guardian_deliveries(uuid, uuid)', 'guardian_mark_ack(uuid, uuid, uuid)',
-    'guardian_transitions(uuid, uuid)', 'guardian_status_event(uuid, jsonb)', 'guardian_purge()', 'admin_guardian_summary(uuid)'] loop
+    'guardian_transitions(uuid, uuid)', 'guardian_status_event(uuid, jsonb)', 'guardian_purge()', 'admin_guardian_summary(uuid)',
+    'guardian_contact_for_consent(uuid)', 'guardian_contact_set_consent(uuid, text, text)'] loop
     execute format('drop function if exists public.%s', f);
   end loop;
 end $$;

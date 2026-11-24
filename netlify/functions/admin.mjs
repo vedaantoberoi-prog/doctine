@@ -206,6 +206,9 @@ const ACTIONS = {
   // stored assistant traces (codes, timings, tokens; no person or content); the function checks health.view
   ai_traces: async (uid, b) => { try { return { available: true, ...(await rpc("admin_ai_traces", { p_actor: uid, p_days: Math.min(30, Math.max(1, parseInt(b.days, 10) || 7)) })) }; }
     catch (e) { if (e.status === 503) { await rpc("admin_incidents", { p_actor: uid }); return { available: false }; } throw e; } },
+  // Guardian incidents in the last 30 days, counts only (Founder only; no person, location or contact)
+  guardian_summary: async (uid) => { try { return { available: true, ...(await rpc("admin_guardian_summary", { p_actor: uid })) }; }
+    catch (e) { if (e.status === 503) return { available: false }; throw e; } },
   // pilot accounts for the records assistant (Founder only; add/remove audited with a reason)
   ai_pilot: async (uid, b, rid) => { const act = ["list", "add", "remove"].includes(b.op) ? b.op : "list";
     return rpc("admin_ai_pilot", { p_actor: uid, p_action: act, p_email: act === "list" ? null : s(b.email, 200), p_reason: act === "list" ? null : s(b.reason, 500), p_request: rid }); },

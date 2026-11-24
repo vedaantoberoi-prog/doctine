@@ -41,7 +41,7 @@ const PSECTIONS = (now) => { const secs = [
 const NEEDS = { overview: "dashboard.view", series: "analytics.view", funnel: "analytics.view", retention: "analytics.view", adoption: "analytics.view", adoption_trend: "analytics.view", engagement: "analytics.view", profile_analytics: "analytics.view", activity: "dashboard.view", search: "dashboard.view",
   users: "users.view", user: "users.view", user_suspend: "users.suspend", user_restore: "users.suspend", user_revoke_sessions: "users.suspend", user_reset_password: "users.reset_password", user_note: "users.notes",
   documents: "documents.view", flags: "flags.view", set_flag: "flags.manage", set_maintenance: "maintenance.manage", announcements: "dashboard.view", announcement_save: "content.edit", incidents: "health.view",
-  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view", ai_infrastructure: "health.view", ai_traces: "health.view", ai_pilot: "ai.manage",
+  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view", ai_infrastructure: "health.view", ai_traces: "health.view", ai_pilot: "ai.manage", guardian_summary: "ai.manage",
   data_overview: "data.view", perm_catalog: "dashboard.view", invite: "team.manage", invite_revoke: "team.manage", member_set: "team.manage", session: "dashboard.view", page_denied: "dashboard.view", product_overview: "dashboard.view",
   support_list: "support.view", support_item: "support.view", support_update: "support.view", support_message: "support.respond", feedback: "feedback.view", feedback_update: "feedback.manage",
   work: "bugs.view|feedback.view", work_save: "bugs.manage|feedback.manage", content: "content.view|releases.view", content_save: "content.edit",
@@ -94,9 +94,10 @@ function data(action, body) {
     documents: { summary: { records: 7, records_total: 14, by_source: { scan: 5, manual: 2 }, by_category: { "Lab report": 6, Other: 1 }, by_category_total: {}, files: 5, files_total: 9, by_type: { "image/jpeg": 5 }, by_type_total: {}, bytes: 400000, storage_bytes: 5242880, storage_limit: 1073741824,
       upload_completed: 0, upload_failed: 0, failure_reasons: {}, processing_completed: 0, processing_failed: 0, pdf_completed: 0, pdf_failed: 0, processing_reasons: {}, processing_ms_avg: null, events_since: null },
       total: 1, rows: [{ at: iso(now), account: "1a2b3c4d5e", file_type: "image/jpeg", bytes: 100000, upload_status: "stored", processing_status: null, error_code: null, ms: null }] },
-    flags: [{ key: "ai_assistant", enabled: false, value: {}, updated_at: null }, { key: "document_upload", enabled: true, value: {}, updated_at: null }, { key: "maintenance", enabled: false, value: {}, updated_at: null, on_now: false }],
+    flags: [{ key: "ai_assistant", enabled: false, value: {}, updated_at: null }, { key: "document_upload", enabled: true, value: {}, updated_at: null }, { key: "guardian", enabled: false, value: {}, updated_at: null }, { key: "maintenance", enabled: false, value: {}, updated_at: null, on_now: false }],
     set_flag: { ok: true }, set_maintenance: { ok: true, on_now: !!body.enabled },
     ai_infrastructure: AI_INFO,
+    guardian_summary: { available: true, by_state: { CANCELLED: 2 }, by_type: { sos: 2 }, people_enabled: 3 },
     ai_pilot: { pilots: [{ email: "pilot-test@example.test", added_at: "2026-11-23T10:00:00Z", note: "fictional pilot" }], max: 10 },
     ai_traces: { available: true, days: 7, total: 3, by_state: { COMPLETED: 2, FAILED: 1 }, by_outcome: { completed: 2, retrieval_failed: 1 }, by_route: { C: 2, A: 1 }, degraded: {},
       ms_p50: 1840, ms_p95: 4120, tokens_in: 3600, tokens_out: 320, cost_usd: 0.0104, rows_without_price: 0, cache_hits: 1, per_day: [],
@@ -314,7 +315,7 @@ check("documents: unmeasured outcomes are labelled, not shown as 0", (await pg.$
 
 // feature switches
 await go(pg, "#/flags", ".switch");
-check("feature switches: each card shows on/off effects, dependencies and the enforcing layer", (await pg.$$eval(".flag", (e) => e.length)) === 2 && /enforced by/i.test(await text(pg, "#view")) && /depends on/i.test(await text(pg, "#view")));
+check("feature switches: each card shows on/off effects, dependencies and the enforcing layer", (await pg.$$eval(".flag", (e) => e.length)) === 3 && /enforced by/i.test(await text(pg, "#view")) && /depends on/i.test(await text(pg, "#view")));
 await pg.click('[data-k="ai_assistant"]'); await pg.waitForSelector("dialog[open]");
 check("turning on the AI assistant shows the safeguards warning", (await text(pg, "dialog")).includes("legal review"));
 await pg.click("dialog #cc"); await pg.waitForTimeout(150);
@@ -355,6 +356,7 @@ check("the Re-check button runs the checks again", log.calls.filter((c) => c.act
 await go(pg, "#/ai", "table");
 { const t = await text(pg, "#view"); check("AI infrastructure: policy version, switches, routing, tools and states; configuration only", t.includes(AI_INFO.policy.version) && t.includes("Model routing") && t.includes("investigate_records") && t.includes("PERMISSION_CHECKED") && /Not configured/.test(t) && !/mg\/dL/.test(t));
   check("AI infrastructure: stored traces shown as totals, timings and cost (no person or content)", t.includes("95th percentile") && t.includes("4,120 ms") && t.includes("US$0.0104") && t.includes("claude-sonnet-5-5"));
+  check("AI infrastructure: the Founder sees Guardian alert counts only (no person, place or contact)", t.includes("Guardian") && t.includes("People with Guardian on") && !/lat|phone|@/.test(t.split("Guardian")[1].split("Model routing")[0]));
   check("AI infrastructure: the Founder sees pilot accounts, with add and remove", t.includes("Pilot accounts") && t.includes("pilot-test@example.test") && !!(await pg.$("#pilot-add")) && !!(await pg.$("[data-pilot-remove]"))); }
 
 // audit, settings
@@ -438,7 +440,7 @@ await ctx.close();
 // ── a Co-Founder with the operations-style preset cannot switch the AI assistant ──
 ({ ctx, pg, log } = await open("admin@example.test", { hash: "#/flags" }));
 await pg.waitForSelector(".switch[data-k]");
-check("11 · only the Founder can switch the AI assistant; a Co-Founder's AI switch is disabled", await pg.$eval('.switch[data-k="ai_assistant"]', (b) => b.disabled) && !(await pg.$eval('.switch[data-k="document_upload"]', (b) => b.disabled)));
+check("11 · only the Founder can switch the AI assistant or Guardian; a Co-Founder's switches for them are disabled", await pg.$eval('.switch[data-k="ai_assistant"]', (b) => b.disabled) && await pg.$eval('.switch[data-k="guardian"]', (b) => b.disabled) && !(await pg.$eval('.switch[data-k="document_upload"]', (b) => b.disabled)));
 check("10 · a Co-Founder sees no invite or manage controls on the leadership page", await (async () => { await go(pg, "#/team", "[data-member]"); return !(await pg.$("#tinv")) && !(await pg.$("[data-manage]")); })());
 await ctx.close();
 // ── invitation acceptance ──

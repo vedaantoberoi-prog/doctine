@@ -8,6 +8,7 @@
  *   POST { action, ... }        → settings | contact_save | contact_delete | report | respond | retry | resolve | share
  *   GET  ?ack=<link token>      → a trusted contact's page: "I'm on it" (no account needed; signed link, 24 h)
  *   POST ?ack=<link token>      → records the contact's acknowledgement
+ *   GET/POST ?consent=<token>   → a contact agrees (or declines) to be a trusted contact (signed link, 7 days)
  *
  * No messaging provider is connected: deliveries are recorded as `not_configured` and the app says so plainly and
  * shows the person how to reach their contacts themselves. Nothing here calls an AI model.
@@ -20,7 +21,7 @@ import { createEngine, GuardianError, MAX_CONTACTS } from "../lib/guardian/engin
 import { EventError } from "../lib/guardian/events.mjs";
 import { createSupabaseStore } from "../lib/guardian/store-supabase.mjs";
 import { deliveryAdapter } from "../lib/guardian/delivery.mjs";
-import { linkSecret, makeAckToken, readAckToken } from "../lib/guardian/links.mjs";
+import { linkSecret, makeAckToken, readAckToken, makeConsentToken, readConsentToken, phoneTag } from "../lib/guardian/links.mjs";
 import { OPEN_STATES } from "../lib/guardian/states.mjs";
 
 const MAX_BODY = 8_000;
@@ -95,6 +96,31 @@ async function contactPage(req, url, { engine, store, env }) {
 <form method="post"><button type="submit">I'm on it</button></form><p class="n">Pressing this tells them (and Doctine) that you've seen the alert. It doesn't call anyone.</p>`);
 }
 
+async function consentPage(req, url, { store, env }) {
+  const secret = linkSecret(env);
+  const t = readConsentToken(url.searchParams.get("consent"), { secret });
+  const gone = page("Link not valid", `<h1>This link isn't valid any more</h1><p>It may have expired (these links last 7 days) or the number it was sent for has changed. Ask the person to send a new one.</p>`, 410);
+  if (t.error) return gone;
+  const c = await store.getContactForConsent(t.contact_id);
+  if (!c || phoneTag(c.phone, secret) !== t.phone_tag) return gone;
+  const hi = c.name ? esc(c.name) + ", s" : "S";
+  if (req.method === "POST") {
+    const form = new URLSearchParams(await req.text().catch(() => ""));
+    const choice = form.get("choice") === "decline" ? "declined" : form.get("choice") === "agree" ? "verified" : null;
+    if (!choice) return page("Choose an answer", `<h1>Please choose Agree or Decline</h1>`, 400);
+    await store.setContactConsent(c.id, c.phone, choice);
+    return choice === "verified"
+      ? page("Thank you", `<h1>Thank you${c.name ? ", " + esc(c.name) : ""}</h1><p>You're now a trusted contact. If they raise an alert, you may get a message asking you to check on them. You can change your mind by opening this link again.</p>`)
+      : page("Declined", `<h1>You've declined</h1><p>You won't be sent alerts. If you change your mind, open this link again while it's still valid.</p>`);
+  }
+  const now = c.status === "verified" ? "<p><b>You have already agreed.</b></p>" : c.status === "declined" ? "<p><b>You declined earlier.</b></p>" : "";
+  return page("Trusted contact", `<h1>${hi}omeone has added you as a trusted contact on Doctine</h1>
+<p>If they raise an alert (for example, they press SOS), you may get a message with the time and, if they chose to share it, their location, and be asked to check on them.</p>${now}
+<form method="post"><button type="submit" name="choice" value="agree">I agree</button></form>
+<form method="post" style="margin-top:.75rem"><button type="submit" name="choice" value="decline" style="background:#fff;color:#14243A;border:1px solid #14243A">Decline</button></form>
+<p class="n">Doctine stores only your name and number, as the person entered them. You can't be sent alerts unless you agree.</p>`);
+}
+
 export default async function handler(req, context, { env = process.env, fetchImpl = fetch, store: injected, delivery, now = Date.now, log = (l) => console.log(JSON.stringify(l)) } = {}) {
   const t0 = Date.now(), url = new URL(req.url);
   const store = injected || createSupabaseStore({ env, fetchImpl });
@@ -107,6 +133,12 @@ export default async function handler(req, context, { env = process.env, fetchIm
     if (req.method !== "GET" && req.method !== "POST") return done("ack", json({ error: "method_not_allowed" }, 405));
     try { return done("ack", await contactPage(req, url, { engine, store, env })); }
     catch { return done("ack", page("Something went wrong", `<h1>Something went wrong</h1><p>Please try calling the person directly.</p>`, 500)); }
+  }
+
+  if (url.searchParams.has("consent")) {
+    if (req.method !== "GET" && req.method !== "POST") return done("consent", json({ error: "method_not_allowed" }, 405));
+    try { return done("consent", await consentPage(req, url, { store, env })); }
+    catch { return done("consent", page("Something went wrong", `<h1>Something went wrong</h1><p>Please try the link again later.</p>`, 500)); }
   }
 
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
@@ -158,6 +190,16 @@ export default async function handler(req, context, { env = process.env, fetchIm
       const r = await engine.report(uid, body.event);
       if (r.status_only) return done(action, json({ status_only: true }));
       return done(action, json({ incident: await view(r.incident), created: !!r.created, joined: !!r.joined, duplicate: !!r.duplicate }), { created: !!r.created });
+    }
+    if (action === "invite") {
+      const c = (await store.listContacts(uid)).find((x) => x.id === body.contact_id);
+      if (!c) return done(action, json({ error: "not_found" }, 404));
+      const secret = linkSecret(env);
+      if (!secret) return done(action, json({ error: "links_not_configured", message: "Confirmation links aren't set up on this site yet." }, 503));
+      const origin = env.PUBLIC_APP_URL ? String(env.PUBLIC_APP_URL).replace(/\/$/, "") : url.origin;
+      const link = `${origin}/api/guardian?consent=${makeConsentToken(c.id, c.phone, { secret, now: now() })}`;
+      const who = typeof body.name === "string" && body.name.trim() ? body.name.trim().slice(0, 60) : "I";
+      return done(action, json({ link, phone: c.phone, message: `${who === "I" ? "I'd" : who + " would"} like you to be a trusted contact on Doctine, so you can be told if ${who === "I" ? "I" : "they"} raise an alert. Please open this link to agree or decline: ${link}` }));
     }
     const id = String(body.incident_id || "");
     if (!UUID.test(id)) return done(action, json({ error: "invalid", message: "incident_id is required." }, 400));

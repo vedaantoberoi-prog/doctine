@@ -32,3 +32,35 @@ export function readAckToken(token, { secret, now = Date.now() }) {
   if (!(+exp > Math.floor(now / 1000))) return { error: "expired" };
   return { incident_id, contact_id };
 }
+
+/**
+ * Consent links: the person sends one to a contact (from their own phone) so the contact can agree, or decline, to
+ * be a trusted contact. Valid 7 days, signed separately from "I'm on it" links (a different HMAC context, so one kind
+ * can never be used as the other), and bound to the contact's phone number: changing the number voids the old link.
+ */
+export const CONSENT_TTL_S = 7 * 24 * 3600;
+const phoneKey = (phone) => String(phone || "").replace(/\D/g, "").slice(-12);
+const consentMac = (secret, payload) => createHmac("sha256", secret).update("guardian-consent:" + payload).digest("base64url");
+
+export function makeConsentToken(contactId, phone, { secret, now = Date.now() }) {
+  if (!secret || !UUID.test(contactId) || phoneKey(phone).length < 6) return null;
+  const ph = createHmac("sha256", secret).update("phone:" + phoneKey(phone)).digest("base64url").slice(0, 16);
+  const payload = ["c", contactId, ph, Math.floor(now / 1000) + CONSENT_TTL_S].join(".");
+  return b64(payload) + "." + consentMac(secret, payload);
+}
+
+/** → { contact_id, phone_tag } or { error }. The caller checks phone_tag against the contact's current number. */
+export function readConsentToken(token, { secret, now = Date.now() }) {
+  if (!secret) return { error: "not_configured" };
+  const [p, mac] = String(token || "").split(".");
+  if (!p || !mac || p.length > 200) return { error: "bad_link" };
+  let payload; try { payload = Buffer.from(p, "base64url").toString(); } catch { return { error: "bad_link" }; }
+  const want = Buffer.from(consentMac(secret, payload)), got = Buffer.from(mac);
+  if (want.length !== got.length || !timingSafeEqual(want, got)) return { error: "bad_link" };
+  const [kind, contact_id, phone_tag, exp] = payload.split(".");
+  if (kind !== "c" || !UUID.test(contact_id) || !phone_tag) return { error: "bad_link" };
+  if (!(+exp > Math.floor(now / 1000))) return { error: "expired" };
+  return { contact_id, phone_tag };
+}
+
+export const phoneTag = (phone, secret) => createHmac("sha256", secret).update("phone:" + phoneKey(phone)).digest("base64url").slice(0, 16);

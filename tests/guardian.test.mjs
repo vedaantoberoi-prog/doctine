@@ -10,7 +10,7 @@ import { normalizeEvent, openingFor, relatedTo, fuse, POLICY, EventError } from 
 import { createEngine, GuardianError } from "../netlify/lib/guardian/engine.mjs";
 import { createMemoryStore } from "../netlify/lib/guardian/store-memory.mjs";
 import { noProvider, deliveryAdapter } from "../netlify/lib/guardian/delivery.mjs";
-import { makeAckToken, readAckToken } from "../netlify/lib/guardian/links.mjs";
+import { makeAckToken, readAckToken, makeConsentToken, readConsentToken, phoneTag } from "../netlify/lib/guardian/links.mjs";
 
 let passed = 0, failed = 0;
 const results = [];
@@ -286,6 +286,17 @@ await test("contact links: signed, expire after 24 h, refuse tampering, and don'
 });
 
 
+await test("consent links: 7 days, bound to the phone number, and never usable as an 'I'm on it' link (or the reverse)", () => {
+  const secret = "z".repeat(40), con = "c0000000-0000-4000-8000-000000000002", inc = "c0000000-0000-4000-8000-000000000001";
+  const t = makeConsentToken(con, "+91 90000 00001", { secret, now: T0 });
+  const r = readConsentToken(t, { secret, now: T0 + 6 * 86400e3 });
+  assert.equal(r.contact_id, con); assert.equal(r.phone_tag, phoneTag("+91 90000 00001", secret)); assert.notEqual(r.phone_tag, phoneTag("+91 90000 00009", secret));
+  assert.equal(readConsentToken(t, { secret, now: T0 + 8 * 86400e3 }).error, "expired");
+  assert.equal(readAckToken(t, { secret, now: T0 }).error, "bad_link");
+  assert.equal(readConsentToken(makeAckToken(inc, con, { secret, now: T0 }), { secret, now: T0 }).error, "bad_link");
+  assert.equal(makeConsentToken(con, "+91 90000 00001", { secret: "", now: T0 }), null);
+});
+
 console.log("/api/guardian");
 const { default: guardianFn, _resetGuardianCache } = await import("../netlify/functions/guardian.mjs");
 const { _resetSettingsCache } = await import("../netlify/lib/settings.mjs");
@@ -309,13 +320,16 @@ async function apiSetup(extraEnv = {}) {
   };
   const call = async (method, body, { token = "tok-a", query = "", form = false } = {}) => {
     const headers = { "content-type": form ? "application/x-www-form-urlencoded" : "application/json" }; if (token) headers.authorization = "Bearer " + token;
-    const req = new Request("https://app.doctine.test/api/guardian" + query, { method, headers, body: method === "POST" ? (form ? "" : JSON.stringify(body || {})) : undefined });
+    const req = new Request("https://app.doctine.test/api/guardian" + query, { method, headers, body: method === "POST" ? (form ? (typeof form === "string" ? form : "") : JSON.stringify(body || {})) : undefined });
     const res = await guardianFn(req, {}, { env: { ...ENV, ...extraEnv }, fetchImpl, store, now, log: (l) => lines.push(JSON.stringify(l)) });
     const text = await res.text(); let j = null; try { j = JSON.parse(text); } catch {}
     return { status: res.status, json: j, text };
   };
+  lastStore = store;
   return { call, store, now, lines };
 }
+let lastStore = null;
+const apiStore = async () => lastStore;
 await test("no sign-in, no Guardian", async () => {
   const { call } = await apiSetup();
   assert.equal((await call("GET", null, { token: "" })).status, 401);
@@ -392,6 +406,36 @@ await test("a contact's link: page with 'I'm on it'; pressing it acknowledges; t
   assert.equal((await call("GET", null, { token: "", query: q.slice(0, -3) + "abc" })).status, 410);
   await call("POST", { action: "resolve", incident_id: r.json.incident.id });
   assert.match((await call("GET", null, { token: "", query: q })).text, /This alert is closed/);
+});
+await test("asking a contact to confirm: invite link, the contact agrees on the page, and only then shows as agreed", async () => {
+  const { call } = await apiSetup({ GUARDIAN_LINK_SECRET: "s".repeat(48) });
+  const c = (await call("POST", { action: "contact_save", contact: { name: "Fictional Sister", phone: "+91 90000 00001" } })).json.contact;
+  const inv = await call("POST", { action: "invite", contact_id: c.id, name: "Asha" });
+  assert.equal(inv.status, 200); assert.match(inv.json.message, /^Asha would like you to be a trusted contact on Doctine/); assert.match(inv.json.link, /\/api\/guardian\?consent=/);
+  const q = "?consent=" + inv.json.link.split("consent=")[1];
+  const pg = await call("GET", null, { token: "", query: q });
+  assert.equal(pg.status, 200); assert.match(pg.text, /Fictional Sister, someone has added you as a trusted contact/); assert.match(pg.text, /I agree/); assert.doesNotMatch(pg.text, /Asha|90000/);
+  const req = new Request("https://app.doctine.test/api/guardian" + q, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "choice=agree" });
+  _resetGuardianCache();
+  const res = await guardianFn(req, {}, { env: { ...ENV, GUARDIAN_LINK_SECRET: "s".repeat(48) }, fetchImpl: async () => new Response("{}", { status: 401 }), store: (await apiStore()), log: () => {} });
+  assert.equal(res.status, 200); assert.match(await res.text(), /You're now a trusted contact/);
+  assert.equal((await call("GET")).json.contacts[0].status, "verified");
+  await call("POST", { action: "contact_save", contact: { id: c.id, name: "Fictional Sister", phone: "+91 90000 00009" } });
+  assert.equal((await call("GET")).json.contacts[0].status, "unverified");
+  assert.equal((await call("GET", null, { token: "", query: q })).status, 410);                   // the old link is void after the number changed
+});
+await test("a contact can decline; without a link secret, invites are refused plainly", async () => {
+  const { call } = await apiSetup();
+  const c = (await call("POST", { action: "contact_save", contact: { name: "Fictional Friend", phone: "+91 90000 00002" } })).json.contact;
+  const r = await call("POST", { action: "invite", contact_id: c.id });
+  assert.equal(r.status, 503); assert.equal(r.json.error, "links_not_configured");
+  const s2 = await apiSetup({ GUARDIAN_LINK_SECRET: "s".repeat(48) });
+  const c2 = (await s2.call("POST", { action: "contact_save", contact: { name: "Fictional Friend", phone: "+91 90000 00002" } })).json.contact;
+  const inv = await s2.call("POST", { action: "invite", contact_id: c2.id });
+  const q = "?consent=" + inv.json.link.split("consent=")[1];
+  const d = await s2.call("POST", null, { token: "", query: q, form: "choice=decline" });
+  assert.match(d.text, /You've declined/); assert.equal((await s2.call("GET")).json.contacts[0].status, "declined");
+  assert.equal((await s2.call("POST", { action: "invite", contact_id: c2.id }, { token: "tok-b" })).status, 404);   // another person can't invite my contact
 });
 await test("log lines carry actions and timings only: no names, numbers, places or messages", async () => {
   const { call, lines } = await apiSetup();

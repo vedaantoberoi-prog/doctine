@@ -8,7 +8,9 @@ What works today in the app (web and the Android app, which runs the same web co
 cancel, "Are you OK?" check-ins with a countdown on any screen, up to 5 trusted contacts, an honest status panel, one-tap
 "Call 112", calling or messaging a contact yourself (recorded as *opened by you*, never as *delivered*), contact
 "I'm on it" links (when `GUARDIAN_LINK_SECRET` is set), incident history, test alerts that contact no one, and an
-offline queue that sends a saved SOS once when the network returns.
+offline queue that sends a saved SOS once when the network returns, and "Ask to confirm": the person sends each
+contact a 7-day link from their own phone, and the contact agrees or declines on a Doctine page (the only way a contact
+becomes "agreed"; a changed phone number voids the agreement and the old link).
 
 Nothing is detected automatically yet. Crash, fall, wearable and background monitoring need native app work that
 doesn't exist (see section 3).
@@ -39,7 +41,8 @@ doesn't exist (see section 3).
 | Storage | `netlify/lib/guardian/store-supabase.mjs`, `store-memory.mjs` (tests); migration `supabase/migrations/20261125000000_guardian.sql`, rollback `supabase/rollback/20261125000000_guardian_down.sql` |
 | API | `netlify/functions/guardian.mjs` → `/api/guardian` (routed on Cloudflare too; CORS for the apps) |
 | App | `public/index.html`: Guardian screen, banner check-in, offline queue |
-| Tests | `tests/guardian.test.mjs` (47), `tests/guardian.test.sql` (40), `tests/browser/guardian.test.mjs` (27) |
+| Tests | `tests/guardian.test.mjs` (50), `tests/guardian.test.sql` (48), `tests/browser/guardian.test.mjs` (31) |
+| Admin console | Guardian switch (Founder only) with its effects; AI page card with 30-day counts only (`guardian_summary`) |
 
 ### Incident states
 
@@ -82,9 +85,10 @@ Unverified contacts are never messaged automatically. Test incidents never messa
 ### API (`/api/guardian`, signed-in person; id from the token, never from the body)
 
 `GET` status (applies due check-in deadlines) · `POST {action}`: `settings`, `contact_save` (status can't be set),
-`contact_delete`, `report` (one normalized event; idempotent on `event_id`), `respond` (`ok` | `help` | `timeout`,
+`contact_delete`, `invite` (a contact's consent link and message), `report` (one normalized event; idempotent on `event_id`), `respond` (`ok` | `help` | `timeout`,
 the last refused before the server's deadline), `retry`, `resolve`, `share` (records `user_initiated`, returns the
-message text and, with a secret, the contact's link) · `GET/POST ?ack=<token>`: the contact's page.
+message text and, with a secret, the contact's link) · `GET/POST ?ack=<token>`: the contact's "I'm on it" page ·
+`GET/POST ?consent=<token>`: the contact's agree/decline page (shows only the contact's own name).
 
 ### Data and privacy
 
@@ -116,8 +120,8 @@ test checks no name, number, place or message reaches them). The admin summary i
 
 ## 4. Before automatic escalation is switched on for real people
 
-1. A messaging provider under contract (DLT-registered SMS templates, WhatsApp Business), a `live` adapter, delivery
-   receipts mapped to `delivered`/`failed`, and a contact verification flow (one-time code) so contacts agree first.
+1. A messaging provider under contract (DLT-registered SMS templates, WhatsApp Business), a `live` adapter and delivery
+   receipts mapped to `delivered`/`failed`. Contact consent already exists (links the person sends themselves).
 2. `GUARDIAN_LINK_SECRET` set; a scheduled job that runs `tick` for open incidents (today deadlines are applied when
    the person's app or any request touches Guardian, so a phone that dies mid-check-in isn't followed up), and runs
    `guardian_purge`.
@@ -129,5 +133,5 @@ test checks no name, number, place or message reaches them). The admin summary i
 ## 5. Not done in this change
 
 Native code (Android Guardian service, iOS/watchOS apps, App Intents), device registration and per-device capability
-reporting, any detector, wearable ingestion, the emergency medical passport, an admin console card, Hindi text, the
+reporting, any detector, wearable ingestion, the emergency medical passport, Hindi text, the
 scheduled `tick`/`purge` job, and any external integration.

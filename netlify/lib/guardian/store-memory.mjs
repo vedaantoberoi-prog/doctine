@@ -76,6 +76,12 @@ export function createMemoryStore({ now = Date.now } = {}) {
       if (!mine.length) i.deliveries.push({ id: randomUUID(), contact_id: contactId, channel: "manual_share", wave: 0, kind: "alert", status: "acknowledged", attempts: 0, created_at: iso(), updated_at: iso() });
       for (const d of mine) Object.assign(d, { status: "acknowledged", updated_at: iso() });
     },
+    async getContactForConsent(contactId) { const c = contacts.get(contactId); return c ? { id: c.id, name: c.name, phone: c.phone, status: c.status } : null; },
+    async setContactConsent(contactId, phone, status) {
+      const c = contacts.get(contactId);
+      if (!c || c.phone !== phone || !["verified", "declined"].includes(status)) throw Object.assign(new Error("no such contact"), { code: "not_found" });
+      Object.assign(c, { status, verified_at: status === "verified" ? iso() : null, updated_at: iso() }); return { id: c.id, status };
+    },
     async listTransitions(uid, id) { const i = own(uid, id); return i ? i.transitions.map((t) => ({ ...t })) : []; },
   };
 }

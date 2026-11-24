@@ -67,6 +67,16 @@ select pg_temp.expect((select lat is null from private.guardian_incidents where 
 update private.guardian_incidents set closed_at = now() - interval '13 months' where id = :'inc';
 select pg_temp.expect((public.guardian_purge()->>'incidents_deleted')::int = 1, 'closed incidents are deleted after 12 months');
 
+-- consent: a contact agrees only while the number is unchanged; declining is recorded
+create temp table t_k as select (public.guardian_contact_save(:B, '{"name":"Fictional Cousin","phone":"+91 90000 00077"}')->>'id')::uuid as id;
+select pg_temp.expect((public.guardian_contact_for_consent((select id from t_k))->>'status') = 'unverified', 'a new contact is unverified');
+select pg_temp.raises(format($q$select public.guardian_contact_set_consent(%L, '+91 90000 00078', 'verified')$q$, (select id from t_k)), 'P0002', 'consent for a different number is refused');
+select pg_temp.raises(format($q$select public.guardian_contact_set_consent(%L, '+91 90000 00077', 'admin')$q$, (select id from t_k)), '22023', 'only agree or decline');
+select pg_temp.expect((public.guardian_contact_set_consent((select id from t_k), '+91 90000 00077', 'verified')->>'status') = 'verified', 'the contact agrees');
+select pg_temp.expect((select verified_at is not null from private.guardian_contacts where id = (select id from t_k)), 'when they agreed is recorded');
+select pg_temp.expect((public.guardian_contact_set_consent((select id from t_k), '+91 90000 00077', 'declined')->>'status') = 'declined', 'they can change their mind and decline');
+select pg_temp.expect(public.guardian_contact_for_consent((select id from t_k))::text !~ 'user_id', 'the consent lookup reveals nothing about the person');
+
 -- browsers can't reach any of it
 set role authenticated;
 select set_config('request.jwt.claims', '{"sub":"e0000000-0000-0000-0000-0000000000a1","role":"authenticated"}', false);
@@ -74,6 +84,7 @@ select pg_temp.raises('select count(*) from private.guardian_incidents', '42501'
 select pg_temp.raises('select count(*) from private.guardian_contacts', '42501', 'a signed-in person cannot read the contacts table directly');
 select pg_temp.raises($q$select public.guardian_settings_get('e0000000-0000-0000-0000-0000000000a1')$q$, '42501', 'a signed-in person cannot call the server functions, even for themselves');
 select pg_temp.raises($q$select public.guardian_incident_insert('e0000000-0000-0000-0000-0000000000a1', '{}', 'USER_CONFIRMED', '{}')$q$, '42501', 'a signed-in person cannot open incidents directly');
+select pg_temp.raises($q$select public.guardian_contact_set_consent('e0000000-0000-0000-0000-0000000000a1', '+91', 'verified')$q$, '42501', 'a signed-in person cannot mark a contact as agreed');
 select set_config('request.jwt.claims', '', false);
 reset role;
 

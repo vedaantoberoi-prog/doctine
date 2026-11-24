@@ -20,14 +20,14 @@ async function device(features, { width = 390 } = {}) {
   await ctx.addInitScript({ content: fakeSrc });
   const pg = await ctx.newPage(); pg.on("pageerror", (e) => errs.push(e.message));
   const st = { store: createMemoryStore(), skew: 0, offline: false, calls: [] };
-  const env = { SUPABASE_URL: "https://fictional.supabase.test", SUPABASE_ANON_KEY: "anon" };
+  const env = { SUPABASE_URL: "https://fictional.supabase.test", SUPABASE_ANON_KEY: "anon", GUARDIAN_LINK_SECRET: "fictional-test-secret-".padEnd(48, "x") };
   const fetchImpl = async (u, init = {}) => String(u).endsWith("/auth/v1/user") && /^Bearer .+/.test(init.headers.authorization || "") ? new Response(JSON.stringify({ id: UID })) : new Response("{}", { status: 401 });
-  await pg.route("**/*", async (r) => { const u = r.request().url();
+  await ctx.route("**/*", async (r) => { const u = r.request().url();
     if (u.endsWith("/api/config")) return r.fulfill({ contentType: "application/json", body: JSON.stringify({ supabaseUrl: "https://x.supabase.co", supabaseAnonKey: "anon", accounts: "supabase", aiAvailable: true, features }) });
     if (u.includes("/api/guardian")) {
       if (st.offline) return r.abort("internetdisconnected");
       const rq = r.request(), body = rq.postData();
-      st.calls.push(body ? JSON.parse(body).action : "status");
+      st.calls.push(body ? (() => { try { return JSON.parse(body).action; } catch { return "form"; } })() : "status");
       const req = new Request(u, { method: rq.method(), headers: rq.headers(), body: rq.method() === "POST" ? body : undefined });
       const res = await guardianFn(req, {}, { env, fetchImpl, store: st.store, now: () => Date.now() + st.skew, log: () => {} });
       return r.fulfill({ status: res.status, contentType: res.headers.get("content-type") || "application/json", body: await res.text() });
@@ -63,7 +63,20 @@ const W = (pg, ms) => pg.waitForTimeout(ms);
   await pg.click("#gadd"); await pg.fill("#gcf input[name=name]", "Fictional Sister"); await pg.fill("#gcf input[name=phone]", "+91 90000 00001"); await pg.fill("#gcf input[name=relationship]", "Sister");
   await pg.click("#gcf button[type=submit]"); await W(pg, 900);
   t = await text(pg);
-  check("a trusted contact is added and shown as not verified", t.includes("Fictional Sister") && t.includes("Not verified") && (await st.store.listContacts(UID)).length === 1);
+  check("a trusted contact is added and shown as not verified", t.includes("Fictional Sister") && t.includes("Not confirmed yet") && (await st.store.listContacts(UID)).length === 1);
+
+  await pg.click("[data-ginvite]"); await W(pg, 1200);
+  const inv = await pg.$eval("#ginvmsg", (e) => e.value).catch(() => "");
+  const link = (inv.match(/https?:\/\/\S+/) || [""])[0];
+  check("'Ask to confirm' prepares a message with the contact's own link", /^Asha would like you to be a trusted contact on Doctine/.test(inv) && link.includes("/api/guardian?consent="), inv.slice(0, 60));
+  const pc = await ctx.newPage(); await pc.goto(link); await W(pc, 300);
+  const ct = await pc.evaluate(() => document.body.innerText);
+  check("the contact's page explains what agreeing means and shows nothing about the person", ct.includes("Fictional Sister, someone has added you as a trusted contact") && ct.includes("I agree") && !ct.includes("Asha") && !ct.includes("90000"));
+  await pc.click("button[value=agree]"); await W(pc, 300);
+  check("agreeing thanks them", (await pc.evaluate(() => document.body.innerText)).includes("You're now a trusted contact"));
+  await pc.close();
+  await pg.evaluate(() => gLoad(true)); await W(pg, 800);
+  check("…and the person now sees the contact as agreed, with no 'Ask to confirm' button", (await text(pg)).includes("Agreed to be your contact") && !(await pg.$("[data-ginvite]")));
 
   await pg.click("#gsos"); await W(pg, 300);
   check("SOS gives a 5-second countdown with Cancel", (await text(pg)).includes("Raising an alert in") && !!(await pg.$("#gsoscancel")));

@@ -41,5 +41,7 @@ export function createSupabaseStore({ env = process.env, fetchImpl = fetch, time
     markAcknowledged: (uid, id, contactId) => rpc("guardian_mark_ack", { p_user: uid, p_id: id, p_contact: contactId }),
     listTransitions: async (uid, id) => (await rpc("guardian_transitions", { p_user: uid, p_id: id })) || [],
     purge: () => rpc("guardian_purge", {}),
+    getContactForConsent: (contactId) => rpc("guardian_contact_for_consent", { p_contact: contactId }),
+    setContactConsent: (contactId, phone, status) => rpc("guardian_contact_set_consent", { p_contact: contactId, p_phone: phone, p_status: status }),
   };
 }

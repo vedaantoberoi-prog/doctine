@@ -58,6 +58,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (url.endsWith("/rpc/monitor_mark_notified")) return new Response("null");
   if (url.endsWith("/rpc/report_error")) return new Response("true");
   if (url.endsWith("/rpc/admin_ai_pilot")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ pilots: [], max: 10, got: { action: body.p_action, email: body.p_email, reason: body.p_reason } })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
+  if (url.endsWith("/rpc/admin_guardian_summary")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ by_state: { CANCELLED: 1 }, by_type: { sos: 1 }, people_enabled: 2 })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/rpc/admin_ai_traces")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ days: body.p_days, total: 0 })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/rpc/admin_incidents")) return ROLES[body.p_actor] === "founder" ? new Response("[]") : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/version.json") || url.endsWith("/auth/v1/health") || url.includes("/storage/v1/bucket/") || url.endsWith("/rpc/public_settings")) return new Response("{}");
@@ -229,6 +230,9 @@ await test("AI infrastructure page: configuration only, behind health.view; no k
   const ls = await read(await post(admin, tok("owner"), { action: "ai_pilot", op: "drop table" }, "10.3.0.6"));
   assert.equal(ls.j.data.got.action, "list", "unknown operations become a harmless list");
   assert.equal((await read(await post(admin, tok("analyst"), { action: "ai_pilot", op: "add", email: "x@example.test", reason: "x" }, "10.3.0.7"))).status, 403);
+  const gs = await read(await post(admin, tok("owner"), { action: "guardian_summary" }, "10.3.0.8"));
+  assert.equal(gs.status, 200); assert.equal(gs.j.data.available, true); assert.equal(gs.j.data.people_enabled, 2);
+  assert.equal((await read(await post(admin, tok("analyst"), { action: "guardian_summary" }, "10.3.0.9"))).status, 403);
 });
 
 console.log(failed ? `${passed} admin server tests passed, ${failed} FAILED` : `${passed} admin server tests passed`);

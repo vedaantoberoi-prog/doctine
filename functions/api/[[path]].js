@@ -1,6 +1,6 @@
 /**
  * Doctine · runs the app's server functions on Cloudflare Pages (the same code Netlify runs, from netlify/functions).
- * /api/config, /api/account, /api/chat, /api/scan, /api/admin, /api/events, /api/monitor, /api/errors, /api/gateway, /api/assist and /api/guardian are routed to their handlers; Cloudflare's settings are copied into
+ * /api/config, /api/account, /api/chat, /api/scan, /api/admin, /api/events, /api/monitor, /api/errors, /api/gateway, /api/assist, /api/guardian and /api/doctor are routed to their handlers; Cloudflare's settings are copied into
  * process.env, where the handlers read them; the visitor's IP comes from Cloudflare's cf-connecting-ip header.
  * Needs the nodejs_compat compatibility flag (wrangler.toml), for process and node:crypto.
  */
@@ -15,10 +15,11 @@ import errors from "../../netlify/functions/errors.mjs";
 import gateway from "../../netlify/functions/gateway.mjs";
 import assist from "../../netlify/functions/assist.mjs";
 import guardian from "../../netlify/functions/guardian.mjs";
+import doctor from "../../netlify/functions/doctor.mjs";
 import { reportServerError } from "../../netlify/lib/monitor.mjs";
 import { corsFor } from "../../netlify/lib/cors.mjs";
 
-const ROUTES = { config, account, chat, scan, admin, events, monitor, errors, gateway, assist, guardian };
+const ROUTES = { config, account, chat, scan, admin, events, monitor, errors, gateway, assist, guardian, doctor };
 // Production answers /api only at its real addresses. Cloudflare keeps every past deployment reachable at
 // <id>.doctine-app-direct.pages.dev with the production settings, so without this an old copy of the server code
 // (missing later fixes) could still be used against the live database. APP_HOSTS (comma-separated) overrides the list.

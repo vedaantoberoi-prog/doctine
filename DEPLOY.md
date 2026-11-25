@@ -93,6 +93,12 @@ Netlify → **Site configuration → Environment variables**. Set the scope to i
 | `ANTHROPIC_BASE_URL` (tests only) | browser tests | Points the functions at the local AI stand-in. Ignored when `DOCTINE_ENV=production`. Never set it on a deployed site. |
 | `KNOWLEDGE_URL`, `KNOWLEDGE_TOKEN`, `KNOWLEDGE_ALLOWED_DOMAINS`, `KNOWLEDGE_TIMEOUT_MS` (optional) | the retrieval service | Its address, an optional token, the publisher domains you allow (default: who.int, icmr.gov.in, mohfw.gov.in, nhs.uk, nih.gov, cdc.gov), and a timeout in ms (default 4000). |
 
+**Doctor network, phase 1** (migration `20261126000000_doctor_onboarding`): adds the private storage bucket
+`practitioner-credentials` (created by the migration; no browser policies), the `doctor_onboarding` switch (off,
+Founder only) and the `doctors.view` / `doctors.verify` permissions. No new environment variable. The doctor page is
+`/doctor/`; the queue is Admin → Doctor verification. Before switching it on: a privacy notice for doctors' documents
+reviewed by counsel. See docs/DOCTOR_NETWORK.md.
+
 `AI_API_KEY` is accepted as another name for `ANTHROPIC_API_KEY`.
 
 Without the three Supabase variables, the app keeps its browser-only demo accounts, and rate limits are per function instance only (not real protection; see section 5).

@@ -21,6 +21,7 @@ import { buildReport, toCsv, toPdf, REPORTS } from "../lib/reports.mjs";
 import { infrastructure } from "../lib/orchestrator/info.mjs";
 import { linkSecret } from "../lib/guardian/links.mjs";
 import { deliveryAdapter } from "../lib/guardian/delivery.mjs";
+import { STATUSES as DOCTOR_STATUSES } from "../lib/doctors/verification.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY = 86400000;
@@ -212,6 +213,26 @@ const ACTIONS = {
   guardian_summary: async (uid) => { const d = deliveryAdapter(process.env), ready = { contact_links: !!linkSecret(process.env), delivery: { provider: d.name, live: !!d.live } };
     try { return { available: true, ...(await rpc("admin_guardian_summary", { p_actor: uid })), ...ready }; }
     catch (e) { if (e.status === 503) return { available: false }; throw e; } },
+  // doctor network (phase 1): the verification queue. Credential files open through a 60-second link; every opening is logged.
+  doctors: (uid, b) => rpc("admin_practitioners", { p_actor: uid, p_status: DOCTOR_STATUSES.includes(b.status) ? b.status : null }),
+  doctor: (uid, b, rid) => rpc("admin_practitioner", { p_actor: uid, p_user: uuid(b.id), p_request: rid }),
+  doctor_document: async (uid, b, rid) => {
+    const d = await rpc("admin_practitioner_document", { p_actor: uid, p_user: uuid(b.id), p_doc: uuid(b.doc), p_request: rid });
+    const { base, service } = env();
+    const r = await call(`${base}/storage/v1/object/sign/practitioner-credentials/${String(d.path).split("/").map(encodeURIComponent).join("/")}`, { method: "POST", headers: serviceHeaders(service, { "content-type": "application/json" }), body: JSON.stringify({ expiresIn: 60 }) });
+    const j = await r.json().catch(() => ({}));
+    const signed = j.signedURL || j.signedUrl;
+    if (!r.ok || typeof signed !== "string") throw httpError(502, "storage_error");
+    return { url: base + "/storage/v1" + (signed.startsWith("/") ? signed : "/" + signed), mime: d.mime, file_name: d.file_name, expires_in: 60 };
+  },
+  doctor_set_status: (uid, b, rid) => {
+    if (!DOCTOR_STATUSES.includes(b.to)) throw httpError(400, "invalid");
+    const e = b.evidence && typeof b.evidence === "object" && !Array.isArray(b.evidence) ? b.evidence : null;
+    const m = e && e.matched && typeof e.matched === "object" ? e.matched : {};
+    const evidence = e ? { register: s(e.register, 20), register_name: s(e.register_name, 120), checked_on: s(e.checked_on, 10), register_reference: s(e.register_reference, 200), notes: s(e.notes, 1000),
+      matched: Object.fromEntries(["name", "registration_number", "council", "active", "photo_id"].map((k) => [k, m[k] === true])) } : null;
+    return rpc("admin_practitioner_transition", { p_actor: uid, p_user: uuid(b.id), p_to: b.to, p_reason: s(b.reason, 1000) || null, p_evidence: evidence, p_request: rid });
+  },
   // pilot accounts for the records assistant (Founder only; add/remove audited with a reason)
   ai_pilot: async (uid, b, rid) => { const act = ["list", "add", "remove"].includes(b.op) ? b.op : "list";
     return rpc("admin_ai_pilot", { p_actor: uid, p_action: act, p_email: act === "list" ? null : s(b.email, 200), p_reason: act === "list" ? null : s(b.reason, 500), p_request: rid }); },

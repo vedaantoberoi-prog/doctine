@@ -44,7 +44,7 @@ const ICON = {
   support: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM8 9h8M8 13h5", feedback: "M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z",
   work: "M9 11l3 3 8-8M4 6h4M4 12h4M4 18h16", content: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z", lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
   data: "M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3",
-  x: "M18 6 6 18M6 6l12 12", columns: "M12 3v18M3 3h18v18H3z", download: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3",
+  doctors: "M6 3v5a5 5 0 0 0 10 0V3M11 13v3a5 5 0 0 0 10 0v-2M21 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z", x: "M18 6 6 18M6 6l12 12", columns: "M12 3v18M3 3h18v18H3z", download: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3",
 };
 const ic = (k, cls = "i") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[k] || ICON.info}"/></svg>`;
 
@@ -228,6 +228,7 @@ const NAV = [
   ["Overview", [["dashboard", "Dashboard", "dashboard.view"], ["analytics", "Analytics", "analytics.view"], ["profile", "Health profile", "analytics.view"], ["reports", "Reports", "reports.export"]]],
   ["Operations", [["users", "Users", "users.view"], ["documents", "Documents", "documents.view"], ["data", "Database", "data.view"], ["health", "Platform health", "health.view"], ["errors", "Errors", "health.view"], ["incidents", "Incidents", "health.view"], ["alerts", "Alerts", "health.view"], ["ai", "AI infrastructure", "health.view"]]],
   ["Product", [["support", "Support", "support.view"], ["feedback", "Feedback", "feedback.view"], ["work", "Bugs and tasks", "bugs.view|feedback.view"], ["content", "Content and releases", "content.view|releases.view"]]],
+  ["Doctor network", [["doctors", "Doctor verification", "doctors.view"]]],
   ["Control", [["flags", "Feature switches", "flags.view"], ["maintenance", "Maintenance", "flags.view|maintenance.manage"], ["announcements", "Announcements", "content.view"]]],
   ["Leadership", [["team", "Leadership", "team.view"], ["audit", "Audit log", "audit.view"], ["security", "Security events", "security.view"]]],
   ["Settings", [["definitions", "Metric definitions", "dashboard.view"], ["settings", "Admin settings", "dashboard.view"]]],
@@ -1066,8 +1067,105 @@ VIEWS.alerts = async (v, seq) => {
   $$("[data-a]", v).forEach((b) => b.onclick = async () => { try { await api("alert_update", { id: b.dataset.id, status: b.dataset.a }); toast(b.dataset.a === "muted" ? "Muted for 24 hours." : "Updated."); VIEWS.alerts(v, A.seq); refreshBadges(); } catch (e) { toast(ERR[e.code] || "Not updated.", true); } });
 };
 
+/* Doctor network (phase 1): verification queue. Credential files open through 60-second links; every opening is logged. */
+const DOC_ST = { NOT_STARTED: ["Not submitted", "none"], DOCUMENTS_SUBMITTED: ["Submitted", "info"], UNDER_REVIEW: ["Under review", "warn"], VERIFIED: ["Verified", "good"],
+  REJECTED: ["Not verified", "bad"], SUSPENDED: ["Suspended", "bad"], EXPIRED_REQUIRES_REVERIFICATION: ["Needs re-verification", "warn"] };
+// Cosmetic copy of the allowed staff moves; the database enforces the real list (netlify/lib/doctors/verification.mjs).
+const DOC_MOVES = { DOCUMENTS_SUBMITTED: [["UNDER_REVIEW", "Start review"], ["REJECTED", "Reject"]],
+  UNDER_REVIEW: [["VERIFIED", "Verify…"], ["REJECTED", "Reject"], ["DOCUMENTS_SUBMITTED", "Return to queue"]],
+  VERIFIED: [["SUSPENDED", "Suspend"], ["EXPIRED_REQUIRES_REVERIFICATION", "Require re-verification"]], SUSPENDED: [["VERIFIED", "Reinstate"], ["REJECTED", "Reject"]] };
+const DOC_KIND = { registration_certificate: "Registration certificate", degree_certificate: "Degree certificate", photo_id: "Photo ID", other: "Other" };
+const docSt = (k) => { const [t, c] = DOC_ST[k] || [k, "none"]; return `<span class="st ${c}">${esc(t)}</span>`; };
+const DQ = { status: "" };
+VIEWS.doctors = async (v, seq) => {
+  const d = await api("doctors", { status: DQ.status }); if (stale(seq)) return;
+  const c = d.counts || {};
+  v.innerHTML = `<div class="callout" style="margin-bottom:12px">${ic("info")}<span>Verify a doctor only after checking their registration yourself on the official register: the NMC's National Medical Register or their State Medical Council's register. “Verified” records that check and its evidence; it is not a rating, and nothing here shows a doctor to patients. You can't review your own application. Opening a credential file is recorded in the audit log.</span></div>
+  <div class="grid kpis">
+    ${kpi({ id: "d-sub", label: "Waiting for review", value: c.DOCUMENTS_SUBMITTED || 0 })}
+    ${kpi({ id: "d-rev", label: "Under review", value: c.UNDER_REVIEW || 0 })}
+    ${kpi({ id: "d-ver", label: "Verified", value: c.VERIFIED || 0, meta: `<span class="muted">${n(c.EXPIRED_REQUIRES_REVERIFICATION || 0)} need re-verification</span>` })}
+    ${kpi({ id: "d-rej", label: "Not verified or suspended", value: (c.REJECTED || 0) + (c.SUSPENDED || 0) })}
+  </div>
+  <div class="card" style="margin-top:12px"><div class="toolbar"><div class="seg" role="group" aria-label="Status">${[["", "All submitted"], ["DOCUMENTS_SUBMITTED", "Waiting"], ["UNDER_REVIEW", "Under review"], ["VERIFIED", "Verified"], ["REJECTED", "Not verified"], ["SUSPENDED", "Suspended"], ["EXPIRED_REQUIRES_REVERIFICATION", "Expired"], ["NOT_STARTED", "Drafts"]].map(([k, t]) => `<button data-ds="${k}" aria-pressed="${DQ.status === k}">${t}</button>`).join("")}</div></div>
+  ${d.items.length ? `<div class="tbl-wrap"><table><thead><tr><th>Doctor</th><th>Council</th><th>Specialties</th><th>Status</th><th class="num">Files</th><th>Submitted</th></tr></thead><tbody>${d.items.map((r) => `<tr class="click" data-doc="${esc(r.user_id)}" tabindex="0"><td><b>${esc(r.full_name || "(no name yet)")}</b><div class="muted">${esc(r.email || "")}</div></td><td>${esc(r.registration_council || "—")}</td><td>${esc((r.specialties || []).join(", ") || "—")}</td><td>${docSt(r.status)}${r.status === "VERIFIED" && r.expires_at ? `<div class="muted">until ${dt(r.expires_at, false)}</div>` : ""}</td><td class="num">${n(r.documents)}</td><td>${r.submitted_at ? ago(r.submitted_at) : "—"}</td></tr>`).join("")}</tbody></table></div>`
+    : `<div class="card-b">${none(DQ.status ? "No applications with this status." : "No doctor has submitted an application yet.", "No applications")}</div>`}</div>`;
+  const again = () => VIEWS.doctors(v, A.seq);
+  $$("[data-ds]", v).forEach((b) => b.onclick = () => { DQ.status = b.dataset.ds; again(); });
+  $$("tr[data-doc]", v).forEach((tr) => { tr.onclick = () => openDoctor(tr.dataset.doc, again); tr.onkeydown = (e) => { if (e.key === "Enter") openDoctor(tr.dataset.doc, again); }; });
+};
+async function openDoctor(id, after) {
+  const D = drawer("Doctor application");
+  let p; try { p = await api("doctor", { id }); } catch (e) { D.body.innerHTML = `<div class="callout bad">${errText(e)}</div>`; return; }
+  D.head.textContent = `${p.full_name || "(no name yet)"} · ${p.email || ""}`;
+  const docs = p.documents || [];
+  const moves = p.can_verify ? DOC_MOVES[p.status] || [] : [];
+  D.body.innerHTML = `<div class="row" style="margin-bottom:12px">${docSt(p.status)}${p.expires_at && p.status === "VERIFIED" ? `<span class="muted">verified until ${dt(p.expires_at, false)}</span>` : ""}<span class="mono muted">${esc(p.user_id)}</span></div>
+    ${p.status_reason ? `<div class="callout warn" style="margin-bottom:10px"><span><b>Reason shown to the doctor:</b> ${esc(p.status_reason)}</span></div>` : ""}
+    <h4>Registration (as entered by the doctor; check every line on the register)</h4><dl class="dl"><dt>Name</dt><dd>${esc(p.full_name || "—")}</dd><dt>Registration number</dt><dd class="mono">${esc(p.registration_number || "—")}</dd>
+      <dt>Council</dt><dd>${esc(p.registration_council || "—")}</dd><dt>Year of registration</dt><dd>${esc(p.registration_year || "—")}</dd></dl>
+    <h4>Qualifications</h4>${(p.qualifications || []).length ? `<ul class="timeline">${p.qualifications.map((q) => `<li><b>${esc(q.degree)}</b> · ${esc(q.institution)} · ${esc(q.year)}</li>`).join("")}</ul>` : `<p class="hint">None entered.</p>`}
+    <h4>Practice (self-reported, not verified)</h4><dl class="dl"><dt>Specialties</dt><dd>${esc((p.specialties || []).join(", ") || "—")}</dd><dt>Languages</dt><dd>${esc((p.languages || []).join(", ") || "—")}</dd>
+      <dt>Consultation modes</dt><dd>${esc((p.consultation_modes || []).join(", ") || "—")}</dd><dt>Years of experience</dt><dd>${p.experience_years == null ? "—" : n(p.experience_years)}</dd><dt>About</dt><dd>${esc(p.bio || "—")}</dd>
+      <dt>Declaration</dt><dd>${p.declaration_at ? "Confirmed " + dt(p.declaration_at) : "Not confirmed"}</dd></dl>
+    <h4>Credential files</h4>${docs.length ? `<div class="tbl-wrap"><table><thead><tr><th>Kind</th><th>File</th><th>Uploaded</th><th></th></tr></thead><tbody>${docs.map((x) => `<tr><td>${esc(DOC_KIND[x.kind] || x.kind)}${x.removed_at ? ` <span class="st none">removed by doctor</span>` : ""}</td><td>${esc(x.file_name)} <span class="muted">${bytes(x.size_bytes)} · ${esc((x.mime || "").split("/")[1] || "")}</span><div class="mono muted" title="SHA-256">${esc((x.sha256 || "").slice(0, 16))}…</div></td><td>${dt(x.uploaded_at)}</td><td><button class="btn sm" data-open="${esc(x.id)}">Open</button></td></tr>`).join("")}</tbody></table></div><p class="hint">Files open in a new tab through a link that works for 60 seconds. Don't download or forward them.</p>` : `<p class="hint">No files uploaded.</p>`}
+    <h4>Verification history</h4>${(p.history || []).length ? `<ul class="timeline">${p.history.map((h) => `<li>${docSt(h.from)} → ${docSt(h.to)} <span class="muted">by ${esc(h.by === "doctor" ? "the doctor" : h.by === "system" ? "Doctine (automatic)" : h.actor_email || "staff")}</span>${h.reason ? `<div>“${esc(h.reason)}”</div>` : ""}${h.evidence ? `<div class="muted">Evidence: ${esc(h.evidence.register_name)} (${esc(h.evidence.register === "nmr" ? "National Medical Register" : "State Medical Council")}) checked ${esc(h.evidence.checked_on)}${h.evidence.register_reference ? " · " + esc(h.evidence.register_reference) : ""}${h.evidence.notes ? " · " + esc(h.evidence.notes) : ""}</div>` : ""}<div class="muted">${dt(h.at)}</div></li>`).join("")}</ul>` : `<p class="hint">No changes yet.</p>`}
+    <h4>Actions</h4><div class="row">${moves.length ? moves.map(([to, label]) => `<button class="btn sm ${to === "VERIFIED" ? "primary" : to === "REJECTED" || to === "SUSPENDED" ? "danger" : ""}" data-to="${to}">${esc(label)}</button>`).join("") : `<span class="muted">${p.self ? "You can't review your own application." : !p.can_verify ? "Your permissions show applications but don't change them (needs doctors.verify)." : "No action is available in this status."}</span>`}</div>`;
+  $$("[data-open]", D.body).forEach((b) => b.onclick = async () => {
+    const w = window.open("about:blank", "_blank");
+    try { const r = await api("doctor_document", { id: p.user_id, doc: b.dataset.open }); if (w) { w.opener = null; w.location.href = r.url; } else toast("Allow pop-ups for this page to open files.", true); }
+    catch (e) { if (w) w.close(); toast(ERR[e.code] || "The file couldn't be opened.", true); }
+  });
+  $$("[data-to]", D.body).forEach((b) => b.onclick = async () => {
+    const to = b.dataset.to;
+    let payload;
+    if (to === "VERIFIED" && p.status === "UNDER_REVIEW") payload = await verifyBox(p);
+    else {
+      const txt = { UNDER_REVIEW: ["Start the review?", "Shows the doctor that a reviewer is checking their application."], REJECTED: ["Mark as not verified?", "The doctor sees your reason and can correct their details and submit again."],
+        DOCUMENTS_SUBMITTED: ["Return to the queue?", "Puts the application back in the waiting list (for example if someone else should review it). The doctor sees the reason."],
+        SUSPENDED: ["Suspend this doctor's verification?", "Use when something needs investigating (a complaint, a register change). The doctor sees the reason."],
+        EXPIRED_REQUIRES_REVERIFICATION: ["Require re-verification now?", "The doctor must submit again and be checked against the register again."], VERIFIED: ["Reinstate verification?", "Restores the earlier verification until its original expiry date. Check the register again first."] }[to];
+      const r = await confirmBox(txt[0], esc(txt[1]), { reason: true, danger: to === "REJECTED" || to === "SUSPENDED", button: b.textContent.replace("…", ""), reasonLabel: to === "UNDER_REVIEW" ? "Note (recorded in the audit log)" : "Reason (the doctor sees this; recorded in the audit log)", reasonHint: "At least 10 characters." });
+      if (r === null) return; payload = { reason: r };
+    }
+    if (!payload) return;
+    try { await api("doctor_set_status", { id: p.user_id, to, ...payload }); toast("Updated."); openDoctor(p.user_id, after); if (after) after(); }
+    catch (e) { toast(e.code === "invalid" ? "Not accepted: check the reason (10+ characters) and, for a verification, every evidence item." : e.code === "forbidden" ? "Your permissions don't allow this (or it's your own application)." : ERR[e.code] || "Not changed.", true); }
+  });
+}
+function verifyBox(p) {
+  return new Promise((res) => {
+    const d = document.createElement("dialog"); const today = new Date(Date.now() + IST).toISOString().slice(0, 10);
+    const isNmc = /National Medical Commission/.test(p.registration_council || "");
+    d.innerHTML = `<form method="dialog" style="max-width:560px"><h3>Verify ${esc(p.full_name || "this doctor")}</h3>
+      <p style="color:var(--ink-2);margin:0 0 8px">Record what you checked on the official register. Every item must be true; if anything doesn't match, reject with a reason instead.</p>
+      <label class="f">Register checked</label><div class="row"><label class="row" style="gap:6px"><input type="radio" name="reg" value="nmr" ${isNmc ? "checked" : ""}> NMC National Medical Register</label><label class="row" style="gap:6px"><input type="radio" name="reg" value="state_council" ${isNmc ? "" : "checked"}> State Medical Council register</label></div>
+      <label class="f" for="vrn">Register name</label><input id="vrn" maxlength="120" value="${esc(p.registration_council || "")}">
+      <label class="f" for="vdt">Date checked (IST)</label><input id="vdt" type="date" value="${today}" max="${today}">
+      <label class="f" for="vref">Register reference (record ID or page address, optional)</label><input id="vref" maxlength="200">
+      <fieldset style="border:0;padding:0;margin:10px 0 0"><legend class="f">On the register, I confirmed</legend>
+        ${[["name", `the name matches: ${esc(p.full_name || "—")}`], ["registration_number", `the registration number matches: ${esc(p.registration_number || "—")}`], ["council", `the council matches: ${esc(p.registration_council || "—")}`], ["active", "the registration is active (not suspended, removed or lapsed)"], ["photo_id", "the photo ID belongs to the same person (name, photo)"]].map(([k, t]) => `<label class="row" style="gap:8px;align-items:flex-start;margin:4px 0"><input type="checkbox" data-m="${k}"> <span>${t}</span></label>`).join("")}</fieldset>
+      <label class="f" for="vnotes">Notes (optional)</label><textarea id="vnotes" maxlength="1000" placeholder="Anything a later reviewer should know. No patient details."></textarea>
+      <p class="err" id="verr" role="alert"></p><p class="hint">Verification lasts 12 months. Acting as ${esc(A.me.email)} (${esc(A.me.title || A.me.role)}).</p>
+      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" type="button" id="vc">Cancel</button><button class="btn primary" id="vo">Verify</button></div></form>`;
+    document.body.appendChild(d); d.showModal();
+    const done = (val) => { d.close(); d.remove(); res(val); };
+    $("#vc", d).onclick = () => done(null);
+    d.addEventListener("cancel", (e) => { e.preventDefault(); done(null); });
+    $("form", d).onsubmit = (e) => {
+      e.preventDefault();
+      const matched = Object.fromEntries($$("[data-m]", d).map((x) => [x.dataset.m, x.checked]));
+      const ev = { register: ($("input[name=reg]:checked", d) || {}).value, register_name: $("#vrn", d).value.trim(), checked_on: $("#vdt", d).value, register_reference: $("#vref", d).value.trim(), notes: $("#vnotes", d).value.trim(), matched };
+      if (Object.values(matched).some((x) => !x)) { $("#verr", d).textContent = "Every item must be confirmed on the register. If one doesn't match, reject instead."; return; }
+      if (ev.register_name.length < 3 || !ev.checked_on) { $("#verr", d).textContent = "Give the register's name and the date you checked it."; return; }
+      done({ evidence: ev, reason: "Registration checked on " + ev.register_name + " on " + ev.checked_on });
+    };
+  });
+}
+
 /* Feature switches */
 const FLAG_INFO = {
+  doctor_onboarding: { label: "Doctor sign-up and verification", on: "Doctors can open app.doctine.com/doctor/, enter their registration details and upload their registration certificate, degree and photo ID for verification. Reviewers with the doctors.verify permission check them against the official register in Doctor verification.", off: "/api/doctor refuses every request and the doctor page says sign-up isn't open. Applications already made are kept.", deps: "Migration 20261126000000_doctor_onboarding, a privacy notice for doctors' identity documents reviewed by counsel, and a reviewer trained on the verification checklist. Nothing is shown to patients and there are no consultations in this phase.", layer: "Backend (server refuses)", sensitive: true },
   guardian: { label: "Guardian (safety alerts)", on: "People can switch Guardian on in the app: an SOS button, \"Are you OK?\" check-ins and trusted contacts. No messages are sent automatically until a messaging provider is connected; the app shows people how to call or message their contacts themselves.", off: "Guardian is hidden in the app and /api/guardian refuses requests. Existing alerts and contacts are kept.", deps: "Migration 20261125000000_guardian, GUARDIAN_LINK_SECRET for contact links, and a clinical and legal review of the wording.", layer: "Backend (server refuses) and the app menu", sensitive: true },
   ai_actions: { label: "Assistant can propose actions", on: "The records assistant may propose a reminder time for a medicine already listed. Nothing is saved until the person reviews it in the medicine editor and presses Save; the app does the saving.", off: "Requests like \"remind me…\" get a polite refusal.", deps: "The orchestrated assistant, a server ORCHESTRATOR_SECRET, and a doctor's review of the wording.", layer: "Backend (server refuses)", sensitive: true },
   ai_orchestrator: { label: "Orchestrated records assistant", on: "Signed-in people who consent and tick “Use my saved reports” get answers from /api/assist: their own records retrieved and checked by the server, facts shown with sources, and an AI explanation that is validated before it is shown.", off: "/api/assist refuses every request. The chat assistant is unchanged.", deps: "The AI assistant and gateway switches must also be on, plus a doctor's review of its answers.", layer: "Backend (server refuses)", sensitive: true },
@@ -1092,8 +1190,8 @@ VIEWS.flags = async (v, seq) => {
   v.innerHTML = `<p class="lead">Each switch changes what Doctine actually does, at the layer shown. Every change needs a reason, is recorded in the audit log, and is confirmed against the live app.</p>
   <div class="grid cols-2">${flags.map((f) => { const i = FLAG_INFO[f.key] || { label: f.key, on: "", off: "", deps: "", layer: "" };
     return `<section class="card flag" data-flag="${esc(f.key)}"><div><h3>${esc(i.label)} ${i.sensitive ? `<span class="st warn">Sensitive</span>` : ""}</h3><div class="row" style="margin-top:4px">${f.enabled ? `<span class="st good">On</span>` : `<span class="st none">Off</span>`}<span class="muted" style="font-size:12px">${f.updated_by ? `changed by ${esc(f.updated_by)} ` : ""}${f.updated_at ? ago(f.updated_at) : "never changed"}</span></div><div id="prop-${esc(f.key)}" style="margin-top:6px"></div></div>
-      <button class="switch" role="switch" aria-checked="${f.enabled}" aria-label="${esc(i.label)}" data-k="${esc(f.key)}" ${can(f.key === "ai_assistant" || f.key === "ai_gateway" || f.key === "ai_orchestrator" || f.key === "ai_actions" || f.key === "guardian" ? "ai.manage" : "flags.manage") ? "" : "disabled"}></button>
-      ${f.key === "ai_assistant" || f.key === "ai_gateway" || f.key === "ai_orchestrator" || f.key === "ai_actions" || f.key === "guardian" ? `<p class="hint" style="grid-column:1/-1;margin:0">Founder only. Never switched on automatically.</p>` : ""}
+      <button class="switch" role="switch" aria-checked="${f.enabled}" aria-label="${esc(i.label)}" data-k="${esc(f.key)}" ${can(f.key === "ai_assistant" || f.key === "ai_gateway" || f.key === "ai_orchestrator" || f.key === "ai_actions" || f.key === "guardian" || f.key === "doctor_onboarding" ? "ai.manage" : "flags.manage") ? "" : "disabled"}></button>
+      ${f.key === "ai_assistant" || f.key === "ai_gateway" || f.key === "ai_orchestrator" || f.key === "ai_actions" || f.key === "guardian" || f.key === "doctor_onboarding" ? `<p class="hint" style="grid-column:1/-1;margin:0">Founder only. Never switched on automatically.</p>` : ""}
       <div class="grid2"><div><b>When on</b>${esc(i.on)}</div><div><b>When off</b>${esc(i.off)}</div><div><b>Depends on</b>${esc(i.deps)}</div><div><b>Enforced by</b>${esc(i.layer)}</div></div></section>`; }).join("")}</div>
   ${can("flags.manage") ? "" : `<p class="hint" style="margin-top:10px">Your permissions show switches but do not change them.</p>`}`;
   $$(".switch[data-k]", v).forEach((b) => b.onclick = async () => {

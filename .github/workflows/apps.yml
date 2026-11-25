@@ -39,6 +39,14 @@ jobs:
         with: { node-version: "22" }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21" }
+      - name: Cache Gradle downloads (fewer requests to Maven Central, which rate-limits)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('package-lock.json', 'apps/android/**/*.gradle', 'apps/android/**/*.json') }}
+          restore-keys: gradle-${{ runner.os }}-
       - name: Install (exact versions from the lockfile once it exists)
         run: if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
       - name: Versions
@@ -56,7 +64,8 @@ jobs:
           DOCTINE_KEYSTORE_PASSWORD: ${{ secrets.DOCTINE_ANDROID_KEYSTORE_PASSWORD }}
           DOCTINE_KEY_ALIAS: ${{ secrets.DOCTINE_ANDROID_KEY_ALIAS }}
           DOCTINE_KEY_PASSWORD: ${{ secrets.DOCTINE_ANDROID_KEY_PASSWORD }}
-        run: cd android && ./gradlew --no-daemon assembleDebug bundleRelease assembleRelease
+        # one retry after a minute: Maven Central sometimes answers 429 (too many requests) to shared CI machines
+        run: cd android && (./gradlew --no-daemon assembleDebug bundleRelease assembleRelease || (echo "retrying after a minute"; sleep 60; ./gradlew --no-daemon assembleDebug bundleRelease assembleRelease))
       - name: What was built (and whether it is signed)
         run: |
           find android/app/build/outputs -name "*.apk" -o -name "*.aab" | xargs ls -la

@@ -78,6 +78,12 @@ jobs:
       - name: Guardian tests (state machine, incident engine, /api/guardian; offline, fictional data)
         if: always()
         run: node tests/guardian.test.mjs
+      - name: Admin API, admin reports, AI gateway, evidence engine and orchestrator tests (offline, fictional data)
+        if: always()
+        run: node tests/admin-api.test.mjs && node tests/admin-reports.test.mjs && node tests/gateway.test.mjs && node tests/evidence-lib.test.mjs && node tests/orchestrator.test.mjs
+      - name: AI policy gate (prompts and rules match the recorded, versioned policy)
+        if: always()
+        run: node tools/ai-policy-gate.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: report-backend, path: reports/, if-no-files-found: warn, retention-days: 30 }

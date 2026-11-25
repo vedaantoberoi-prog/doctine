@@ -232,6 +232,8 @@ await test("AI infrastructure page: configuration only, behind health.view; no k
   assert.equal((await read(await post(admin, tok("analyst"), { action: "ai_pilot", op: "add", email: "x@example.test", reason: "x" }, "10.3.0.7"))).status, 403);
   const gs = await read(await post(admin, tok("owner"), { action: "guardian_summary" }, "10.3.0.8"));
   assert.equal(gs.status, 200); assert.equal(gs.j.data.available, true); assert.equal(gs.j.data.people_enabled, 2);
+  assert.equal(typeof gs.j.data.contact_links, "boolean"); assert.deepEqual(gs.j.data.delivery, { provider: "none", live: false });
+  assert.ok(!JSON.stringify(gs.j.data).includes(process.env.GUARDIAN_LINK_SECRET || "no-secret-set-here"), "never returns the link secret");
   assert.equal((await read(await post(admin, tok("analyst"), { action: "guardian_summary" }, "10.3.0.9"))).status, 403);
 });
 

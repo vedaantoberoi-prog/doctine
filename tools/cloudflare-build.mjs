@@ -19,7 +19,7 @@ const ADMIN_CSP = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.ne
 writeFileSync("public/_headers", `/*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=()
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(self), payment=()
   X-Frame-Options: DENY
   Cross-Origin-Opener-Policy: same-origin
   ! Access-Control-Allow-Origin

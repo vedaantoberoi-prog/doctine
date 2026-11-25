@@ -176,7 +176,8 @@ jobs:
         # Signing and notarisation only when the Apple secrets exist (Tauri treats an empty value as "sign").
         run: |
           if [ -n "$S_CERT" ]; then export APPLE_CERTIFICATE="$S_CERT" APPLE_CERTIFICATE_PASSWORD="$S_CERT_PW" APPLE_SIGNING_IDENTITY="$S_IDENT" APPLE_ID="$S_ID" APPLE_PASSWORD="$S_PW" APPLE_TEAM_ID="$S_TEAM"; else echo "No Apple signing secrets: building an unsigned (ad-hoc) app"; fi
-          npx tauri build --target universal-apple-darwin --bundles app,dmg
+          # GitHub's Mac machines sometimes report the DMG disk image as busy (bundle_dmg.sh fails): detach leftover images and retry once
+          npx tauri build --target universal-apple-darwin --bundles app,dmg || { echo "DMG step failed; detaching leftover disk images and retrying"; hdiutil info | awk '/^\/dev\/disk[0-9]+[[:space:]]/ {print $1}' | sort -u | while read d; do hdiutil detach -force "$d" || true; done; rm -f src-tauri/target/universal-apple-darwin/release/bundle/dmg/rw.*.dmg; sleep 15; npx tauri build --target universal-apple-darwin --bundles app,dmg; }
       - name: What was built (architectures, signature, Gatekeeper)
         run: |
           B=src-tauri/target/universal-apple-darwin/release/bundle

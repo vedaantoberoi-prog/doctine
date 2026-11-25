@@ -460,4 +460,10 @@ const done = () => {
   if (process.env.REPORT_DIR) { import("node:fs").then(({ writeFileSync, mkdirSync }) => { mkdirSync(process.env.REPORT_DIR, { recursive: true }); writeFileSync(`${process.env.REPORT_DIR}/guardian.json`, JSON.stringify({ passed, failed, results }, null, 1)); }); }
   if (failed) process.exitCode = 1;
 };
+await test("the app's Permissions-Policy lets the page itself ask for location (Guardian's opt-in location), and still blocks the microphone and payments", () => {
+  for (const f of ["netlify.toml", "tools/cloudflare-build.mjs"]) {
+    const t = readFileSync(new URL("../" + f, import.meta.url), "utf8");
+    assert.match(t, /geolocation=\(self\)/, f); assert.doesNotMatch(t, /geolocation=\(\)/, f); assert.match(t, /microphone=\(\)/, f); assert.match(t, /payment=\(\)/, f);
+  }
+});
 done();

@@ -19,10 +19,22 @@ import { reportServerError } from "../../netlify/lib/monitor.mjs";
 import { corsFor } from "../../netlify/lib/cors.mjs";
 
 const ROUTES = { config, account, chat, scan, admin, events, monitor, errors, gateway, assist, guardian };
+// Production answers /api only at its real addresses. Cloudflare keeps every past deployment reachable at
+// <id>.doctine-app-direct.pages.dev with the production settings, so without this an old copy of the server code
+// (missing later fixes) could still be used against the live database. APP_HOSTS (comma-separated) overrides the list.
+const PRODUCTION_HOSTS = ["app.doctine.com", "doctine-app-direct.pages.dev"];
+export function hostAllowed(request, env) {
+  if (String((env && env.DOCTINE_ENV) || "").toLowerCase() !== "production") return true;
+  const list = env.APP_HOSTS ? String(env.APP_HOSTS).split(",").map((h) => h.trim().toLowerCase()).filter(Boolean) : PRODUCTION_HOSTS;
+  let host = "";
+  try { host = new URL(request.url).hostname.toLowerCase(); } catch { return false; }
+  return list.includes(host);
+}
 const notFound = () => new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 
 export async function onRequest({ request, env, params, waitUntil }) {
   for (const [k, v] of Object.entries(env || {})) if (typeof v === "string") process.env[k] = v;
+  if (!hostAllowed(request, env)) return new Response(JSON.stringify({ error: "wrong_address", message: "Use https://app.doctine.com." }), { status: 421, headers: { "content-type": "application/json", "cache-control": "no-store" } });
   const name = [].concat(params && params.path || [])[0];
   const handler = Object.prototype.hasOwnProperty.call(ROUTES, name) ? ROUTES[name] : null;
   if (!handler || [].concat(params.path).length !== 1) return notFound();

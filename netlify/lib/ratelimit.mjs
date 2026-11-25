@@ -63,16 +63,30 @@ function hashSubject(s, env) {
   return createHmac("sha256", key).update(s).digest("hex").slice(0, 40);
 }
 
+// One retry, with a longer wait, for a slow or briefly failing database (timeouts, network errors, 5xx). A reply the
+// database gave on purpose (4xx, a malformed answer) is not retried. A retry may count one request twice, never zero times.
 async function sharedHit(bucket, subject, limit, windowSec, env, fetchImpl) {
+  try { return await sharedHitOnce(bucket, subject, limit, windowSec, env, fetchImpl, 2500); }
+  catch (e) {
+    if (!e || !e.transient) throw e;
+    return await sharedHitOnce(bucket, subject, limit, windowSec, env, fetchImpl, 4000);
+  }
+}
+
+async function sharedHitOnce(bucket, subject, limit, windowSec, env, fetchImpl, timeoutMs) {
   const base = (env.SUPABASE_URL || "").replace(/\/$/, ""), key = env.SUPABASE_SERVICE_ROLE_KEY;
-  const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 1500);
+  const ac = new AbortController(); const t = setTimeout(() => ac.abort(), timeoutMs);
+  const transient = (msg) => Object.assign(new Error(msg), { transient: true });
   try {
-    const r = await fetchImpl(`${base}/rest/v1/rpc/rate_limit_hit`, {
-      method: "POST", signal: ac.signal,
-      headers: serviceHeaders(key, { "content-type": "application/json" }),
-      body: JSON.stringify({ p_bucket: bucket, p_subject: subject, p_limit: limit, p_window_seconds: windowSec }),
-    });
-    if (!r.ok) throw new Error("limiter " + r.status);
+    let r;
+    try {
+      r = await fetchImpl(`${base}/rest/v1/rpc/rate_limit_hit`, {
+        method: "POST", signal: ac.signal,
+        headers: serviceHeaders(key, { "content-type": "application/json" }),
+        body: JSON.stringify({ p_bucket: bucket, p_subject: subject, p_limit: limit, p_window_seconds: windowSec }),
+      });
+    } catch (e) { throw transient("limiter " + ((e && e.name) || "network")); }
+    if (!r.ok) throw r.status >= 500 || r.status === 408 || r.status === 429 ? transient("limiter " + r.status) : new Error("limiter " + r.status);
     const rows = await r.json();
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (!row || typeof row.allowed !== "boolean") throw new Error("limiter reply");

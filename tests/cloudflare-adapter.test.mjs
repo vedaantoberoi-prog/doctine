@@ -50,4 +50,15 @@ await t("…but no other origin, never a wildcard, no cookies, and never the adm
   }
   const r = await call("config", { headers: { origin: "https://localhost" } }); assert.notEqual(r.headers.get("access-control-allow-origin"), "*"); assert.equal(r.headers.get("access-control-allow-credentials"), null);
 });
+await t("production answers /api only at app.doctine.com and doctine-app-direct.pages.dev, not at an old deployment's own address", async () => {
+  const at = (host, e = env) => onRequest({ request: new Request(`https://${host}/api/config`, { headers: { "cf-connecting-ip": "203.0.113.9" } }), env: e, params: { path: ["config"] } });
+  assert.equal((await at("app.doctine.com")).status, 200);
+  assert.equal((await at("APP.DOCTINE.COM")).status, 200);
+  assert.equal((await at("doctine-app-direct.pages.dev")).status, 200);
+  for (const h of ["9efabcab.doctine-app-direct.pages.dev", "f625d0a8.doctine-app-direct.pages.dev", "evil.example", "app.doctine.com.evil.example"]) {
+    const r = await at(h); assert.equal(r.status, 421, h); const j = await r.json(); assert.equal(j.error, "wrong_address"); assert.ok(!JSON.stringify(j).includes("supabase"), h);
+  }
+  assert.equal((await at("9efabcab.doctine-app-direct.pages.dev", { ...env, APP_HOSTS: "9efabcab.doctine-app-direct.pages.dev" })).status, 200, "APP_HOSTS overrides the list");
+  assert.equal((await at("staging.example", { ...env, DOCTINE_ENV: "staging" })).status, 200, "non-production sites are not restricted");
+});
 console.log(`${passed} cloudflare-adapter tests passed`);

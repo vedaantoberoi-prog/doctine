@@ -19,6 +19,8 @@ import { _resetSettingsCache, getSettings } from "../lib/settings.mjs";
 import { runChecks, recordChecks, reportServerError } from "../lib/monitor.mjs";
 import { buildReport, toCsv, toPdf, REPORTS } from "../lib/reports.mjs";
 import { infrastructure } from "../lib/orchestrator/info.mjs";
+import { linkSecret } from "../lib/guardian/links.mjs";
+import { deliveryAdapter } from "../lib/guardian/delivery.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY = 86400000;
@@ -207,7 +209,8 @@ const ACTIONS = {
   ai_traces: async (uid, b) => { try { return { available: true, ...(await rpc("admin_ai_traces", { p_actor: uid, p_days: Math.min(30, Math.max(1, parseInt(b.days, 10) || 7)) })) }; }
     catch (e) { if (e.status === 503) { await rpc("admin_incidents", { p_actor: uid }); return { available: false }; } throw e; } },
   // Guardian incidents in the last 30 days, counts only (Founder only; no person, location or contact)
-  guardian_summary: async (uid) => { try { return { available: true, ...(await rpc("admin_guardian_summary", { p_actor: uid })) }; }
+  guardian_summary: async (uid) => { const d = deliveryAdapter(process.env), ready = { contact_links: !!linkSecret(process.env), delivery: { provider: d.name, live: !!d.live } };
+    try { return { available: true, ...(await rpc("admin_guardian_summary", { p_actor: uid })), ...ready }; }
     catch (e) { if (e.status === 503) return { available: false }; throw e; } },
   // pilot accounts for the records assistant (Founder only; add/remove audited with a reason)
   ai_pilot: async (uid, b, rid) => { const act = ["list", "add", "remove"].includes(b.op) ? b.op : "list";

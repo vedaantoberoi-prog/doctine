@@ -503,6 +503,29 @@ await test("with RATE_LIMIT_REQUIRE_SHARED=true, AI requests are refused while t
   _resetTokenCache(); limiterSim({ down: true }); const r = await checkRate(rq(null, "4.4.4.5"), { ip: "4.4.4.5" }, "chat", { env: { ...sharedEnv, RATE_LIMIT_REQUIRE_SHARED: "true" } });
   assert.equal(r.allowed, false); assert.equal(r.error, "limiter_unavailable"); assert.equal(r.status, 503);
 });
+await test("a brief limiter failure (one 503) is retried once and the request still goes through the shared limiter", async () => {
+  _resetTokenCache(); const sim = limiterSim(); const inner = globalThis.fetch; let failed = 0;
+  globalThis.fetch = async (url, init) => { if (url.endsWith("/rest/v1/rpc/rate_limit_hit") && failed === 0) { failed++; return new Response("{}", { status: 503 }); } return inner(url, init); };
+  const r = await checkRate(rq(null, "4.4.4.6"), { ip: "4.4.4.6" }, "chat", { env: { ...sharedEnv, RATE_LIMIT_REQUIRE_SHARED: "true" } });
+  assert.equal(r.allowed, true); assert.equal(r.mode, "shared"); assert.equal(failed, 1); assert.ok(sim.calls >= 1);
+});
+await test("a network error on the limiter is retried once", async () => {
+  _resetTokenCache(); limiterSim(); const inner = globalThis.fetch; let thrown = 0;
+  globalThis.fetch = async (url, init) => { if (url.endsWith("/rest/v1/rpc/rate_limit_hit") && thrown === 0) { thrown++; throw new TypeError("fetch failed"); } return inner(url, init); };
+  const r = await checkRate(rq(null, "4.4.4.7"), { ip: "4.4.4.7" }, "chat", { env: { ...sharedEnv, RATE_LIMIT_REQUIRE_SHARED: "true" } });
+  assert.equal(r.allowed, true); assert.equal(r.mode, "shared"); assert.equal(thrown, 1);
+});
+await test("a refusal from the database (4xx) is not retried", async () => {
+  _resetTokenCache(); limiterSim(); const inner = globalThis.fetch; let hits = 0;
+  globalThis.fetch = async (url, init) => { if (url.endsWith("/rest/v1/rpc/rate_limit_hit")) { hits++; return new Response("{}", { status: 401 }); } return inner(url, init); };
+  const r = await checkRate(rq(null, "4.4.4.8"), { ip: "4.4.4.8" }, "chat", { env: { ...sharedEnv, RATE_LIMIT_REQUIRE_SHARED: "true" } });
+  assert.equal(r.allowed, false); assert.equal(r.error, "limiter_unavailable"); assert.equal(hits, 1);
+});
+await test("a limiter that stays down is tried exactly twice, then refused when shared limiting is required", async () => {
+  _resetTokenCache(); const sim = limiterSim({ down: true });
+  const r = await checkRate(rq(null, "4.4.4.9"), { ip: "4.4.4.9" }, "chat", { env: { ...sharedEnv, RATE_LIMIT_REQUIRE_SHARED: "true" } });
+  assert.equal(r.allowed, false); assert.equal(r.error, "limiter_unavailable"); assert.equal(sim.calls, 2);
+});
 await test("without Supabase settings, limits are local-only and reported as such", async () => {
   const r = await checkRate(rq(null, "6.6.6.6"), { ip: "6.6.6.6" }, "chat", { env: {} }); assert.equal(r.mode, "local");
 });

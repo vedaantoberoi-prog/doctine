@@ -591,11 +591,11 @@ const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const isOn=(m,d)=>(m.status||'active')==='active'&&d>=m.start&&(!m.end||d<=m.end)&&((m.freq||'daily')==='daily'||(m.days||[]).includes(new Date(d+'T00:00:00').getDay()));
 const LOGO='<svg viewBox="0 0 32 32" width="36" height="36" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#101C2B"/><path d="M11.5 8.5v15h4.2c4.2 0 6.8-3 6.8-7.5s-2.6-7.5-6.8-7.5z" fill="none" stroke="#F3F1EB" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="7.6" r="2.3" fill="#8DB5AE"/></svg>';
-const NAV=[['home','My Health','home','Overview'],['medicines','Medicines','meds','Health'],['reminders','Reminders','clock','Health'],['vitals','Vitals','health','Health'],['reports','Medical records','reports','Health'],['health','Health profile','profile','Health'],['chat','Doctine AI','chat','AI'],['guardian','Guardian','shield','Safety'],['settings','Settings','settings','Account'],['about','About','about','Account']];
+const NAV=[['home','My Health','home','Overview'],['medicines','Medicines','meds','Health'],['reminders','Reminders','clock','Health'],['vitals','Vitals','health','Health'],['reports','Medical records','reports','Health'],['health','Health profile','profile','Health'],['sharing','Share with a doctor','share','Health'],['chat','Doctine AI','chat','AI'],['guardian','Guardian','shield','Safety'],['settings','Settings','settings','Account'],['about','About','about','Account']];
 const VIEWS=NAV.map(n=>n[0]);
 const hashView=()=>{const h=(location.hash||'').slice(1);return VIEWS.includes(h)?h:''};
 let wantView=hashView(); // the screen in the address when the page loaded; opened once sign-in finishes
-const NAVI=(()=>{const P={home:'<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/>',chat:'<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V15h0a2.5 2.5 0 0 1-2-2.5z"/>',health:'<path d="M3.5 12h4l2-4.5 3.5 9 2-4.5h5.5"/>',profile:'<circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c.9-3.4 3.6-5.2 7-5.2s6.1 1.8 7 5.2"/>',reports:'<path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/>',meds:'<rect x="3.5" y="9" width="17" height="6" rx="3"/><path d="M12 9v6"/>',clock:'<circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 1.5M9.5 3.5h5"/>',about:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',shield:'<path d="M12 3.5 5 6.5v5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9v-5z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M6 18l1.4-1.4M16.6 7.4 18 6"/>'};const o={};for(const k in P)o[k]=`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]}</svg>`;return o})();
+const NAVI=(()=>{const P={home:'<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/>',chat:'<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V15h0a2.5 2.5 0 0 1-2-2.5z"/>',health:'<path d="M3.5 12h4l2-4.5 3.5 9 2-4.5h5.5"/>',profile:'<circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c.9-3.4 3.6-5.2 7-5.2s6.1 1.8 7 5.2"/>',reports:'<path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 13h6M9 16.5h4"/>',meds:'<rect x="3.5" y="9" width="17" height="6" rx="3"/><path d="M12 9v6"/>',clock:'<circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 1.5M9.5 3.5h5"/>',about:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',shield:'<path d="M12 3.5 5 6.5v5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9v-5z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/>',share:'<circle cx="7" cy="12" r="2.5"/><circle cx="17" cy="6.5" r="2.5"/><circle cx="17" cy="17.5" r="2.5"/><path d="M9.2 10.8 14.8 7.7M9.2 13.2l5.6 3.1"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M6 18l1.4-1.4M16.6 7.4 18 6"/>'};const o={};for(const k in P)o[k]=`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]}</svg>`;return o})();
 /* ---- demo storage: this browser only ---- */
 const KEY='doctine:v2';
 (()=>{try{ // one-time carry-over from the previous app name; old entries are left untouched
@@ -772,6 +772,52 @@ async function gChange(t){if(!t.dataset||!t.dataset.gset)return false;const k=t.
  await gDo({action:'settings',[k]:t.checked},k==='enabled'?(t.checked?'Guardian is on.':'Guardian is off.'):'Saved.');return true}
 async function gSubmit(F){const c={name:String(F.get('name')||'').trim(),phone:String(F.get('phone')||'').trim(),relationship:String(F.get('relationship')||'').trim(),priority:Number(F.get('priority'))||1};
  if(G.form&&G.form.id)c.id=G.form.id;const r=await gDo({action:'contact_save',contact:c},'Contact saved.');if(r)G.form=null;render()}
+/* Share with a doctor (switch `record_sharing`, /api/share, docs/DOCTOR_NETWORK.md). The person picks one verified doctor
+   by the doctor's code, which parts of their record, for how long, and why; they can stop at any time and see every
+   time the doctor opened something. Nothing is copied: the doctor reads the live record while the share lasts. */
+const SH={uid:null,data:null,loading:false,err:'',found:null,code:'',busy:false};
+const shShown=()=>!!(S.cloud&&CLOUD.features&&CLOUD.features.record_sharing===true);
+const SH_PURPOSE={consultation:'A consultation',second_opinion:'A second opinion',follow_up:'A follow-up',other:'Something else'};
+async function shApi(body){const ah=await authHeaders();if(!ah.Authorization)throw Object.assign(new Error('Please sign in again.'),{status:401});
+ const r=await fetch(API+'/api/share',body?{method:'POST',headers:{'Content-Type':'application/json',...ah},body:JSON.stringify(body)}:{headers:ah});
+ const j=await r.json().catch(()=>null);if(!r.ok)throw Object.assign(new Error((j&&j.message)||'Sharing couldn’t be reached. Please try again.'),{code:j&&j.error,status:r.status});return j}
+async function shLoad(){if(!shShown())return;if(SH.uid!==CLOUD.uid)Object.assign(SH,{uid:CLOUD.uid,data:null,err:'',found:null,code:''});SH.loading=true;
+ try{SH.data=await shApi();SH.err=''}catch(e){SH.err=e.message}finally{SH.loading=false;if(S.view==='sharing')render()}}
+const shDoc=d=>`<div class="font-semibold">${esc(d.name||'')}</div><div class="mx-sub">${esc((d.qualifications||[]).join(', '))}${(d.specialties||[]).length?' · '+esc(d.specialties.join(', ')):''}</div><div class="mx-sub">Registration ${esc(d.registration_number||'—')} · ${esc(d.registration_council||'—')}</div>`;
+const shWhen=v=>v?new Date(v).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+function shareView(){
+ const H='<h1 class="text-2xl">Share with a doctor</h1>';
+ if(!S.cloud)return`<div class="max-w-3xl mx-auto px-4 md:px-8 py-6"><section class="card p-5">${H}<p class="mx-sub mt-2">Sharing needs a Doctine account.</p></section></div>`;
+ if(!shShown())return`<div class="max-w-3xl mx-auto px-4 md:px-8 py-6"><section class="card p-5">${H}<p class="mx-sub mt-2">Sharing with a doctor isn’t available yet.</p></section></div>`;
+ if(!SH.data&&!SH.err){if(!SH.loading)setTimeout(shLoad,0);return`<div class="max-w-3xl mx-auto px-4 md:px-8 py-6"><section class="card p-5">${H}<p class="mx-sub mt-2">Loading…</p></section></div>`}
+ const d=SH.data||{shares:[],access:[],options:{scopes:{},purposes:SH_PURPOSE,days:[1,7,30]}},o=d.options||{},sc=o.scopes||{},act=(d.shares||[]).filter(x=>x.active),past=(d.shares||[]).filter(x=>!x.active),f=SH.found;
+ const SCN=k=>(sc[k]||{label:k}).label;
+ return`<div class="space-y-4 max-w-3xl mx-auto px-4 md:px-8 py-6">
+ <section class="card p-5">${H}<p class="mx-sub mt-1">Let a verified doctor see parts of your record before or during a consultation. You choose what, for how long, and can stop at any time. You’ll see every time they open something.</p>
+  ${SH.err?`<div class="err mt-3">${esc(SH.err)}</div>`:''}
+  ${!f?`<form id="shfind" class="mt-4 flex flex-wrap items-end gap-2"><label class="text-sm" style="flex:1 1 14rem">Your doctor’s sharing code<input class="inp w-full mt-1" id="shcode" maxlength="16" autocomplete="off" autocapitalize="characters" placeholder="e.g. ABCDE-FGHJK" value="${esc(SH.code)}"></label><button class="btn" type="button" id="shlookup" ${SH.busy?'disabled':''}>Find doctor</button></form><p class="mx-sub mt-2 text-sm">Ask your doctor for their Doctine code. Only doctors whose registration Doctine has checked have one.</p>`
+  :`<form id="shf" class="mt-4 space-y-3"><div class="g-row" style="border:1px solid var(--line);border-radius:.75rem;padding:.75rem 1rem"><div>${shDoc(f)}<div class="mx-sub mt-1">✓ Registration checked by Doctine${f.verified_at?' on '+esc(new Date(f.verified_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})):''}. This isn’t a rating.</div></div><button class="btn" type="button" id="shcancel">Change</button></div>
+   <fieldset><legend class="text-sm font-semibold">What to share</legend>${Object.entries(sc).map(([k,v])=>`<label class="flex items-start gap-3 mt-2"><input type="checkbox" class="w-5 h-5 mt-1" name="scope" value="${esc(k)}" ${['profile','allergies','medicines'].includes(k)?'checked':''}><span><b>${esc(v.label)}</b><br><span class="mx-sub">${esc(v.hint)}</span></span></label>`).join('')}</fieldset>
+   <div class="grid gap-3" style="grid-template-columns:repeat(auto-fit,minmax(12rem,1fr))"><label class="text-sm">For how long<select class="inp w-full mt-1" name="days">${(o.days||[1,7,30]).map(n=>`<option value="${n}" ${n===7?'selected':''}>${n===1?'1 day':n+' days'}</option>`).join('')}</select></label>
+    <label class="text-sm">Why<select class="inp w-full mt-1" name="purpose">${Object.entries(o.purposes||SH_PURPOSE).map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join('')}</select></label></div>
+   <label class="text-sm block">A note for the doctor (optional)<input class="inp w-full mt-1" name="note" maxlength="300" placeholder="e.g. Fever since Monday"></label>
+   <label class="flex items-start gap-3"><input type="checkbox" class="w-5 h-5 mt-1" name="confirm" value="yes"><span>I want ${esc(f.name||'this doctor')} to see these parts of my record until the time I chose. I can stop sharing at any time.</span></label>
+   <button class="btn pri" ${SH.busy?'disabled':''}>Share</button></form>`}
+ </section>
+ <section class="card p-5"><h2 class="text-xl">Sharing now</h2>${act.length?`<ul class="g-list mt-2">${act.map(x=>`<li class="g-row"><div>${shDoc(x.doctor)}<div class="mt-1">${x.scopes.map(k=>`<span class="tag">${esc(SCN(k))}</span>`).join(' ')}</div><div class="mx-sub mt-1">For ${esc((o.purposes||SH_PURPOSE)[x.purpose]||x.purpose)} · until ${esc(shWhen(x.expires_at))} · opened ${x.opened} time${x.opened===1?'':'s'}${x.last_opened?', last '+esc(shWhen(x.last_opened)):''}</div></div><button class="btn" data-shrev="${esc(x.id)}">Stop sharing</button></li>`).join('')}</ul>`:`<p class="mx-sub mt-2">You’re not sharing your record with anyone.</p>`}</section>
+ ${(d.access||[]).length?`<section class="card p-5"><h2 class="text-xl">Who opened what</h2><ul class="g-list mt-2">${d.access.map(a=>`<li class="g-row"><div><b>${esc(a.doctor||'')}</b> opened <b>${esc(SCN(a.scope))}</b></div><span class="mx-sub">${esc(shWhen(a.at))}</span></li>`).join('')}</ul></section>`:''}
+ ${past.length?`<section class="card p-5"><h2 class="text-xl">Ended</h2><ul class="g-list mt-2">${past.map(x=>`<li class="g-row"><div><b>${esc(x.doctor.name||'')}</b><div class="mx-sub">${x.revoked_at?'Stopped '+esc(shWhen(x.revoked_at)):'Ended '+esc(shWhen(x.expires_at))} · opened ${x.opened} time${x.opened===1?'':'s'}</div></div></li>`).join('')}</ul></section>`:''}
+ </div>`}
+async function shClick(t){
+ if(t.id==='shlookup'){const c=($('#shcode')||{}).value||'';SH.code=c;SH.busy=true;SH.err='';render();
+  try{SH.found=(await shApi({action:'lookup',code:c})).doctor;SH.found.code=c}catch(e){SH.err=e.message}finally{SH.busy=false;render()}return true}
+ if(t.id==='shcancel'){SH.found=null;SH.err='';render();return true}
+ if(t.dataset&&t.dataset.shrev){const x=((SH.data&&SH.data.shares)||[]).find(s=>s.id===t.dataset.shrev);if(x&&!confirm(`Stop sharing with ${x.doctor.name}? They won’t be able to open your record any more.`))return true;
+  try{SH.data={...SH.data,...(await shApi({action:'revoke',id:t.dataset.shrev}))};toast('Stopped. The doctor can no longer open your record.')}catch(e){SH.err=e.message}render();return true}
+ return false}
+async function shSubmit(F){if(!SH.found)return;const body={action:'create',code:SH.found.code,scopes:F.getAll('scope'),days:Number(F.get('days')),purpose:String(F.get('purpose')||''),note:String(F.get('note')||''),confirm:F.get('confirm')==='yes'};
+ if(!body.scopes.length){SH.err='Choose at least one part of your record.';render();return}if(!body.confirm){SH.err='Please tick the box to confirm.';render();return}
+ SH.busy=true;SH.err='';render();try{SH.data={...SH.data,...(await shApi(body))};SH.found=null;SH.code='';toast('Shared. You can stop at any time.')}catch(e){SH.err=e.message}finally{SH.busy=false;render()}}
 addEventListener('online',()=>{if(gShown())gLoad(true)});addEventListener('offline',()=>{if(gShown()){G.cap.online=false;if(S.view==='guardian')render()}});
 const closeNav=()=>{$('#side').classList.add('-translate-x-full');$('#scrim').classList.add('hidden')};
 $('#burger').onclick=()=>{$('#side').classList.remove('-translate-x-full');$('#scrim').classList.remove('hidden')};$('#scrim').onclick=closeNav;
@@ -2324,11 +2370,11 @@ async function notify(title,body){try{if(!('Notification' in window)||Notificati
 function render(){
  const authed=S.email||S.sample||S.guest;$('#auth').classList.toggle('hidden',!!authed);$('#app').classList.toggle('hidden',!authed);
  if(!authed){const hv=hashView();if(hv&&hv!=='about')setHash(false);$('#auth').innerHTML=authView();abObserve();return}
- const NV=NAV.filter(n=>n[0]!=='guardian'||gShown());$('#nav').innerHTML=NV.map(([k,l,i,g],n)=>`${!n||NV[n-1][3]!==g?`<div class="navg">${g}</div>`:''}<button class="nav ${S.view===k?'on':''}" data-nav="${k}" ${S.view===k?'aria-current="page"':''}><span class="navi">${NAVI[i]||''}</span>${l}</button>`).join('');
+ const NV=NAV.filter(n=>(n[0]!=='guardian'||gShown())&&(n[0]!=='sharing'||shShown()));$('#nav').innerHTML=NV.map(([k,l,i,g],n)=>`${!n||NV[n-1][3]!==g?`<div class="navg">${g}</div>`:''}<button class="nav ${S.view===k?'on':''}" data-nav="${k}" ${S.view===k?'aria-current="page"':''}><span class="navi">${NAVI[i]||''}</span>${l}</button>`).join('');
  const tb=$('#tabbar');if(tb)tb.innerHTML=[['home','My Health','home'],['medicines','Medicines','meds'],['reports','Records','reports'],['chat','Doctine AI','chat']].map(([k,l,i])=>`<button data-nav="${k}" class="${S.view===k?'on':''}" ${S.view===k?'aria-current="page"':''}><span class="navi">${NAVI[i]||''}</span>${l}</button>`).join('')+`<button id="tbmore" class="${['home','medicines','reports','chat'].includes(S.view)?'':'on'}" aria-label="More: vitals, reminders, profile, settings"><span class="navi"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg></span>More</button>`;
  $('#ttl').textContent=(NAV.find(n=>n[0]===S.view)||[,S.view==='family'?'Family':''])[1];$('#who').innerHTML=S.sample?'Sample data':S.guest?'Not signed in':`${esc(S.email)}<span class="tag" style="display:inline-block;margin-top:.25rem;${S.cloud?'':'background:var(--warnbg);color:var(--warntx)'}">${S.cloud?'Doctine account':'Demo · this browser only'}</span>`;
  $('#banner').innerHTML=bannerHTML();
- const V={home:homeView,chat:chatView,health:healthView,vitals:vitalsView,reports:reportsView,medicines:medsView,reminders:remView,guardian:guardianView,family:soon,about:aboutView,settings:setView}[S.view]||homeView;
+ const V={home:homeView,chat:chatView,health:healthView,vitals:vitalsView,reports:reportsView,medicines:medsView,reminders:remView,guardian:guardianView,sharing:shareView,family:soon,about:aboutView,settings:setView}[S.view]||homeView;
  const v=$('#view'),ae=document.activeElement,fk=ae&&v.contains(ae)&&(ae.id?'#'+CSS.escape(ae.id):['p','uf','mt'].map(k=>ae.dataset&&ae.dataset[k]!==undefined?`[data-${k}="${CSS.escape(ae.dataset[k])}"]`:'').find(Boolean)),fsel=fk&&typeof ae.selectionStart==='number'?[ae.selectionStart,ae.selectionEnd]:null;
  v.innerHTML=V();
  if(fk){const n=v.querySelector(fk);if(n){n.focus({preventScroll:true});if(fsel)try{n.setSelectionRange(fsel[0],fsel[1])}catch{}}}v.style.overflow=S.view==='chat'?'hidden':'';
@@ -2370,6 +2416,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='samp')return enter(null,sampleData(),true);
  if(t.id==='erase'){if(confirm('Erase all demo accounts stored in this browser?')){DB={users:{}};store.set(DB);toast('Demo accounts erased.');S.auth='register';render()}return}
  if(await gClick(t))return;
+ if(await shClick(t))return;
  if(t.dataset.nav)return go(t.dataset.nav);
  if(t.id==='aiallow'){S.consent.ai=true;persist();const q=S.aiAsk;S.aiAsk=null;toast('AI assistant switched on. You can switch it off in Settings.');return send(q)}
  if(t.id==='ainot'){S.aiAsk=null;return render()}
@@ -2478,6 +2525,8 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
 });
 document.addEventListener('submit',async e=>{e.preventDefault();const id=e.target.id,F=new FormData(e.target);
  if(id==='gcf')return gSubmit(F);
+ if(id==='shf')return shSubmit(F);
+ if(id==='shfind')return shClick({id:'shlookup',dataset:{}});
  if(id==='hs'){S.q=String(F.get('hq')).trim();if(S.q)track('search_performed',{scope:'home'},'search:'+today());return go('reports')}
  if(id==='cf'){const i=$('#ci'),v=i.value;i.value='';send(v)}
  if(id==='hask'){const v=String(F.get('haq')||'').trim();if(!v)return;go('chat');send(v);return}

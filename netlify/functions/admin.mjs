@@ -215,6 +215,7 @@ const ACTIONS = {
     catch (e) { if (e.status === 503) return { available: false }; throw e; } },
   // doctor network (phase 1): the verification queue. Credential files open through a 60-second link; every opening is logged.
   doctors: (uid, b) => rpc("admin_practitioners", { p_actor: uid, p_status: DOCTOR_STATUSES.includes(b.status) ? b.status : null }),
+  sharing_summary: async (uid) => { try { return { available: true, ...(await rpc("admin_sharing_summary", { p_actor: uid })) }; } catch (e) { if (e.status === 503) return { available: false }; throw e; } },
   doctor: (uid, b, rid) => rpc("admin_practitioner", { p_actor: uid, p_user: uuid(b.id), p_request: rid }),
   doctor_document: async (uid, b, rid) => {
     const d = await rpc("admin_practitioner_document", { p_actor: uid, p_user: uuid(b.id), p_doc: uuid(b.doc), p_request: rid });

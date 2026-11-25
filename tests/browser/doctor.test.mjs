@@ -6,6 +6,7 @@
  */
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
+import { SCOPES } from "../../netlify/lib/doctors/sharing.mjs";
 import { STATUS_TEXT, COUNCILS, SPECIALTIES, LANGUAGES, MODES, DOCUMENT_KINDS, MAX_FILE_BYTES } from "../../netlify/lib/doctors/verification.mjs";
 const BASE = process.env.DOCTINE_BASE || "http://localhost:8888";
 const fakeSrc = readFileSync(new URL("./fake-supabase-strict.js", import.meta.url), "utf8");
@@ -15,12 +16,13 @@ const b = await chromium.launch();
 const errs = [];
 const OPTIONS = { councils: COUNCILS, specialties: SPECIALTIES, languages: LANGUAGES, modes: MODES, document_kinds: DOCUMENT_KINDS, status_text: STATUS_TEXT, max_file_bytes: MAX_FILE_BYTES };
 
-async function open({ on = true, width = 1280 } = {}) {
+async function open({ on = true, width = 1280, verified = false } = {}) {
   const ctx = await b.newContext({ viewport: { width, height: 900 } });
   await ctx.addInitScript({ content: fakeSrc });
   const pg = await ctx.newPage(); pg.on("pageerror", (e) => errs.push(e.message)); pg.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|status of 4\d\d/.test(m.text())) errs.push(m.text()); });
   const log = { calls: [], direct: [] };
   const app = { status: "NOT_STARTED", exists: false, editable: true, documents: [], history: [], qualifications: [], specialties: [], languages: [], consultation_modes: [] };
+  if (verified) Object.assign(app, { status: "VERIFIED", exists: true, editable: false, full_name: "Dr Meera Fictional", expires_at: new Date(Date.now() + 300 * 864e5).toISOString() });
   const missing = () => [...["full_name", "registration_number", "registration_council", "registration_year"].filter((k) => !app[k]), ...(app.qualifications.length ? [] : ["qualifications"]),
     ...(app.specialties.length ? [] : ["specialties"]), ...(app.languages.length ? [] : ["languages"]), ...(app.declaration_at ? [] : ["declaration"]),
     ...["registration_certificate", "degree_certificate", "photo_id"].filter((k) => !app.documents.some((d) => d.kind === k)).map((k) => "doc:" + k)];
@@ -32,8 +34,13 @@ async function open({ on = true, width = 1280 } = {}) {
       const send = (status, j) => r.fulfill({ status, contentType: "application/json", body: JSON.stringify(j) });
       if (!/^Bearer tok-/.test(r.request().headers().authorization || "")) return send(401, { error: "unauthorized" });
       if (!on) return send(503, { error: "switched_off" });
-      if (r.request().method() === "GET") { log.calls.push({ action: "GET" }); return send(200, { available: true, application: view(), options: OPTIONS }); }
+      if (r.request().method() === "GET") { log.calls.push({ action: "GET" }); return send(200, { available: true, application: view(), options: OPTIONS, sharing: { on: verified, scopes: SCOPES } }); }
       const body = JSON.parse(r.request().postData() || "{}"); log.calls.push(body);
+      if (body.action === "share_code") return send(200, { code: "ABCDEFGHJK" });
+      if (body.action === "patients") return send(200, { patients: [{ id: "f8000000-0000-0000-0000-0000000000s1", patient: { name: "Asha Patient Fictional", age: 36, sex_at_birth: "female" }, scopes: ["medicines", "labs"], purpose: "second_opinion", note: "Fictional cough", expires_at: new Date(Date.now() + 864e5).toISOString() }] });
+      if (body.action === "patient_record") return send(200, { scope: body.scope, patient: { name: "Asha Patient Fictional" }, shared_until: new Date(Date.now() + 864e5).toISOString(), read_at: new Date().toISOString(),
+        data: body.scope === "medicines" ? { items: [{ name: "Fictional amlodipine", strength: "5 mg", dose: "1 daily", status: "active", start_date: "2026-08-01", source: "patient" }] }
+          : { items: [{ test: "HbA1c", value: "5.6", unit: "%", date: "2026-11-10", report: "Fictional blood report", source: "ai_extracted" }] } });
       if (body.action === "save") {
         if (!app.editable) return send(400, { error: "invalid", message: "the application can not be changed while it is " + app.status });
         const p = body.profile; Object.assign(app, { exists: true, full_name: p.full_name || null, registration_number: (p.registration_number || "").toUpperCase() || null, registration_council: p.registration_council || null,
@@ -92,6 +99,26 @@ await pg.check("#declaration"); await pg.click("#submit"); await settle(pg);
 check("with everything in place, Submit sends it and the status becomes 'Submitted'", log.calls.some((c) => c.action === "submit") && (await text(pg, "#status")) === "Submitted");
 check("once submitted, the details are read-only and there is no Save or upload", await pg.$eval("#full_name", (i) => i.disabled) && !(await pg.$("#save")) && !(await pg.$("input[data-up]")));
 check("the history shows the submission", /Submitted/.test(await text(pg, ".timeline")) && /by you/.test(await text(pg, ".timeline")));
+await ctx.close();
+
+// a verified doctor with record sharing on
+({ ctx, pg, log } = await open({ verified: true }));
+await pg.evaluate(async () => { const c = window.supabase.createClient("https://x.supabase.co", "anon"); await c.auth.signUp({ email: "dr.meera.fictional@example.test", password: "fictional-pass-1", options: { data: {} } }); });
+await pg.reload(); await pg.waitForSelector("#shared", { timeout: 10000 });
+check("a verified doctor sees “Records shared with you”, and that each opening is visible to the patient", /each time you open something it's recorded/i.test(await text(pg, "#shared")));
+await pg.click("#getcode"); await settle(pg);
+check("…their sharing code, shown in two groups", (await text(pg, "#code")) === "ABCDE-FGHJK");
+await pg.click("#loadpts"); await settle(pg);
+check("…the patients sharing with them, with what they shared and why", /Asha Patient Fictional/.test(await text(pg, "#shared")) && /a second opinion/.test(await text(pg, "#shared")) && (await pg.$$("[data-pr]")).length === 2);
+await pg.click('[data-pr$="|labs"]'); await settle(pg);
+const lt = await text(pg, "#shared");
+check("opening a part shows it with where each value came from, and says it was logged", lt.includes("HbA1c") && /AI-read from a report/i.test(lt) && /in their access log/.test(lt) && /not clinician-verified/.test(lt));
+check("…requested for the share and part clicked only (no patient id is sent)", log.calls.some((c) => c.action === "patient_record" && c.scope === "labs" && c.share_id === "f8000000-0000-0000-0000-0000000000s1" && !("patient_id" in c)));
+await ctx.close();
+({ ctx, pg } = await open());
+await pg.evaluate(async () => { const c = window.supabase.createClient("https://x.supabase.co", "anon"); await c.auth.signUp({ email: "dr.unverified@example.test", password: "fictional-pass-1", options: { data: {} } }); });
+await pg.reload(); await pg.waitForSelector(".dwrap #full_name", { timeout: 10000 });
+check("a doctor who isn't verified sees no shared-records section", !(await pg.$("#shared")));
 await ctx.close();
 
 // layout

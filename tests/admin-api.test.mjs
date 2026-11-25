@@ -59,6 +59,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (url.endsWith("/rpc/report_error")) return new Response("true");
   if (url.endsWith("/rpc/admin_ai_pilot")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ pilots: [], max: 10, got: { action: body.p_action, email: body.p_email, reason: body.p_reason } })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/rpc/admin_guardian_summary")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ by_state: { CANCELLED: 1 }, by_type: { sos: 1 }, people_enabled: 2 })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
+  if (url.endsWith("/rpc/admin_sharing_summary")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ active_shares: 1, shares_30d: 2, stopped_30d: 0, openings_30d: 5 })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/rpc/admin_practitioners")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ counts: { DOCUMENTS_SUBMITTED: 1 }, items: [], got: body.p_status })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/rpc/admin_practitioner_document")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ path: "c0000000-0000-0000-0000-00000000d0c1/a b.pdf", mime: "application/pdf", file_name: "reg.pdf" })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.includes("/storage/v1/object/sign/practitioner-credentials/")) return new Response(JSON.stringify({ signedURL: "/object/sign/practitioner-credentials/x.pdf?token=fictional" }));
@@ -247,6 +248,9 @@ await test("doctor verification: list filter, 60-second credential links, eviden
   assert.equal(l.status, 200); assert.equal(l.j.data.got, "UNDER_REVIEW");
   assert.equal((await read(await post(admin, tok("owner"), { action: "doctors", status: "'; drop table x" }, "10.4.0.2"))).j.data.got, null, "unknown status filters become no filter");
   assert.equal((await read(await post(admin, tok("analyst"), { action: "doctors" }, "10.4.0.3"))).status, 403);
+  const sm = await read(await post(admin, tok("owner"), { action: "sharing_summary" }, "10.4.1.1")); assert.equal(sm.j.data.available, true); assert.equal(sm.j.data.openings_30d, 5);
+  assert.deepEqual(Object.keys(sm.j.data).sort(), ["active_shares", "available", "openings_30d", "shares_30d", "stopped_30d"], "counts only");
+  assert.equal((await read(await post(admin, tok("analyst"), { action: "sharing_summary" }, "10.4.1.2"))).status, 403);
   calls = [];
   const d = await read(await post(admin, tok("owner"), { action: "doctor_document", id: "c0000000-0000-0000-0000-00000000d0c1", doc: "c0000000-0000-0000-0000-0000000000f1" }, "10.4.0.4"));
   assert.equal(d.status, 200); assert.equal(d.j.data.expires_in, 60); assert.ok(d.j.data.url.startsWith("https://abc.supabase.co/storage/v1/object/sign/"), d.j.data.url);

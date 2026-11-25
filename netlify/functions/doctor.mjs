@@ -7,6 +7,10 @@
  *   POST {action:"upload", kind, file_name, data}   add a credential file (base64; PDF, JPEG or PNG, at most 5 MB)
  *   POST {action:"remove_document", id}       take a file off the application (the file and its record are kept)
  *   POST {action:"submit"}                    submit for verification (the database checks it is complete)
+ * With the `record_sharing` switch on too, for a VERIFIED doctor:
+ *   POST {action:"share_code"}                the code patients enter to share their record with this doctor
+ *   POST {action:"patients"}                  people currently sharing with this doctor (what, and until when)
+ *   POST {action:"patient_record", share_id, scope}   one shared part, read live; every opening is logged for the patient
  *
  * The person is always the one in the sign-in token, never an id from the request. Files go to the private storage bucket
  * `practitioner-credentials`, which browsers can't reach; reviewers open them through the admin console, where every
@@ -18,6 +22,8 @@ import { json, readJson } from "../lib/ai.mjs";
 import { getSettings } from "../lib/settings.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { serviceHeaders } from "../lib/supabase-keys.mjs";
+import { SCOPES } from "../lib/doctors/sharing.mjs";
+import { sharingOn } from "./share.mjs";
 import { cleanProfile, sniffMime, extFor, DOCUMENT_KINDS, MAX_FILE_BYTES, STATUS_TEXT, COUNCILS, SPECIALTIES, LANGUAGES, MODES } from "../lib/doctors/verification.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -57,7 +63,7 @@ function store({ env, fetchImpl }) {
       const text = await r.text();
       if (!r.ok) {
         let code = "db_error", message = ""; try { const j = JSON.parse(text); message = String(j.message || "").slice(0, 200);
-          code = j.code === "P0002" ? "not_found" : ["22023", "23514", "22P02", "23505"].includes(j.code) ? "invalid" : j.code === "PGRST202" || j.code === "42883" ? "not_installed" : "db_error"; } catch {}
+          code = j.code === "P0002" ? "not_found" : j.code === "42501" ? "forbidden" : ["22023", "23514", "22P02", "23505"].includes(j.code) ? "invalid" : j.code === "PGRST202" || j.code === "42883" ? "not_installed" : "db_error"; } catch {}
         throw Object.assign(new Error(name + " " + r.status), { code, message });
       }
       return text ? JSON.parse(text) : null;
@@ -90,7 +96,7 @@ export default async function handler(req, context, { env = process.env, fetchIm
   if (!rate.allowed) return done("rate", json({ error: rate.error, retry_after: rate.retryAfter }, rate.status));
 
   try {
-    if (req.method === "GET") return done("status", json({ available: true, application: await db.rpc("practitioner_get", { p_user: uid }), options: OPTIONS }));
+    if (req.method === "GET") return done("status", json({ available: true, application: await db.rpc("practitioner_get", { p_user: uid }), options: OPTIONS, sharing: { on: await sharingOn(env, fetchImpl), scopes: SCOPES } }));
 
     const parsed = await readJson(req, MAX_BODY);
     if (parsed.error) return done("body", json({ error: parsed.error === "too_large" ? "too_large" : "invalid", message: parsed.error === "too_large" ? "Files can be at most 5 MB." : undefined }, parsed.status));
@@ -130,11 +136,19 @@ export default async function handler(req, context, { env = process.env, fetchIm
       if (r && r.ok === false) return done(action, json({ error: r.error || "incomplete", missing: r.missing || [] }, 400));
       return done(action, json({ application: await db.rpc("practitioner_get", { p_user: uid }) }));
     }
+    if (["share_code", "patients", "patient_record"].includes(action)) {
+      if (!(await sharingOn(env, fetchImpl))) return done(action, json({ error: "switched_off", message: "Record sharing isn't available yet." }, 503));
+      if (action === "share_code") return done(action, json(await db.rpc("practitioner_share_code", { p_user: uid })));
+      if (action === "patients") return done(action, json({ patients: (await db.rpc("doctor_shares", { p_doctor: uid })) || [] }));
+      if (!UUID.test(String(body.share_id || "")) || !Object.prototype.hasOwnProperty.call(SCOPES, body.scope)) return done(action, json({ error: "invalid" }, 400));
+      return done(action, json(await db.rpc("doctor_share_record", { p_doctor: uid, p_share: body.share_id, p_scope: body.scope })), { scope: body.scope });
+    }
     return done("unknown", json({ error: "invalid_action" }, 400));
   } catch (e) {
     const code = (e && e.code) || "server_error";
-    if (code === "invalid") return done("db", json({ error: "invalid", message: e.message && /can not|cannot|at most|qualification/i.test(e.message) ? e.message : "That wasn't accepted." }, 400));
-    if (code === "not_found") return done("db", json({ error: "not_found" }, 404));
+    if (code === "invalid") return done("db", json({ error: "invalid", message: e.message && /can not|cannot|at most|qualification|only a verified/i.test(e.message) ? e.message : "That wasn't accepted." }, 400));
+    if (code === "not_found") return done("db", json({ error: "not_found", message: "This share has ended or doesn't exist." }, 404));
+    if (code === "forbidden") return done("db", json({ error: "forbidden", message: "Only a verified doctor can do this, and only for what was shared." }, 403));
     if (code === "not_installed") return done("db", json({ error: "not_configured", message: "Doctor sign-up isn't set up on this site yet." }, 503));
     if (code === "storage_error") return done("storage", json({ error: "storage_error", message: "The file couldn't be stored. Please try again." }, 502));
     return done("error", json({ error: "server_error" }, 500), { code });

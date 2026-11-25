@@ -1,7 +1,8 @@
 # Doctine doctor network and clinical intelligence
 
-Status: **phase 1 built (doctor identity, credentials, verification)**, behind the `doctor_onboarding` switch, which is off.
-Nothing is shown to patients. There are no consultations, prescriptions or payments. Last updated 26 Nov 2026.
+Status: **phase 1 built (doctor identity, credentials, verification)** behind the `doctor_onboarding` switch, and
+**patient-controlled record sharing built** behind the `record_sharing` switch. Both switches are off. No doctor
+directory, consultations, prescriptions or payments exist. Last updated 26 Nov 2026.
 
 ## 1. Where this starts from (inspected 25–26 Nov 2026)
 
@@ -88,12 +89,47 @@ one yet). Specialties, languages, experience and the bio are self-reported and l
 - **Open item**: files stay in storage when an account is deleted. The account-deletion flow should remove the
   `practitioner-credentials/<user id>/` folder. Agree the retention period with counsel first.
 
+## 2b. Patient-controlled record sharing (built; switch `record_sharing`, off)
+
+A person shares parts of their own record with **one verified doctor**, by that doctor's sharing code. There is no
+directory and no searching for doctors.
+
+- **What the patient chooses**:
+  - which parts: basic details, allergies, medicines, medical history, test results, or the list of documents (titles
+    only, never the files);
+  - for 1, 7 or 30 days;
+  - why (a consultation, second opinion, follow-up, other), plus an optional note;
+  - an explicit confirmation naming the doctor.
+
+  They see the doctor's name, qualifications, registration number and council before sharing (TPG §5.1), and that
+  Doctine checked the registration, which is not a rating.
+- **What the patient sees afterwards**: each active share with how many times it was opened, "Who opened what" (every
+  opening, with time), and ended shares. **Stop sharing** ends access at once.
+- **What the doctor sees** (`/doctor`, verified doctors only):
+  - their code;
+  - the people currently sharing with them, with age, sex at birth, purpose, note and expiry;
+  - each shared part on demand, read live from the patient's record.
+
+  Every item says where it came from: patient, clinician, document, imported, or "AI-read from a report". The view says
+  plainly that patient- and AI-sourced items are not clinician-verified.
+- **Enforced by the database** (`20261127000000_record_sharing.sql`, tested in `tests/sharing.test.sql`):
+  - access only while the share is active and the doctor is VERIFIED, so suspension or lapse ends it at once;
+  - only the parts shared;
+  - one active share per doctor; at most 10 active shares;
+  - every opening is written to an append-only access log the patient sees.
+
+  Staff see counts only (Admin → Doctor verification). Lookups are rate-limited tightly so codes can't be guessed. Codes
+  are 10 characters from 32 symbols with no look-alike letters.
+- **Not yet**: sharing files, sharing with a hospital or provider (scope 3), research and model-development scopes (4
+  and 5, which need governance first), a doctor writing anything back into the record, and a notification to the
+  patient when a doctor opens something (they see it in the app).
+
 ## 3. The full plan (phases), mapped to this codebase
 
 | Phase | What | Builds on | Blocked by |
 |---|---|---|---|
 | 1 ✅ | Doctor identity, credentials, verification | this change | — |
-| 2 | Doctor workspace: dashboard, patient list *only for patients who shared with them*, read-only record viewer | `/doctor`, the evidence index, documents | A sharing consent (section 5) and phase 3's encounter |
+| 2 | Doctor workspace: dashboard, patient list *only for patients who shared with them*, read-only record viewer | `/doctor`, record sharing (2b, built) | Phase 3's encounter, for anything beyond reading |
 | 3 | Consultation workflow: appointment → encounter (FHIR Encounter), modes, status, notes, follow-up | phase 1 | Legal sign-off on the platform's role; consent capture (TPG §3.4); audio/video provider; payment model |
 | 4 | Pre-consultation brief: source-linked, time-aware summary the patient reviews, then the doctor reviews | orchestrator (facts with sources), health-profile history, lab trends | Doctor review of the AI; the AI key; phase 3 |
 | 5 | Structured prescription: a doctor-authored, immutable e-prescription with the registration number (TPG §3.2.5, §3.7.4 lists O/A/B; Schedule X and NDPS never) | phase 3 | Counsel; NMC advisory on digital signatures (Oct 2026) |
@@ -147,10 +183,10 @@ Doctine does not claim any ABDM connection.
 | 11 | Consumer protection, refunds, payment-aggregator (RBI) rules and app-store health-app policies | phase 3 | To review |
 | 12 | Doctors' identity documents: privacy notice, retention, access log | phase 1 | Access log built. **Privacy notice needed before the switch goes on** |
 
-## 5. Patient control: separate permission scopes (to build with phase 2/3)
+## 5. Patient control: separate permission scopes (scope 2 built, see 2b)
 
 1. Storing the personal health record (exists: the account).
-2. Sharing selected records with a named doctor, for a named encounter, until a set date (revocable).
+2. Sharing selected records with a named doctor until a set date, revocable (built: `record_sharing`).
 3. Sharing with a healthcare provider.
 4. Research use of eligible data.
 5. Model development.
@@ -193,9 +229,11 @@ open Guardian incident. It is read-only, time-limited and audited. No change to 
 - DPDP Rules 2025 (phased commencement). https://www.scconline.com/blog/post/2025/12/26/digital-personal-data-protection-rules-2025-key-highlights/
 - NMC advisory on remote authentication of medical records with digital signatures (Oct 2026), relevant to phase 5.
 
-## 9. Turning phase 1 on
+## 9. Turning it on
 
 1. Apply `20261126000000_doctor_onboarding` (staging first; production only with explicit approval).
 2. Publish a privacy notice for doctors' documents (reviewed by counsel) and link it from `/doctor`.
 3. Grant `doctors.view` / `doctors.verify` to the reviewer(s) (Admin → Leadership) and walk them through the checklist.
 4. The Founder switches **Doctor sign-up and verification** on (Admin → Feature switches).
+5. For sharing: apply `20261127000000_record_sharing`, have counsel review the consent wording on “Share with a doctor”,
+   verify at least one doctor, then the Founder switches **Patients share records with a doctor** on.

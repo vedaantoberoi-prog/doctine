@@ -84,10 +84,12 @@ jobs:
           printf %s "$PASS" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
             --symmetric --cipher-algo AES256 --s2k-digest-algo SHA512 --s2k-count 65011712 \
             -o "out/doctine-db-$stamp.dump.gpg" "$RUNNER_TEMP/db.dump"
-          # prove the encrypted copy opens and is a valid dump, then remove every plain copy
-          printf %s "$PASS" | gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 0 -d "out/doctine-db-$stamp.dump.gpg" \
-            | /usr/lib/postgresql/17/bin/pg_restore --list > /dev/null
-          shred -u "$RUNNER_TEMP/db.dump" "$RUNNER_TEMP/err"
+          # prove the encrypted copy opens, is byte-for-byte the dump, and is a valid dump; then remove every plain copy.
+          # (Decrypt to a file: piping into pg_restore --list broke the pipe once dumps outgrew the pipe buffer.)
+          printf %s "$PASS" | gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 0 -o "$RUNNER_TEMP/check.dump" -d "out/doctine-db-$stamp.dump.gpg"
+          [ "$(sha256sum < "$RUNNER_TEMP/check.dump")" = "$(sha256sum < "$RUNNER_TEMP/db.dump")" ] || { echo "::error::the encrypted copy does not decrypt to the dump"; exit 1; }
+          /usr/lib/postgresql/17/bin/pg_restore --list "$RUNNER_TEMP/check.dump" > /dev/null
+          shred -u "$RUNNER_TEMP/db.dump" "$RUNNER_TEMP/check.dump" "$RUNNER_TEMP/err"
           echo "Backup $stamp: $n tables (private schema included), $(du -h out/*.gpg | cut -f1) encrypted." >> "$GITHUB_STEP_SUMMARY"
       - name: Keep for 30 days
         if: steps.cfg.outputs.ready == 'true'

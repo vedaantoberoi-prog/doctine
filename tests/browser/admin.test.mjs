@@ -45,6 +45,7 @@ const NEEDS = { overview: "dashboard.view", series: "analytics.view", funnel: "a
   data_overview: "data.view", perm_catalog: "dashboard.view", invite: "team.manage", invite_revoke: "team.manage", member_set: "team.manage", session: "dashboard.view", page_denied: "dashboard.view", product_overview: "dashboard.view",
   support_list: "support.view", support_item: "support.view", support_update: "support.view", support_message: "support.respond", feedback: "feedback.view", feedback_update: "feedback.manage",
   work: "bugs.view|feedback.view", work_save: "bugs.manage|feedback.manage", content: "content.view|releases.view", content_save: "content.edit",
+  doctors: "doctors.view", doctor: "doctors.view", doctor_document: "doctors.view", doctor_set_status: "doctors.verify",
   errors: "health.view", error: "health.view", error_update: "alerts.manage", report: "reports.export", exports: "reports.export", prefs: "dashboard.view", set_prefs: "dashboard.view", settings_status: "dashboard.view" };
 
 const out = [];
@@ -97,6 +98,12 @@ function data(action, body) {
     flags: [{ key: "ai_assistant", enabled: false, value: {}, updated_at: null }, { key: "document_upload", enabled: true, value: {}, updated_at: null }, { key: "guardian", enabled: false, value: {}, updated_at: null }, { key: "maintenance", enabled: false, value: {}, updated_at: null, on_now: false }],
     set_flag: { ok: true }, set_maintenance: { ok: true, on_now: !!body.enabled },
     ai_infrastructure: AI_INFO,
+    doctors: { counts: { DOCUMENTS_SUBMITTED: 1, UNDER_REVIEW: 1, VERIFIED: 0 }, items: [{ user_id: "f3000000-0000-0000-0000-0000000000a1", email: "dr.asha.fictional@example.test", full_name: "Dr Asha Fictional", status: "UNDER_REVIEW", registration_council: "Maharashtra Medical Council", specialties: ["General physician"], submitted_at: iso(now - 864e5), updated_at: iso(now), expires_at: null, documents: 3 }] },
+    doctor: { user_id: "f3000000-0000-0000-0000-0000000000a1", email: "dr.asha.fictional@example.test", status: "UNDER_REVIEW", full_name: "Dr Asha Fictional", registration_number: "MMC/2010/12345", registration_council: "Maharashtra Medical Council", registration_year: 2010,
+      qualifications: [{ degree: "MBBS", institution: "Fictional Medical College", year: 2009 }], specialties: ["General physician"], languages: ["English"], consultation_modes: ["video"], experience_years: 12, bio: null, declaration_at: iso(now - 864e5),
+      documents: [{ id: "f3000000-0000-0000-0000-0000000000d1", kind: "photo_id", file_name: "id.pdf", mime: "application/pdf", size_bytes: 120000, sha256: "a".repeat(64), uploaded_at: iso(now - 864e5), removed_at: null }],
+      history: [{ from: "NOT_STARTED", to: "DOCUMENTS_SUBMITTED", by: "doctor", reason: null, at: iso(now - 864e5), actor_email: "dr.asha.fictional@example.test", evidence: null }], self: false, can_verify: ROLE.perms.includes("doctors.verify") },
+    doctor_set_status: { ok: true, status: body.to }, doctor_document: { url: BASE + "/robots.txt", mime: "application/pdf", file_name: "id.pdf", expires_in: 60 },
     guardian_summary: { available: true, by_state: { CANCELLED: 2 }, by_type: { sos: 2 }, people_enabled: 3 },
     ai_pilot: { pilots: [{ email: "pilot-test@example.test", added_at: "2026-11-23T10:00:00Z", note: "fictional pilot" }], max: 10 },
     ai_traces: { available: true, days: 7, total: 3, by_state: { COMPLETED: 2, FAILED: 1 }, by_outcome: { completed: 2, retrieval_failed: 1 }, by_route: { C: 2, A: 1 }, degraded: {},
@@ -203,7 +210,7 @@ await ctx.close();
 
 // ── owner ──
 ({ ctx, pg, log } = await open("owner@example.test"));
-check("2 · the Founder sees every section, grouped", JSON.stringify(await navKeys(pg)) === JSON.stringify(["dashboard", "analytics", "profile", "reports", "users", "documents", "data", "health", "errors", "incidents", "alerts", "ai", "support", "feedback", "work", "content", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"]));
+check("2 · the Founder sees every section, grouped", JSON.stringify(await navKeys(pg)) === JSON.stringify(["dashboard", "analytics", "profile", "reports", "users", "documents", "data", "health", "errors", "incidents", "alerts", "ai", "support", "feedback", "work", "content", "doctors", "flags", "maintenance", "announcements", "team", "audit", "security", "definitions", "settings"]));
 check("5 · the Founder is titled FOUNDER in the top bar and on a Founder dashboard", /founder/i.test(await text(pg, "#who .title-badge")) && (await text(pg, ".hello h2")) === "Founder dashboard");
 check("console sign-in is recorded once on entry", log.calls.filter((c) => c.action === "session" && c.event === "sign_in").length === 1);
 check("top bar: title, breadcrumb, date range, search, notifications, refresh, environment and profile", (await text(pg, "#title")) === "Dashboard" && (await text(pg, "#crumb")) === "Overview" && !!(await pg.$("#q")) && !!(await pg.$("#bell")) && !!(await pg.$("#refresh")) && (await text(pg, ".env")).toLowerCase() === "staging" && (await text(pg, "#who")).includes("owner@example.test"));
@@ -435,6 +442,24 @@ await ctx.close();
 const au = await navKeys(pg);
 check("auditor-style Co-Founder: audit log, security events and team only (plus dashboard, reports, definitions, settings)", au.includes("audit") && au.includes("security") && au.includes("team") && !au.includes("users") && !au.includes("flags") && !au.includes("analytics"));
 check("auditor dashboard has headline figures but no trend charts", !!(await pg.$("[data-kpi=accounts]")) && (await text(pg, "#view")).includes("Trend charts need the analytics permission"));
+await ctx.close();
+
+// ── doctor verification (Founder holds doctors.view and doctors.verify) ──
+({ ctx, pg, log } = await open("owner@example.test", { hash: "#/doctors" }));
+await pg.waitForSelector("tr[data-doc]");
+check("doctor verification: the queue lists applications with their status", (await text(pg, "#view")).includes("Dr Asha Fictional") && (await text(pg, "#view")).includes("Under review") && (await text(pg, "#view")).includes("official register"));
+await pg.click("tr[data-doc]"); await pg.waitForSelector(".drawer [data-to=VERIFIED]");
+check("…the application shows registration details to check, files, history and the allowed actions", /MMC\/2010\/12345/.test(await text(pg, ".drawer")) && !!(await pg.$(".drawer [data-open]")) && !!(await pg.$(".drawer [data-to=REJECTED]")) && !(await pg.$(".drawer [data-to=SUSPENDED]")));
+await pg.click(".drawer [data-to=VERIFIED]"); await pg.waitForSelector("dialog [data-m]");
+await pg.click("dialog #vo"); await pg.waitForTimeout(150);
+check("…verifying refuses until every item is confirmed on the register (nothing sent)", (await text(pg, "#verr")).includes("Every item") && !log.calls.some((c) => c.action === "doctor_set_status"));
+for (const k of ["name", "registration_number", "council", "active", "photo_id"]) await pg.check(`dialog [data-m=${k}]`);
+await pg.fill("dialog #vref", "fictional record 12345"); await pg.click("dialog #vo"); await settle(pg);
+const vs = log.calls.find((c) => c.action === "doctor_set_status");
+check("…and then sends the evidence with the change", !!vs && vs.to === "VERIFIED" && vs.evidence && Object.values(vs.evidence.matched).every((x) => x === true) && vs.evidence.register === "state_council" && vs.evidence.register_reference === "fictional record 12345" && /^\d{4}-\d{2}-\d{2}$/.test(vs.evidence.checked_on));
+await ctx.close();
+({ ctx, pg, log } = await open("product@example.test"));
+check("doctor verification is hidden from a Co-Founder without doctors.view", !(await navKeys(pg)).includes("doctors"));
 await ctx.close();
 
 // ── a Co-Founder with the operations-style preset cannot switch the AI assistant ──

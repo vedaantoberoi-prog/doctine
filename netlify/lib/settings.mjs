@@ -8,7 +8,7 @@
 import { serviceHeaders } from "./supabase-keys.mjs";
 
 export const DEFAULTS = Object.freeze({
-  flags: { registrations: true, document_upload: true, pdf_reading: true, sample_data: true, ai_assistant: false, ai_gateway: false, ai_orchestrator: false, ai_actions: false, guardian: false },
+  flags: { registrations: true, document_upload: true, pdf_reading: true, sample_data: true, ai_assistant: false, ai_gateway: false, ai_orchestrator: false, ai_actions: false, guardian: false, doctor_onboarding: false },
   maintenance: { on: false, message: "" },
   announcements: [],
   whatsNew: [],

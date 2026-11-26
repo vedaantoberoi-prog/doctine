@@ -59,6 +59,11 @@ globalThis.fetch = async (url, init = {}) => {
   if (url.endsWith("/rpc/report_error")) return new Response("true");
   if (url.endsWith("/rpc/admin_ai_pilot")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ pilots: [], max: 10, got: { action: body.p_action, email: body.p_email, reason: body.p_reason } })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/rpc/admin_guardian_summary")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ by_state: { CANCELLED: 1 }, by_type: { sos: 1 }, people_enabled: 2 })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
+  if (url.endsWith("/rpc/admin_practitioners")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ counts: { DOCUMENTS_SUBMITTED: 1 }, items: [], got: body.p_status })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
+  if (url.endsWith("/rpc/admin_practitioner_document")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ path: "c0000000-0000-0000-0000-00000000d0c1/a b.pdf", mime: "application/pdf", file_name: "reg.pdf" })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
+  if (url.includes("/storage/v1/object/sign/practitioner-credentials/")) return new Response(JSON.stringify({ signedURL: "/object/sign/practitioner-credentials/x.pdf?token=fictional" }));
+  if (url.endsWith("/rpc/admin_practitioner_transition")) return body.p_actor === body.p_user ? new Response(JSON.stringify({ code: "42501" }), { status: 403 })
+    : body.p_to === "VERIFIED" && !(body.p_evidence && body.p_evidence.matched && body.p_evidence.matched.active) ? new Response(JSON.stringify({ code: "22023" }), { status: 400 }) : new Response(JSON.stringify({ ok: true, status: body.p_to, got: body }));
   if (url.endsWith("/rpc/admin_ai_traces")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ days: body.p_days, total: 0 })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/rpc/admin_incidents")) return ROLES[body.p_actor] === "founder" ? new Response("[]") : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/version.json") || url.endsWith("/auth/v1/health") || url.includes("/storage/v1/bucket/") || url.endsWith("/rpc/public_settings")) return new Response("{}");
@@ -235,6 +240,27 @@ await test("AI infrastructure page: configuration only, behind health.view; no k
   assert.equal(typeof gs.j.data.contact_links, "boolean"); assert.deepEqual(gs.j.data.delivery, { provider: "none", live: false });
   assert.ok(!JSON.stringify(gs.j.data).includes(process.env.GUARDIAN_LINK_SECRET || "no-secret-set-here"), "never returns the link secret");
   assert.equal((await read(await post(admin, tok("analyst"), { action: "guardian_summary" }, "10.3.0.9"))).status, 403);
+});
+
+await test("doctor verification: list filter, 60-second credential links, evidence passed through cleaned, refusals stay refusals", async () => {
+  const l = await read(await post(admin, tok("owner"), { action: "doctors", status: "UNDER_REVIEW" }, "10.4.0.1"));
+  assert.equal(l.status, 200); assert.equal(l.j.data.got, "UNDER_REVIEW");
+  assert.equal((await read(await post(admin, tok("owner"), { action: "doctors", status: "'; drop table x" }, "10.4.0.2"))).j.data.got, null, "unknown status filters become no filter");
+  assert.equal((await read(await post(admin, tok("analyst"), { action: "doctors" }, "10.4.0.3"))).status, 403);
+  calls = [];
+  const d = await read(await post(admin, tok("owner"), { action: "doctor_document", id: "c0000000-0000-0000-0000-00000000d0c1", doc: "c0000000-0000-0000-0000-0000000000f1" }, "10.4.0.4"));
+  assert.equal(d.status, 200); assert.equal(d.j.data.expires_in, 60); assert.ok(d.j.data.url.startsWith("https://abc.supabase.co/storage/v1/object/sign/"), d.j.data.url);
+  const sign = calls.find((c) => c.url.includes("/object/sign/")); assert.equal(sign.body.expiresIn, 60); assert.ok(sign.url.endsWith("/a%20b.pdf"), "the path is encoded");
+  assert.equal((await read(await post(admin, tok("owner"), { action: "doctor_document", id: "not-a-uuid", doc: "c0000000-0000-0000-0000-0000000000f1" }, "10.4.0.5"))).status, 400);
+  assert.equal((await read(await post(admin, tok("analyst"), { action: "doctor_document", id: "c0000000-0000-0000-0000-00000000d0c1", doc: "c0000000-0000-0000-0000-0000000000f1" }, "10.4.0.6"))).status, 403);
+  calls = [];
+  const v = await read(await post(admin, tok("owner"), { action: "doctor_set_status", id: "c0000000-0000-0000-0000-00000000d0c1", to: "VERIFIED", reason: "Checked on the register",
+    evidence: { register: "nmr", register_name: "National Medical Register", checked_on: "2026-11-26", matched: { name: true, registration_number: true, council: true, active: true, photo_id: true, extra: "x" }, injected: "<script>" } }, "10.4.0.7"));
+  assert.equal(v.status, 200); const sent = v.j.data.got.p_evidence;
+  assert.deepEqual(Object.keys(sent.matched).sort(), ["active", "council", "name", "photo_id", "registration_number"]); assert.equal(sent.injected, undefined, "only known evidence fields reach the database");
+  assert.equal((await read(await post(admin, tok("owner"), { action: "doctor_set_status", id: "c0000000-0000-0000-0000-00000000d0c1", to: "VERIFIED", reason: "x", evidence: { matched: { active: "yes" } } }, "10.4.0.8"))).status, 400, "'yes' is not true");
+  assert.equal((await read(await post(admin, tok("owner"), { action: "doctor_set_status", id: "c0000000-0000-0000-0000-00000000d0c1", to: "APPROVED" }, "10.4.0.9"))).status, 400, "unknown statuses are refused before the database");
+  assert.equal((await read(await post(admin, tok("owner"), { action: "doctor_set_status", id: "a0000000-0000-0000-0000-000000000001", to: "REJECTED", reason: "trying my own" }, "10.4.1.0"))).status, 403, "never your own application");
 });
 
 console.log(failed ? `${passed} admin server tests passed, ${failed} FAILED` : `${passed} admin server tests passed`);

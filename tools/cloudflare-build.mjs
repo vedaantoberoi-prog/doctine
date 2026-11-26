@@ -29,6 +29,9 @@ writeFileSync("public/_headers", `/*
 /admin/*
   Cache-Control: no-store
   Content-Security-Policy: ${ADMIN_CSP}
+/doctor/*
+  Cache-Control: no-store
+  Content-Security-Policy: ${ADMIN_CSP}
 /api/*
   Cache-Control: no-store
 /version.json

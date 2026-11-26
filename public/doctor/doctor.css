@@ -1,0 +1,24 @@
+/* Doctine · doctor workspace (builds on /admin/admin.css, the same design system). */
+.dwrap{max-width:780px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right,0px)) 60px max(16px,env(safe-area-inset-left,0px))}
+.dtop{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.dtop .mark{width:30px;height:30px;font-size:15px;margin:0}
+.dtop h1{font:600 17px/1.2 var(--serif,inherit);margin:0;flex:1}
+.dsec{margin-top:14px}
+.dsec .card-b{display:grid;gap:4px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px}
+@media (max-width:600px){.dgrid{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chips label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--panel);cursor:pointer;font-size:13px}
+.chips input:checked + span{font-weight:600;color:var(--brand)}
+.qrow{display:grid;grid-template-columns:1.1fr 1.6fr .6fr auto;gap:6px;align-items:end;margin-top:6px}
+@media (max-width:600px){.qrow{grid-template-columns:1fr 1fr}}
+.dfile{display:flex;align-items:center;gap:8px;border:1px solid var(--line-2);border-radius:8px;padding:6px 10px;margin-top:6px;background:var(--panel-2)}
+.dfile .nm{flex:1;min-width:0;overflow-wrap:anywhere}
+.dkind{border-top:1px solid var(--line-2);padding-top:10px;margin-top:10px}
+.dkind:first-child{border-top:0;margin-top:0;padding-top:0}
+.missing{margin:6px 0 0;padding-left:18px}
+.dfoot{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 30%);padding:16px 0 6px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.ro dd{overflow-wrap:anywhere}
+.dwrap input:not([type=checkbox]):not([type=radio]):not([type=file]),.dwrap select,.dwrap textarea{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+.dwrap .card,.dwrap .card-b,.dgrid > div,.qrow > div{min-width:0}
+.decl{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}

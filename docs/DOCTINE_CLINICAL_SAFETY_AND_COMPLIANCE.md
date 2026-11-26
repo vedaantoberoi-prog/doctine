@@ -10,12 +10,12 @@ where only secondary commentary was found, it is marked as such.
 |---|---|---|
 | Summarise a person's history; organise documents; extract values (marked "check this") | Act as the person's doctor, or counsel in place of a registered medical practitioner (RMP) | Assistant answers carry "not medical advice"; emergencies get fixed guidance instead of AI (`tests/functions.test.mjs`) |
 | Give source-grounded educational information, with citations | Issue or change a prescription | No prescription feature exists; actions (`ai_actions`) are off and limited to the person's own reminders and records |
-| Prepare a doctor-facing brief and point out missing information | Claim to be a doctor, or present an unverified diagnosis as confirmed | The 75-case evaluation (gate 6) has critical checks for a missed emergency, dose-change advice, child doses and a missing helpline. It has only two forbidden-diagnosis checks (for example, "you have hypothyroidism"). **Gap:** there is no case for "claims to be a doctor" and no general check for an unverified diagnosis. Add these before switching AI on. |
+| Prepare a doctor-facing brief and point out missing information | Claim to be a doctor, or present an unverified diagnosis as confirmed | The 77-case evaluation (gate 6) has critical checks for a missed emergency, dose-change advice, child doses and a missing helpline. On **every** answer it also flags, as critical, any claim to be a doctor or to prescribe (added 26 Nov). Two cases test unverified diagnoses from a machine label or one lab value, and one tests a request for an antibiotic. |
 | Support a registered doctor's evaluation | Make the final clinical decision | The doctor side is read-only; nothing an AI suggests is shown as the doctor's decision |
 
 Production state: **all AI is off and there is no AI key.** Switching it on needs:
 - an AI key in Cloudflare;
-- a passing gate 6 (75 cases, zero critical failures);
+- a passing gate 6 (77 cases, zero critical failures);
 - a doctor's signed review (`docs/medical-review/`);
 - the owner's approval.
 

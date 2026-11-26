@@ -63,7 +63,7 @@ Built:
 - a 27-second deadline;
 - per-person token budgets.
 
-`npm run eval:rag` (`docs/EVIDENCE_EVAL.md`) measures retrieval on fictional records. The answer grader (75 cases)
+`npm run eval:rag` (`docs/EVIDENCE_EVAL.md`) measures retrieval on fictional records. The answer grader (77 cases)
 grades safety. Retrieval and answers are evaluated separately, as required.
 
 Metrics not yet measured:
@@ -108,7 +108,7 @@ Models never modify themselves in production.
 
 | Stage | Contents | State | Next concrete step |
 |---|---|---|---|
-| **A: current product intelligence** | Secure provider integration, patient context, grounded retrieval, document extraction, structured summaries, safe Q&A | Built and tested on fictional data; **off**, no key | Add an AI key (owner), pass gate 6 on staging, doctor sign-off. Add evaluation cases for "claims to be a doctor" and unverified diagnoses. |
+| **A: current product intelligence** | Secure provider integration, patient context, grounded retrieval, document extraction, structured summaries, safe Q&A | Built and tested on fictional data; **off**, no key | Add an AI key (owner), pass gate 6 on staging, doctor sign-off. (Evaluation cases for doctor claims and unverified diagnoses were added on 26 Nov.) |
 | **B: clinical data infrastructure** | Longitudinal structured records, standard terminology (LOINC for labs, SNOMED CT / ICD for conditions), FHIR-shaped export, provenance, doctor-reviewed annotations, outcome tracking, consent governance | Records and provenance exist; no terminology mapping; doctor network built but off | Map lab tests to LOINC codes in `lab_results`; decide on ABDM integration |
 | **C: evaluation and narrow models** | Curated datasets, extraction and summary models, retrieval reranking, task-specific fine-tuning, clinical benchmarks | Not started | Only after B, with the §6 pipeline and consented data |
 | **D: proprietary medical intelligence** | Own architecture, domain training, external clinical validation, model governance | Not started | Do not spend here before A–C prove out |

@@ -11,7 +11,7 @@
  *   EXPECT_COMMIT        stop unless the site's /version.json names this commit (the staging workflow sets it)
  *   PRODUCTION_URL       the production address; the run refuses to start if DOCTINE_URL is the same site
  *   EVAL_PACED=yes       manual runs only: run without the token, paced under the public limit (~31 s per case,
- *                        about 40 minutes for all 75). Refused inside CI.
+ *                        about 40 minutes for all 77). Refused inside CI.
  *   EVAL_ONLY            comma-separated case ids or categories to run (e.g. "MED-001,self_harm")
  *   ALLOW_NON_STAGING_EVAL=yes   run against a site that does not report staging/eval (never sends the token there)
  *   REPORT_DIR           where to write medical-eval.json and medical-eval.md (default: reports)
@@ -42,7 +42,7 @@ const evalEnv = environment === "staging" || environment === "eval";
 if (!evalEnv && process.env.ALLOW_NON_STAGING_EVAL !== "yes") stop(`the site reports environment "${environment}". Set DOCTINE_ENV=staging on the staging site, or ALLOW_NON_STAGING_EVAL=yes to run anyway (without the evaluation token).`);
 const inCI = process.env.GITHUB_ACTIONS === "true" || process.env.CI === "true";
 if (evalEnv && !token) {
-  if (inCI || process.env.EVAL_PACED !== "yes") stop("EVAL_ACCESS_TOKEN is not set. Without it the 75 cases would run under the public anonymous limit (about 31 s each, roughly 40 minutes), so the run is refused. Set the EVAL_ACCESS_TOKEN secret on the GitHub \"staging\" environment, with the same value as the staging Netlify site. (For a slow manual run outside CI, set EVAL_PACED=yes.)");
+  if (inCI || process.env.EVAL_PACED !== "yes") stop("EVAL_ACCESS_TOKEN is not set. Without it the 77 cases would run under the public anonymous limit (about 31 s each, roughly 40 minutes), so the run is refused. Set the EVAL_ACCESS_TOKEN secret on the GitHub \"staging\" environment, with the same value as the staging Netlify site. (For a slow manual run outside CI, set EVAL_PACED=yes.)");
   console.warn("! No evaluation token: running paced under the public limit because EVAL_PACED=yes (about 31 s per case).");
 }
 const useToken = !!token && evalEnv;

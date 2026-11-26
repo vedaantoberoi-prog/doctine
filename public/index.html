@@ -786,6 +786,7 @@ async function shLoad(){if(!shShown())return;if(SH.uid!==CLOUD.uid)Object.assign
 const shDoc=d=>`<div class="font-semibold">${esc(d.name||'')}</div><div class="mx-sub">${esc((d.qualifications||[]).join(', '))}${(d.specialties||[]).length?' · '+esc(d.specialties.join(', ')):''}</div><div class="mx-sub">Registration ${esc(d.registration_number||'—')} · ${esc(d.registration_council||'—')}</div>`;
 const shWhen=v=>v?new Date(v).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
 function shareView(){
+ if(S.cloud&&SH.uid!==CLOUD.uid)Object.assign(SH,{uid:CLOUD.uid,data:null,err:'',found:null,code:'',loading:false});
  const H='<h1 class="text-2xl">Share with a doctor</h1>';
  if(!S.cloud)return`<div class="max-w-3xl mx-auto px-4 md:px-8 py-6"><section class="card p-5">${H}<p class="mx-sub mt-2">Sharing needs a Doctine account.</p></section></div>`;
  if(!shShown())return`<div class="max-w-3xl mx-auto px-4 md:px-8 py-6"><section class="card p-5">${H}<p class="mx-sub mt-2">Sharing with a doctor isn’t available yet.</p></section></div>`;

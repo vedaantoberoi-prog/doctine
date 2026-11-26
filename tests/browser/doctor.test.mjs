@@ -114,6 +114,8 @@ await pg.click('[data-pr$="|labs"]'); await settle(pg);
 const lt = await text(pg, "#shared");
 check("opening a part shows it with where each value came from, and says it was logged", lt.includes("HbA1c") && /AI-read from a report/i.test(lt) && /in their access log/.test(lt) && /not clinician-verified/.test(lt));
 check("…requested for the share and part clicked only (no patient id is sent)", log.calls.some((c) => c.action === "patient_record" && c.scope === "labs" && c.share_id === "f8000000-0000-0000-0000-0000000000s1" && !("patient_id" in c)));
+await pg.click("#so"); await settle(pg);
+check("signing out clears the shared records from the page", !(await pg.$("#shared")) && !/Asha Patient Fictional|HbA1c/.test(await pg.evaluate(() => document.body.innerText)) && !!(await pg.$("#signin")));
 await ctx.close();
 ({ ctx, pg } = await open());
 await pg.evaluate(async () => { const c = window.supabase.createClient("https://x.supabase.co", "anon"); await c.auth.signUp({ email: "dr.unverified@example.test", password: "fictional-pass-1", options: { data: {} } }); });

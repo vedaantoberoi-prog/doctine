@@ -78,7 +78,7 @@ one yet). Specialties, languages, experience and the bio are self-reported and l
 
 - Credential files are in the private bucket `practitioner-credentials`, with no browser policies. Only the server
   writes them. Staff open them through a 60-second signed link, and every opening is written to the audit log
-  (`doctor.document_open`). File types are read from the bytes (PDF, JPEG, PNG; at most 5 MB). Each file's SHA-256 is
+  (`doctor.document_open`). File types are read from the bytes (PDF, JPEG, PNG; at most 4 MB, so a file fits in one request on staging too). Each file's SHA-256 is
   stored.
 - A file the doctor removes is hidden from them but kept, because it is evidence. The history is append-only (a
   trigger refuses edits and deletes). Deleting the doctor's account deletes the application, its files' records and

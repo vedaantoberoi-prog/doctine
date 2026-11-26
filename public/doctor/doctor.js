@@ -50,6 +50,7 @@ async function enter() {
 }
 
 function gate(msg) {
+  Object.assign(S, { app: null, code: null, patients: null, open: null });   // nothing from a previous account stays on screen
   $("#root").innerHTML = `<main class="gate"><form class="card" id="signin" novalidate><div class="mark" aria-hidden="true">D</div>
     <h1>Doctine for doctors</h1>
     <p>Apply to join Doctine's doctor network. Sign in with your Doctine account; we'll check your medical registration against the official register before anything else.</p>
@@ -104,7 +105,7 @@ function render() {
       <label class="f" for="bio">About you (optional)</label><textarea id="bio" maxlength="1200" ${ed ? "" : "disabled"} placeholder="Your clinical interests and where you practise.">${esc(a.bio || "")}</textarea>
       <p class="err" data-err="specialties languages consultation_modes experience_years"></p></div></section>
 
-    <section class="card dsec"><div class="card-h"><div><h3>Documents</h3><p>PDF, JPEG or PNG, up to 5 MB each. Stored privately; only Doctine reviewers checking your registration open them, and every opening is logged.</p></div></div><div class="card-b">
+    <section class="card dsec"><div class="card-h"><div><h3>Documents</h3><p>PDF, JPEG or PNG, up to 4 MB each. Stored privately; only Doctine reviewers checking your registration open them, and every opening is logged.</p></div></div><div class="card-b">
       ${Object.entries(o.document_kinds).map(([k, d]) => { const mine = docs.filter((x) => x.kind === k);
         return `<div class="dkind" data-kind="${k}"><b>${esc(d.label)}</b>${d.required ? "" : ` <span class="muted">(optional)</span>`}<div class="hint" style="margin:2px 0 0">${esc(d.hint)}</div>
           ${mine.map((x) => `<div class="dfile"><span class="nm">${esc(x.file_name)} <span class="muted">${kb(x.size_bytes)} · uploaded ${dt(x.uploaded_at)}</span></span>${ed ? `<button class="btn sm ghost" type="button" data-rm="${esc(x.id)}">Remove</button>` : ""}</div>`).join("")}
@@ -206,7 +207,7 @@ async function submit() {
   finally { S.busy = false; }
 }
 async function upload(kind, file) {
-  if (file.size > S.opt.max_file_bytes) return toast("Files can be at most 5 MB.", true);
+  if (file.size > S.opt.max_file_bytes) return toast("Files can be at most 4 MB.", true);
   if (!["application/pdf", "image/jpeg", "image/png"].includes(file.type)) return toast("Upload a PDF, JPEG or PNG.", true);
   await save({ quiet: true });                                  // keep what was typed: the page re-renders after the upload
   const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(r.error); r.readAsDataURL(file); });

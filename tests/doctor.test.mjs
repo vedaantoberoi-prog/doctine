@@ -141,7 +141,7 @@ await test("upload: other file types, empty and oversized files are refused befo
   assert.equal((await call(s, { body: { action: "upload", kind: "photo_id", file_name: "x.html", data: Buffer.from("<html><script>alert(1)</script>").toString("base64") } })).status, 415);
   assert.equal((await call(s, { body: { action: "upload", kind: "photo_id", file_name: "x.pdf", data: "" } })).status, 400);
   assert.equal((await call(s, { body: { action: "upload", kind: "photo_id", file_name: "x.pdf", data: "not base64 !!" } })).status, 400);
-  const big = Buffer.concat([Buffer.from("%PDF-1.7\n"), Buffer.alloc(5 * 1024 * 1024)]);
+  const big = Buffer.concat([Buffer.from("%PDF-1.7\n"), Buffer.alloc(4 * 1024 * 1024)]);
   assert.equal((await call(s, { body: { action: "upload", kind: "photo_id", file_name: "big.pdf", data: big.toString("base64") } })).status, 413);
   assert.equal((await call(s, { body: { action: "upload", kind: "selfie", file_name: "x.pdf", data: PDF.toString("base64") } })).status, 400, "unknown kinds");
   assert.equal(s.db.storage.size, 0);

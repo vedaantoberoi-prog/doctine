@@ -4,7 +4,7 @@
  *
  *   GET                                       the person's application, its status and history, and the form's choices
  *   POST {action:"save", profile}             save details (only while the application can be edited)
- *   POST {action:"upload", kind, file_name, data}   add a credential file (base64; PDF, JPEG or PNG, at most 5 MB)
+ *   POST {action:"upload", kind, file_name, data}   add a credential file (base64; PDF, JPEG or PNG, at most 4 MB)
  *   POST {action:"remove_document", id}       take a file off the application (the file and its record are kept)
  *   POST {action:"submit"}                    submit for verification (the database checks it is complete)
  * With the `record_sharing` switch on too, for a VERIFIED doctor:
@@ -27,7 +27,7 @@ import { sharingOn } from "./share.mjs";
 import { cleanProfile, sniffMime, extFor, DOCUMENT_KINDS, MAX_FILE_BYTES, STATUS_TEXT, COUNCILS, SPECIALTIES, LANGUAGES, MODES } from "../lib/doctors/verification.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const MAX_BODY = Math.ceil(MAX_FILE_BYTES * 4 / 3) + 4096;   // a 5 MB file as base64, plus the rest of the request
+const MAX_BODY = Math.ceil(MAX_FILE_BYTES * 4 / 3) + 4096;   // a 4 MB file as base64, plus the rest of the request
 export const BUCKET = "practitioner-credentials";
 
 export async function onboardingOn(env = process.env, fetchImpl = fetch) {
@@ -99,7 +99,7 @@ export default async function handler(req, context, { env = process.env, fetchIm
     if (req.method === "GET") return done("status", json({ available: true, application: await db.rpc("practitioner_get", { p_user: uid }), options: OPTIONS, sharing: { on: await sharingOn(env, fetchImpl), scopes: SCOPES } }));
 
     const parsed = await readJson(req, MAX_BODY);
-    if (parsed.error) return done("body", json({ error: parsed.error === "too_large" ? "too_large" : "invalid", message: parsed.error === "too_large" ? "Files can be at most 5 MB." : undefined }, parsed.status));
+    if (parsed.error) return done("body", json({ error: parsed.error === "too_large" ? "too_large" : "invalid", message: parsed.error === "too_large" ? "Files can be at most 4 MB." : undefined }, parsed.status));
     const body = parsed.body && typeof parsed.body === "object" && !Array.isArray(parsed.body) ? parsed.body : {};
     const action = String(body.action || "");
 
@@ -115,7 +115,7 @@ export default async function handler(req, context, { env = process.env, fetchIm
       if (!data || !/^[A-Za-z0-9+/=\s]+$/.test(data)) return done(action, json({ error: "invalid", message: "The file didn't arrive." }, 400));
       const bytes = Buffer.from(data, "base64");
       if (!bytes.length) return done(action, json({ error: "invalid", message: "The file is empty." }, 400));
-      if (bytes.length > MAX_FILE_BYTES) return done(action, json({ error: "too_large", message: "Files can be at most 5 MB." }, 413));
+      if (bytes.length > MAX_FILE_BYTES) return done(action, json({ error: "too_large", message: "Files can be at most 4 MB." }, 413));
       const mime = sniffMime(bytes.subarray(0, 16));
       if (!mime) return done(action, json({ error: "unsupported_type", message: "Upload a PDF, JPEG or PNG." }, 415));
       const name = (String(body.file_name || "document").replace(/[^\w .()-]+/g, "_").trim() || "document").slice(0, 160);

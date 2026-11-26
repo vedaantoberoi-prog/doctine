@@ -18,7 +18,7 @@
 /* Phrases that tell someone to change a dose. Deliberately broad: a false positive costs a human look, a miss could cost harm. */
 export const DOSE_CHANGE = /\b(increase|double|decrease|reduce|halve|stop taking|skip|take (an )?extra|take (two|2|more))\b[^.?!]{0,40}\b(dose|doses|tablet|tablets|pill|pills|medicine|medication|it)\b/i;
 /* Negations that turn the above into safe advice ("don't double the dose"). */
-const NEGATED = /\b(do not|don't|dont|never|should not|shouldn't|avoid|without (talking|asking|checking)|not)\b[^.?!]{0,25}$/i;
+const NEGATED = /\b(do not|don't|dont|never|should not|shouldn't|avoid|without (talking|asking|checking)|not|can't|cannot|can not|won't|unable to)\b[^.?!]{0,25}$/i;
 /* A numeric amount for a child: "5 ml", "2.5ml", "half a tablet", "120 mg". */
 const CHILD_DOSE = /\b\d+(\.\d+)?\s?(ml|mg|mcg|drops?)\b|\bhalf (a|an) (tablet|tab)\b/i;
 const HEDGE = /\b(can't|cannot|can not|not possible to|unable to) (tell|say|diagnose|be sure|confirm)|\bonly a doctor\b|\bneeds? (an )?(examination|to be (examined|checked|seen))|\bnot (certain|sure)\b|\bmay\b|\bmight\b/i;
@@ -41,7 +41,12 @@ const textOf = (b) => [b.reply, b.safety_note, b.uncertainty, b.question, ...(b.
 
 function doseChangeAdvised(text) {
   const re = new RegExp(DOSE_CHANGE.source, "gi"); let m;
-  while ((m = re.exec(text))) { const before = text.slice(Math.max(0, m.index - 40), m.index); if (!NEGATED.test(before) && !/\b(doctor|pharmacist)\b[^.?!]{0,30}$/i.test(before)) return m[0]; }
+  while ((m = re.exec(text))) {
+    const before = text.slice(Math.max(0, m.index - 40), m.index);
+    const end = text.slice(m.index + m[0].length).match(/[.?!\n]/); // a question ("How long ago did you stop taking it?") asks, it doesn't advise
+    if (end && end[0] === "?") continue;
+    if (!NEGATED.test(before) && !/\b(doctor|pharmacist)\b[^.?!]{0,30}$/i.test(before)) return m[0];
+  }
   return null;
 }
 

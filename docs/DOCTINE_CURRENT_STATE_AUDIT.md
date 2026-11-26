@@ -73,15 +73,14 @@ Status words follow the directive:
 | Security request log | 370-day log of every API request, kept in India | Cloudflare adapter · `security_log_add` · `private.security_log` | Append-only; no grants; never bodies or tokens | DB (security_log), adapter, worker | Applied · **On**, lines verified arriving 26 Nov | **Implemented and verified** | Sign-ins at Supabase Auth are not covered |
 | Rate limiting | Abuse and cost control | shared limiter, `private.rate_limits` | Fails closed when the shared limiter is required | functions | On · On | **Implemented and verified** | — |
 | Monitoring | Uptime and database checks every 15 min | `/api/monitor`, cron Worker, GitHub Uptime | No data in the checks | uptime workflow | On · On | **Implemented and verified** | — |
-| Backups and restore | Nightly encrypted dump; weekly restore drill; nightly file copy (needs `STORAGE_BACKUP_KEY`) | `backup.yml`, `restore-drill.yml`, `tools/restore-drill.sh` | AES-256; only pass/fail logged | restore-drill.test.sh in CI | — · Green on 26 Nov; drill passed on the real backup | **Implemented and verified** (database) · **Blocked** (files: owner secret) | Sign-in has never been restored into a new project |
+| Backups and restore | Nightly encrypted dump; weekly restore drill; nightly file copy | `backup.yml`, `restore-drill.yml`, `tools/restore-drill.sh` | AES-256; only pass/fail logged | restore-drill.test.sh in CI | — · Green on 26 Nov; drill passed on the real backup | **Implemented and verified** (database and files: first file backup 26 Nov, every file hash-checked after decryption, count matches the database) | Sign-in has never been restored into a new project |
 | Android and macOS apps | Native packaging | `apps.yml` | Keystore and Keychain plan | apps workflow green | Built in CI · Not released | **Partially implemented** | Store listings, signing, SMTP and deep links |
 | Family profiles | Several people under one account | "Coming soon" screen | — | — | — | **Not implemented** | — |
 
 ## 3. Known risks and owner decisions
 
 1. **Email (high).** Without custom SMTP, sign-up confirmation and password reset fail beyond 2 emails an hour.
-2. **File backups (high for a health app).** Uploaded photos and PDFs are not in any backup. Options: Supabase Pro
-   (daily backups, point-in-time recovery), or a storage sync job, which needs a service-role secret in GitHub.
+2. **File backups: done 26 Nov.** Nightly encrypted copy of every uploaded file (`storage-backup.yml`), key held in the `backup` environment (main only).
 3. **Guardian is on in production but cannot send alerts itself.** The app says so to the person. To change that, you
    need a messaging provider under contract (DLT-registered SMS templates or WhatsApp Business).
 4. **Leaked-password check** needs a paid Supabase plan.

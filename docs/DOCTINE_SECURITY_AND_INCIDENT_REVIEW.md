@@ -34,7 +34,7 @@ Result: **one real gap, now closed.**
 
 ### Proof 3: a real backup restores, not just a green backup job
 
-Result: **gaps found and fixed. A restore drill on the newest backup is pending its first run.**
+Result: **gaps found and fixed; the newest real production backup then restored and passed every check** (restore drill run 45800576737, 26 Nov, on backup run 45800174258: 55 tables restored with no errors, counts matching production, references and record owners intact, row-level security correct on the restored copy).
 
 - **Confirmed.** The nightly backup did not include the `private` schema: Guardian contacts and deliveries, doctor applications, record shares and their access log, the admin audit log, switches. None of these could have been restored from any backup made before 26 Nov. Fixed in PR #39.
 - **Confirmed.** The first backup that included the private schema failed its own self-check. A pipe broke once the dump grew, so a green job was in fact the only kind it could produce while the dump stayed small. Fixed in PR #40: the check now decrypts to a file and compares SHA-256 with the dump.

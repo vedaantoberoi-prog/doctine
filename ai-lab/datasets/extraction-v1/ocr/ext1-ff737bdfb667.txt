@@ -1,0 +1,28 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 70
+
+Age/Sex: 42 Y/M
+
+Report Date: 09/01/2025
+
+Investigation Value Unit Reference Range
+
+HDL Cholesterol 59 mg/dL 40 - 60
+
+Haemoglobin 16.4 g/dL 13.0 - 17.0
+
+Glucose Fasting 160 mg/dL 70 - 100
+
+Total Leucocyte Count 10276 /cumm 4000 - 11000
+HbAIc 6.5 % 4.0 -.5.6
+--- page 2 ---
+ASHOKA PATH LABS
+
+Investigation Value Unit Reference Range
+Blood Urea 20.mg/dL 15 - 40
+
+Platelet Count 4.66 lakhs/cumm 1.50 - 4.50
+Creatinine 1.91 mg/dL 0.70 - 1.30
+
++ End of report *** :

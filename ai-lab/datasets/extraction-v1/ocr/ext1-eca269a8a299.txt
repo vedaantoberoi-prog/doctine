@@ -1,0 +1,16 @@
+LOTUS DIAGNOSTIC HOSPITAL
+Patient: Fictional Person 29
+Age/Sex: 53 Y / F
+
+Report Date: 15/07/2024
+
+Test Value Unit Reference Range
+ALT (SGPT) 93 U/L 7 - 56
+
+HDL 52 mg/dL 40 - 60
+
+Vitamin B12 532 200 - 900
+Creatinine 2.01 mg/dL 0.70 - 1.30
+Total Cholesterol 154 < 200
+Vitamin D 22.6 ng/mL 30 - 100
+*** End of report ***

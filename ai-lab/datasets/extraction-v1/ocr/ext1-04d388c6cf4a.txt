@@ -1,0 +1,22 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 69
+
+Age/Sex: 58 Y/M
+
+Report Date: 20/03/2025
+
+Test Name Result Units Bio. Ref. Interval
+Blood Urea 19 mg/dL 15 - 40
+
+Serum Sodium 138 mmol/L 135 - 145
+TG 139 mg/dL < 150
+
+Creatinine 1.17 mg/dL 0.70 - 1.30
+FBS 172 mg/dL 70 - 100
+
+ALT (SGPT) 19 U/L7 - 56
+
+LDL Direct 106 mg/dL < 100
+
+*** End of report ***

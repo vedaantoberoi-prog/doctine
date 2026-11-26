@@ -1,0 +1,19 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 164
+Age/Sex: 73 Y/M
+
+Report Date: 16-08-2025
+
+Test Result Flag Unit Range
+TLC 9,709 /cumm 4000 - 11000
+Platelet Count 1.30 L lakhs/cumm 1.50 - 4.50
+Total Cholesterol 149 mg/dL < 200
+Vitamin B12 841 pg/mL 200 - 900
+FBS 176 H mg/dL 70 - 100
+
+Urea 27 15 - 40
+
+TSH 6.33 H ulU/mL 0.40 - 4.00
+HDL Cholesterol 60 mg/dL 40 - 60
+* End of report ***

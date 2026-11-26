@@ -1,0 +1,15 @@
+NILGIRI LABS
+
+Patient: Fictional Person 97
+
+Age/Sex: 60.Y / F
+
+Report Date: 2026-06-24
+
+Serum Uric Acid : 5.9 mg/dL (3.5 -:7.2)
+WBC Count: 6727 /cumm (4000 - 11000)
+Creatinine : 1.16 :mg/dL (0.70 -.1.30)
+
+FBS : 99 mg/dL (70 - 100)
+
+* End of report ***

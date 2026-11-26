@@ -1,0 +1,21 @@
+LOTUS DIAGNOSTIC HOSPITAL PATHOLOGY
+Patient: Fictional Person 22
+Age/Sex: 31 Y / F
+
+- ‘Report Date: 2026-05-22
+Investigation Value Unit Reference Range
+TSH 3.18 ulU/mL 0.40:- 4.00
+HDL Cholesterol 54 mg/dL 40 - 60
+Serum Creatinine 1.36 mg/dL,0.70 - 1.30
+Vitamin D 57.2 ng/mL 30 - 100
+TLC.12214 /cumm 4000 - 11000
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+FBS 74 mg/dL 70 - 100
+
+LDL Direct 63 mg/dL < 100
+
+Serum Uric Acid 6.9 3.5 - 7.2
+
+ee End of report ***

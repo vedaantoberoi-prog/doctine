@@ -1,0 +1,15 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 101
+Age/Sex: 38 Y /M
+
+Report Date: 16/06/2024
+
+Test Value Unit Reference Range
+Serum Creatinine 1.55 mg/dL 0.70 - 1.30
+Serum Uric Acid 7.7 mg/dL 3.5 - 7.2
+Blood Urea 84 mg/dL 15 - 40
+Glycated Haemoglobin 9,4 % 4.0 - 5.6
+Cyanocobalamin 422 pg/mL 200 - 900
+HDL Cholesterol 65 mg/dL 40 - 60
+*# End of report ***

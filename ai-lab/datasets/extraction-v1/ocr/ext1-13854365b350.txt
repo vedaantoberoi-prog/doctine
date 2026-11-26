@@ -1,0 +1,15 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 119
+Age/Sex: 62 Y/M
+
+Report Date: 04-06-2025
+
+Test Value Unit Reference Range
+LDL Direct 110 mg/dL < 100
+Serum Uric Acid 8.5 mg/dL 3.5 - 7.2
+25-OH Vitamin D 24.8 ng/mL 30 - 100
+TLC 7593 /cumm 4000 - 11000
+HbAtc 10.5 % 4.0 - 5.6
+
+te End of report ***

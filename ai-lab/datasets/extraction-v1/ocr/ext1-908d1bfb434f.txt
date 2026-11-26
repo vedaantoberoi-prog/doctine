@@ -1,0 +1,23 @@
+ASHOKA PATH LABS.
+
+Patient: Fictional Person 59
+
+Age/Sex: 75 Y/M
+
+Report Date: 2024-02-12
+
+Test Value Unit Reference Range
+
+Hb 13.0 g/dL 13.0 - 17.0
+
+Platelets 2.49 lakhs/cumm 1.50 - 4.50
+Thyroid Stimulating Hormone 2.30 ulU/mL 0.40 - 4.00
+HDL Cholesterol 66 mg/dL 40 - 60
+Serum Sodium 136 mmol/L 135 - 145
+WEC Count 14864 /cumm 4000 - 11000
+Fasting Blood Sugar 132 mg/dL 70 - 100
+SGPT 29 U/L 7 - 56
+
+Vitamin B12 409 pg/mL 200 - 900
+
+e End of report ***

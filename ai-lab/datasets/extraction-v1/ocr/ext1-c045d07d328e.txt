@@ -1,0 +1,20 @@
+KAVERI CLINICAL LABORATORY PATHOLOGY
+Patient: Fictional Person 174
+
+Age/Sex: 22 Y/F
+
+Report Date: 2024-11-10
+
+Test Value Unit Reference Range
+Glycated Haemoglobin 5.9 % 4.0 - 5.6
+Total Cholesterol 188 < 200
+
+HDL Cholesterol 33 mg/dL 40 - 60
+Triglycerides 119 mg/dL < 150
+
+TSH 6.92 ulU/mL, 0.40 - 4.00
+
+Blood Urea 12 mg/dL 15 - 40
+
+Platelet Count 1.47 lakhs/cumm 1.50 - 4.50
+*“* End of report ***

@@ -1,0 +1,18 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 153
+
+Age/Sex: 36 Y/M
+
+Report Date: 25-07-2025
+
+Test Name Result Units Bio. Ref. Interval
+Platelets 2.75.lakhs/cumm 1.50-4.50  -
+‘Total Leucocyte Count 10770 /cumm 4000 - 11000"
+Hemoglobin 13.7 g/dL 13.0 - 17.0
+Cyanocobalamin 699-pg/mL 200.- 900
+
+SGPT 66 U/L 7 - 56 .
+Triglycerides 333 mg/dL < 150
+
+*** End of report ***

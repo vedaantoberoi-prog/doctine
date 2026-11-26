@@ -1,0 +1,13 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 175
+Age/Sex: 72 Y/F
+
+Report Date: 22/07/2026
+
+Vitamin B12 : 409 pg/mL (200 - 900)
+Sodium : 143 mmol/L (135 - 145)
+TSH : 8.38 ulU/mL (0.40 - 4.00)
+Hemoglobin : 12.8 g/dL (13.0 - 17.0)
+Vitamin B12 1003 pg/mL 200 - 900
+* End of report ***

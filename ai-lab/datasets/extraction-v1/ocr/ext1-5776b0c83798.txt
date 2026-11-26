@@ -1,0 +1,19 @@
+LOTUS DIAGNOSTIC HOSPITAL
+
+Patient: Fictional Person 52
+
+Age/Sex: 54 Y/M
+
+Report Date: 09-05-2026
+
+Investigation Value Unit Reference Range
+Triglycerides 191 mg/dL < 150
+
+Glucose Fasting 205 mg/dL 70 - 100
+Sodium 144 mmol/L 135 -.145
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+HbAI1¢ 7.6 %.4.0 - 5.6
+
+** End of report ***

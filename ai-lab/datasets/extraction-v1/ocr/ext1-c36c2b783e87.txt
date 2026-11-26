@@ -1,0 +1,14 @@
+NILGIRI LABS
+Patient: Fictional Person 159
+Age/Sex: 32 Y/M
+Report Date: 28-06-2026
+Test Name Result Units Bio. Ref. Interval
+25-OH Vitamin D 21.5 ng/mL 30 - 100
+Urea 60 mg/dL 15 - 40
+Glycated. Haemoglobin 5.6 % 4.0 - 5.6
+LDL Cholesterol 83 mg/dL < 100
+Vitamin B12 481 pg/mL 200 - 900
+TG 204 mg/dL < 150
+Sodium 137 mmol/L 135 = 145.
+
+ee End of report ***

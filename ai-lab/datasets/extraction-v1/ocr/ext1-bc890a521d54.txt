@@ -1,0 +1,21 @@
+KAVERI CLINICAL LABORATORY PATHOLOGY
+Patient: Fictional Person 43
+
+Age/Sex: 46 Y/M
+
+Report Date: 26-12-2025
+
+Serum Creatinine : 0.58 mg/dL (0.70 - 1.30)
+Glycated Haemoglobin : 7.7 % (4.0 - 5.6)
+Sodium : 132 mmol/L (135 - 145)
+Cyanocobalamin : 567 pg/mL (200 - 900)
+Platelet Count : 2.90 lakhs/cumm (1.50 - 4.50)
+TSH : 8.61 ulU/mL (0.40 - 4.00)
+
+TLC : 15,275 (4000 - 11000)
+
+TG : 188 mg/dL (< 150)
+
+HDL Cholesterol : 67 mg/dL (40 - 60)
+Serum Creatinine 1.91 mg/dL 0.70 - 1.30
+& End of report ***

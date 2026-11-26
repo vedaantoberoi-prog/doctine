@@ -1,0 +1,21 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 37
+
+Age/Sex: 20 Y/M
+
+Report Date: 06-12-2024
+
+HDL Cholesterol : 74 mg/dL (40 - 60)
+
+ALT (SGPT) : 31 U/L (7 - 56)
+
+Glycated Haemoglobin : 10.0 % (4.0 - 5.6)
+Thyroid Stimulating Hormone : 5.12 ulU/mL (0.40 - 4.00)
+Haemoglobin : 9.7 g/dL (13.0 - 17.0)
+Fasting Blood Sugar : 160 mg/dL (70 - 100)
+Blood Urea : 78 mg/dL (15 - 40)
+
+HDL Cholesterol 32 mg/dL 40 - 60
+
+*** End of report ***

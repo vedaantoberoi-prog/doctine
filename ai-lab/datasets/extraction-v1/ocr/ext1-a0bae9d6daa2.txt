@@ -1,0 +1,20 @@
+LOTUS DIAGNOSTIC HOSPITAL
+Patient: Fictional Person 5
+
+Age/Sex: 32 Y/F
+
+Report Date: 23/07/2025.
+
+Test. Value Unit Reference Range
+Platelet Count 3.51 lakhs/cumm 1.50 - 4.50
+HDL Cholesterol 38 mg/dL 40 - 60
+Serum Uric Acid 5.9 mg/dL 3.5 - 7.2
+Serum Sodium 140 mmol/L 135 - 145
+ALT (SGPT).121.U/L 7 + 56
+
+Glycated Haemoglobin 6.8% 4.0.- 5.6
+Triglyceridés 99. mg/dL '<.150
+
+Fasting Blood Sugar 165. mg/dL 70 - 100
+Urea 62 mg/dL 15-40 .
+*** End of report ***

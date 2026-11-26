@@ -1,0 +1,15 @@
+SUNRISE DIAGNOSTICS
+Patient: Fictional Person 67
+Age/Sex: 36 Y / F
+
+Report Date: 02/04/2025
+
+TG : 178 mg/dL (< 150)
+
+Hb : 15.3 g/dL (13.0 - 17.0)
+Sodium : 146 mmol/L (135 - 145)
+Thyroid Stimulating Hormone : 7.01 uIU/mL (0.40 - 4.00)
+HbA 1c : 8.3 % (4.0 - 5.6)
+
+Vitamin D : 27.3 ng/mL (30 - 100)
+*k End of report ***

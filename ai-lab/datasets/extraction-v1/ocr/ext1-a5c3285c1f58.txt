@@ -1,0 +1,13 @@
+VEDANT DIAGNOSTIC CENTRE
+Patient: Fictional Person 116
+Age/Sex:.43 Y/M
+Report Date: 08/06/2025
+Test Result Flag Unit Range
+Vitamin B12 660 pg/mL 200 - 900
+Triglycerides 285 H-mg/dL.<.150
+
+~  Hb.9.2 L g/dL 13.0 - 17.0
+Platelets 1.02 L lakhs/cumm'1.50 -.4.50
+Creatinine 1.33.H mg/dL 0.70 - 1.30
+Vitamin B12 827 pg/mL 200 - 900
+*** End of report ***

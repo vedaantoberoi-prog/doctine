@@ -1,0 +1,23 @@
+SUNRISE. DIAGNOSTICS PATHOLOGY
+Patient: Fictional Person 140
+
+Age/Sex: 20 Y /F
+Report Date: 2026-07-14
+
+Test Result Flag Unit Range
+
+Uric Acid 4.9 mg/db 3.5 - 7.2
+
+TSH 4.29 H ulU/mL 0.40 - 4.00
+
+LDE Cholesterol:202 H mg/dL < 100
+Glycated Haemoglobin 5.4 % 4.0 - 5:6
+WBC Count 6738./cumm 4000 - 11000
+HDL 64 H mg/dL 40 - 60
+
+Sodium 140 135 - 145
+
+25-O0H Vitamin D. 29.5 L ng/mL. 30 - 100
+SGPT 81 H U/L 7 - 56
+
+*** End of report ***

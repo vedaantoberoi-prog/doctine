@@ -1,0 +1,22 @@
+VEDANT DIAGNOSTIC CENTRE PATHOLOGY
+Patient: Fictional Person 165
+
+Age/Sex: 73 Y/M
+
+Report Date: 17/06/2026
+
+Test Name Result Units Bio. Ref. Interval
+HDL Cholesterol 36 mg/dL 40 - 60
+
+Vitamin B12 720 pg/mL 200 - 900
+
+Sodium 146 mmol/L 135 - 145
+
+TG 114 mg/dl < 150
+
+Vitamin D 39.6 30 - 100
+
+Cholesterol Total 240 mg/dL < 200
+Platelet Count 2.51 lakhs/cumm 1.50 - 4.50
+Serum Creatinine 0.89 mg/dL 0.70 - 1.30
+#4 End of report ***

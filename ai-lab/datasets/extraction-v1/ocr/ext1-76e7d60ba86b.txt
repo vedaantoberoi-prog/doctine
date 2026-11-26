@@ -1,0 +1,14 @@
+NILGIRI LABS
+
+Patient: Fictional Person 114 :
+Age/Sex: 38 Y./ F :
+
+Report Date: 20/12/2025
+
+Test Value. Unit Reference Range
+Serum Uric Acid 3.3 mg/dL 3.5 - 7.2
+LDL Direct.66 mg/dk < 100 :
+Serum: Sodium 133. mmol/L 135 - 145
+Glycated Haemoglobin 5.6 %.4.0 - 5.6
+Vitamin B12.270 pg/mL 200 - 900.
+*-End of report ***

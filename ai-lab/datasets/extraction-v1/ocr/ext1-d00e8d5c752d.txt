@@ -1,0 +1,18 @@
+NILGIRI LABS
+
+Patient: Fictional Person 132
+
+Age/Sex: 53 Y/ F
+
+Report Date: 13/06/2026
+
+Test Value Unit Reference Range
+Fasting Blood.Sugar 119 mg/dL 70 - 100
+LDL Direct 186 mg/dL ‘< 100
+
+WBC Count 13,025 /cumm 4000 - 11000
+Hb 10.9 g/dL 13.0 -17.0
+
+ALT (SGPT) 52 U/L 7 - 56
+
+** End of report ***

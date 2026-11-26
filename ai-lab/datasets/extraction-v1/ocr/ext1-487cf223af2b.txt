@@ -1,0 +1,10 @@
+KAVERI CLINICAL LABORATORY ;
+Patient: Fictional Person 6
+Age/Sex: 31 Y/M
+Report Date: 06-07-2025
+. Test Value Unit Reference Range
+SGPT 127 U/L7 - 56
+Platelets 3.83 lakhs/cumm 1.50 - 4.50
+HbA1c 9.2 % 4.0.- 5.6
+Thyroid Stimulating Hormone 6.88 uIU/mL 0.40 - 4.00
+*e End of report ***

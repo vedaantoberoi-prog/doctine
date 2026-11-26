@@ -1,0 +1,17 @@
+KAVERI CLINICAL LABORATORY
+Patient: Fictional Person 93
+
+Age/Sex: 24 Y/ F
+
+Report Date: 2024-05-06
+
+Test Name Result Units Bio. Ref. Interval
+Glucose Fasting 107 mg/dL 70 - 100
+Sodium 137 mmol/L 135 - 145
+
+Serum Uric Acid 5.7 mg/dL 3.5 - 7.2
+Glycated Haemoglobin 7.2 % 4.0 - 5.6
+Cyanocobalamin 914 pg/mL 200 - 900
+Creatinine 1.16 mg/dL 0.70 - 1.30
+
+** End of report ***

@@ -1,0 +1,26 @@
+LOTUS DIAGNOSTIC HOSPITAL PATHOLOGY
+Patient: Fictional Person 76
+
+Age/Sex:.58 Y / F
+
+Report Date: 27/07/2025
+
+Investigation Value. Unit Reference Range
+Hb 15.5 g/dL 13.0 - 17.0
+
+SGPT 56 U/L7 - 56
+
+FBS 203 mg/dL 70 - 100
+
+Cyanocobalamin 592 pg/mL 200 -.900
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+
+Investigation Value Unit Reference Range
+
+HDL Cholesterol 48 mg/dL 40 - 60
+
+Thyroid Stimulating Hormone 5.48 ulU/mL 0.40 - 4.00
+LDL Cholesterol 156 mg/dL < 100
+
+*k End of report ***

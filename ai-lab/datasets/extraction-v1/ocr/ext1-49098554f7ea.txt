@@ -1,0 +1,16 @@
+LOTUS DIAGNOSTIC HOSPITAL
+
+Patient: Fictional Person 17
+
+Age/Sex: 80 Y/ F
+
+Report Date: 2024-07-08
+
+Test Value Unit Reference Range
+Fasting Blood Sugar 90 mg/dL 70 - 100
+LDL Cholesterol 85 mg/dL < 100
+Serum Sodium 144 mmol/L 135 - 145
+Glycated Haemoglobin 7,5 % 4.0 - 5.6
+Serum Creatinine 1.60 mg/dL 0.70 - 1.30
+Platelets 3.35 lakhs/cumm 1.50 - 4.50
+* End of report ***

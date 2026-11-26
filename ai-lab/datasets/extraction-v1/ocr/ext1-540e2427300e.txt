@@ -1,0 +1,20 @@
+LOTUS DIAGNOSTIC HOSPITAL PATHOLOGY.
+Patient: Fictional Person 23
+
+Age/Sex: 69 Y / F
+
+Report Date: 2026-05-07 .
+
+Test Value. Unit Reference Range
+
+Platelet Count 5.06 lakhs/cummi.1.50 -'4.50
+SGPT 16 U/L 7 - 56
+
+Vitamin D 50.5 ng/mL 30 - 100 .
+Creatinine 1.56 mg/dL 0.70 - 1.30
+
+Total Cholesterol.191 mg/dL’< 200
+
+Urea 40 mg/dL 15 - 40
+
+*e* End of report ***

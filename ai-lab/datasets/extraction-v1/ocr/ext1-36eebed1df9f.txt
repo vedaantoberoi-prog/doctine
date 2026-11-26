@@ -1,0 +1,18 @@
+GANGA PATHOLOGY. LAB
+
+Patient: Fictional Person 61
+
+Age/Sex:-31 Y/-M
+
+Report Date: 04-04-2024
+
+TLC : 12008 /cumm (4000 - 11000) .
+"Serum Creatinine : 0.52 mg/dL (0.70 - 1.30)
+
+Fasting Blood Sugar : 174 mg/dL (70 100)
+
+Total Cholesterol : 222 mg/dL (< 200)
+
+Thyroid Stimulating Hormone : 3.22 ulU/mL (0.40 - 4.00)
+
+** End of report *** | ~

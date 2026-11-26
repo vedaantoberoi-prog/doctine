@@ -1,0 +1,22 @@
+KAVERI CLINICAL LABORATORY
+
+Patient: Fictional Person 177
+
+Age/Sex: 58 Y /M
+
+Report Date: 12-10-2025
+
+Test Name Result Units Bio. Ref. Interval
+HDL 36 mg/dL 40 - 60
+
+Total Leucocyte Count 8515 /cumm 4000 - 11000
+Uric Acid 4.6 mg/dL 3.5 - 7.2
+Cyanocobalamin 668 pg/mL 200 - 900
+Platelets 3.41 lakhs/cumm 1.50 - 4.50
+Serum Sodium 136 mmol/L 135 - 145
+Triglycerides 269 mg/dL < 150
+
+LDL Cholesterol 103 mg/dL < 100
+Glycated Haemoglobin 4.9 % 4.0 - 5.6
+
+*** End of report ***

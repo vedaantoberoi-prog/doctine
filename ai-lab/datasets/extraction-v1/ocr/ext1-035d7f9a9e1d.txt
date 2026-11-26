@@ -1,0 +1,18 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 33
+
+Age/Sex: 21 Y/M
+
+Report Date: 2026-07-02
+
+Test Name Result Units Bio. Ref. Interval
+HDL 69 mg/dL 40 - 60
+
+Hb 14.8 g/dL 13.0 - 17.0
+Cyanocobalamin 414 pg/mL 200 - 900
+Total Cholesterol 189 mg/dL < 200
+Urea 83 mg/dL 15 - 40
+
+Fasting Blood Sugar 162 mg/dL 70 - 100
+*e End of report ***

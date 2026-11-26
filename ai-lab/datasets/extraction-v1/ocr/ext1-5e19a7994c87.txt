@@ -1,0 +1,14 @@
+GANGA PATHOLOGY LAB.
+
+Patient: Fictional Person 24
+Age/Sex: 75 Y/M
+
+Report Date: 2024-07-14
+
+Test Value Unit Reference Range
+Vitamin B12 738 pg/mL 200 - 900
+LDL Cholesterol 201 mg/dL < 100
+Hb 13.2 g/dL 13.0 - 17.0
+
+Total Cholesterol 165 mg/dL < 200
+#e* End of report ***

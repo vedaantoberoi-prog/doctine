@@ -1,0 +1,25 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 28,
+
+Age/Sex: 22 Y./M
+
+Report Date: 25-11-2024
+
+Investigation. Value Unit Reference Range
+Total Cholesterol 260 < 200
+
+Vitamin D 58.0 ng/mL 30 - 100
+
+Uric Acid 4.3 mg/dL 3.5:-.7.2
+
+Urea 15 mg/dL 15 - 40
+--- page 2 ---
+ASHOKA PATH LABS
+
+Investigation Value Unit Reference Range
+Fasting Blood Sugar 95 70 - 100
+
+TSH 3.63 ulU/mL 0.40 - 4.00
+
+*** End of report ***

@@ -1,0 +1,25 @@
+VEDANT DIAGNOSTIC CENTRE
+
+Patient: Fictional Person 147
+
+Age/Sex: 40 Y/ F
+
+Report Date: 08-08-2024
+
+Test Name: Result Units Bio. Ref. Interval
+
+HbAlc 9.6 % 4.0 - 5.6 “ :
+
+Serum Sodium 142.mmol/L 135 - 145
+
+Total Leucocyte. Count 10378 /cumm, 4000 -.11000
+Urea 38 mg/dL 15 - 40
+
+Thyroid Stimulating Hormone 0.74 ulU/mL 0.40 - 4.00
+Serum Uric Acid 4.5 mg/dL 3.5 - 7.2
+
+Cyanocobalamin 237 pg/mL 200 - 900
+
+Platelet Count 1.79 lakhs/cumm 1.50 - 4.50
+
+et End of report *** ;

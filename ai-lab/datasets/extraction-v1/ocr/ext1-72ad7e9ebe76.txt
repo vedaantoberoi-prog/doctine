@@ -1,0 +1,20 @@
+SUNRISE DIAGNOSTICS PATHOLOGY
+Patient: Fictional Person 126
+
+Age/Sex: 69 Y/ M
+
+Report Date: 23-09-2026
+
+Test Value Unit Reference Range
+Vitamin D 56.9 ng/mL 30.- 100
+
+SGPT 26 U/L 7 - 56
+
+Serum Creatinine 2.03 mg/dL 0.70 - 1.36
+Thyroid Stimulating Hormone 6.69 ulU/mL 0.40 - 4.00
+Fasting Blood Sugar 183 mg/dL.70 - 100
+HDL Cholesterol 46 40 - 60
+
+Urea 21 mg/dL 15 - 40
+
+xe End of report ***

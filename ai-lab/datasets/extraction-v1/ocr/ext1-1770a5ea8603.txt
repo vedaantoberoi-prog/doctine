@@ -1,0 +1,13 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 49 .
+Age/Sex: 31-Y/F
+
+Report Date: 08-08-2025
+
+LDL Direct : 122 mg/dL (<.100)
+Cyanocobalamin ; 931 pg/mL (200 - 900)
+Platelet Count : 1.13 lakhs/cumm (1.50 - 4.50)
+HDL Cholesterol : 70 mg/dL (40 --60)
+
+*e End of report ***

@@ -1,0 +1,17 @@
+GANGA PATHOLOGY LAB.
+
+Patient: Fictional Person 117
+
+Age/Sex: 49 Y/M
+
+Report Date: 04/06/2024 .
+Test Name Result. Units Bio. Ref. Interval
+Urea 81 mg/dL 15~- 40
+
+LDL-Cholesterol 69 mg/dL < 100
+Fasting Blood Sugar 202 mg/dL 70 - 100
+Triglycerides 411 mg/dL < 150
+
+Sodium 142 mmol/L 135 - 145
+
+End of report ***

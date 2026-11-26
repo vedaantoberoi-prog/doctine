@@ -1,0 +1,26 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 46
+
+Age/Sex: 41 Y/ F
+
+Report Date: 2025-11-22
+
+Investigation Value Unit Reference Range
+Cyanocobalamin 429 pg/mL 200 - 900
+Blood Urea 59 mg/dL 15 - 40
+
+Serum Creatinine 1.63 mg/dL 0.70 - 1.30
+Total Cholesterol 165 mg/dL < 200
+
+SGPT 52 U/L7 -56
+--- page 2 ---
+ASHOKA PATH LABS
+
+Investigation Value Unit Reference Range
+HDL Cholesterol 66. mg/dL 40 - 60
+
+TEC 10138 /cumm 4000 - 11000
+Haemoglobin 15.2 g/dL 13.0 - 17.0
+
+*** End of report ***

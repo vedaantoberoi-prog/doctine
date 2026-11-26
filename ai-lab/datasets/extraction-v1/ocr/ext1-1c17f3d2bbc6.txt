@@ -1,0 +1,21 @@
+LOTUS DIAGNOSTIC HOSPITAL
+
+Patient: Fictional Person 136
+
+Age/Sex: 50 Y/M
+
+Report Date: 2024-01-15
+
+Investigation Value Unit Reference Range
+TSH 0.93 ulU/mL 0.40 - 4.00
+
+Triglycerides 103 mg/dL < 150
+
+Urea 54 mg/dL 15 - 40
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+LDL Direct 155 mg/dL < 100
+
+Fasting Blood Sugar 142 mg/dL 70 -.100
+*e* End of report ***

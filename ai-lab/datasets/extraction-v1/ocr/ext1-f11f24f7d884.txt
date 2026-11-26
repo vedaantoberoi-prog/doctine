@@ -1,0 +1,20 @@
+LOTUS DIAGNOSTIC HOSPITAL
+
+Patient: Fictional Person 4
+
+Age/Sex: 50 Y/M :
+
+Report Date: 12/02/2025
+
+Investigation Value Unit Reference Range
+
+SGPT 53, U/L 7 - 56
+
+Thyroid Stimulating Hormone 5.88 uIU/mL 0.40 - 4.00
+Vitamin.D 8.0 ng/mL 30 - 100
+--- page 2 ---
+LOTUS DIAGNOSTIC ‘HOSPITAL
+Investigation Value Unit Reference Range
+HbAlc 7.6% 4.0 - 5.6
+
+** End of report ***

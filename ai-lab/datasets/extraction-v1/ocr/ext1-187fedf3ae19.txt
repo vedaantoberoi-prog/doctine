@@ -1,0 +1,21 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 102
+Age/Sex: 45 Y/F
+
+Report Date: 14-08-2024
+
+Test Value Unit Reference Range
+Total Cholesterol 274 mg/dL < 200
+Glucose Fasting 127 mg/dL 70 - 100
+Creatinine 0.70 mg/dL 0.70 - 1.30
+SGPT 72 U/L 7 - 56
+
+Glycated Haemoglobin 9.9 % 4.0 - 5.6
+Platelets 3.63 lakhs/cumm 1.50 - 4.50
+HDL Cholesterol 61 40 - 60
+
+Thyroid Stimulating Hormone 7.87 ulU/mL 0.40 - 4.00
+Hemoglobin 14.2 g/dL 13.0 - 17.0
+
+** End of report ***

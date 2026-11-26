@@ -1,0 +1,15 @@
+VEDANT DIAGNOSTIC CENTRE
+Patient: Fictional Person 20
+Age/Sex: 48 Y/ F
+
+Report Date: 21-09-2026
+
+Test Result Flag Unit Range
+
+HDL 53 mg/dL 40 - 60
+
+SGPT 54 U/L 7-56
+
+Creatinine 1.84 H mg/dL 0.70 - 1.30
+Cholesterol Total 229 H mg/dL < 200
+*k End of report ***

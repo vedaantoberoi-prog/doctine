@@ -1,0 +1,22 @@
+LOTUS DIAGNOSTIC HOSPITAL
+
+Patient: Fictional Person 130
+
+Age/Sex: 43 Y/ F
+
+Report Date: 2026-03-03
+
+Investigation Value Unit Reference Range
+Uric Acid 4.0 mg/dL 3.5 - 7.2
+
+TSH 4.83 ulU/mL 0.40 - 4.00
+
+Cholesterol Total 283 mg/dL < 200
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+Urea 31 mg/dL 15 - 40
+
+TLC 9,492 /cumm 4000 - 11000
+
+** End of report ***

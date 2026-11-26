@@ -1,0 +1,17 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 48
+
+Age/Sex: 57 Y/M
+
+Report Date: 28-04-2024
+
+Test Value Unit Reference Range
+Glucose Fasting 86 mg/dL 70 - 100
+HbAlc 4.9 % 4.0 - 5.6
+
+Serum Sodium 130 mmol/L 135 - 145
+Cholesterol Total 183 < 200
+
+Platelet Count 4.79 lakhs/cumm 1.50 - 4.50
+** End of report ***

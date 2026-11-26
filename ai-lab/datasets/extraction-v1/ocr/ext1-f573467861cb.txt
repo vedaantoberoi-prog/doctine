@@ -1,0 +1,19 @@
+KAVERI CLINICAL LABORATORY
+
+Patient: Fictional Person 98
+
+Age/Sex: 53 Y/M
+
+Report Date:.2025-06-06
+
+Test Result Flag Unit Range
+
+Creatinine 1.63 H mg/dL 0.70 - 1.30
+
+HDL 56 mg/dL 40 - 60 :
+LDL Direct 174 H mg/dL < 100
+
+Platelet Count 5.13 H lakhs/cumm 1.50 - 4,50
+
+Thyroid Stimulating Hormone 3.93 ulU/mL. 0.40 - 4.00
+** End of report ***

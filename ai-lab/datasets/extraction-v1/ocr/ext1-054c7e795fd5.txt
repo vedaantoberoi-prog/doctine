@@ -1,0 +1,21 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 128
+Age/Sex: 32 Y/M
+
+Report Date: 08/08/2025
+
+Test Result Flag Unit Range
+
+TSH 9.38 H 0.40 - 4.00
+
+Hb 17.8 H g/dL 13.0 - 17.0
+
+Total Cholesterol 198 mg/dL < 200
+TG 237 H mg/dL < 150
+
+25-OH Vitamin D 47.9 ng/mL 30 - 100
+Glucose Fasting 173 H mg/dL 70 - 100
+Urea 55 H mg/dL 15 - 40
+
+*** End of report ***

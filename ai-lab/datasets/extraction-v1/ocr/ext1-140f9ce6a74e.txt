@@ -1,0 +1,21 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 122
+
+Age/Sex: 21 Y / F :
+Report Date: 05-08-2024
+
+Test Result Flag Unit Range
+
+Uric Acid 8.2 H mg/dL 3.5 = 7.2
+
+ALT (SGPT) 130 H U/L 7 -56
+
+LDL Direct 152 H mg/dL < 100
+
+Serum Creatinine 1.25 mg/dL 0.70 - 1.30
+Triglycerides 214°-H mg/dL < 150
+
+Urea 73 H mg/dL 15-40
+
+** End of report ***

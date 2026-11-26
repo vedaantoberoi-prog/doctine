@@ -1,0 +1,15 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 127
+Age/Sex: 39 Y/ F
+
+Report Date: 02/10/2025
+
+FBS : 100 mg/dL (70 - 100)
+Creatinine : 1.19 mg/dL (0.70 - 1.30)
+Platelets : 4.03 lakhs/cumm (1.50 - 4.50)
+Total Cholesterol : 230 mg/dL (< 200)
+Sodium : 132 mmol/L (135 - 145)
+Uric Acid : 5.9 mg/dL (3.5 - 7.2)
+
+** End of report ***

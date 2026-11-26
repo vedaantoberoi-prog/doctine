@@ -1,0 +1,24 @@
+ASHOKA PATH LABS :
+Patient: Fictional Person 166
+
+Age/Sex: 67 Y/M
+
+Report Date: 2026-05-17
+
+Investigation Value Unit Reference Range
+
+Platelets 1.22 1.50 - 4.50
+
+Glycated Haemoglobin 9.8 % 4.0 - 5.6
+
+Thyroid Stimulating Hormone 3.80 ulU/mL 0.40. - 4.00
+TG 201 mg/dL < 150
+--- page 2 ---
+ASHOKA PATH LABS
+
+Investigation Value Unit Reference Range
+LDL Cholesterol 96 mg/dL < 100.
+
+ALT (SGPT) 139 U/L’7 - 56
+
+*k End of report ***

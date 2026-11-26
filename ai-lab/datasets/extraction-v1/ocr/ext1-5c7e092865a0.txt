@@ -1,0 +1,18 @@
+KAVERI CLINICAL LABORATORY
+
+Patient: Fictional Person 2
+
+Age/Sex: 48 Y / F
+
+Report Date: 01/05/2025
+
+Test Result Flag Unit Range
+
+LDL Direct 180 H mg/dL < 100
+
+Thyroid Stimulating Hormone 9.31 H ulU/mL 0.40 - 4.00
+Fasting Blood Sugar 124 H mg/dL 70 - 100
+Triglycerides 403 H mg/dL < 150
+
+Serum Creatinine 1.98 H mg/dL 0.70 - 1.30
+** End of report ***

@@ -1,0 +1,21 @@
+NILGIRI LABS
+
+Patient: Fictional Person 168
+
+Age/Sex: 63 Y/F
+
+Report Date: 2024-03-09
+
+Test Value Unit Reference Range
+Platelet Count 0.98 lakhs/cumm 1.50 - 4.50
+HDL Cholesterol 73 mg/dL 40 - 60
+
+Total Cholesterol 192 mg/dL < 200
+
+Blood Urea 85 mg/dL 15 - 40
+
+Triglycerides 248 mg/dL < 150
+Hemoglobin 15.8 g/dL 13.0 - 17.0
+
+Thyroid Stimulating Hormone 1.74 ulU/mL 0.40 - 4.00
+*** End of report ***

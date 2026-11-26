@@ -1,0 +1,24 @@
+VEDANT DIAGNOSTIC CENTRE
+
+Patient: Fictional Person 51
+
+Age/Sex: 25 Y/M
+
+Report Date:.2024-05-27
+
+Test Name Result Units Bio. Ref. Interval
+Blood Urea 74 mg/dL 15 - 40
+
+ALT (SGPT) 40 U/L 7 - 56
+
+Cholesterol Total 201 mg/dL < 200
+
+TSH 4.16 ulU/mL 0.40 - 4.00
+
+HDL Cholesterol 69 mg/dL 40 - 60
+Creatinine 1.78 mg/dL 0.70 - 1.30
+
+Vitamin B12 881 pg/mL 200 - 900
+
+Platelet Count 2.66 lakhs/cumm 1.50 - 4.50
+*** End of report ***

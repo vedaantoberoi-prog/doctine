@@ -1,0 +1,17 @@
+KAVERI CLINICAL LABORATORY PATHOLOGY
+Patient: Fictional Person 115
+
+Age/Sex: 63 Y / F
+
+Report Date: 2026-06-13
+
+LDL Direct : 120 mg/dL (< 100)
+
+Haemoglobin : 12.5 g/dL (13.0 - 17.0)
+Cholesterol Total : 121 mg/dL (< 200)
+
+TSH : 3.98 ulU/mL (0.40 - 4.00)
+
+Uric Acid : 4.1 mg/dL (3.5 - 7.2)
+
+** End of report ***

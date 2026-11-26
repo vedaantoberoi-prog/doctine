@@ -1,0 +1,18 @@
+VEDANT DIAGNOSTIC CENTRE
+
+Patient: Fictional Person 146
+
+Age/Sex: 63 Y/F
+
+Report Date: 16-03-2026
+
+Test Result Flag Unit Range
+
+Serum Creatinine 1.28 mg/dL 0.70 - 1.30
+
+Thyroid Stimulating Hormone 4.01 H ulU/mL 0.40 - 4.00
+Platelets 4.98 H lakhs/cumm 1.50 - 4.50
+
+Glucose Fasting 152 H mg/dL 70 - 100
+
+ek End of report ***

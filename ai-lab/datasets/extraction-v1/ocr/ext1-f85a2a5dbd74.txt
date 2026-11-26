@@ -1,0 +1,19 @@
+GANGA: PATHOLOGY LAB
+
+Patient: Fictional Person 18
+
+Age/Sex: 75 Y/F
+
+Report Date: 14-08-2024
+
+Test Value Unit Reference Range
+TG 107 mg/dL < 150
+
+25-OH Vitamin D 53:0 ng/mL 30 - 100
+Serum Creatinine 1.10 mg/dL 0.70°- 1.30
+HDL Cholesterol 38 40 - 60
+
+Platelet Count 4.52 1.50 -4.50
+
+Total Cholesterol 148 mg/dL < 200
+** End of report ***

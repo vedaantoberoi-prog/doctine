@@ -1,0 +1,19 @@
+VEDANT DIAGNOSTIC CENTRE
+Patient: Fictional Person 96
+Age/Sex: 75 Y/F
+
+Report Date: 2026-06-07
+
+Test Value Unit Reference Range
+Sodium 136 mmol/L 135 - 145
+
+FBS 191 mg/dL 70 - 100
+
+Hb 17.7 g/dL 13.6 - 17.0
+
+TSH 6.53 ulU/mL 0.40 - 4.00
+Vitamin B12 446 pg/mL. 200 - 900
+Serum Uric Acid 8.4 mg/dL 3.5 - 7.2
+HbAlIc 5.9 % 4.0 - 5.6
+
+** End of report ***

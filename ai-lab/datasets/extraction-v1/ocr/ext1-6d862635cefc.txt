@@ -1,0 +1,19 @@
+KAVERI CLINICAL LABORATORY
+Patient: Fictional Person 150
+Age/Sex: 30 Y/M
+
+Report Date: 2024-04-02
+
+Test Value Unit Reference Range
+Urea 65 mg/dL 15 - 40
+
+Cholesterol Total 265 mg/dL < 200
+FBS 115 mg/dL 70 - 100
+
+Vitamin B12 325 pg/mL 200 - 900
+HbAIc 9.5 % 4.0 - 5.6
+
+TG 272 mg/dL < 150
+
+Creatinine 2.33 mg/dL 0.70 - 1.30
+*** End of report ***

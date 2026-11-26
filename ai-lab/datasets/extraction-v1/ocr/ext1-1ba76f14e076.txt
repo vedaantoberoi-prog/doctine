@@ -1,0 +1,18 @@
+KAVERI CLINICAL LABORATORY
+
+Patient: Fictional Person 169
+
+Age/Sex: 49 Y/M
+
+Report Date: 24-03-2026
+
+Cyanocobalamin : 384 pg/mL (200 - 900)
+
+Thyroid Stimulating Hormone : 6.49 ulU/mL (0.40 - 4.00)
+Serum Uric Acid : 7.7 mg/dL (3.5 - 7.2)
+
+Urea : 77 mg/dL (15 - 40)
+
+Serum Sodium : 132 mmol/L (135 - 145)
+
+*e End of report ***

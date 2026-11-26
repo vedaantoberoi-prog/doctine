@@ -1,0 +1,13 @@
+VEDANT DIAGNOSTIC CENTRE
+Patient: Fictional Person 134
+Age/Sex: 63 Y/M
+
+Report Date: 04-08-2024
+
+Test Result Flag Unit Range
+Creatinine 2.01 H mg/dL 0.70 - 1.30
+LDL Direct 204 H mg/dL < 100
+Sodium 128 L mmol/L 135 - 145
+HDL 44 mg/dL 40 - 60
+
+** End of report ***

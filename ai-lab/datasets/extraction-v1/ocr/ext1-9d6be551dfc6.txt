@@ -1,0 +1,15 @@
+VEDANT DIAGNOSTIC-CENTRE, PATHOLOGY
+Patient: Fictional Person 21
+Age/Sex: 27.Y /M
+Report Date: 11/08/2025 :
+Test Name Result.’Units’ Bio. Ref: Interval
+LDL Direct 147 mg/dL < 100
+HDL Cholesterol 67 mg/dL 40 - 60
+FBS 181.mg/dL 70 - 100
+ALT (SGPT) 29 7 - 56
+Total Leucocyte Count 3668 4000 -.11000
+Hb 13.7 13.0 - 17.0 :
+Vitamin D‘50.4 ng/mL 30 - 100
+: Uric Acid 5.7 mg/dL 3.5 - 7.2
+LDL Direct 157 mg/dL < 100
+*# End of report. ***

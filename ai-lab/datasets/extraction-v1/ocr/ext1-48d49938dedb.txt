@@ -1,0 +1,19 @@
+VEDANT DIAGNOSTIC CENTRE PATHOLOGY
+Patient: Fictional Person 72
+
+Age/Sex: 76 Y/M
+
+Test Value Unit Reference Range
+
+Sodium 132 mmol/L 135 - 145
+
+Uric Acid 6.5 mg/dL 3.5 - 7.2
+
+Serum Creatinine 1.91 mg/dL 0.70 - 1.30
+HbAlc 6.1 % 4.0 - 5.6
+
+Platelet Count 2.09 lakhs/cumm 1.50 - 4.50
+Total Cholesterol 259 mg/dL < 200
+
+Thyroid Stimulating Hormone 9.33 ulU/mL 0.40 - 4.00
+*e End of report ***

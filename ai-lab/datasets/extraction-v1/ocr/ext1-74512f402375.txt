@@ -1,0 +1,17 @@
+LOTUS DIAGNOSTIC HOSPITAL
+
+Patient: Fictional Person 124
+
+Age/Sex:.67 Y/ F
+
+Investigation Value Unit. Reference Range
+ALT (SGPT) 58 U/L 7-56
+
+HDL Cholesterol 43 mg/dL 40 - 60
+Haemoglobin.14.0 g/dL 13.0 - 17.0
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+Creatinine 0.82 mg/dL 0.70 - 1.30
+
+*** End of report ***

@@ -1,0 +1,20 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 78
+Age/Sex: 56 Y/M
+
+Report Date: 12-09-2026
+
+Test Value Unit Reference Range
+Uric Acid 4.4 mg/dL 3.5 - 7:2
+‘Serum Creatinine 0.83 mg/dL 0.70°- 1.30
+TLC 10,306 /cumm 4000 -:11000
+Sodium 135 mmol/L 135 - 145
+HDL 63 mg/dL 40 - 60
+Triglycerides 251 mg/dL < 150
+LDL Direct 148 mg/dL < 100
+
+Total Cholesterol 283 mg/dL < 200
+FBS 181 mg/dL 70 - 100
+
+ek End of report ***

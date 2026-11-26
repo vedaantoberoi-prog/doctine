@@ -1,0 +1,17 @@
+KAVERI CLINICAL LABORATORY
+Patient: Fictional Person 36
+Age/Sex: 26 Y / F
+
+Report Date: 2026-07-03
+
+Test. Value Unit. Reference Range
+Platelet Count 3.18 lakhs/cumm 1.50 - 4.50
+ALT (SGPT) 43 7 - 56
+
+Urea 67.15 - 40
+
+Haemoglobin.9.5 g/dL 13:0 -.17.0
+TG 366 mg/dL < 150
+
+Total Cholesterol 284. mg/dL. < 200
+* End of report ***

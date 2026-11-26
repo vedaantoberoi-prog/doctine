@@ -1,0 +1,20 @@
+VEDANT DIAGNOSTIC CENTRE PATHOLOGY
+Patient: Fictional Person 85
+
+Age/Sex: 36 Y/M
+
+Report Date: 2024-02-03
+
+Platelet Count : 2.85 lakhs/cumm (1.50 - 4.50)
+Cyanocobalamin : 546 pg/mL (200 - 900)
+
+TG : 88 mg/dL (< 150)
+
+TLC : 6,517 /cumm (4000 - 11000)
+
+Hb : 10.0 g/dL (13.0 - 17.0)
+
+Thyroid Stimulating Hormone : 8.70 ulU/mL (0.40 - 4.00)
+LDL Direct : 200 mg/dL (< 100)
+
+** End of report ***

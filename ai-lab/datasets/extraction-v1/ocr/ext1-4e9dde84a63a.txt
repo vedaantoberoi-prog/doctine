@@ -1,0 +1,32 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 154
+
+Age/Sex: 37 Y/ F
+
+Report Date: 27/11/2026
+
+Investigation Value Unit Reference Range
+SGPT 22 U/L:7 -56
+
+Urea 19 mg/dL 15 - 40.
+
+Serum Uric Acid 8.6 3.5 -.7.2
+
+Glucose Fasting 146 mg/dL 70 - 100
+
+Hb 9.2 g/dL 13.0 - 17.0
+--- page 2 ---
+ASHOKA PATH LABS :
+Investigation Value Unit Reference Range
+Cyanocobalamin.1073 pg/mL 200 - 900
+
+TG 369 mg/dL < 150
+
+Serum Sodium 146 mmol/L 135 - 145
+
+LDL Cholesterol 79 mg/dL < 100
+
+SGPT 61 U/L 7 - 56. .
+
+ek End of report ***

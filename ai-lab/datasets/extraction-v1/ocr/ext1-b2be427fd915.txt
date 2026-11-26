@@ -1,0 +1,16 @@
+KAVERI CLINICAL LABORATORY
+Patient: Fictional Person 1
+
+Age/Sex: 51 Y/M
+
+Report Date: 23-07-2024
+
+SGPT : 80 U/L (7 - 56)
+
+Blood Urea : 42 mg/dL (15 - 40)
+
+LDL Direct : 77 mg/dL (< 100)
+Creatinine : 1.26 mg/dL (0.70 - 1.30)
+Vitamin D : 21.8 ng/mL (30 - 100)
+Cyanocobalamin : 891 pg/mL (200 - 900)
+#** End of report ***

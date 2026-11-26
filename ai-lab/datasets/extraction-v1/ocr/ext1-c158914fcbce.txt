@@ -1,0 +1,24 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 8
+
+Age/Sex: 50 Y/M
+
+Report Date: 2024-02-03
+
+Test Result Flag Unit Range
+
+WBC Count 10,257 /cumm 4000 - 11000
+LDL Direct 205 H mg/dL < 100
+
+Urea 81 H mg/dL 15 - 40
+
+FBS 154 H mg/dL 70 - 100
+
+25-OH Vitamin D 39.5 ng/mL 30 - 100
+HbAtc 8.0 H % 4.0 - 5.6
+
+HDL Cholesterol 56 mg/dL 40 - 60
+Platelets 0.99 L lakhs/cumm 1.50 - 4.50
+Serum Sodium 143 mmol/L 135 - 145
+ee End of report ***

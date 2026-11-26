@@ -1,0 +1,22 @@
+NILGIRI LABS PATHOLOGY
+
+Patient: Fictional Person 141
+
+Age/Sex: 68 Y / F
+
+Report Date: 11-07-2024
+
+Test Name Result Units Bio. Ref. Interval
+Serum Creatinine 1.27 mg/dL 0.70 - 1.30
+LDL Cholesterol 173 mg/dL < 100
+
+TSH 0.58 ulU/mL 0.40 - 4.00
+
+Serum Sodium 137 mmol/L 135 - 145
+HbAIc 5.4 4.0 - 5.6
+
+TLC 3,012 /cumm 4000 - 11000
+
+HDL Cholesterol 30 mg/dL 40 - 60
+Serum Creatinine 2.11 mg/dL 0.70 - 1.30
+*** End of report ***

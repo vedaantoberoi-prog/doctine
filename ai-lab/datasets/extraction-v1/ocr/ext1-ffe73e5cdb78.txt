@@ -1,0 +1,16 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 133
+
+Age/Sex: 43 Y/F
+
+Report Date: 11/05/2024
+
+Blood Urea : 70 mg/dL (15 - 40)
+
+Platelet Count : 3.72 lakhs/cumm (1.50 - 4.50)
+
+Total Leucocyte Count : 12186 /cumm (4000 - 11000)
+HDL Cholesterol : 58 mg/dL (40 - 60)
+
+** End of report ***

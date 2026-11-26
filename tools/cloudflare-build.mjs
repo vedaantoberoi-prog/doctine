@@ -10,12 +10,13 @@ execFileSync(process.execPath, ["tests/functions.test.mjs"], { stdio: "inherit" 
 const sha = process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || "";
 if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error("no commit id to stamp (CF_PAGES_COMMIT_SHA)");
 writeFileSync("public/version.json", JSON.stringify({ commit: sha }) + "\n");
+// This build is production only (app.doctine.com), so it may connect to the production database and not staging's.
 // Scripts only from this site and the two libraries' CDNs. This also keeps out anything a host injects into pages, such
 // as an analytics beacon: the privacy policy says Doctine collects no analytics.
-const CSP = "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src 'self' blob: data: https://ggqctflfwpfkemgehizq.supabase.co https://hmlxqmhqfaxfgbizcjyg.supabase.co https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self'; frame-src 'none'; form-action 'self'";
+const CSP = "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src 'self' blob: data: https://ggqctflfwpfkemgehizq.supabase.co https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self'; frame-src 'none'; form-action 'self'";
 // The admin console is stricter still (Cloudflare sends both policies; browsers enforce both): only its own script and
 // the pinned Supabase library, no inline or evaluated script, and nothing that can frame it.
-const ADMIN_CSP = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://ggqctflfwpfkemgehizq.supabase.co https://hmlxqmhqfaxfgbizcjyg.supabase.co; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+const ADMIN_CSP = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://ggqctflfwpfkemgehizq.supabase.co; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
 writeFileSync("public/_headers", `/*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

@@ -70,9 +70,11 @@ check("emergency wording shows the urgent-help banner with 112 (real safety rule
 
 // ---------- error states ----------
 await pg.click("#newchat");
-for (const [status, words, label] of [[401, "rejected the API key", "invalid key"], [529, "busy right now", "busy"], [400, "no credit left", "no credit"]]) {
+for (const [status, words, label] of [[401, "isn’t available right now", "invalid key"], [529, "busy right now", "busy"], [400, "isn’t available right now", "no credit"]]) {
   await mockMode(status); await pg.fill("#ci", "What is BMI?"); await pg.click("#cf button.pri"); await W(600);
-  check(`AI provider error (${label}) is explained, not hidden`, (await text()).includes(words), (await text()).slice(-200));
+  const shown = (await text()).slice(-400);
+  check(`AI provider error (${label}) is explained, not hidden`, shown.includes(words), shown.slice(-200));
+  check(`AI provider error (${label}) shows the person no key, billing or hosting details`, !/api key|netlify|deploy|billing|credits|console/i.test(shown), shown.slice(-200));
 }
 await mockMode(500); await pg.fill("#ci", "my baby is 2 months old and not breathing properly"); await pg.click("#cf button.pri"); await W(600);
 check("with the AI failing, emergency wording still gets 112 guidance", (await text()).includes("112") && (await text()).includes("built-in safety guidance"));

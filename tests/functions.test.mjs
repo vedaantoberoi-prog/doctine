@@ -223,6 +223,7 @@ await test("Claude 5.5 requests: no sampling parameters, tool_choice auto, one r
   sent.length = 0; n = 0;
   r = await callClaude({ key: "k", model: "claude-sonnet-5-5" }, { system: "S", messages: [{ role: "user", content: "hi" }], tool, fetchImpl: fake([{ content: [{ type: "thinking", thinking: "" }], stop_reason: "max_tokens" }]) });
   assert.equal(r.error, "bad_output"); assert.equal(sent.length, 1, "running out of tokens is not retried");
+});
 await test("every refused request carries Retry-After (all rate-limited routes)", async () => {
   const { refused } = await import("../netlify/lib/ai.mjs");
   const r = refused({ status: 429, retryAfter: 42.4 }, { error: "rate_limited" });

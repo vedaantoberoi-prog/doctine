@@ -85,6 +85,10 @@ jobs:
             echo "::error::Netlify deploy to staging failed (exit $code$([ "$code" = 124 ] && echo ', timed out')). Netlify said:"
             # Show what Netlify reported (tokens masked), so the cause is visible in the log.
             cat deploy.err deploy.json 2>/dev/null | sed -E 's/nfp_[A-Za-z0-9_-]+/[masked]/g; s/(token|authorization)([^:]*):[^,}]*/\1\2: [masked]/Ig' | tail -40
+            # Once more with --debug (no --json), so the CLI says what it was doing when it stopped; tokens masked.
+            echo "--- second attempt, with --debug ---"
+            timeout 6m npx --yes "$NETLIFY_CLI" deploy --build --prod --debug --message "staging ${GITHUB_SHA::12} run ${GITHUB_RUN_ID} (debug)" 2>&1 \
+              | sed -E 's/nfp_[A-Za-z0-9_-]+/[masked]/g; s/(token|authorization|bearer)([^:= ]*)[:= ]+[^ ,}]*/\1\2 [masked]/Ig' | grep -v '^\s*$' | tail -60 || true
             # The site's own state and its last deploys, as Netlify records them (states and messages only).
             curl -sS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys?per_page=3" \
               | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);if(!Array.isArray(j)){console.log("Netlify API:",String(j.message||j.code||s).slice(0,200));return}for(const d of j)console.log(`deploy ${d.id}: ${d.state}${d.error_message?" - "+String(d.error_message).slice(0,200):""} (${d.created_at})`)}catch{console.log("Netlify API answered:",s.slice(0,200))}})' || true

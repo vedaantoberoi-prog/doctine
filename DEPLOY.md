@@ -403,7 +403,7 @@ its files public at that deployment's address; delete that deployment.
 real app (`app.doctine.com/?sample=1`).
 
 **CI:** the workflows in `.github/workflows/` run again on GitHub (CI on every push; `apps.yml` for Android/Mac; on `main`:
-nightly backup, uptime, staging). Staging deploys to Netlify fail since 11 Nov (Netlify credits). Still run the local
+nightly backup, restore drill, uptime, staging). Staging deploys to Netlify again (doctine-staging.netlify.app). Still run the local
 checks in section 17 before each upload.
 
 ## 17. Checks to run before an upload

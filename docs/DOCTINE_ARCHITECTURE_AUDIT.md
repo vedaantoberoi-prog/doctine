@@ -1,5 +1,7 @@
 # Doctine — architecture audit (for the Android and macOS apps)
 
+> Historical (12 Nov 2026). For the current state, see `DOCTINE_CURRENT_STATE_AUDIT.md`.
+
 Audited 12 Nov 2026 against branch `bolt-3d-hero` (commit `fc81e38`, the version live at app.doctine.com) and the live
 Supabase project. Facts below were read from the code or queried from production read-only; nothing was changed.
 

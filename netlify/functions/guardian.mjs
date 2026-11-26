@@ -77,9 +77,9 @@ function page(title, body, status = 200) {
 <body><main>${body}<p class="n">Doctine is not an emergency service. In an emergency in India, call 112.</p></main></body></html>`, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-robots-tag": "noindex" } });
 }
 
-async function contactPage(req, url, { engine, store, env }) {
+async function contactPage(req, url, { engine, store, env, now = Date.now }) {
   const secret = linkSecret(env);
-  const t = readAckToken(url.searchParams.get("ack"), { secret });
+  const t = readAckToken(url.searchParams.get("ack"), { secret, now: now() });
   if (t.error) return page("Link not valid", `<h1>This link isn't valid any more</h1><p>It may have expired (links last 24 hours) or the alert was closed. Try calling the person directly.</p>`, 410);
   const found = await store.getIncidentForContact(t.incident_id, t.contact_id);
   if (!found) return page("Link not valid", `<h1>This link isn't valid any more</h1><p>Try calling the person directly.</p>`, 410);
@@ -96,9 +96,9 @@ async function contactPage(req, url, { engine, store, env }) {
 <form method="post"><button type="submit">I'm on it</button></form><p class="n">Pressing this tells them (and Doctine) that you've seen the alert. It doesn't call anyone.</p>`);
 }
 
-async function consentPage(req, url, { store, env }) {
+async function consentPage(req, url, { store, env, now: clock = Date.now }) {
   const secret = linkSecret(env);
-  const t = readConsentToken(url.searchParams.get("consent"), { secret });
+  const t = readConsentToken(url.searchParams.get("consent"), { secret, now: clock() });
   const gone = page("Link not valid", `<h1>This link isn't valid any more</h1><p>It may have expired (these links last 7 days) or the number it was sent for has changed. Ask the person to send a new one.</p>`, 410);
   if (t.error) return gone;
   const c = await store.getContactForConsent(t.contact_id);
@@ -131,13 +131,13 @@ export default async function handler(req, context, { env = process.env, fetchIm
 
   if (url.searchParams.has("ack")) {
     if (req.method !== "GET" && req.method !== "POST") return done("ack", json({ error: "method_not_allowed" }, 405));
-    try { return done("ack", await contactPage(req, url, { engine, store, env })); }
+    try { return done("ack", await contactPage(req, url, { engine, store, env, now })); }
     catch { return done("ack", page("Something went wrong", `<h1>Something went wrong</h1><p>Please try calling the person directly.</p>`, 500)); }
   }
 
   if (url.searchParams.has("consent")) {
     if (req.method !== "GET" && req.method !== "POST") return done("consent", json({ error: "method_not_allowed" }, 405));
-    try { return done("consent", await consentPage(req, url, { store, env })); }
+    try { return done("consent", await consentPage(req, url, { store, env, now })); }
     catch { return done("consent", page("Something went wrong", `<h1>Something went wrong</h1><p>Please try the link again later.</p>`, 500)); }
   }
 

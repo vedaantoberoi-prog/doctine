@@ -10,7 +10,7 @@
  * The person is always the one in the sign-in token. Doctors read shared records through /api/doctor, and every
  * opening is logged where the person can see it. See docs/DOCTOR_NETWORK.md.
  */
-import { json, readJson } from "../lib/ai.mjs";
+import { json, readJson, refused } from "../lib/ai.mjs";
 import { getSettings } from "../lib/settings.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { serviceHeaders } from "../lib/supabase-keys.mjs";
@@ -72,7 +72,7 @@ export default async function handler(req, context, { env = process.env, fetchIm
   const uid = await verifiedUser(token, { env, fetchImpl });
   if (!uid) return done("auth", json({ error: "unauthorized", message: "Please sign in again." }, 401));
   const rate = await checkRate(req, context, "share", { env, fetchImpl });
-  if (!rate.allowed) return done("rate", json({ error: rate.error, retry_after: rate.retryAfter }, rate.status));
+  if (!rate.allowed) return done("rate", refused(rate, { error: rate.error, retry_after: rate.retryAfter }));
   try {
     if (req.method === "GET") return done("list", json({ ...(await rpc("share_list", { p_patient: uid })), options: OPTIONS }));
     const parsed = await readJson(req, 8_000);

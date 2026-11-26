@@ -6,7 +6,7 @@
  * Respects the person's analytics choice: the app only sends events when they have not turned analytics off.
  */
 import { serviceHeaders } from "../lib/supabase-keys.mjs";
-import { json, readJson } from "../lib/ai.mjs";
+import { json, readJson, refused } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 
 // Every event needs a signed-in account: anonymous reports could be used to inflate failure counts and trigger false
@@ -18,7 +18,7 @@ export default async (req, context) => {
   const base = (process.env.SUPABASE_URL || "").replace(/\/$/, ""), anon = process.env.SUPABASE_ANON_KEY, service = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!base || !anon || !service) return json({ ok: false, stored: false, reason: "not_configured" }, 202);
   const rl = await checkRate(req, context, "events");
-  if (!rl.allowed) return json({ error: rl.error }, rl.status);
+  if (!rl.allowed) return refused(rl, { error: rl.error });
   const parsed = await readJson(req, 2048);
   if (parsed.error) return json({ error: parsed.error }, parsed.status);
   const b = parsed.body || {};

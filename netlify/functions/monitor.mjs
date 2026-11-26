@@ -5,7 +5,7 @@
  * when email is configured (RESEND_API_KEY, ALERT_EMAIL_TO, ALERT_EMAIL_FROM). The reply holds counts only.
  * Calling it more often changes nothing: the database records at most one round per 4 minutes.
  */
-import { json } from "../lib/ai.mjs";
+import { json, refused } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { runChecks, recordChecks, rpc, emailAlerts } from "../lib/monitor.mjs";
 
@@ -13,7 +13,7 @@ export default async (req, context) => {
   if (req.method !== "GET" && req.method !== "POST") return json({ error: "invalid" }, 405);
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return json({ error: "not_configured" }, 503);
   const rl = await checkRate(req, context, "monitor");
-  if (!rl.allowed) return json({ error: rl.error }, rl.status);
+  if (!rl.allowed) return refused(rl, { error: rl.error });
   const checks = await runChecks(new URL(req.url).origin);
   const rec = await recordChecks(checks);
   const run = await rpc("monitor_run", {});

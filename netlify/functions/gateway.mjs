@@ -11,7 +11,7 @@
  * Audit: one log line per call with the step names, timings and row counts, never any values; the person is a hash.
  */
 import { createHash } from "node:crypto";
-import { json, readJson } from "../lib/ai.mjs";
+import { json, readJson, refused } from "../lib/ai.mjs";
 import { getSettings } from "../lib/settings.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { userDb, GatewayError } from "../lib/gateway/db.mjs";
@@ -44,7 +44,7 @@ export default async function handler(req, context, { env = process.env, fetchIm
   if (!uid) return json({ error: "unauthorized", message: "Please sign in again." }, 401);
 
   const rl = await checkRate(req, context, "gateway", { env, fetchImpl });
-  if (!rl.allowed) return json({ error: rl.error, retryAfter: rl.retryAfter }, rl.status);
+  if (!rl.allowed) return refused(rl, { error: rl.error, retryAfter: rl.retryAfter });
 
   const parsed = await readJson(req, MAX_BODY);
   if (parsed.error) return json({ error: parsed.error === "too_large" ? "too_large" : "bad_request", message: "Send a short JSON body with an op." }, parsed.status);

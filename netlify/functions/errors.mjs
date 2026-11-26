@@ -3,7 +3,7 @@
  * No sign-in, account id, IP address or page content is stored; the database removes quoted text, numbers and email
  * addresses from the message before keeping it, and groups repeats. Rate-limited per visitor.
  */
-import { json, readJson } from "../lib/ai.mjs";
+import { json, readJson, refused } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { rpc } from "../lib/monitor.mjs";
 
@@ -14,7 +14,7 @@ export default async (req, context) => {
   const origin = req.headers.get("origin");
   if (origin && origin !== new URL(req.url).origin) return json({ error: "forbidden" }, 403);
   const rl = await checkRate(req, context, "errors");
-  if (!rl.allowed) return json({ error: rl.error }, rl.status);
+  if (!rl.allowed) return refused(rl, { error: rl.error });
   const parsed = await readJson(req, 2048);
   if (parsed.error) return json({ error: parsed.error }, parsed.status);
   const b = parsed.body || {}, str = (v, n) => (typeof v === "string" ? v.slice(0, n) : "");

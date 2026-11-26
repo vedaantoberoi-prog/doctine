@@ -6,7 +6,7 @@
  * Needs SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY (server only, never sent to browsers).
  */
 import { serviceHeaders } from "../lib/supabase-keys.mjs";
-import { json } from "../lib/ai.mjs";
+import { json, refused } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 
 const BUCKET = "health-documents";
@@ -27,7 +27,7 @@ export default async (req, context) => {
     return json({ error: "not_configured", missing: ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"].filter((k) => !process.env[k]), message: "Account deletion isn’t set up on this site yet. Nothing was removed." }, 503);
   }
   const rl = await checkRate(req, context, "account");
-  if (!rl.allowed) return json({ error: rl.error, message: "Too many attempts. Please wait and try again." }, rl.status);
+  if (!rl.allowed) return refused(rl, { error: rl.error, message: "Too many attempts. Please wait and try again." });
 
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   if (!token) return json({ error: "unauthorized", message: "Please sign in again." }, 401);

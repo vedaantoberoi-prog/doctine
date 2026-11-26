@@ -13,7 +13,7 @@
  */
 import { randomUUID, createHash } from "node:crypto";
 import { serviceHeaders } from "../lib/supabase-keys.mjs";
-import { json, readJson } from "../lib/ai.mjs";
+import { json, readJson, refused } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { _resetSettingsCache, getSettings } from "../lib/settings.mjs";
 import { runChecks, recordChecks, reportServerError } from "../lib/monitor.mjs";
@@ -286,7 +286,7 @@ export default async (req, context) => {
   const { base, anon, service } = env();
   if (!base || !anon || !service) return json({ error: "not_configured" }, 503);
   const rl = await checkRate(req, context, "admin");
-  if (!rl.allowed) return json({ error: rl.error }, rl.status);
+  if (!rl.allowed) return refused(rl, { error: rl.error });
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   if (!token || token.length > 4096) return json({ error: "unauthorized" }, 401);
 

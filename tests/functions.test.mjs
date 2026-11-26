@@ -205,6 +205,15 @@ await test("rate limit per address", async () => {
   for (let i = 0; i < 41; i++) [last] = await call(chat, "/api/chat", { messages: [user("What is BMI?")] }, { ip: "7.7.7.7" });
   assert.equal(last, 429);
 });
+await test("every refused request carries Retry-After (all rate-limited routes)", async () => {
+  const { refused } = await import("../netlify/lib/ai.mjs");
+  const r = refused({ status: 429, retryAfter: 42.4 }, { error: "rate_limited" });
+  assert.equal(r.status, 429); assert.equal(r.headers.get("retry-after"), "42"); assert.equal((await r.json()).error, "rate_limited");
+  assert.equal(refused({ status: 503 }, {}).headers.get("retry-after"), "60", "a missing wait defaults to 60 s");
+  const src = (f) => readFileSync(new URL(`../netlify/functions/${f}.mjs`, import.meta.url), "utf8");
+  for (const f of ["account", "admin", "assist", "doctor", "errors", "events", "gateway", "guardian", "monitor", "scan", "share"])
+    assert.doesNotMatch(src(f), /allowed\) return (done\("rate", )?json\(/, f + " answers a refused request without Retry-After");
+});
 await test("GET ?test=1 makes a real tiny call and reports the result", async () => {
   anthropic(200, { content: [{ type: "text", text: "ok" }] });
   let [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.ok, true); assert.equal(j.model, "claude-sonnet-5-5"); assert.equal(lastReq.body.max_tokens, 5);

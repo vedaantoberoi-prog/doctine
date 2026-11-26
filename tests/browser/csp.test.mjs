@@ -10,13 +10,15 @@ const build = readFileSync(new URL("../../tools/cloudflare-build.mjs", import.me
 const CSP = build.match(/const CSP = "([^"]+)"/)[1];
 const toml = readFileSync(new URL("../../netlify.toml", import.meta.url), "utf8"), site = readFileSync(new URL("../../website/_headers", import.meta.url), "utf8");
 const results = []; const check = (name, ok, detail = "") => results.push((ok ? "PASS " : "FAIL ") + name + (detail ? "  — " + detail : ""));
-check("the same policy is used for the app on Cloudflare and staging on Netlify", toml.includes(`Content-Security-Policy = "${CSP}"`));
+const PROD = "https://ggqctflfwpfkemgehizq.supabase.co", STAGING = "https://hmlxqmhqfaxfgbizcjyg.supabase.co";
+check("production and staging use the same policy, except that each may connect only to its own database",
+  toml.includes(`Content-Security-Policy = "${CSP.replace(PROD, STAGING)}"`) && CSP.includes(PROD) && !CSP.includes(STAGING) && !toml.includes(PROD));
 // The website no longer holds a copy of the app, so it has its own, stricter policy (checked page by page in website-csp.test.mjs).
 check("the website's own policy is stricter than the app's: no eval, no outside scripts, no database", /Content-Security-Policy: default-src 'self'/.test(site) && !/unsafe-eval|supabase|https:\/\//.test((site.match(/Content-Security-Policy: (.*)/) || [])[1] || "x"));
 const dir = (n) => (CSP.split(";").map((d) => d.trim()).find((d) => d.startsWith(n + " ")) || "");
 check("the policy allows scripts only from this site and the two library CDNs", /^script-src 'self' [^;]*https:\/\/cdnjs\.cloudflare\.com https:\/\/cdn\.jsdelivr\.net$/.test(dir("script-src")) && !/cloudflareinsights|\*/.test(dir("script-src")));
-check("the app can connect only to itself, its two Supabase projects (production, staging) and the library CDNs; plugins, framing and outside forms are off",
-  dir("connect-src").split(/\s+/).slice(1).every((s) => ["'self'", "blob:", "data:", "https://ggqctflfwpfkemgehizq.supabase.co", "https://hmlxqmhqfaxfgbizcjyg.supabase.co", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"].includes(s))
+check("the app can connect only to itself, its own Supabase project and the library CDNs; plugins, framing and outside forms are off",
+  dir("connect-src").split(/\s+/).slice(1).every((s) => ["'self'", "blob:", "data:", PROD, "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"].includes(s))
   && ["object-src 'none'", "base-uri 'self'", "frame-ancestors 'none'", "frame-src 'none'", "form-action 'self'"].every((d) => CSP.includes(d)), dir("connect-src"));
 
 const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 390, height: 844 } });

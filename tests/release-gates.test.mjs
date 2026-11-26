@@ -27,7 +27,7 @@ const good = () => ({
   "medical-eval.json": { live: true, environment: "staging", run_id: "run-1", kind: "LIVE", target: STAGING, deployed_commit: SHA, generated_at: "2026-11-03T20:00:00Z", case_set_size: 2,
     summary: { total: 2, pass: 2, fail: 0, error: 0, critical: 0, failure_categories: {} }, results: [{ id: "A", result: "pass", failures: [] }, { id: "B", result: "pass", failures: [] }] },
 });
-const SIGNOFF = `run_id: run-1\ncommit: ${SHA}\nreviewer: Dr Test Reviewer\nregistration: TEST-REG-0000\ndate: 2026-11-04\ndecision: approved\n`;
+const SIGNOFF = `run_id: run-1\ncommit: ${SHA}\nreviewer: Dr Test Reviewer\nregistration: TEST-REG-0000\nregistration_checked: 2026-11-04 NMC Indian Medical Register, by Test Owner\ndate: 2026-11-04\ndecision: approved\n`;
 const without = (line) => SIGNOFF.split("\n").filter((l) => !l.startsWith(line + ":")).join("\n");
 const swap = (a, b) => SIGNOFF.replace(a, b);
 function run(files, { require = "1-7", signoff = SIGNOFF, sha = SHA } = {}) {
@@ -116,12 +116,18 @@ test("gate 7: pending, rejected, changes_required or missing decisions are refus
   for (const d of ["pending", "rejected", "changes_required", "Approved", "approved?"]) assert.equal(g7(swap("decision: approved", "decision: " + d)).status, "failed", d);
   assert.equal(g7(without("decision")).status, "failed");
 });
-test("gate 7: the report says the registration number was not independently verified", () => { assert.match(g7(SIGNOFF).details, /not independently verified/); });
+test("gate 7: the report says how the registration was checked", () => { assert.match(g7(SIGNOFF).details, /checked by hand: 2026-11-04 NMC/); assert.match(g7(SIGNOFF).details, /does not verify it automatically/); });
+test("gate 7: a sign-off without a hand check of the registration is refused", () => {
+  assert.match(g7(without("registration_checked")).details, /registration_checked is missing/);
+  assert.equal(g7(swap("registration_checked: 2026-11-04 NMC Indian Medical Register, by Test Owner", "registration_checked: <date, register, who checked>")).status, "failed");
+  assert.match(g7(swap("registration_checked: 2026-11-04 NMC Indian Medical Register, by Test Owner", "registration_checked: 2026-11-04")).details, /where and by whom/);
+  assert.match(g7(swap("registration_checked: 2026-11-04 NMC Indian Medical Register, by Test Owner", "registration_checked: 2099-01-01 NMC, by X")).details, /in the future/);
+});
 test("gate 7: the filled-in template passes only when every field is real", () => {
   const tpl = readFileSync(new URL("../docs/medical-review/TEMPLATE.md", import.meta.url), "utf8");
   assert.equal(g7(tpl).status, "failed", "the unedited template never passes");
   const filled = tpl.replace(/^run_id:.*$/m, "run_id: run-1").replace(/^commit:.*$/m, `commit: ${SHA}`).replace(/^reviewer:.*$/m, "reviewer: Dr Test Reviewer")
-    .replace(/^registration:.*$/m, "registration: TEST-REG-0000").replace(/^date:.*$/m, "date: 2026-11-04").replace(/^decision:.*$/m, "decision: approved   # approved | changes_required | rejected");
+    .replace(/^registration:.*$/m, "registration: TEST-REG-0000").replace(/^registration_checked:.*$/m, "registration_checked: 2026-11-04 NMC Indian Medical Register, by Test Owner").replace(/^date:.*$/m, "date: 2026-11-04").replace(/^decision:.*$/m, "decision: approved   # approved | changes_required | rejected");
   assert.equal(g7(filled).status, "passed", g7(filled).details);
 });
 test("CI scope (gates 1–5) passes without staging evidence, and says gates 6–7 were not run", () => {

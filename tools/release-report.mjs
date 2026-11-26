@@ -59,8 +59,9 @@ const fromCounts = (j, label) => {
 const both = (...rs) => ({ status: rs.some((r) => r.status === "failed") ? "failed" : rs.every((r) => r.status === "passed") ? "passed" : "not_run", details: rs.flatMap((r) => r.details) });
 
 /* Gate 7. The sign-off must name the exact evaluation run and the exact (full) commit that run evaluated, a reviewer,
-   a registration number and a valid date, and say "decision: approved". The registration number is recorded as
-   written: Doctine does not verify it with a medical council. */
+   a registration number and a valid date, and say "decision: approved". The registration number must also have been
+   looked up by hand on the NMC Indian Medical Register by someone other than the reviewer (registration_checked: date,
+   where, by whom). Doctine has no automatic check against any medical council. */
 function checkSignoff(med, releaseSha, readFile = (f) => (existsSync(f) ? readFileSync(f, "utf8") : null), today = new Date()) {
   if (!med || !med.run_id) return { status: "not_run", details: ["no live evaluation run to sign off"] };
   if (!/^run-[\w-]{1,80}$/.test(med.run_id)) return { status: "failed", details: [`evaluation run id ${JSON.stringify(med.run_id)} is malformed`] };
@@ -89,7 +90,12 @@ function checkSignoff(med, releaseSha, readFile = (f) => (existsSync(f) ? readFi
     if (Number.isFinite(evalDay) && d.getTime() < evalDay - 24 * 3600_000) problems.push(`review date ${date} is before the evaluation ran`);
   }
   if (decision !== "approved") problems.push(`decision is "${decision || "missing"}", not "approved"`);
-  const details = [`reviewer: ${reviewer || "—"} · registration ${reg || "—"} (as written; not independently verified) · ${date || "no date"}`, `run ${field("run_id") || "—"} · commit ${commit || "—"} · decision ${decision || "—"}`, ...problems.map((p) => "✗ " + p)];
+  // Someone other than the reviewer looked the registration up on the National Medical Commission's register.
+  const checked = field("registration_checked"), cm = checked.match(/^(\d{4})-(\d{2})-(\d{2})\b(.*)$/);
+  if (placeholder(checked) || !cm) problems.push("registration_checked is missing: look the reviewer up on the NMC Indian Medical Register and record the date and who checked");
+  else if (!/\S/.test(cm[4].replace(/[·:-]/g, ""))) problems.push("registration_checked must say where and by whom the registration was checked, after the date");
+  else if (Date.UTC(+cm[1], +cm[2] - 1, +cm[3]) > today.getTime() + 36 * 3600_000) problems.push(`registration_checked date ${cm[1]}-${cm[2]}-${cm[3]} is in the future`);
+  const details = [`reviewer: ${reviewer || "—"} · registration ${reg || "—"} (checked by hand: ${checked || "not recorded"}; Doctine does not verify it automatically) · ${date || "no date"}`, `run ${field("run_id") || "—"} · commit ${commit || "—"} · decision ${decision || "—"}`, ...problems.map((p) => "✗ " + p)];
   return { status: problems.length ? "failed" : "passed", details };
 }
 

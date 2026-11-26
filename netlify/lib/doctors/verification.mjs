@@ -41,7 +41,8 @@ export const DOCUMENT_KINDS = Object.freeze({
   photo_id: { label: "Government photo ID", required: true, hint: "PAN card, passport, driving licence or voter ID. Please mask your Aadhaar number if you use Aadhaar." },
   other: { label: "Other (postgraduate degree, additional registration)", required: false, hint: "Optional." },
 });
-export const MAX_FILE_BYTES = 5 * 1024 * 1024;
+// 4 MB: a file travels as base64 (a third larger) and staging (Netlify) accepts requests of at most 6 MB.
+export const MAX_FILE_BYTES = 4 * 1024 * 1024;
 export const MIME_TYPES = Object.freeze(["application/pdf", "image/jpeg", "image/png"]);
 
 /** The file's real type from its first bytes; the declared type and file name are not trusted. */

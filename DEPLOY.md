@@ -99,6 +99,9 @@ Founder only) and the `doctors.view` / `doctors.verify` permissions. No new envi
 `/doctor/`; the queue is Admin → Doctor verification. Before switching it on: a privacy notice for doctors' documents
 reviewed by counsel. See docs/DOCTOR_NETWORK.md.
 
+**Record sharing** (migration `20261127000000_record_sharing`, after the doctor-onboarding one): adds the
+`record_sharing` switch (off, Founder only) and `/api/share`. No new environment variable.
+
 `AI_API_KEY` is accepted as another name for `ANTHROPIC_API_KEY`.
 
 Without the three Supabase variables, the app keeps its browser-only demo accounts, and rate limits are per function instance only (not real protection; see section 5).

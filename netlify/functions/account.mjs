@@ -10,6 +10,7 @@ import { json } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 
 const BUCKET = "health-documents";
+const CREDENTIALS_BUCKET = "practitioner-credentials";   // a doctor's credential files (docs/DOCTOR_NETWORK.md)
 
 async function call(url, init = {}, ms = 10000) {
   const ac = new AbortController();
@@ -40,42 +41,48 @@ export default async (req, context) => {
     if (!uid || !/^[0-9a-f-]{36}$/i.test(uid)) return json({ error: "unauthorized", message: "Please sign in again." }, 401);
     const admin = serviceHeaders(service, { "content-type": "application/json" });
 
-    // 2. Every file under their folder, page by page ({uid}/{record}/{file}; deeper folders are followed too).
+    // 2. Every file under their folder, page by page ({uid}/{record}/{file}; deeper folders are followed too), in the
+    //    health-documents bucket and, for doctors, in practitioner-credentials (that bucket may not exist yet on a site
+    //    without the doctor-network migration; a missing bucket there counts as empty).
     const PAGE = 1000;
-    const listPage = async (prefix, offset) => {
-      const r = await call(`${base}/storage/v1/object/list/${BUCKET}`, { method: "POST", headers: admin, body: JSON.stringify({ prefix, limit: PAGE, offset, sortBy: { column: "name", order: "asc" } }) });
+    const listPage = async (bucket, prefix, offset, optional) => {
+      const r = await call(`${base}/storage/v1/object/list/${bucket}`, { method: "POST", headers: admin, body: JSON.stringify({ prefix, limit: PAGE, offset, sortBy: { column: "name", order: "asc" } }) });
+      if (optional && (r.status === 400 || r.status === 404)) { const t = await r.text().catch(() => ""); if (/not.?found/i.test(t) || r.status === 404) return []; throw new Error("storage list " + r.status); }
       if (!r.ok) throw new Error("storage list " + r.status);
       const rows = await r.json();
       if (!Array.isArray(rows)) throw new Error("storage list: unexpected reply");
       return rows;
     };
-    const collect = async (prefix, depth = 0) => {
+    const collect = async (bucket, prefix, optional, depth = 0) => {
       if (depth > 4) throw new Error("storage list: folders nested too deeply");
       const out = [];
       for (let offset = 0; ; offset += PAGE) {
-        const rows = await listPage(prefix, offset);
+        const rows = await listPage(bucket, prefix, offset, optional);
         for (const e of rows) {
           if (!e || typeof e.name !== "string" || !e.name || e.name.includes("..")) continue;
-          if (e.id) out.push(`${prefix}/${e.name}`); else out.push(...await collect(`${prefix}/${e.name}`, depth + 1));
+          if (e.id) out.push(`${prefix}/${e.name}`); else out.push(...await collect(bucket, `${prefix}/${e.name}`, optional, depth + 1));
         }
         if (rows.length < PAGE) break;
       }
       return out;
     };
-    const paths = await collect(uid);
-    if (paths.some((p) => !p.startsWith(uid + "/"))) throw new Error("refusing to delete outside the person's folder");
-    let removed = 0;
-    for (let i = 0; i < paths.length; i += 500) {
-      const batch = paths.slice(i, i + 500);
-      const r = await call(`${base}/storage/v1/object/${BUCKET}`, { method: "DELETE", headers: admin, body: JSON.stringify({ prefixes: batch }) });
-      if (!r.ok) return json({ error: "delete_failed", files_removed: removed, files_total: paths.length,
-        message: `Some of your files couldn’t be removed (${removed} of ${paths.length} done). Your account was NOT deleted. Please try again.` }, 502);
-      removed += batch.length;
+    let removed = 0, total = 0;
+    for (const [bucket, optional] of [[BUCKET, false], [CREDENTIALS_BUCKET, true]]) {
+      const paths = await collect(bucket, uid, optional);
+      if (paths.some((p) => !p.startsWith(uid + "/"))) throw new Error("refusing to delete outside the person's folder");
+      total += paths.length;
+      for (let i = 0; i < paths.length; i += 500) {
+        const batch = paths.slice(i, i + 500);
+        const r = await call(`${base}/storage/v1/object/${bucket}`, { method: "DELETE", headers: admin, body: JSON.stringify({ prefixes: batch }) });
+        if (!r.ok) return json({ error: "delete_failed", files_removed: removed, files_total: total,
+          message: `Some of your files couldn’t be removed (${removed} of ${total} done). Your account was NOT deleted. Please try again.` }, 502);
+        removed += batch.length;
+      }
+      // Check nothing is left before the account goes (a file left behind would have no owner afterwards).
+      const left = await collect(bucket, uid, optional);
+      if (left.length) return json({ error: "delete_failed", files_removed: removed, files_left: left.length,
+        message: `${left.length} file${left.length === 1 ? "" : "s"} could not be removed. Your account was NOT deleted. Please try again.` }, 502);
     }
-    // Check nothing is left before the account goes (a file left behind would have no owner afterwards).
-    const left = await collect(uid);
-    if (left.length) return json({ error: "delete_failed", files_removed: removed, files_left: left.length,
-      message: `${left.length} file${left.length === 1 ? "" : "s"} could not be removed. Your account was NOT deleted. Please try again.` }, 502);
 
     // 3. The account; rows go with it.
     const del = await call(`${base}/auth/v1/admin/users/${uid}`, { method: "DELETE", headers: admin });

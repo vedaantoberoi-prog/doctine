@@ -80,7 +80,7 @@ jobs:
         run: node tests/guardian.test.mjs
       - name: Doctor network tests (verification rules, /api/doctor; offline, fictional data)
         if: always()
-        run: node tests/doctor.test.mjs
+        run: node tests/doctor.test.mjs && node tests/sharing.test.mjs
       - name: Admin API, admin reports, AI gateway, evidence engine and orchestrator tests (offline, fictional data)
         if: always()
         run: node tests/admin-api.test.mjs && node tests/admin-reports.test.mjs && node tests/gateway.test.mjs && node tests/evidence-lib.test.mjs && node tests/orchestrator.test.mjs

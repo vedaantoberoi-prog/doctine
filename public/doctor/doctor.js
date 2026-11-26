@@ -20,7 +20,7 @@ const FIELD = { full_name: "Full name", registration_number: "Registration numbe
   specialties: "At least one specialty", languages: "At least one language", declaration: "The declaration", "doc:registration_certificate": "Registration certificate (file)", "doc:degree_certificate": "Degree certificate (file)", "doc:photo_id": "Photo ID (file)" };
 const MODE = { text: "Text", audio: "Audio", video: "Video" };
 
-const S = { sb: null, cfg: null, app: null, opt: null, busy: false };
+const S = { sb: null, cfg: null, app: null, opt: null, busy: false, sharing: null, code: null, patients: null, open: null };
 function toast(msg, bad = false) { const t = document.createElement("div"); t.className = "toast" + (bad ? " bad" : ""); t.setAttribute("role", "status"); t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 4200); }
 async function token() { const { data } = await S.sb.auth.getSession(); return data.session && data.session.access_token; }
 async function api(method, body) {
@@ -44,12 +44,13 @@ const closed = () => page(`<h1>Doctor sign-up isn't open yet</h1><p>Doctine is p
 
 async function enter() {
   if (!(await token())) return gate();
-  try { const j = await api("GET"); S.app = j.application; S.opt = j.options; }
+  try { const j = await api("GET"); S.app = j.application; S.opt = j.options; S.sharing = j.sharing || null; }
   catch (e) { if (e.code === "switched_off") return closed(); if (e.code === "signed_out" || e.status === 401) return; return page(`<h1>Something went wrong</h1><p>${esc(e.message || "Please try again in a moment.")}</p><div class="row"><button class="btn" id="re">Try again</button></div>`), ($("#re").onclick = enter); }
   render();
 }
 
 function gate(msg) {
+  Object.assign(S, { app: null, code: null, patients: null, open: null });   // nothing from a previous account stays on screen
   $("#root").innerHTML = `<main class="gate"><form class="card" id="signin" novalidate><div class="mark" aria-hidden="true">D</div>
     <h1>Doctine for doctors</h1>
     <p>Apply to join Doctine's doctor network. Sign in with your Doctine account; we'll check your medical registration against the official register before anything else.</p>
@@ -83,6 +84,7 @@ function render() {
       ${a.status_reason ? `<div class="callout warn" style="margin-top:8px"><span><b>From the Doctine reviewer:</b> ${esc(a.status_reason)}</span></div>` : ""}
       <p class="hint" style="margin-top:8px">Being verified doesn't list you for patients: consultations aren't open on Doctine yet. Verification checks your registration only; it isn't a rating.</p></div></section>
 
+    ${st === "VERIFIED" && S.sharing && S.sharing.on ? sharedSection() : ""}
     <form id="app" novalidate>
     <section class="card dsec"><div class="card-h"><div><h3>Medical registration</h3><p>Exactly as it appears on your registration certificate and the register.</p></div></div><div class="card-b">
       <label class="f" for="full_name">Full name</label><input id="full_name" maxlength="120" value="${esc(a.full_name || "")}" ${ed ? "" : "disabled"} autocomplete="name">
@@ -103,7 +105,7 @@ function render() {
       <label class="f" for="bio">About you (optional)</label><textarea id="bio" maxlength="1200" ${ed ? "" : "disabled"} placeholder="Your clinical interests and where you practise.">${esc(a.bio || "")}</textarea>
       <p class="err" data-err="specialties languages consultation_modes experience_years"></p></div></section>
 
-    <section class="card dsec"><div class="card-h"><div><h3>Documents</h3><p>PDF, JPEG or PNG, up to 5 MB each. Stored privately; only Doctine reviewers checking your registration open them, and every opening is logged.</p></div></div><div class="card-b">
+    <section class="card dsec"><div class="card-h"><div><h3>Documents</h3><p>PDF, JPEG or PNG, up to 4 MB each. Stored privately; only Doctine reviewers checking your registration open them, and every opening is logged.</p></div></div><div class="card-b">
       ${Object.entries(o.document_kinds).map(([k, d]) => { const mine = docs.filter((x) => x.kind === k);
         return `<div class="dkind" data-kind="${k}"><b>${esc(d.label)}</b>${d.required ? "" : ` <span class="muted">(optional)</span>`}<div class="hint" style="margin:2px 0 0">${esc(d.hint)}</div>
           ${mine.map((x) => `<div class="dfile"><span class="nm">${esc(x.file_name)} <span class="muted">${kb(x.size_bytes)} · uploaded ${dt(x.uploaded_at)}</span></span>${ed ? `<button class="btn sm ghost" type="button" data-rm="${esc(x.id)}">Remove</button>` : ""}</div>`).join("")}
@@ -121,6 +123,7 @@ function render() {
     <p class="hint" style="margin-top:16px">Questions about your application: write to Doctine from the app (Settings → Help and feedback). Never send patient information.</p>
   </div>`;
   $("#so").onclick = async () => { await S.sb.auth.signOut({ scope: "local" }); gate(); };
+  wireShared();
   if (!ed) return;
   const addq = $("#addq"); if (addq) addq.onclick = () => { const box = $("#quals"); const n = $$(".qrow", box).length; if (n >= 8) return toast("At most 8 qualifications.", true); addq.parentElement.insertAdjacentHTML("beforebegin", qrow({ degree: "", institution: "", year: "" }, n, true)); wireQ(); };
   wireQ();
@@ -129,6 +132,41 @@ function render() {
   $$("[data-rm]").forEach((b) => b.onclick = () => removeDoc(b.dataset.rm));
   $$("[data-up]").forEach((i) => i.onchange = () => { if (i.files && i.files[0]) upload(i.dataset.up, i.files[0]); });
   const sp = $$("input[name=specialties]"); sp.forEach((c) => c.onchange = () => { if (sp.filter((x) => x.checked).length > 5) { c.checked = false; toast("Choose up to 5 specialties.", true); } });
+}
+
+/* ───────────── records patients shared with this doctor (switch `record_sharing`) ───────────── */
+const SRC = { user: "patient", patient: "patient", clinician: "clinician", document: "from a document", import: "imported", ai_extracted: "AI-read from a report" };
+const src = (x) => `<span class="tag" title="Where this came from">${esc(SRC[x] || x || "patient")}</span>`;
+const PURPOSE = { consultation: "a consultation", second_opinion: "a second opinion", follow_up: "a follow-up", other: "something else" };
+function sharedSection() {
+  const sc = S.sharing.scopes || {};
+  const pts = S.patients;
+  return `<section class="card dsec" id="shared"><div class="card-h"><div><h3>Records shared with you</h3><p>Patients choose what to share, for how long, and can stop at any time. Each time you open something it's recorded, and the patient can see it.</p></div></div><div class="card-b">
+    <div class="row">${S.code ? `<span>Your sharing code: <b class="mono" id="code" style="letter-spacing:.08em">${esc(S.code.slice(0, 5) + "-" + S.code.slice(5))}</b></span><span class="muted">Give it to a patient; they enter it in Doctine under “Share with a doctor”.</span>` : `<button class="btn sm" type="button" id="getcode">Show my sharing code</button>`}</div>
+    <div class="row" style="margin-top:10px"><button class="btn sm" type="button" id="loadpts">${pts ? "Refresh" : "Show patients sharing with me"}</button></div>
+    ${pts ? (pts.length ? `<div class="tbl-wrap" style="margin-top:8px"><table><thead><tr><th>Patient</th><th>Shared for</th><th>Until</th><th>Open</th></tr></thead><tbody>${pts.map((x) => `<tr><td><b>${esc(x.patient.name)}</b><div class="muted">${x.patient.age != null ? esc(x.patient.age) + " years" : ""}${x.patient.sex_at_birth ? " · " + esc(x.patient.sex_at_birth) : ""}</div>${x.note ? `<div class="muted">“${esc(x.note)}”</div>` : ""}</td><td>${esc(PURPOSE[x.purpose] || x.purpose)}</td><td>${dt(x.expires_at)}</td><td><div class="row" style="gap:4px">${x.scopes.map((k) => `<button class="btn sm ${S.open && S.open.share_id === x.id && S.open.scope === k ? "primary" : ""}" type="button" data-pr="${esc(x.id)}|${esc(k)}">${esc((sc[k] || { label: k }).label)}</button>`).join("")}</div></td></tr>`).join("")}</tbody></table></div>` : `<p class="hint" style="margin-top:8px">Nobody is sharing their record with you right now.</p>`) : ""}
+    ${S.open && S.open.data ? sharedView(S.open) : ""}</div></section>`;
+}
+function sharedView(o) {
+  const d = o.data.data, sc = (S.sharing.scopes || {})[o.scope] || { label: o.scope }, items = (d && d.items) || [];
+  const head = `<div class="callout" style="margin-top:12px"><span><b>${esc(sc.label)}</b> · ${esc(o.data.patient.name)} · shared until ${dt(o.data.shared_until)}. Read just now from the patient's live record; this opening is in their access log. Items marked “AI-read from a report” or “patient” are not clinician-verified: check them with the patient or the report.</span></div>`;
+  let body = "";
+  if (o.scope === "profile") body = d ? `<dl class="dl ro"><dt>Name</dt><dd>${esc(d.full_name || "—")}</dd><dt>Age</dt><dd>${d.age != null ? esc(d.age) + " (born " + esc(d.date_of_birth) + ")" : "—"}</dd><dt>Sex at birth</dt><dd>${esc(d.sex_at_birth || "—")}</dd><dt>Gender</dt><dd>${esc(d.gender || "—")}</dd><dt>Blood group</dt><dd>${esc(d.blood_group || "—")}</dd><dt>Height / weight</dt><dd>${d.height_cm ? esc(d.height_cm) + " cm" : "—"} / ${d.weight_kg ? esc(d.weight_kg) + " kg" : "—"}${d.measured_on ? ` <span class="muted">(${esc(d.measured_on)})</span>` : ""}</dd></dl>${src("patient")}` : `<p class="hint">The patient hasn't filled in their basic details.</p>`;
+  else if (o.scope === "allergies") body = (items.length ? `<ul class="timeline">${items.map((a) => `<li><b>${esc(a.title)}</b> <span class="muted">${esc([a.category, a.certainty, a.severity, a.reaction].filter(Boolean).join(" · "))}</span> ${src(a.source)}</li>`).join("")}</ul>` : `<p class="hint">No allergies recorded${d.answer ? ` (patient's answer: ${esc(d.answer)})` : ""}.</p>`) + (d.free_text ? `<p>Also written by the patient: “${esc(d.free_text)}”</p>` : "");
+  else if (o.scope === "medicines") body = items.length ? `<div class="tbl-wrap"><table><thead><tr><th>Medicine</th><th>Dose</th><th>Status</th><th>Dates</th><th>Why / notes</th><th>Source</th></tr></thead><tbody>${items.map((m) => `<tr><td><b>${esc(m.name)}</b>${m.generic_name ? `<div class="muted">${esc(m.generic_name)}</div>` : ""}<div class="muted">${esc([m.strength, m.form, m.route].filter(Boolean).join(" · "))}</div></td><td>${esc(m.dose)}${m.instructions ? `<div class="muted">${esc(m.instructions)}</div>` : ""}</td><td>${esc(m.status)}${m.category === "occasional" ? " (occasional)" : ""}</td><td>${esc(m.start_date || "?")} → ${esc(m.end_date || (m.status === "stopped" ? "?" : "now"))}</td><td>${esc([m.reason, m.prescriber && "by " + m.prescriber, m.stop_reason && "stopped: " + m.stop_reason].filter(Boolean).join(" · ") || "—")}</td><td>${src(m.source)}</td></tr>`).join("")}</tbody></table></div>` : `<p class="hint">No medicines recorded.</p>`;
+  else if (o.scope === "history") body = items.length ? `<ul class="timeline">${items.map((h) => `<li><span class="muted">${esc(h.kind.replace(/_/g, " "))}</span> <b>${esc(h.title)}</b> <span class="muted">${esc([h.category, h.status, h.certainty, h.severity, h.onset && "since " + h.onset].filter(Boolean).join(" · "))}</span> ${src(h.source)}</li>`).join("")}</ul>` : `<p class="hint">No history recorded.</p>`;
+  else if (o.scope === "labs") body = items.length ? `<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Test</th><th>Value</th><th>Reference</th><th>Report</th><th>Source</th></tr></thead><tbody>${items.map((l) => `<tr><td>${esc(l.date || "—")}</td><td>${esc(l.test)}</td><td><b>${esc(l.value ?? "—")}</b> ${esc(l.unit || "")}${l.flag ? ` <span class="st warn">${esc(l.flag)}</span>` : ""}</td><td>${esc(l.reference_range || "—")}</td><td>${esc(l.report || "—")}</td><td>${src(l.source)}</td></tr>`).join("")}</tbody></table></div>` : `<p class="hint">No test results recorded.</p>`;
+  else if (o.scope === "documents") body = items.length ? `<ul class="timeline">${items.map((x) => `<li><b>${esc(x.title)}</b> <span class="muted">${esc([x.category, x.date, x.provider, x.pages && x.pages + " page(s)"].filter(Boolean).join(" · "))}</span></li>`).join("")}</ul><p class="hint">Titles only: files aren't shared yet. Ask the patient to show you a report if you need it.</p>` : `<p class="hint">No documents.</p>`;
+  return head + `<div style="margin-top:8px">${body}</div>`;
+}
+function wireShared() {
+  const gc = $("#getcode"); if (gc) gc.onclick = async () => { try { S.code = (await api("POST", { action: "share_code" })).code; render(); } catch (e) { toast(e.message || "Not available.", true); } };
+  const lp = $("#loadpts"); if (lp) lp.onclick = async () => { try { S.patients = (await api("POST", { action: "patients" })).patients; S.open = null; render(); } catch (e) { toast(e.message || "Not available.", true); } };
+  $$("[data-pr]").forEach((b) => b.onclick = async () => {
+    const [share_id, scope] = b.dataset.pr.split("|");
+    try { const data = await api("POST", { action: "patient_record", share_id, scope }); S.open = { share_id, scope, data }; render(); const el = $("#shared"); if (el) el.scrollIntoView({ block: "start" }); }
+    catch (e) { if (e.status === 404) { toast("This share has ended.", true); S.patients = null; S.open = null; render(); } else toast(e.message || "Couldn't open it.", true); }
+  });
 }
 const qrow = (q, i, ed) => `<div class="qrow"><div><label class="f" for="qd${i}">Degree</label><input id="qd${i}" data-q="degree" maxlength="80" placeholder="MBBS" value="${esc(q.degree || "")}" ${ed ? "" : "disabled"}></div>
   <div><label class="f" for="qi${i}">Institution</label><input id="qi${i}" data-q="institution" maxlength="160" value="${esc(q.institution || "")}" ${ed ? "" : "disabled"}></div>
@@ -169,7 +207,7 @@ async function submit() {
   finally { S.busy = false; }
 }
 async function upload(kind, file) {
-  if (file.size > S.opt.max_file_bytes) return toast("Files can be at most 5 MB.", true);
+  if (file.size > S.opt.max_file_bytes) return toast("Files can be at most 4 MB.", true);
   if (!["application/pdf", "image/jpeg", "image/png"].includes(file.type)) return toast("Upload a PDF, JPEG or PNG.", true);
   await save({ quiet: true });                                  // keep what was typed: the page re-renders after the upload
   const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(r.error); r.readAsDataURL(file); });

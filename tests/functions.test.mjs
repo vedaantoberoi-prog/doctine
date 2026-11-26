@@ -367,18 +367,21 @@ await test("config reports the site environment, and only known names", async ()
   if (saved === undefined) delete process.env.DOCTINE_ENV; else process.env.DOCTINE_ENV = saved;
 });
 /* A small stand-in for Supabase Storage + Auth admin, with real paging (limit/offset) and per-path deletion. */
-function storageSim({ files, failDeleteBatch = -1, stuck = [], failListAt = -1 }) {
-  const live = new Set(files); let deleteCalls = 0, listCalls = 0; const log = [];
-  const uid = "aaaaaaaa-0000-0000-0000-000000000001";
+function storageSim({ files, failDeleteBatch = -1, stuck = [], failListAt = -1, credentials = [], noCredentialsBucket = false, uid: who = "aaaaaaaa-0000-0000-0000-000000000001" }) {
+  const live = new Set(files), creds = new Set(credentials); let deleteCalls = 0, listCalls = 0; const log = [];
+  if (who !== "aaaaaaaa-0000-0000-0000-000000000001") _resetTokenCache();   // the token "good" is someone else in these tests
+  const uid = who;
   globalThis.fetch = async (url, init = {}) => {
     const u = url.replace("https://abc.supabase.co", ""); log.push((init.method || "GET") + " " + u);
     if (u !== "/auth/v1/user") (log.heads ||= []).push({ apikey: init.headers.apikey, authorization: init.headers.authorization });
     if (u === "/auth/v1/user") return new Response(JSON.stringify({ id: uid }));
     if (u.startsWith("/storage/v1/object/list/")) {
-      if (++listCalls === failListAt) return new Response("{}", { status: 500 });
+      const isCred = u.endsWith("/practitioner-credentials");
+      if (isCred && noCredentialsBucket) return new Response(JSON.stringify({ statusCode: "404", error: "Bucket not found", message: "Bucket not found" }), { status: 400 });
+      if (!isCred && ++listCalls === failListAt) return new Response("{}", { status: 500 });
       const { prefix, limit, offset } = JSON.parse(init.body);
       const names = new Map();
-      for (const f of [...live].sort()) if (f.startsWith(prefix + "/")) { const rest = f.slice(prefix.length + 1), seg = rest.split("/")[0]; if (!names.has(seg)) names.set(seg, rest.includes("/") ? null : "file-id"); }
+      for (const f of [...(isCred ? creds : live)].sort()) if (f.startsWith(prefix + "/")) { const rest = f.slice(prefix.length + 1), seg = rest.split("/")[0]; if (!names.has(seg)) names.set(seg, rest.includes("/") ? null : "file-id"); }
       const page = [...names].slice(offset, offset + limit).map(([name, id]) => ({ name, id }));
       return new Response(JSON.stringify(page));
     }
@@ -387,10 +390,11 @@ function storageSim({ files, failDeleteBatch = -1, stuck = [], failListAt = -1 }
       for (const p of JSON.parse(init.body).prefixes) if (!stuck.includes(p)) live.delete(p);
       return new Response("[]");
     }
+    if (u.startsWith("/storage/v1/object/practitioner-credentials") && init.method === "DELETE") { for (const p of JSON.parse(init.body).prefixes) creds.delete(p); return new Response("[]"); }
     if (u.startsWith("/auth/v1/admin/users/")) { log.userDeleted = true; return new Response("{}"); }
     return new Response("{}", { status: 404 });
   };
-  return { live, log, uid };
+  return { live, creds, log, uid };
 }
 const del = (ip) => account(new Request("https://d/api/account", { method: "DELETE", headers: { authorization: "Bearer good" } }), { ip });
 const manyFiles = (uid) => { const f = [];
@@ -422,6 +426,16 @@ await test("a listing failure part-way removes nothing and keeps the account", a
   const sim = storageSim({ files: manyFiles("aaaaaaaa-0000-0000-0000-000000000001"), failListAt: 3 });
   const r = await del("8.8.8.4");
   assert.equal(r.status, 502); assert.ok(!sim.log.some((x) => x.startsWith("DELETE")), "no deletion started"); assert.equal(sim.live.size, 3701);
+});
+await test("a doctor's credential files are deleted with the account, and only theirs", async () => {
+  const uid = "aaaaaaaa-0000-0000-0000-0000000000d1";
+  const sim = storageSim({ uid, files: [`${uid}/1/cleaned-0.jpg`], credentials: [`${uid}/c1.pdf`, `${uid}/c2.png`, "bbbbbbbb-0000-0000-0000-000000000002/c.pdf"] });
+  const r = await del("8.8.8.6"); const j = await r.json();
+  assert.equal(r.status, 200, JSON.stringify(j)); assert.equal(j.files_removed, 3); assert.deepEqual([...sim.creds], ["bbbbbbbb-0000-0000-0000-000000000002/c.pdf"]); assert.ok(sim.log.userDeleted);
+});
+await test("a site without the credentials bucket still deletes accounts", async () => {
+  const sim = storageSim({ uid: "aaaaaaaa-0000-0000-0000-0000000000d2", files: ["aaaaaaaa-0000-0000-0000-0000000000d2/1/cleaned-0.jpg"], noCredentialsBucket: true });
+  const r = await del("8.8.8.7"); const j = await r.json(); assert.equal(r.status, 200, JSON.stringify(j)); assert.ok(sim.log.userDeleted);
 });
 await test("an account with no files is deleted cleanly", async () => {
   const sim = storageSim({ files: [] }); const r = await del("8.8.8.5"); const j = await r.json();

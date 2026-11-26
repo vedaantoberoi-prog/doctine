@@ -45,7 +45,7 @@ const NEEDS = { overview: "dashboard.view", series: "analytics.view", funnel: "a
   data_overview: "data.view", perm_catalog: "dashboard.view", invite: "team.manage", invite_revoke: "team.manage", member_set: "team.manage", session: "dashboard.view", page_denied: "dashboard.view", product_overview: "dashboard.view",
   support_list: "support.view", support_item: "support.view", support_update: "support.view", support_message: "support.respond", feedback: "feedback.view", feedback_update: "feedback.manage",
   work: "bugs.view|feedback.view", work_save: "bugs.manage|feedback.manage", content: "content.view|releases.view", content_save: "content.edit",
-  doctors: "doctors.view", doctor: "doctors.view", doctor_document: "doctors.view", doctor_set_status: "doctors.verify",
+  doctors: "doctors.view", doctor: "doctors.view", doctor_document: "doctors.view", doctor_set_status: "doctors.verify", sharing_summary: "doctors.view",
   errors: "health.view", error: "health.view", error_update: "alerts.manage", report: "reports.export", exports: "reports.export", prefs: "dashboard.view", set_prefs: "dashboard.view", settings_status: "dashboard.view" };
 
 const out = [];
@@ -103,6 +103,7 @@ function data(action, body) {
       qualifications: [{ degree: "MBBS", institution: "Fictional Medical College", year: 2009 }], specialties: ["General physician"], languages: ["English"], consultation_modes: ["video"], experience_years: 12, bio: null, declaration_at: iso(now - 864e5),
       documents: [{ id: "f3000000-0000-0000-0000-0000000000d1", kind: "photo_id", file_name: "id.pdf", mime: "application/pdf", size_bytes: 120000, sha256: "a".repeat(64), uploaded_at: iso(now - 864e5), removed_at: null }],
       history: [{ from: "NOT_STARTED", to: "DOCUMENTS_SUBMITTED", by: "doctor", reason: null, at: iso(now - 864e5), actor_email: "dr.asha.fictional@example.test", evidence: null }], self: false, can_verify: ROLE.perms.includes("doctors.verify") },
+    sharing_summary: { available: true, active_shares: 2, shares_30d: 3, stopped_30d: 1, openings_30d: 7 },
     doctor_set_status: { ok: true, status: body.to }, doctor_document: { url: BASE + "/robots.txt", mime: "application/pdf", file_name: "id.pdf", expires_in: 60 },
     guardian_summary: { available: true, by_state: { CANCELLED: 2 }, by_type: { sos: 2 }, people_enabled: 3 },
     ai_pilot: { pilots: [{ email: "pilot-test@example.test", added_at: "2026-11-23T10:00:00Z", note: "fictional pilot" }], max: 10 },
@@ -447,7 +448,7 @@ await ctx.close();
 // ── doctor verification (Founder holds doctors.view and doctors.verify) ──
 ({ ctx, pg, log } = await open("owner@example.test", { hash: "#/doctors" }));
 await pg.waitForSelector("tr[data-doc]");
-check("doctor verification: the queue lists applications with their status", (await text(pg, "#view")).includes("Dr Asha Fictional") && (await text(pg, "#view")).includes("Under review") && (await text(pg, "#view")).includes("official register"));
+check("doctor verification: the queue lists applications with their status", (await text(pg, "#view")).includes("Dr Asha Fictional") && (await text(pg, "#view")).includes("Under review") && (await text(pg, "#view")).includes("official register") && /Record sharing[\s\S]*never shown/.test(await text(pg, "#view")));
 await pg.click("tr[data-doc]"); await pg.waitForSelector(".drawer [data-to=VERIFIED]");
 check("…the application shows registration details to check, files, history and the allowed actions", /MMC\/2010\/12345/.test(await text(pg, ".drawer")) && !!(await pg.$(".drawer [data-open]")) && !!(await pg.$(".drawer [data-to=REJECTED]")) && !(await pg.$(".drawer [data-to=SUSPENDED]")));
 await pg.click(".drawer [data-to=VERIFIED]"); await pg.waitForSelector("dialog [data-m]");

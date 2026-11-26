@@ -7,7 +7,26 @@ Production is not touched by anything here:
 
 ## 1. Why staging deploys on Netlify stopped
 
-NETLIFY_ROOT_CAUSE
+**Root cause: Netlify billing. The account's credits are used up.** On the 26 Nov run with plain output (Staging run 45865328571), the deploy API answered:
+
+```
+JSONHTTPError: Forbidden   status: 403
+error: 'Account credit usage exceeded - new deploys are blocked until credits are added'
+```
+
+The failure is in the CLI's deploy step, after the build passed. Each candidate cause was checked against the logs:
+
+| Possible cause | Finding |
+|---|---|
+| The CLI | Not the cause. The same `netlify-cli@17.38.1` deployed at 12:22 and 12:50 UTC; exit 4 is the CLI's code for an internal error raised by the API's 403. |
+| Authentication | Not the cause. The token works: the step that cancels stale deploys uses the same token and succeeds. |
+| The API | It is Netlify's API refusing, for billing. |
+| Repository permissions | Not involved. The deploy uploads from GitHub Actions with a token, not from a GitHub link. |
+| Deployment configuration | Not the cause. The build and the configuration resolved normally. |
+
+The last successful deploy, at 12:50 UTC, is still live on doctine-staging.netlify.app. Since then no deploy has been created.
+
+**Fix without moving:** add credits or upgrade the plan in Netlify (Team settings → Billing). That's a purchase only you can approve.
 
 ## 2. Is Vercel compatible with Doctine?
 

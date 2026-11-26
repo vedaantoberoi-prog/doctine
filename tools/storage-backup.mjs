@@ -67,7 +67,13 @@ export async function backupBuckets({ base, key, out, buckets = BUCKETS, fetchIm
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const [out, ...b] = process.argv.slice(2);
-  const base = String(process.env.SUPABASE_URL || "").replace(/\/$/, ""), key = process.env.STORAGE_BACKUP_KEY || "";
+  const base = String(process.env.SUPABASE_URL || "").replace(/\/$/, ""), key = String(process.env.STORAGE_BACKUP_KEY || "").trim();
+  // Shape checks only (never the value): the usual copy-and-paste mistakes, each with a plain reason.
+  const shape = !key ? "" : /[^\x21-\x7e]/.test(key) ? "it contains spaces, line breaks or hidden characters (was the masked key copied instead of the real one?)"
+    : /^sb_publishable_/.test(key) ? "it is the publishable key; the secret key is needed"
+    : /^eyJ/.test(key) ? (JSON.parse(Buffer.from(key.split(".")[1] || "", "base64url").toString() || "{}").role === "service_role" ? "" : "it is a legacy key but not the service_role one")
+    : /^sb_secret_[A-Za-z0-9_-]{20,}$/.test(key) ? "" : "it doesn't look like a Supabase secret key (sb_secret_…)";
+  if (shape) { console.error(`::error::STORAGE_BACKUP_KEY looks wrong: ${shape}. Copy it again with the copy button in Supabase → Project Settings → API Keys → Secret keys.`); process.exit(2); }
   if (!out || !base || !key) { console.error("::error::storage backup: SUPABASE_URL, STORAGE_BACKUP_KEY and an output folder are needed"); process.exit(2); }
   try { await backupBuckets({ base, key, out, buckets: b.length ? b : BUCKETS }); console.log("storage backup: ok"); }
   catch (e) { console.error(`::error::storage backup failed: ${/^(list_failed|download_failed|unsafe_name)/.test(e.message) ? e.message : "unexpected error"} (details withheld from this public log)`); process.exit(1); }

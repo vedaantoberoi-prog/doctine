@@ -247,6 +247,24 @@ await test("an organisation-level key names its workspace (ANTHROPIC_WORKSPACE_I
   assert.equal("anthropic-workspace-id" in anthropicHeaders("k", { ANTHROPIC_WORKSPACE_ID: "x\r\nevil: 1" }), false);
   assert.equal(anthropicHeaders("k", {})["x-api-key"], "k");
 });
+await test("children's medicine amounts never reach the person (MED-008 backstop), adults and dose-free answers untouched", async () => {
+  const { childDoseGuard, CHILD_DOSE_TEXT } = await import("../netlify/functions/chat.mjs");
+  const base = { reply: "", sections: [], urgency: "routine", question: "", options: [], safety_note: "" };
+  const kid = [{ role: "user", content: "How many ml of paracetamol syrup should I give my 2 year old?" }];
+  const bad = { ...base, reply: "A typical paediatric dose is about 10–15 mg of paracetamol per kg. With a 120 mg/5 ml syrup, that is about 5–7.5 ml.", question: "What does the label say?" };
+  let r = childDoseGuard(kid, bad);
+  assert.equal(r.reply, CHILD_DOSE_TEXT); assert.equal(r.question, ""); assert.doesNotMatch(JSON.stringify(r), /\b\d+(\.\d+)?\s?(ml|mg)\b/i, "no amount survives anywhere");
+  assert.equal(r.safety, "child_dose_guard");
+  r = childDoseGuard([{ role: "user", content: "Can I give my 8 month old half an adult cetirizine tablet?" }], { ...base, reply: "No.", sections: [{ title: "Safe", body: "Saline drops, 1–2 drops in each nostril." }] });
+  assert.equal(r.reply, CHILD_DOSE_TEXT, "amounts in sections count too");
+  r = childDoseGuard(kid, { ...base, urgency: "emergency", reply: "Give 5 ml now", safety_note: "Call 112 now." });
+  assert.equal(r.urgency, "emergency"); assert.match(r.safety_note, /112/, "urgency and the emergency number are kept");
+  const ok = { ...base, reply: "It depends on weight; check the label or ask a pharmacist." };
+  assert.equal(childDoseGuard(kid, ok), ok, "a child answer without amounts is left alone");
+  const adult = { ...base, reply: "Adults usually take 500 mg." };
+  assert.equal(childDoseGuard([{ role: "user", content: "What is the usual paracetamol tablet strength?" }], adult), adult, "no child in the conversation: untouched");
+  assert.equal(childDoseGuard([{ role: "user", content: "my 5 year old has a fever" }, { role: "assistant", content: "x" }, { role: "user", content: "how much syrup?" }], bad).reply, CHILD_DOSE_TEXT, "the child named in an earlier turn counts");
+});
 await test("GET ?test=1 makes a real tiny call and reports the result", async () => {
   anthropic(200, { content: [{ type: "text", text: "ok" }] });
   let [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.ok, true); assert.equal(j.model, "claude-sonnet-5-5"); assert.equal(lastReq.body.max_tokens, 64, "a tiny check still leaves room for thinking");

@@ -27,6 +27,7 @@ What you are, and are not
 - You are an AI assistant, not a doctor. Never say or imply you are a doctor.
 - Never give a definitive diagnosis from chat. You may say what a pattern of symptoms is "often" or "commonly" linked to, as possibilities, and say what would tell them apart.
 - Never prescribe, never tell someone to start, stop or change the dose of a medicine. You may explain what a medicine is generally used for and general precautions, and tell them to ask their doctor or pharmacist.
+- Never give a medicine amount for a child or baby (anyone under 18): no mg, ml, drops, tablets, mg per kg, ranges, examples or worked calculations, even if asked directly or the weight is given. Say that children's doses depend on weight and on the strength of the product, and point to the dosing chart on the label, a pharmacist or the child's doctor. Never suggest splitting or using an adult tablet for a child.
 - Never invent test results, records, studies, guidelines or sources. If you don't know, say so.
 - A confident-sounding answer is not medical certainty. Say clearly what you can't know from a chat.
 
@@ -119,6 +120,23 @@ function cleanContext(c) {
   })).filter((r) => /^R\d{1,2}$/.test(r.id) && r.test);
   if (recs.length) out.records = recs;
   return Object.keys(out).length ? out : null;
+}
+
+/* Children's medicine doses: a deterministic backstop after the model, whatever it wrote (medical-eval MED-008, run
+   run-2026-11-26T2125-171bdc: a worked mg/kg and ml dose for a 2-year-old). If the conversation is about a child and the
+   answer contains a medicine amount, the answer is replaced by fixed guidance; urgency and any 112 advice are kept. */
+const CHILD_CONTEXT = /\b(baby|babies|infant|newborn|toddler|child|children|kid|kids|son|daughter|bacch?a|bacch?e|bachchi|beta|beti|munna|munni|(\d{1,2})\s*(-|\s)?(year|yr|month|mo|week|day)s?[- ]?old|\d{1,2}\s*(months?|mahine|saal)\b)/i;
+const DOSE_AMOUNT = /\b\d+(\.\d+)?\s*(?:(?:-|–|to)\s*\d+(\.\d+)?\s*)?(ml|mL|mg|mcg|micrograms?|milligrams?|millilit(?:re|er)s?|drops?|tablets?|tabs?|tsp|teaspoons?|units?)\b|\bmg\s*\/\s*kg\b|\bper\s+kg\b|\bhalf (?:a|an|of an?) (?:adult )?(?:tablet|tab|pill)\b/i;
+export const CHILD_DOSE_TEXT = "I can't give a medicine amount for a child, even as an example. Children's doses depend on their weight and on the strength of the product (the same medicine comes in different strengths), so the safe amount is different for each child and each bottle. Please use the dosing chart on the label for your child's weight, or ask a pharmacist or your child's doctor, and use the measuring syringe or cup that comes with the medicine. Don't split or use adult tablets for a child, and don't give two products that contain the same medicine.";
+export function childDoseGuard(turns, ans) {
+  const asked = turns.filter((t) => t.role === "user").slice(-3).map((t) => typeof t.content === "string" ? t.content : "").join(" ");
+  if (!CHILD_CONTEXT.test(asked)) return ans;
+  const said = [ans.reply, ans.safety_note, ans.question, ...ans.sections.map((x) => x.title + " " + x.body), ...(ans.options || [])].join(" ");
+  if (!DOSE_AMOUNT.test(said)) return ans;
+  const urgent = ans.urgency === "emergency" || ans.urgency === "same_day";
+  return { ...ans, reply: CHILD_DOSE_TEXT, sections: [{ title: "Get help quickly if", body: "Call 112 or go to the nearest emergency department if your child is very drowsy or hard to wake, has trouble breathing, has a fit, or may have been given too much medicine, even if they seem well. See a doctor the same day if your child is under 3 months old with a fever, is not drinking or has far fewer wet nappies, or seems to be getting worse." }],
+    options: [], question: "", safety: ans.safety || "child_dose_guard", urgency: urgent ? ans.urgency : ans.urgency || "routine",
+    safety_note: [urgent ? ans.safety_note : "", "Doctine doesn't give medicine amounts for children."].filter(Boolean).join(" ") };
 }
 
 function cleanAnswer(a, recordIds, passages = []) {
@@ -249,6 +267,8 @@ export default async (req, context) => {
       ? "If you’re having thoughts of harming yourself now, call Tele-MANAS on 14416 (free, 24×7) or 112."
       : "If this is happening to someone now, call 112 straight away.");
   } else if (ans.urgency === "emergency") ans.safety = "model";
+  const guarded = childDoseGuard(turns, ans);
+  if (guarded !== ans) { Object.assign(ans, guarded); }
   return logged(json({ ...ans, knowledge: kb.status, ...(kb.version ? { knowledge_version: kb.version } : {}), state: ans.state || state }),
     { urgency: ans.urgency, safety: ans.safety || "", current_emergency: current === undefined ? null : current, follow_up: !!ans.question, sections: ans.sections.length, sources: ans.sources.length, knowledge: kb.status });
 };

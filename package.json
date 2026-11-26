@@ -23,7 +23,7 @@
     "smoke": "node tools/smoke-check.mjs",
     "build:direct": "node tools/build-direct.mjs",
     "test:gates": "node tests/release-gates.test.mjs",
-    "test:tools": "node tests/netlify-guard.test.mjs && node tests/cloudflare-adapter.test.mjs && node tests/storage-backup.test.mjs && node tests/ai-registry.test.mjs",
+    "test:tools": "node tests/netlify-guard.test.mjs && node tests/cloudflare-adapter.test.mjs && node tests/storage-backup.test.mjs && node tests/ai-registry.test.mjs && node tests/vercel-adapter.test.mjs",
     "build:website": "node tools/build-website.mjs"
   },
   "devDependencies": {

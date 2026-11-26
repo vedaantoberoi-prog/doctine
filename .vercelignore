@@ -1,0 +1,10 @@
+# Only what the staging site needs. Never upload the lab data, the apps, reports or local env files.
+ai-lab/
+apps/
+bolt-3d/
+dist/
+reports/
+website/
+workers/
+.env*
+*.zip

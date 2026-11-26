@@ -71,6 +71,22 @@ export function providerError(status, text, model) {
  * Returns {input} | {text} | {error, ...}. Never throws.
  */
 export async function callClaude({ key, model }, { system, messages, tool, maxTokens = 1500, timeoutMs = TIME_LIMIT_MS, fetchImpl = fetch, signal }) {
+  // Claude 5.5 models (Sonnet, Haiku, Opus): no temperature/top_p/top_k, no forced tool_choice ("tool"/"any" are a 400),
+  // and adaptive thinking is on by default (its tokens count towards max_tokens). So: tool_choice "auto" with a clear
+  // instruction, a larger output budget, and one retry if the model answers in prose instead of calling the tool.
+  // Platform docs: platform.claude.com/docs/en/models/sonnet-5-5/migration-guide (read 27 Nov 2026).
+  const budget = Math.max(64, Math.ceil(maxTokens * THINKING_HEADROOM));
+  const ask = (sys) => requestClaude({ key, model }, { system: sys, messages, tool, maxTokens: budget, timeoutMs, fetchImpl, signal });
+  const sys = tool ? `${system || ""}\n\nAnswer only by calling the ${tool.name} tool, exactly once. Do not write a separate text reply.`.trim() : system;
+  const first = await ask(sys);
+  if (!tool || first.error !== "no_tool_call") return first;
+  const second = await ask(`${sys}\n\nYour previous attempt did not call the ${tool.name} tool. Call it now.`);
+  return second.error === "no_tool_call" ? { error: "bad_output", usage: second.usage } : second;
+}
+/** Thinking shares the output budget with the answer on Claude 5.5 models, so each caller's answer budget is scaled. */
+export const THINKING_HEADROOM = 2.5;
+
+async function requestClaude({ key, model }, { system, messages, tool, maxTokens, timeoutMs, fetchImpl, signal }) {
   const ac = new AbortController();
   if (signal) { if (signal.aborted) return { error: "cancelled" }; signal.addEventListener("abort", () => ac.abort(), { once: true }); }
   const timer = setTimeout(() => ac.abort(), timeoutMs);
@@ -81,8 +97,8 @@ export async function callClaude({ key, model }, { system, messages, tool, maxTo
       signal: ac.signal,
       headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
-        model, max_tokens: maxTokens, temperature: 0.2, system, messages,
-        ...(tool ? { tools: [tool], tool_choice: { type: "tool", name: tool.name } } : {}),
+        model, max_tokens: maxTokens, system, messages,
+        ...(tool ? { tools: [tool], tool_choice: { type: "auto" } } : {}),
       }),
     });
   } catch (e) {
@@ -101,7 +117,8 @@ export async function callClaude({ key, model }, { system, messages, tool, maxTo
   if (!j || !Array.isArray(j.content)) return { error: "bad_output" };
   if (tool) {
     const t = j.content.find((c) => c.type === "tool_use" && c.name === tool.name);
-    return t ? { input: t.input, stop: j.stop_reason, usage: j.usage } : { error: "bad_output", usage: j.usage };
+    if (t) return { input: t.input, stop: j.stop_reason, usage: j.usage };
+    return { error: j.stop_reason === "max_tokens" ? "bad_output" : "no_tool_call", usage: j.usage };
   }
   return { text: j.content.filter((c) => c.type === "text").map((c) => c.text).join(""), usage: j.usage };
 }

@@ -24,7 +24,8 @@ select pg_temp.expect(public.record_ai_trace('{"state":"COMPLETED","outcome":"LD
 select pg_temp.expect(public.record_ai_trace('{"state":"NOT_A_STATE","ms":1}'::jsonb) = false, 'an unknown state is refused (returns false, never raises)');
 select pg_temp.expect(public.record_ai_trace('"text"'::jsonb) = false, 'a non-object is refused');
 select pg_temp.expect((select count(*) from private.ai_traces) = 2, 'two rows stored');
-select pg_temp.expect(not exists (select 1 from private.ai_traces t where to_jsonb(t)::text ~ 'SECRET|142|Asha|drop table|c0000000'), 'no question, value, name, id or injected text stored');
+select pg_temp.expect(not exists (select 1 from private.ai_traces t where (to_jsonb(t) - 'id' - 'at')::text ~ 'SECRET|142|Asha|drop table|c0000000'), 'no question, value, name, id or injected text stored');
+-- (the row's own id and timestamp are left out above: a random id or time containing "142" made this check flaky)
 select pg_temp.expect((select spans from private.ai_traces where outcome is null) = '[["RECEIVED", 1]]'::jsonb, 'only well-formed stage spans are kept');
 select pg_temp.expect(not exists (select 1 from information_schema.columns where table_schema = 'private' and table_name = 'ai_traces'
   and column_name ~ 'user|person|subject|account|email|question|answer|text|title'), 'the table has no column that could identify a person or hold content');

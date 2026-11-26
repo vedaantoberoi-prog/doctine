@@ -18,7 +18,7 @@
  * patients, and there are no consultations: see docs/DOCTOR_NETWORK.md.
  */
 import { createHash, randomUUID } from "node:crypto";
-import { json, readJson } from "../lib/ai.mjs";
+import { json, readJson, refused } from "../lib/ai.mjs";
 import { getSettings } from "../lib/settings.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { serviceHeaders } from "../lib/supabase-keys.mjs";
@@ -93,7 +93,7 @@ export default async function handler(req, context, { env = process.env, fetchIm
   const uid = await verifiedUser(token, { env, fetchImpl });
   if (!uid) return done("auth", json({ error: "unauthorized", message: "Please sign in again." }, 401));
   const rate = await checkRate(req, context, "doctor", { env, fetchImpl });
-  if (!rate.allowed) return done("rate", json({ error: rate.error, retry_after: rate.retryAfter }, rate.status));
+  if (!rate.allowed) return done("rate", refused(rate, { error: rate.error, retry_after: rate.retryAfter }));
 
   try {
     if (req.method === "GET") return done("status", json({ available: true, application: await db.rpc("practitioner_get", { p_user: uid }), options: OPTIONS, sharing: { on: await sharingOn(env, fetchImpl), scopes: SCOPES } }));

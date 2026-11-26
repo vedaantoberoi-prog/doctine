@@ -10,7 +10,7 @@
  * public anon key, so row-level security limits everything to their rows. The service-role key is never used here.
  * One log line per request: states, timings, counts, model, tokens; never a value from anyone's records.
  */
-import { json, readJson } from "../lib/ai.mjs";
+import { json, readJson, refused } from "../lib/ai.mjs";
 import { getSettings } from "../lib/settings.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { authenticate } from "../lib/orchestrator/identity.mjs";
@@ -99,7 +99,7 @@ export default async function handler(req, context, { env = process.env, fetchIm
   const base = (env.SUPABASE_URL || "").replace(/\/$/, ""), anon = env.SUPABASE_ANON_KEY || "";
   if (!base || !anon) return json({ error: "not_configured", message: "The records assistant isn't set up on this site." }, 503);
   const rl = await checkRate(req, context, "assist", { ai: true, env, fetchImpl });
-  if (!rl.allowed) return json({ error: rl.error, retryAfter: rl.retryAfter }, rl.status);
+  if (!rl.allowed) return refused(rl, { error: rl.error, retryAfter: rl.retryAfter });
   const parsed = await readJson(req, MAX_BODY);
   if (parsed.error) return json({ error: parsed.error === "too_large" ? "too_large" : "bad_request", message: "Send a short JSON body with a message." }, parsed.status);
   const body = parsed.body && typeof parsed.body === "object" ? parsed.body : {};

@@ -7,11 +7,13 @@
 import { onRequest } from "../functions/api/[[path]].js";
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
       const path = url.pathname.slice(5).split("/").filter(Boolean);
-      return onRequest({ request, env, params: path.length ? { path } : {} });
+      // Pass Cloudflare's waitUntil, so work after the reply (security log, analytics, stored traces) isn't cut off.
+      const waitUntil = ctx && typeof ctx.waitUntil === "function" ? ctx.waitUntil.bind(ctx) : undefined;
+      return onRequest({ request, env, params: path.length ? { path } : {}, waitUntil });
     }
     return env.ASSETS.fetch(request);
   },

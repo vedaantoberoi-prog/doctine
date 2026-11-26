@@ -38,4 +38,13 @@ await t("only /api/* runs the worker; the static files keep the security headers
 await t("the bundle contains no secret values", async () => {
   const src = readFileSync(new URL("_worker.js", dir), "utf8"); assert.ok(!/sk-ant-|service_role"\s*:|eyJhbGciOi/.test(src));
 });
+await t("the bundle passes Cloudflare's waitUntil through, so the security log line is written after the reply", async () => {
+  const sent = [], waits = [], real = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { if (String(url).includes("/rpc/security_log_add")) { sent.push(JSON.parse(init.body).p_rows[0]); return new Response("1"); } return real(url, init); };
+  try {
+    const r = await worker.fetch(new Request("https://app.doctine.com/api/config", { headers: { "cf-connecting-ip": "203.0.113.9" } }), env, { waitUntil: (p) => waits.push(p), passThroughOnException() {} });
+    assert.equal(r.status, 200); assert.ok(waits.length >= 1, "waitUntil was used"); await Promise.all(waits);
+    assert.ok(sent.some((l) => l.route === "config" && l.status === 200 && l.ip === "203.0.113.9"), JSON.stringify(sent));
+  } finally { globalThis.fetch = real; }
+});
 console.log(`${passed} worker tests passed`);

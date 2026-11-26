@@ -26,7 +26,7 @@ live()  { PGHOST="$LIVE_HOST" PGPORT="${LIVE_PORT:-5432}" PGUSER="$LIVE_USER" PG
 D() { PGOPTIONS='-c client_min_messages=warning' drill "$PGBIN/psql" -X -q -tA -v ON_ERROR_STOP=1 -d drill "$@"; }
 
 # Tables that change every few minutes by design: they only need to be present and non-empty when live is.
-VOLATILE=" private.rate_limits private.uptime_checks private.analytics_events private.error_hits private.error_groups private.ai_traces private.admin_audit_log "
+VOLATILE=" private.rate_limits private.uptime_checks private.analytics_events private.error_hits private.error_groups private.ai_traces private.admin_audit_log private.security_log "
 SKIP=" private.rate_limits "   # short-lived counters, purged continuously; never worth restoring or comparing
 
 # 0. A fresh database with the app's schema, built from the migrations (never from the dump).

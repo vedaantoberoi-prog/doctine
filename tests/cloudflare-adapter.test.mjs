@@ -61,4 +61,35 @@ await t("production answers /api only at app.doctine.com and doctine-app-direct.
   assert.equal((await at("9efabcab.doctine-app-direct.pages.dev", { ...env, APP_HOSTS: "9efabcab.doctine-app-direct.pages.dev" })).status, 200, "APP_HOSTS overrides the list");
   assert.equal((await at("staging.example", { ...env, DOCTINE_ENV: "staging" })).status, 200, "non-production sites are not restricted");
 });
+await t("every request leaves one security-log line after the reply: route, status, IP, claimed account; never the body or token", async () => {
+  const { claimedUid, securityLine } = await import("../netlify/lib/seclog.mjs");
+  const sent = [], realFetch = globalThis.fetch, waits = [];
+  globalThis.fetch = async (url, init) => { if (String(url).endsWith("/rpc/security_log_add")) { sent.push(JSON.parse(init.body)); return new Response("1"); } return realFetch(url, init); };
+  try {
+    const payload = Buffer.from(JSON.stringify({ sub: "a1000000-0000-4000-8000-000000000001", role: "authenticated" })).toString("base64url");
+    const tok = "x." + payload + ".sig";
+    const go = (host, path, init = {}) => onRequest({ request: new Request(`https://${host}/api/${path}`, { headers: { "cf-connecting-ip": "203.0.113.9", "user-agent": "Fictional/1.0", authorization: "Bearer " + tok, ...(init.headers || {}) }, ...init }),
+      env, params: { path: path.split("/") }, waitUntil: (p) => waits.push(p) });
+    await go("app.doctine.com", "account", { method: "DELETE" });
+    await go("9efabcab.doctine-app-direct.pages.dev", "config");
+    await go("app.doctine.com", "no<script>pe");
+    await Promise.all(waits);
+    assert.equal(sent.length, 3);
+    const [a, b, c] = sent.map((x) => x.p_rows[0]);
+    assert.equal(a.route, "account"); assert.equal(a.method, "DELETE"); assert.ok(a.status >= 400, "refused: " + a.status); assert.equal(a.ip, "203.0.113.9");
+    assert.equal(a.claimed_uid, "a1000000-0000-4000-8000-000000000001"); assert.match(a.ua_hash, /^[0-9a-f]{16}$/); assert.equal(a.host, "app.doctine.com"); assert.equal(a.env, "production");
+    assert.equal(b.route, "wrong_address:config"); assert.equal(b.status, 421); assert.equal(c.route, "unknown"); assert.equal(c.status, 404);
+    const raw = JSON.stringify(sent); assert.ok(!raw.includes(tok) && !raw.includes("sig") && !raw.includes("Fictional") && !raw.includes("script"), "no token, raw user agent or path text");
+    assert.equal(claimedUid("Bearer not-a-jwt"), null); assert.equal(claimedUid(""), null);
+    assert.equal(securityLine(new Request("https://h/api/x", { headers: { "x-forwarded-for": "evil, 1.2.3.4" } }), { route: "x", status: 200 }).ip, null, "junk IPs are dropped");
+  } finally { globalThis.fetch = realFetch; }
+});
+await t("the security log is skipped without the server key, with SECURITY_LOG=off, and never breaks a request when the database fails", async () => {
+  const { recordSecurity } = await import("../netlify/lib/seclog.mjs");
+  assert.equal(await recordSecurity([{ route: "x" }], { env: { SUPABASE_URL: "https://x", SUPABASE_SERVICE_ROLE_KEY: "" } }), false);
+  assert.equal(await recordSecurity([{ route: "x" }], { env: { SUPABASE_URL: "https://x", SUPABASE_SERVICE_ROLE_KEY: "k", SECURITY_LOG: "off" } }), false);
+  assert.equal(await recordSecurity([{ route: "x" }], { env: { SUPABASE_URL: "https://x", SUPABASE_SERVICE_ROLE_KEY: "k" }, fetchImpl: async () => { throw new Error("down"); } }), false);
+  const waits = []; const r = await onRequest({ request: new Request("https://app.doctine.com/api/config"), env, params: { path: ["config"] }, waitUntil: (p) => waits.push(p) });
+  assert.equal(r.status, 200);
+});
 console.log(`${passed} cloudflare-adapter tests passed`);

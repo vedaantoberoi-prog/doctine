@@ -16,6 +16,8 @@ import { serviceHeaders } from "../netlify/lib/supabase-keys.mjs";
 
 const BUCKETS = ["health-documents", "practitioner-credentials"];
 const SAFE = /^[A-Za-z0-9._\-()/ ]+$/;
+/* Only Supabase's own short error words (e.g. "Unauthorized", "InvalidJWT"), never file names or ids. */
+const errCode = (t) => { try { const j = JSON.parse(t); const c = String(j.code || j.error || "").replace(/[^A-Za-z_ ]/g, "").slice(0, 40); return c ? ", " + c : ""; } catch { return ""; } };
 
 export async function backupBuckets({ base, key, out, buckets = BUCKETS, fetchImpl = fetch, pageSize = 100 }) {
   const h = serviceHeaders(key);
@@ -25,8 +27,11 @@ export async function backupBuckets({ base, key, out, buckets = BUCKETS, fetchIm
     for (let offset = 0; ; offset += pageSize) {
       const r = await fetchImpl(`${base}/storage/v1/object/list/${bucket}`, { method: "POST", headers: { ...h, "content-type": "application/json" },
         body: JSON.stringify({ prefix, limit: pageSize, offset, sortBy: { column: "name", order: "asc" } }) });
-      if (r.status === 400 || r.status === 404) { const t = await r.text(); if (/not.?found/i.test(t)) return null; throw new Error("list_failed"); }
-      if (!r.ok) throw new Error("list_failed");
+      if (!r.ok) {
+        const t = await r.text().catch(() => "");
+        if ((r.status === 400 || r.status === 404) && /bucket not found/i.test(t)) return null;
+        throw new Error(`list_failed (HTTP ${r.status}${errCode(t)})`);
+      }
       const page = await r.json(); items.push(...page);
       if (page.length < pageSize) break;
     }
@@ -48,7 +53,7 @@ export async function backupBuckets({ base, key, out, buckets = BUCKETS, fetchIm
     const entries = [];
     for (const path of files) {
       const r = await fetchImpl(`${base}/storage/v1/object/${bucket}/${path.split("/").map(encodeURIComponent).join("/")}`, { headers: h });
-      if (!r.ok) throw new Error("download_failed");
+      if (!r.ok) throw new Error(`download_failed (HTTP ${r.status}${errCode(await r.text().catch(() => ""))})`);
       const bytes = Buffer.from(await r.arrayBuffer());
       const dest = join(out, bucket, path); mkdirSync(dirname(dest), { recursive: true }); writeFileSync(dest, bytes, { mode: 0o600 });
       entries.push({ path, size: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") });
@@ -65,5 +70,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const base = String(process.env.SUPABASE_URL || "").replace(/\/$/, ""), key = process.env.STORAGE_BACKUP_KEY || "";
   if (!out || !base || !key) { console.error("::error::storage backup: SUPABASE_URL, STORAGE_BACKUP_KEY and an output folder are needed"); process.exit(2); }
   try { await backupBuckets({ base, key, out, buckets: b.length ? b : BUCKETS }); console.log("storage backup: ok"); }
-  catch (e) { console.error(`::error::storage backup failed: ${e.message === "list_failed" || e.message === "download_failed" || e.message === "unsafe_name" ? e.message : "unexpected error"} (details withheld from this public log)`); process.exit(1); }
+  catch (e) { console.error(`::error::storage backup failed: ${/^(list_failed|download_failed|unsafe_name)/.test(e.message) ? e.message : "unexpected error"} (details withheld from this public log)`); process.exit(1); }
 }

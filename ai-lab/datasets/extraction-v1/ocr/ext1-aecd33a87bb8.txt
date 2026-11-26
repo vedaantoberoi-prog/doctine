@@ -1,0 +1,17 @@
+VEDANT DIAGNOSTIC CENTRE PATHOLOGY
+Patient: Fictional Person 170
+
+Age/Sex: 33 Y/F
+
+Report Date: 07-07-2024
+
+Test Result Flag Unit Range
+
+Uric Acid 3.0 L mg/dL 3.5 - 7.2
+
+FBS 194 H mg/dL 70 - 100
+
+Platelets 5.13 H lakhs/cumm 1.50 - 4.50
+Hemoglobin 13.8 g/dL 13.0 - 17.0
+
+** End of report ***

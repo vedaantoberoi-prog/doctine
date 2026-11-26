@@ -1,0 +1,21 @@
+ASHOKA PATH LABS :
+Patient: Fictional Person.107
+
+Age/Sex: 43 Y/F
+
+Report Date: 02-05-2026
+
+Test Value. Unit Reference Range
+Platelet Count 2.05 lakhs/cumm 1.50 - 4.50
+Serum Creatinine 1.07 mg/dL 0.70-- 1.30
+HbAlc 10,9 % 4.0 - 5.6
+
+HDL Cholesterol 42 mg/dL 40 - 60
+
+Uric Acid 4.2 mg/dL 3.5 - 7.2
+
+TLC 15,263 /cumm 4000 - 11000
+
+Hb 17.6 13.0 - 17:0
+
+* End of report ***

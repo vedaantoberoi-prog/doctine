@@ -1,0 +1,18 @@
+LOTUS DIAGNOSTIC HOSPITAL PATHOLOGY
+Patient: Fictional Person 125
+
+Age/Sex: 53 Y/ F
+
+Report Date: 01-11-2026
+
+Test Value Unit Reference Range
+
+Blood Urea 14 mg/dL 15 - 40
+
+Hemoglobin 17.3 g/dL 13.0 - 17.0
+
+HDL 51 40 - 60
+
+Glycated Haemoglobin 5.2% 4.0 - 5.6
+
+ek End of report **

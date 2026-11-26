@@ -1,0 +1,22 @@
+VEDANT DIAGNOSTIC CENTRE PATHOLOGY
+Patient: Fictional Person 74
+
+Age/Sex: 39 Y/ F
+
+Report Date: 2024-07-13
+
+Test Result Flag Unit Range
+
+WBC Count 7166 /cumm.4000.- 11000
+Vitamin D 33.5 ng/mL 30 -.100
+Sodium.142 mmol/L.135 - 145
+
+TG 396 H mg/dL < 150
+
+LDL Direct 114 H mg/dL < 100
+
+Thyroid Stimulating Hormone 6.20 H ulU/mL 0.40 - 4.00
+Total Cholesterol 264 H mg/dL < 200
+Platelets 1.96 lakhs/cumm.1.50 -.4.50
+
+*** End. of report ***

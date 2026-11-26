@@ -1,0 +1,18 @@
+NILGIRI LABS PATHOLOGY
+
+Patient: Fictional Person 176
+
+Age/Sex: 69 Y/F
+
+Test Result Flag Unit Range
+
+TG 74 mg/dL < 150
+
+Serum Uric Acid 3.7 mg/dL 3.5 - 7.2
+
+TLC 14,107 H /cumm 4000 - 11000
+
+HDL 57 mg/dL 40 - 60
+
+Thyroid Stimulating Hormone 1.01 ulU/mL 0.40 - 4.00
+*e* End of report ***

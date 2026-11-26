@@ -1,0 +1,24 @@
+NILGIRI LABS
+
+Patient: Fictional Person 26
+
+Age/Sex: 29 Y/M
+
+Report Date: 21/01/2025
+
+Test Result Flag Unit Range
+
+Urea 38 mg/dL 15 - 40
+
+HDL 74 H mg/dL 40 - 60
+
+HbA1c 6.0 H % 4.0 - 5.6
+
+Platelets 3.87 lakhs/cumm 1.50 - 4.50
+Serum Creatinine 1.69 H mg/dL 0.70 - 1.30
+Thyroid Stimulating Hormone 2.09 ulU/mL 0.40 - 4.00
+LDL Direct 179 H mg/dL < 100
+
+Glucose Fasting 161 H mg/dL 70 - 100
+
+ek End of report ***

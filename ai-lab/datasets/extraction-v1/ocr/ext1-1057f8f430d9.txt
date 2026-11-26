@@ -1,0 +1,16 @@
+LOTUS DIAGNOSTIC HOSPITAL PATHOLOGY
+Patient: Fictional Person 11
+
+Age/Sex: 34 Y/F
+
+Report Date: 17-11-2026
+
+Test Value Unit Reference Range
+Creatinine 1.86 mg/dL 0.70 - 1.30
+
+ALT (SGPT) 134 U/L 7 - 56
+
+Serum Uric Acid 4.7 mg/dL 3.5 - 7.2
+Cholesterol Total 174 mg/dL < 200
+
+*e End of report ***

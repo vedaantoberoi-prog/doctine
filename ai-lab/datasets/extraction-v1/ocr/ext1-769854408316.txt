@@ -1,0 +1,14 @@
+LOTUS DIAGNOSTIC HOSPITAL
+Patient: Fictional Person 161
+Age/Sex: 73 Y/ M.
+
+Report Date: 13-08-2024
+
+Test. Value Unit Reference Range
+Hemoglobin 10,2.g/dL 13.0 - 17.0
+Cholesterol Total-259 mg/dL < 200
+Serum Creatinine 1,73 mg/dL 0.70 - 1.30
+Vitamin-B12 717 pg/mL 200 - 900
+LDL Direct 122 mg/dL < 100
+
+** End_.of report ***

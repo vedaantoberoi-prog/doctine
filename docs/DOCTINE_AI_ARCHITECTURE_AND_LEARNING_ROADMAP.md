@@ -104,11 +104,22 @@ non-adherence, wrong diagnoses and site-specific practice. A future clinical dat
 
 Models never modify themselves in production.
 
+## 6a. Model registry and Model Lab
+
+`ai-lab/registry/models.json` lists every model Doctine runs or evaluates. For each one it records who owns what (Doctine logic, Doctine-trained weights, an open-weight base or a third-party hosted model), where it runs, its tasks, its status and its evaluation. CI fails if the server can route to a model that isn't registered (`tests/ai-registry.test.mjs`).
+
+`ai-lab/` is the separate, reproducible workspace for datasets, evaluation and, later, training. It is not part of the app bundle, and it doesn't need a GPU to test. Measured baseline, 26 Nov: on photographed (OCR) lab reports, the app's current reader shows no wrong values, but it finds only 71% of rows, and 10% of reports come out whole. Details are in `ai-lab/README.md`.
+
+**Medical knowledge library: still not connected.** Connecting it needs three things:
+- **Licensing.** Some candidate sources are under non-commercial licences, which may not fit Doctine's use. Others, such as Indian government material, have no clear reuse terms.
+- **An ingestion run with network access.** This workspace can't download from publishers.
+- **A licensing decision by you.** Until it is connected, the app keeps saying that answers come from the model's general knowledge.
+
 ## 7. Staged roadmap
 
 | Stage | Contents | State | Next concrete step |
 |---|---|---|---|
 | **A: current product intelligence** | Secure provider integration, patient context, grounded retrieval, document extraction, structured summaries, safe Q&A | Built and tested on fictional data; **off**, no key | Add an AI key (owner), pass gate 6 on staging, doctor sign-off. (Evaluation cases for doctor claims and unverified diagnoses were added on 26 Nov.) |
 | **B: clinical data infrastructure** | Longitudinal structured records, standard terminology (LOINC for labs, SNOMED CT / ICD for conditions), FHIR-shaped export, provenance, doctor-reviewed annotations, outcome tracking, consent governance | Records and provenance exist; no terminology mapping; doctor network built but off | Map lab tests to LOINC codes in `lab_results`; decide on ABDM integration |
-| **C: evaluation and narrow models** | Curated datasets, extraction and summary models, retrieval reranking, task-specific fine-tuning, clinical benchmarks | Not started | Only after B, with the §6 pipeline and consented data |
+| **C: evaluation and narrow models** | Curated datasets, extraction and summary models, retrieval reranking, task-specific fine-tuning, clinical benchmarks | **Started 26 Nov:** Model Lab (`ai-lab/`), synthetic benchmark extraction-v1, model and dataset registries, baseline of the app's reader measured. No model trained. | First model `doctine-labx-v0` (LoRA on Qwen3-1.7B, lab-report extraction): see `ai-lab/README.md` for the data, compute estimate and promotion bar |
 | **D: proprietary medical intelligence** | Own architecture, domain training, external clinical validation, model governance | Not started | Do not spend here before A–C prove out |

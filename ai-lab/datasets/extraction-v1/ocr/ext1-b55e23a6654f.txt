@@ -1,0 +1,22 @@
+LOTUS DIAGNOSTIC HOSPITAL PATHOLOGY
+Patient: Fictional Person 35
+
+Age/Sex: 34.Y/ F
+
+Report Date: 09/12/2025
+
+Test. Value Unit’ Reference Range
+
+Thyroid Stimulating Hormone 3.41 ulU/mL 0.40 - 4.00
+TLC 8,640 /cumm 4000 - 11000
+Creatinine 1.38.mg/dL 0.70 - 1.30
+
+Serum Uric Acid 9.7 mg/dL 3.5 -- 7.2
+
+Hb 17.1 g/dL-13.0 - 17.0
+
+Blood Urea 82 mg/dL 15-- 40
+
+25-OH Vitamin D 12.0 30 - 100
+
+** End of report ***

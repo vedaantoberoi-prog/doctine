@@ -1,0 +1,18 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 167
+
+Age/Sex: 42:Y /M
+
+Report Date: 27/07/2025
+
+Test Value Unit Reference Range
+
+ALT (SGPT) 61 U/L'7.- 56
+
+Total Leucocyte Count-7028 /cumm 4000 - 11000
+Serum Uric Acid 4.9 mg/dL, 3.5 - 7.2
+
+HbA1c 10.5 % 4.0 - 5.6
+
+** End of report ***

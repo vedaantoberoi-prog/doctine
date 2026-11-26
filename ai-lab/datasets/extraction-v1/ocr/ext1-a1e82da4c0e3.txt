@@ -1,0 +1,14 @@
+VEDANT DIAGNOSTIC CENTRE
+Patient: Fictional Person 108
+Age/Sex: 38 Y/M
+
+Report Date: 2026-02-20
+
+Test Value Unit Reference Range
+Hemoglobin 14.9 g/dL 13.0 - 17.0
+Creatinine 1.68 mg/dL 0.70 - 1.30
+Total Cholesterol 208 mg/dL < 200
+Urea 47 mg/dL 15 - 40
+Cyanocobalamin 535 200 - 900
+Hemoglobin 11.4 g/dL 13.0 - 17.0
+x End of report ***

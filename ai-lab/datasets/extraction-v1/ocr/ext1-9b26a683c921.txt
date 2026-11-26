@@ -1,0 +1,15 @@
+SUNRISE DIAGNOSTICS PATHOLOGY
+Patient: Fictional Person 66
+
+Age/Sex: 57 Y/ F
+
+Report Date: 2024-04-01
+
+Test Value Unit Reference Range
+FBS 109. mg/dL 70 - 100
+
+Serum Sodium 144 mmol/l.135 - 145
+Blood Urea 58 mg/dL 15 - 40
+Hemoglobin 10.8 g/dL 13.0 - 17.0
+
+“** End-of report ***

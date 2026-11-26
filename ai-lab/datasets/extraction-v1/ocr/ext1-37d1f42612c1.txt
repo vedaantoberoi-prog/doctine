@@ -1,0 +1,17 @@
+NILGIRI LABS .
+Patient: Fictional Person 121
+
+Age/Sex: 71 Y / F
+
+Cyariocobalamin : 630 pg/mL (200 - 900)
+Serum. Creatinine : 1.26 mg/dL (0.70 - 1.30)
+HbAlc : 9.3 % (4.0°- 5.6)
+
+Blood Urea : 19 mg/dL (15 - 40)
+
+ALT (SGPT) : 87 U/L (7 - 56)
+
+Serum Sodium : 146 mmol/L (135 --145)
+HDL Cholesterol : 44 mg/dL (40 --60)
+Fasting.Blood Sugar: 145 mg/dL (70 - 100)
+*** End of report ***

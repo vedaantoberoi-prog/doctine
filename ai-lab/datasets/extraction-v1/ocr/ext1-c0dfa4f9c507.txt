@@ -1,0 +1,18 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 163
+
+Age/Sex: 80 Y / F
+Report Date: 2026-12-01
+
+SGPT : 116 U/L(7 -56)
+
+Total Cholesterol : 146 mg/dL (< 200)
+
+TLC : 5938 /eumm (4000 -.11000)
+
+HDL Cholesterol : 75 mg/dL (40 - 60)
+Sodium : 129 mmol/L (135:- 145)
+
+Serum Creatinine : 2.20 mg/dL (0.70 - 1.30)
+* End of report ***

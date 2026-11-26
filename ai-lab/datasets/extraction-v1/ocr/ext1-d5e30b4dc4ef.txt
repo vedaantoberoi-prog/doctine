@@ -1,0 +1,30 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 178
+
+Age/Sex: 40 Y/ F
+
+Report Date: 2024-05-21
+
+Investigation Value Unit Reference Range
+
+Blood Urea 84 mg/dL 15 - 40
+
+Thyroid Stimulating Hormone 0.89 ulU/mlL 0.40 - 4.00
+HDL Cholesterol 73 40'- 60
+
+Glycated-Haemoglobin 4.9 % 4.0 = 5.6 :
+Fasting Blood Sugar,189 mg/dL 70 ~- 100
+--- page 2 ---
+ASHOKA PATH LABS
+
+Investigation Value Unit Reference Range
+Vitamin D 27.2 ng/mL 30 - 100
+
+Cholesterol Total 161 mg/dL < 200
+
+Vitamin B12 944 pg/mL 200 - 900
+
+Serum Uric Acid 5.7 mg/dL 3.5 - 7.2
+
+*#k End of report ***

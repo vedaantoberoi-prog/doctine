@@ -1,0 +1,18 @@
+VEDANT DIAGNOSTIC CENTRE
+
+Patient: Fictional Person 54
+
+Age/Sex: 25 Y/F
+
+Report Date: 2024-11-20
+
+Test Value Unit Reference Range
+
+Total Leucocyte Count 12957 /cumm 4000 - 11000
+HDL Cholesterol 65 mg/dL 40 - 60
+
+Cholesterol Total 253 mg/dL < 200
+
+TG 233 mg/dL < 150
+
+*** End of report ***

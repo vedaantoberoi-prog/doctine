@@ -1,0 +1,24 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 94
+
+Age/Sex: 67 Y/F
+
+Report Date: 2025-10-26
+
+Investigation Value Unit Reference Range
+Serum Creatinine 1.45 mg/dL 0.70 - 1.30
+Cholesterol Total 163 mg/dL < 200
+
+25-OH Vitamin D 30.1 ng/mL 30 - 100
+Cyanocobalamin 1023 pg/mL 200 - 900
+--- page 2 ---
+ASHOKA PATH LABS
+
+Investigation Value Unit Reference Range
+Urea 20 mg/dL 15 - 40
+
+Sodium 135 mmol/L 135 - 145
+
+Fasting Blood Sugar 173 mg/dL 70 - 100
+** End of report ***

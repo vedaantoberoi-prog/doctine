@@ -1,0 +1,25 @@
+LOTUS DIAGNOSTIC HOSPITAL
+
+Patient: Fictional Person 118
+
+Age/Sex: 64 Y/ F
+
+Investigation Value Unit Reference Range
+Serum Sodium 137 mmol/L 135 - 145
+
+Uric Acid 9.1 mg/dL 3.5.- 7.2
+
+Blood. Urea 13 mg/dL 15 - 40
+
+LDL Cholesterol 100 mg/dL < 100
+
+TG 234 mg/dL <.150
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+Platelet Count 3.46 lakhs/cumm 1.50 - 4.50
+Hb 16.1 g/dL 13.0 - 17.0
+
+HDL 54 mg/dL 40 - 60
+
+te End of report ***

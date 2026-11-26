@@ -1,0 +1,21 @@
+VEDANT DIAGNOSTIC CENTRE
+
+Patient: Fictional Person 145
+
+Age/Sex: 60 Y/M
+
+Report Date: 08-01-2025
+
+Platelet Count : 1.74 lakhs/cumm (1.50 - 4.50)
+LDL Direct ; 168 mg/dL (< 100)
+
+ALT (SGPT) : 139 U/L (7 - 56)
+
+WBC Count : 3,703 /cumm (4000 - 11000)
+Cholesterol Total : 219 (< 200)
+
+Serum Sodium : 128 mmol/L (135 - 145)
+Fasting Blood Sugar : 154 mg/dL (70 - 100)
+Triglycerides : 226 mg/dL (< 150)
+
+*e* End of report **

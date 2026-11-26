@@ -1,0 +1,21 @@
+KAVERI CLINICAL LABORATORY PATHOLOGY
+Patient: Fictional Person 87
+
+Age/Sex: 40 Y/M
+
+Report Date: 26/04/2024
+
+Test Name Result Units Bio. Ref. Interval
+Creatinine 2.29 mg/dL 0.70 - 1.30
+
+Sodium 138 mmol/L 135 - 145
+
+TLC 6,154 /cumm 4000 - 11000
+
+LDL Direct 135 mg/dL < 100
+
+ALT (SGPT) 118 U/L 7 - 56
+
+FBS 171 mg/dL 70 - 100
+
+*#k End of report ***

@@ -1,0 +1,15 @@
+NILGIRI LABS PATHOLOGY
+
+Patient: Fictional Person 44
+Age/Sex: 53 Y/ F
+
+Report Date: 2025-06-11
+
+Test Result Flag Unit Range
+
+Uric Acid 6.2 mg/dL 3.5 - 7.2
+Glucose Fasting 175-H mg/dL 70 - 100
+Blood Urea 17 mg/dL 15 - 40
+Hemoglobin 17.7 H g/dL 13.0 = 17.0
+Triglycerides 178 H.mg/dL < 150
+e End of report ***

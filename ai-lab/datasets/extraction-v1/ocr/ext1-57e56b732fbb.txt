@@ -1,0 +1,17 @@
+LOTUS DIAGNOSTIC. HOSPITAL
+Patient: Fictional Person 137
+Age/Sex: 70 Y / F
+
+Report Date: 06-07-2025
+
+Test Value Unit Reference Range
+TSH 6.54 ulU/mL 0.40-- 4.00
+
+LDL Cholesterol 103 mg/dL < 100
+FBS 178 mg/dL 70 - 100
+
+Uric Acid 6,3 mg/dL 3.5 - 7.2
+
+TSH 9.38 ulU/mL 0.40 - 4.00
+
+** End of report **

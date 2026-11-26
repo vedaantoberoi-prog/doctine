@@ -1,0 +1,22 @@
+VEDANT DIAGNOSTIC CENTRE
+
+Patient: Fictional Person 171
+
+Age/Sex: 79 Y/ F
+
+Report Date: 14-07-2026
+
+Test Name Result Units Bio. Ref. Interval
+Thyroid Stimulating Hormone 6.44 ulU/mL 0.40 - 4.00
+Sodium 142 mmol/L 135 - 145
+
+Uric Acid 8.9 mg/dL 3.5 - 7.2
+
+Cholesterol Total 154 < 200
+
+Platelet Count 2.35 lakhs/cumm 1.50 - 4.50
+ALT (SGPT) 83 U/L7 - 56
+
+TLC 9,194 /cumm 4000 - 11000
+
+*** End of report ***

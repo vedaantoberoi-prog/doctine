@@ -1,0 +1,15 @@
+KAVERI CLINICAL LABORATORY
+Patient: Fictional Person 80
+
+Age/Sex: 61Y/M
+
+Test Result Flag Unit Range
+
+25-OH Vitamin D 36.8 ng/mL 30 - 100
+Urea 75 H mg/dL 15 - 40
+
+Serum Sodium 144 mmol/L 135 - 145
+SGPT 21 U/L7 -56
+
+Creatinine 1.63 H mg/dL 0.70 - 1.30
+*** End of report ***

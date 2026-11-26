@@ -1,0 +1,24 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 32
+
+Age/Sex: 78 Y/M
+
+Report Date: 2026-04-01
+
+Test Result Flag Unit Range
+
+Total Cholesterol 289 H mg/dL < 200
+
+WBC Count 13682 H /cumm 4000 - 11000
+Blood Urea 47 H mg/dL 15 - 40
+
+Serum Creatinine 1.89 H mg/dL 0.70 - 1.30
+SGPT 40 U/L 7 - 56
+
+Hemoglobin 10.6 L g/dL 13.0 - 17.0
+Thyroid Stimulating Hormone 8.36 H ulU/mL 0.40 - 4.00
+HDL Cholesterol 42 mg/dL 40 - 60
+
+Platelet Count 2.83 lakhs/cumm 1.50 - 4.50
+*** End of report ***

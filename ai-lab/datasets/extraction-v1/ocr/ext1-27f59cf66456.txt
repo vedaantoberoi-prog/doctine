@@ -1,0 +1,25 @@
+LOTUS DIAGNOSTIC HOSPITAL PATHOLOGY
+Patient: Fictional Person 10
+
+Age/Sex: 29 Y/M
+
+Report Date: 2024-03-13
+
+Investigation Value Unit Reference Range
+Serum Sodium 132 mmol/L 135 - 145
+Cyanocobalamin 165 pg/mL 200 - 900
+
+Serum Creatinine 0.75 mg/dL 0.70 - 1.30
+Total Cholesterol 187 mg/dL < 200
+
+Hb 17.9 g/dL 13.0 - 17.0
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+HDL 33 mg/dL 40 - 60
+
+Urea 84 mg/dL 15 - 40
+
+Uric Acid 9.1 mg/dL 3.5 - 7.2
+
+*** End of report ***

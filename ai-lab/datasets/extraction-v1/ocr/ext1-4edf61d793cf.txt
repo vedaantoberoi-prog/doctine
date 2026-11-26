@@ -1,0 +1,19 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 110
+
+Age/Sex: 73 Y/M
+
+Report Date: 20/01/2024
+
+Test Result Flag Unit Range
+
+Serum Creatinine 1.97 H mg/dL 0.70 - 1.30
+Serum Uric Acid 8.8 H mg/dL 3.5 - 7.2
+Platelet Count 3.00 lakhs/cumm 1.50 - 4.50
+ALT (SGPT) 95 H U/L7 - 56
+
+Thyroid Stimulating Hormone 1.62 ulU/mL 0.40 - 4.00
+HDL 68 H mg/dL 40 - 60
+
+te End of report ***

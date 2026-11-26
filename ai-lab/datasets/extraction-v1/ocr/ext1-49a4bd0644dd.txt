@@ -1,0 +1,17 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 83
+Age/Sex: 26 Y/ F
+
+Report Date: 2024-01-03
+
+Test Value Unit Reference Range
+Sodium 135 mmol/L 135 - 145
+Glucose Fasting 202 mg/dL 70 - 100
+Triglycerides 279 mg/dL < 150
+SGPT 112 U/L7 -56
+
+LDL Direct 109 mg/dL < 100
+Sodium 131 mmol/L 135 - 145
+
+*** End of report ***

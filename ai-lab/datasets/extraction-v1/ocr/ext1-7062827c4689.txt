@@ -1,0 +1,19 @@
+VEDANT DIAGNOSTIC CENTRE PATHOLOGY
+Patient: Fictional Person 103
+
+Age/Sex: 34 Y / F
+
+Report Date: 28/10/2024
+
+Thyroid Stimulating Hormone : 5.71 ulU/mL (0.40 - 4.00)
+Hemoglobin : 18.0 g/dL (13.0 - 17.0)
+
+HDL : 32 mg/dL (40 - 60)
+
+LDL Direct : 166 mg/dL (< 100)
+
+Uric Acid : 5.0 mg/dL (3.5 - 7.2)
+
+Blood Urea : 39 mg/dL (15 - 40)
+
+** End of report ***

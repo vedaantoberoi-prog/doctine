@@ -1,0 +1,13 @@
+GANGA PATHOLOGY LAB
+Patient: Fictional Person 91
+Age/Sex: 56.¥/M
+
+Report Date: 18-09-2026
+TG : 201 mg/dL (< 150)
+FBS : 173:mg/dL (70-- 100)
+HDL :.37 mg/dL (40 - 60)
+Serum Sodium: 129 mmol/L (135 -.145)
+Urea : 13 mg/dL (15 - 40)
+TG 289 mg/dL < 150
+
+*“"* End of report ***

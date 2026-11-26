@@ -1,0 +1,23 @@
+NILGIRI LABS
+
+Patient: Fictional Person 45
+
+Age/Sex: 33 Y / F
+
+Report Date: 2026-07-19
+
+Test Name Result Units Bio. Ref. Interval
+Urea 73 mg/dL 15 - 40
+
+Serum Creatinine 2.25 mg/dL 0.70 - 1.30
+Platelets 2.67 lakhs/cumm 1.50 - 4.50
+Vitamin D 40.2 ng/mL 30 - 100
+Cyanocobalamin 450 pg/mL 200 - 900
+Uric Acid 8.4 mg/dL 3.5 - 7.2
+
+HDL 53 mg/dL 40 - 60
+
+Haemoglobin 17.6 g/dL 13.0 - 17.0
+Triglycerides 185 mg/dL < 150
+
+** End of report ***

@@ -1,0 +1,13 @@
+SUNRISE DIAGNOSTICS PATHOLOGY
+Patient: Fictional Person 31
+Age/Sex: 67 Y/M
+Report Date: 2024-09-13
+
+» Serum Uric Acid’: 5.7 mg/dL (3.5.- 7.2)
+TSH : 2.94 ulU/mL (0.40 - 4.00)
+Blood Urea : 44 mg/dL (15 - 40)
+HDL Cholesterol : 52 mg/dL (40 - 60)
+25-OH Vitamin.D :.51.4 (30 - 100)
+WBC Count : 10318 /cumm (4000 - 11000)
+Glycated Haemoglobin : 6.8 % (4.0 - 5.6)
+* End of report ***

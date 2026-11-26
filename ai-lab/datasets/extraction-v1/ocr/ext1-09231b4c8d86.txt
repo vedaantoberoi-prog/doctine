@@ -1,0 +1,18 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 104
+
+Age/Sex: 41 Y/M
+
+Test. Result Flag Unit Range
+
+SGPT 98 H7 - 56
+
+Uric Acid 3.7 mg/dL 3.5 - 7.2
+
+TG 179 H mg/dL < 150
+
+Platelet Count 2.23 lakhs/cumm 1.50 - 4.50
+Sodium 146 H mmol/L 135 - 145
+
+*** End of report ***

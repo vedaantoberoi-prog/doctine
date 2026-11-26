@@ -1,0 +1,23 @@
+LOTUS DIAGNOSTIC HOSPITAL
+
+Patient: Fictional Person 142
+
+Age/Sex: 66 Y/M
+
+Report Date: 19/06/2026
+
+Investigation Value Unit Reference Range
+ALT (SGPT) 45 U/L 7 - 56
+
+Vitamin D 29.8 ng/mL 30 - 100
+
+HDL Cholesterol 69 mg/dL 40 - 60
+Hemoglobin 14.3 g/dL 13.0 - 17.0
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+TSH 4.15 ulU/mL 0.40 - 4.00
+
+Uric Acid 7.0 mg/dL 3.5 - 7.2
+
+ek End of report ***

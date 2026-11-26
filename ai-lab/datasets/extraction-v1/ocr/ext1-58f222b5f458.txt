@@ -1,0 +1,20 @@
+KAVERI CLINICAL LABORATORY PATHOLOGY
+Patient: Fictional Person 158
+
+Age/Sex: 20 Y/M
+
+Test Result Flag Unit Range
+
+Glycated Haemoglobin 9.1 H % 4.0 - 5.6
+Urea 75 H mg/dL 15 - 40
+
+Glucose Fasting 130 H mg/dL 70 - 100
+WBC Count 12,051 H 4000 - 11000
+
+Serum Uric Acid 4.4 mg/dL 3.5 - 7.2
+Serum Creatinine 0.67 L mg/dL. 0.70 - 1.30
+TG 186 H mg/dL < 150
+
+LDL Direct 86 mg/dL < 100
+
+** End of report ***

@@ -1,0 +1,26 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 123
+
+Age/Sex: 27 Y/M
+
+Report Date: 2024-06-08
+
+Test Name Result Units Bio. Ref. Interval
+Thyroid Stimulating Hormone 0.37 ulU/mL 0.40 - 4.00
+LDL Cholesterol 128 mg/dL < 100
+
+Serum Creatinine 2.25 mg/dL 0.70 - 1.30
+Glucose Fasting 164 mg/dL 70 - 100
+
+HDL 74 mg/dL 40 - 60
+
+TG 72 mg/dL < 150
+
+Sodium 146 mmol/L 135 - 145
+
+Blood Urea 37 mg/dL 15 - 40
+
+Total Cholesterol 267 mg/dL < 200
+
+*** End of report ***

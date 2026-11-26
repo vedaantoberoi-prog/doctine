@@ -1,0 +1,21 @@
+KAVERI CLINICAL LABORATORY
+Patient: Fictional Person 25
+
+Age/Sex: 35 Y/F
+
+Report Date: 2025-04-17
+
+Platelets : 1.06 lakhs/cumm (1.50 - 4.50)
+Cholestero} Total : 283 mg/dL (< 200)
+Cyanocobalamin : 374 pg/mL (200 - 900)
+Serum Uric Acid : 4.1 mg/dL (3.5 - 7.2)
+LDL Direct :.206 mg/dL (< 100)
+
+TSH : 4.19 ulU/mL (0.40 - 4.00)
+
+WBC Count : 13371 /cumm (4000 - 11000)
+FBS : 144 mg/dL (70 --100)
+
+SGPT : 118 U/L (7 - 56)
+
+*« End of report ***

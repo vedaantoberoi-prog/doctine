@@ -1,0 +1,17 @@
+VEDANT DIAGNOSTIC CENTRE
+Patient: Fictional Person 109
+Age/Sex: 34 Y / F
+
+Report Date: 14/03/2024
+
+FBS : 171 mg/dL (70 - 100)
+Haemoglobin : 10.8 g/dL (13.0 - 17.0)
+Vitamin B12 : 324 pg/mL (200 - 900)
+Creatinine : 2.32 mg/dL (0.70 - 1.30)
+SGPT : 37 (7 - 56)
+
+Total Leucocyte Count : 6,395 (4000 - 11000)
+HDL : 30 mg/dL (40 - 60)
+
+LDL Cholesterol : 203 mg/dL (< 100)
+*k End of report ***

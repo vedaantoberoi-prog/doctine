@@ -1,0 +1,15 @@
+LOTUS DIAGNOSTIC HOSPITAL
+Patient: Fictional Person 89
+Age/Sex: 20 Y/M
+
+Report Date: 17/09/2026
+
+Test Value Unit Reference Range
+Haemoglobin 15.5 g/dL 13.0 - 17.0
+TG 296 mg/dL < 150
+
+Blood Urea 37 mg/dL 15 - 40
+
+Uric Acid 5.5 mg/dL 3.5 - 7.2
+Vitamin B12 192 pg/mL 200 - 900
+*** End of report ***

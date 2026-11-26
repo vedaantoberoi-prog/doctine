@@ -1,0 +1,16 @@
+AASHOKA PATH LABS
+
+Patient: Fictional Person 41
+
+Age/Sex: 52. Y/M
+
+Report Date: 2025-06-16
+
+Test Value’ Unit Reference Range
+Hb 16.3 g/dL-13.0 - 17.0.
+
+TLC 7,016 /cumim 4000 - 11000 :
+LDL Cholésteral 104 mg/dl. <.100
+Creatinine 0.79 mg/dL 0.70 - 1.30
+25-OH Vitamin.D 13.6 ng/mL 30 - 100.
+*** End of report ***

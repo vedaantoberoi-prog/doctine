@@ -1,0 +1,20 @@
+VEDANT DIAGNOSTIC CENTRE PATHOLOGY
+Patient: Fictional Person 0
+
+Age/Sex: 70 Y/M
+
+Report Date: 12-07-2024
+
+Test Value Unit Reference Range
+
+WBC Count 11418 /cumm 4000 - 11000
+Platelets 5.16 lakhs/cumm 1.50 - 4.50
+Vitamin B12 681 pg/mL 200 - 900
+HbAlc 6.9 % 4.0 - 5.6
+
+Cholesterol Total 164 mg/dL < 200
+Blood Urea 41 15 - 40
+
+Glucose Fasting 116 mg/dL 70 - 100
+
+** End of report ***

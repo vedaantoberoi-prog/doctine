@@ -1,0 +1,19 @@
+NILGIRI LABS PATHOLOGY
+
+Patient: Fictional Person 57
+
+Age/Sex: 20 Y/F
+
+Report Date: 26-09-2025
+
+Test Name Result Units Bio. Ref. Interval
+Cholesterol Total 227 < 200
+
+Platelet Count 1.04 lakhs/cumm 1.50 - 4.50
+Glycated Haemoglobin 6.6 % 4.0 - 5.6
+Serum Creatinine 1.84 mg/dL 0.70 - 1.30
+Uric Acid 4.0 mg/dL 3.5 - 7.2
+Cyanocobalamin 759 pg/mL 200 - 900
+Serum Sodium 145 mmol/L 135 - 145
+
+*** End of report ***

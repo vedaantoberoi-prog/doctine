@@ -1,0 +1,14 @@
+VEDANT DIAGNOSTIC CENTRE.PATHOLOGY
+Patient: Fictional Person 14
+Age/Sex: 21 Y /M
+. Report Date: 15/06/2026
+Test Result Flag, Unit Range
+Serum Sodium 139: mmol/L 135 - 145
+TG 77. mg/dL < 150
+Thyroid Stimulating Hormone 1.70 ulU/mL 0.40 - 4.00
+HbA1c 10.6 H % 4.0 - 5.6
+SGPT 83.H U/L 7 - 56
+Total Cholesterol 260 H mg/dL < 200
+Platelet Count 4.97 H lakhs/cumm 1.50.-:4.50
+Uric Acid 4.6 mg/dL 3.5 -.7.2
+* End of report *** :

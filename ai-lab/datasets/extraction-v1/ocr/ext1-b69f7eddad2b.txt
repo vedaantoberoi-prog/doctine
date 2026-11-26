@@ -1,0 +1,24 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 53
+
+Age/Sex: 69 Y /-M
+
+Report Date: 03-10-2026
+
+Test Value Unit Reference Range
+
+Thyroid Stimulating Hormone 7,08 ulU/mL 0.40:- 4.00:
+' HbA1c 6.0 % 4.0 -5.6
+
+Creatinine 1.78 mg/dL 0.70 - 1.30
+
+SGPT 19 U/L 7 - 56
+
+Cholesterol Total'185 mg/dL < 200
+
+Total Leucocyte Count 15,177 /cumm 4000 - 11000
+
+Platelet Count 1.04 lakhs/cumm 1.50 - 4.50
+
+*“* End of report ***

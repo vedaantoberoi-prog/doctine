@@ -1,0 +1,19 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 30
+
+Age/Sex: 45 Y/F
+
+Report Date: 26/10/2026
+
+Test Value Unit Reference Range
+Total Cholesterol 262 mg/dL < 200
+25-OH Vitamin D 14.8 30 - 100
+Serum Creatinine 1.10 0.70 - 1.30
+Urea 38 mg/dL 15 - 40
+
+Uric Acid 4.4 mg/dL 3.5 - 7.2
+Cyanocobalamin 933 pg/mL 200 - 900
+Thyroid Stimulating Hormone 3.10 ulU/mL 0.40 - 4.00
+Total Cholesterol 185 mg/dL < 200
+** End of report ***

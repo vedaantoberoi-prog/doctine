@@ -1,0 +1,13 @@
+KAVERI CLINICAL LABORATORY
+Patient: Fictional Person.19
+
+Age/Sex: 61 Y /M
+
+Vitamin B12 ; 607 pg/mL (200 - 900)
+TLC : 13,580 /cumm (4000 - 11000)
+TSH : 1.10 ulU/mL (0.40 - 4.00)
+
+Uric Acid : 7.2 mg/dL (3.5 -.7.2)
+
+25-OH Vitamin D : 55.8: ng/mL (30 -.100)
+*#e* End of report ***

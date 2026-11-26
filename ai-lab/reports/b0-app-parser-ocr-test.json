@@ -1,0 +1,197 @@
+{
+ "by_family": {
+  "lessthan": {
+   "date_acc": 0.9667,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 19,
+    "rows": 19
+   },
+   "documents": 30,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 192,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 2,
+   "perfect_doc_rate": 0.1333,
+   "pred_rows": 132,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.6875,
+   "unit_acc": 0.9242,
+   "value_acc": 1.0
+  },
+  "two_page": {
+   "date_acc": 1.0,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 0,
+    "rows": 0
+   },
+   "documents": 30,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 205,
+   "hallucinated_rows": 1,
+   "hallucination_rate": 0.0066,
+   "name_misread": 3,
+   "perfect_doc_rate": 0.0667,
+   "pred_rows": 152,
+   "range_acc": 1.0,
+   "row_precision": 0.9934,
+   "row_recall": 0.7366,
+   "unit_acc": 0.9272,
+   "value_acc": 1.0
+  }
+ },
+ "by_tag": {
+  "comma_thousands": {
+   "date_acc": 1.0,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 5,
+    "rows": 5
+   },
+   "documents": 9,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 58,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.0,
+   "pred_rows": 40,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.6897,
+   "unit_acc": 0.9,
+   "value_acc": 1.0
+  },
+  "conflicting_repeat": {
+   "date_acc": 1.0,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 4,
+    "rows": 4
+   },
+   "documents": 12,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 88,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 1,
+   "perfect_doc_rate": 0.0833,
+   "pred_rows": 65,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.7386,
+   "unit_acc": 0.8923,
+   "value_acc": 1.0
+  },
+  "decimal_comma": {
+   "date_acc": 0.9286,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 19,
+    "rows": 19
+   },
+   "documents": 14,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 96,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.0,
+   "pred_rows": 63,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.6562,
+   "unit_acc": 0.9524,
+   "value_acc": 1.0
+  },
+  "missing_unit": {
+   "date_acc": 1.0,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 3,
+    "rows": 3
+   },
+   "documents": 17,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 118,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.1765,
+   "pred_rows": 84,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.7119,
+   "unit_acc": 0.9405,
+   "value_acc": 1.0
+  },
+  "no_date": {
+   "date_acc": 1.0,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 0,
+    "rows": 0
+   },
+   "documents": 5,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 32,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.0,
+   "pred_rows": 21,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.6562,
+   "unit_acc": 0.9524,
+   "value_acc": 1.0
+  }
+ },
+ "dataset": "extraction-v1",
+ "date": "2026-11-26",
+ "documents": 60,
+ "input": "ocr",
+ "model": "b0-app-parser",
+ "note": "Fictional synthetic documents only. Not clinical validation.",
+ "overall": {
+  "date_acc": 0.9833,
+  "decimal_comma": {
+   "misread": 0,
+   "read": 0,
+   "reported_unreadable": 19,
+   "rows": 19
+  },
+  "documents": 60,
+  "facility_acc": 1.0,
+  "flag_acc": 1.0,
+  "gold_rows": 397,
+  "hallucinated_rows": 1,
+  "hallucination_rate": 0.0035,
+  "name_misread": 5,
+  "perfect_doc_rate": 0.1,
+  "pred_rows": 284,
+  "range_acc": 1.0,
+  "row_precision": 0.9965,
+  "row_recall": 0.7128,
+  "unit_acc": 0.9258,
+  "value_acc": 1.0
+ },
+ "split": "test"
+}

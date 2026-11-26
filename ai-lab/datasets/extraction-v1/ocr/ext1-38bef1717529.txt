@@ -1,0 +1,22 @@
+LOTUS DIAGNOSTIC HOSPITAL PATHOLOGY
+Patient: Fictional Person 100
+
+Age/Sex: 50 Y./M
+
+Report Date: 02/10/2026
+
+Investigation Value Unit Reference Range
+Urea 73 15 - 40
+
+TSH 1.32 ulU/mL 0.40:-.4.00
+
+TLC 15341 /cumm 4000 - 11000 .
+Haemoglobin 11.7 g/dL 13:0 - 17.0.
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+Triglycerides 316 mg/dL < 150
+
+Glucose Fasting 194 mg/dL 70 - 100
+
+*** End of report ***

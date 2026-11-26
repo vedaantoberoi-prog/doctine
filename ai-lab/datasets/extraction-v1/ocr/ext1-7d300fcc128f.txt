@@ -1,0 +1,18 @@
+KAVERI CLINICAL LABORATORY PATHOLOGY
+Patient: Fictional Person 73
+
+Age/Sex: 69 Y/M
+
+Report Date: 27-04-2024
+
+Triglycerides : 135 mg/dL (< 150)
+
+Blood Urea : 78 mg/dL (15 - 40)
+
+Platelets : 3.61 lakhs/cumm (1.50 - 4.50)
+Uric Acid : 7.1 mg/dL (3.5 - 7.2)
+
+Total Cholesterol : 200 mg/dL (< 200)
+Triglycerides 353 mg/dL < 150
+
+ek End of report ***

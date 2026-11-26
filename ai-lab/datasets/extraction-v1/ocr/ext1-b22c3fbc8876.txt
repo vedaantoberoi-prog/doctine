@@ -1,0 +1,18 @@
+ASHOKA PATH LABS
+Patient: Fictional Person 160
+Age/Sex: 51 Y/F
+Investigation Value Unit Reference Range
+LDL Direct 147 mg/dL <.100
+Vitamin B12 890 pg/mL 200 - 900
+Serum Uric Acid 9.5 mg/dL-3.5--:7.2
+SGPT 139 U/L7 - 56
+- Haemoglobin 9.4 g/dL 13.0 - 17.0
+--- page 2 ---
+ASHOKA PATH LABS
+
+. ‘Investigation Value Unit Reference Range
+TSH 7.42 ulU/mL 0.40 - 4:00
+Fasting Blood Sugar 106 mg/dL 70 - 100
+Total Cholesterol 131 mg/dL < 200
+Platélets 1.75 lakh’s/cumm 1.50 - 4.50
+** End of report ***

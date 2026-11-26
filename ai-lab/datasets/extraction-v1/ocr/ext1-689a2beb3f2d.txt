@@ -1,0 +1,18 @@
+NILGIRI-LABS PATHOLOGY
+
+Patient: Fictional Person 152
+
+Age/Sex: 79 Y/F
+
+Report Date: 28/08/2026
+
+Test Result Flag Unit. Range
+
+Platelets 4.37 lakhs/cumm 1.50 - 4.50
+
+25-OH Vitamin D 49.5 ng/mL 30 - 100
+
+LDL Direct.206 H < 100 .
+
+Thyroid Stimulating Hormone 5.64 H 0.40 - 4.00
+*e End of report ***

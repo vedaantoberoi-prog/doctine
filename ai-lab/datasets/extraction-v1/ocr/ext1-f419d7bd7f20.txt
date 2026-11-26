@@ -1,0 +1,23 @@
+LOTUS DIAGNOSTIC HOSPITAL
+
+Patient: Fictional Person 58
+
+Age/Sex: 47 Y / F
+
+Report Date: 2024-07-19
+
+Investigation Value Unit Reference Range
+LDL Cholesterol 147 mg/dL < 100
+
+25-OH Vitamin D 26.4 30 - 100
+
+WBC Count 13,154 /cumm 4000 - 11000
+Uric Acid 6.9 mg/dL 3.5 - 7.2
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+TG 93 mg/dL < 150
+
+HDL 62 mg/dL 40 - 60
+
+** End of report ***

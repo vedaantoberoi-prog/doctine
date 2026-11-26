@@ -1,0 +1,23 @@
+SUNRISE DIAGNOSTICS PATHOLOGY
+
+Patient: Fictional Person 60
+
+Age/Sex: 42 Y /F
+
+Report Date: 05/02/2025
+
+Test Value Unit Reference Range
+
+TLC 9505 /cumm 4000 - 11000
+
+Glycated Haemoglobin 8.6 % 4.0 - 5.6
+
+ALT (SGPT) 78 U/L-7 - 56
+
+Platelet Count 4.24 lakhs/cumm 1.50 = 4.50
+
+Thyroid Stimulating Hormone 4.84 ulU/mL 0.40 - 4.00
+LDL Cholesterol. 120 mg/dL < 100 ‘
+Creatinine 2.11 mg/dL 0.70 - 1.30
+
+#* End of report *** . ;

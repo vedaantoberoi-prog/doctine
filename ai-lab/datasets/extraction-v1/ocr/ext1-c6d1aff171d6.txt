@@ -1,0 +1,27 @@
+NILGIRI LABS
+
+Patient: Fictional Person 86
+
+Age/Sex: 34 Y/ F :
+Report Date: 05/06/2025
+
+Test Result Flag Unit Range
+
+Hb 10:9 L g/dL 13.0 - 17.0
+
+Blood Urea 77 H mg/dL.15 - 40
+
+Total Leucocyte Count 11466 H /cumm 4000 - 11000
+Vitamin.B12 464 pg/mL 200 - 900
+
+LDL Cholesterol 111 H mg/dL < 100
+
+Serum Creatinine 1.34 H mg/dL 0.70.- 1.30
+
+FBS 207 H mg/dL 70 - 100
+
+Triglycerides 206 H mg/dL <.150
+
+Platelet Count 2.51 lakhs/cumm 1.50 - 4.50
+
+** End of report ***

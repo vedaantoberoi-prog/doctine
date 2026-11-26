@@ -1,0 +1,31 @@
+ASHOKA PATH LABS.
+
+Patient: Fictional: Person 82
+
+Age/Sex: 64 Y / F
+
+Report Date: 2025-12-04
+
+Investigation Value Unit Reference Range
+Triglycerides 155, mg/dL < 150
+
+Blood Urea 71 mg/dL 15 - 40
+
+HbAlc 9.5°% 4.0 - 5.6
+
+TSH 6.06 ulU/mL 0.40 - 4.00
+
+Serum Uric Acid 6.7 mg/dL 3.5 - 7.2
+--- page 2 ---
+ASHOKA PATH LABS
+
+Investigation Value Unit Reference Range
+Haemoglobin 14.8 g/dL 13.0 - 17.0
+
+HDL 40 mg/dL 40 - 60
+
+SGPT 61 U/L 7 - 56
+
+Triglycerides 230 mg/dL < 150
+
+we End of report ***

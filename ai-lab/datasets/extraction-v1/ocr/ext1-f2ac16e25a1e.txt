@@ -1,0 +1,21 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 88
+
+Age/Sex: 79 Y/M
+
+Report Date: 20-03-2026
+
+Investigation Value Unit Reference Range
+Cholesterol Total 184 mg/dL < 200
+Hemoglobin 18.5 g/dL 13.0 - 17.0
+Cyanocobalamin 804 200 - 900
+--- page 2 ---
+ASHOKA PATH LABS
+
+Investigation Value Unit Reference Range
+FBS 207 mg/dL 70 - 100
+
+Cholesterol Total 130 mg/dL < 200
+
+** End of report ***

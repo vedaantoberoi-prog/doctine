@@ -1,0 +1,18 @@
+KAVERI CLINICAL LABORATORY
+
+Patient: Fictional Person 63
+
+Age/Sex: 23 Y/M
+
+Report Date: 18/05/2024
+
+Test Name Result Units Bio. Ref. Interval
+Sodium 148 mmol/L 135 - 145
+
+Blood Urea 79 mg/dL 15 - 40
+
+TSH 1.05 ulU/mL 0.40 - 4.00
+Cyanocobalamin 1006 pg/mL 200 - 900
+HbA1c 6.3 % 4.0 - 5.6
+
+*”* End of report ***

@@ -1,0 +1,15 @@
+KAVERI CLINICAL LABORATORY
+
+Patient: Fictional Person 151
+
+Age/Sex: 65 Y/ F
+
+Report Date: 19/02/2024
+Cyanocobalamin : 449 pg/mL (200 - 900)
+HbAlc : 11.1 % (4.0 - 5.6)
+
+Uric Acid : 3.9 mg/dL (3.5 - 7.2)
+
+Blood Urea : 36 mg/dL (15 - 40)
+
+* End of report ***

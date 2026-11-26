@@ -1,0 +1,25 @@
+KAVERI CLINICAL LABORATORY
+
+Patient: Fictional Person 62
+
+Age/Sex: 33 Y/M
+
+Report Date: 03/05/2025
+
+Test Result Flag Unit Range
+
+HDL 55 mg/dL 40 - 60
+
+Fasting Blood Sugar 164 H mg/dL 70 - 100
+Sodium 134 L mmol/L 135 - 145
+
+Vitamin B12 641 200 - 900
+
+Vitamin D 44.1 ng/mL 30 - 100
+
+Platelet Count 4.64 H lakhs/cumm 1.50 - 4.50
+ALT (SGPT) 70 H U/L 7 - 56
+
+Triglycerides 86 mg/dL < 150
+
+*#k End of report ***

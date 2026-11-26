@@ -1,0 +1,20 @@
+VEDANT DIAGNOSTIC CENTRE
+
+Patient: Fictional Person 38
+
+Age/Sex: 29 Y/M
+
+Report Date: 05-06-2026
+
+Test Result Flag Unit Range
+Creatinine 1.35 H mg/dL 0.70 - 1.30
+Thyroid Stimulating Hormone 1.49 ulU/mL 0.40 - 4.00
+Cholesterol Total 182 mg/dL < 200
+Glycated Haemoglobin 8.8 H % 4.0 - 5.6
+Serum Uric Acid 4.2 mg/dL 3.5 - 7.2
+
+LDL Cholesterol 87 < 100
+
+Hemoglobin 14.5 g/dL 13.0 - 17.0
+
+** End of report ***

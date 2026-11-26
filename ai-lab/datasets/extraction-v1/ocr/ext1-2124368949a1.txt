@@ -1,0 +1,16 @@
+KAVERI CLINICAL LABORATORY PATHOLOGY
+Patient: Fictional Person 111
+
+Age/Sex: 48 Y/ F
+
+Report Date: 23/01/2025
+
+Test Name Result Units Bio. Ref. Interval
+Uric Acid 5.6 mg/dL 3.5 - 7.2
+
+Blood Urea 49 mg/dL 15 - 40
+
+Platelet Count 2.42 lakhs/cumm 1.50 - 4.50
+HDL Cholesterol 35 mg/dL 40 - 60
+
+*** End of report ***

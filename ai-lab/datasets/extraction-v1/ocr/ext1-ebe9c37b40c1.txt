@@ -1,0 +1,20 @@
+LOTUS DIAGNOSTIC HOSPITAL
+
+Patient: Fictional Person 95
+
+Age/Sex: 49 Y / F
+
+Report Date: 2026-12-15
+
+Test Value Unit Reference Range
+
+Platelet Count 4.37 lakhs/cumm 1.50 - 4.50
+Thyroid Stimulating Hormone 7,70 ulU/mL 0.40 - 4.00
+Vitamin B12 366 pg/mL 200 - 900
+Hemoglobin 9,1 g/dL 13.0 - 17.0
+
+25-OH Vitamin D 39.6 ng/mL 30 - 100
+
+FBS 70 mg/dL 70 - 100
+
+*# End of report ***

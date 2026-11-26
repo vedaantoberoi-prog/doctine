@@ -1,0 +1,18 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 156
+
+Age/Sex: 64 Y/M
+
+Report Date: 23/07/2025
+
+Test Value Unit Reference Range
+
+Total Leucocyte Count 7,504 /cumm 4000 - 11000
+Cyanocobalamin 676 pg/mL 200 - 900
+
+Sodium 139 mmol/L 135 - 145
+
+Hemoglobin 14.8 g/dL 13.0 - 17.0
+
+*#k End of report ***

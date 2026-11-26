@@ -1,0 +1,14 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 155
+Age/Sex: 46 Y / F
+
+Report Date: 01/06/2025
+
+Test Value Unit Reference Range
+Uric Acid 5,3 mg/dL 3.5 - 7.2
+Creatinine 0.65 mg/dL 0.70 - 1.30
+LDL Cholesterol 77 mg/dL < 100
+Total Cholesterol 215 mg/dL < 200
+Hemoglobin 12,2 g/dL 13.0 - 17.0
+* End of report ***

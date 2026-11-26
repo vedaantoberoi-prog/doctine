@@ -1,0 +1,197 @@
+{
+ "by_family": {
+  "lessthan": {
+   "date_acc": 0.9667,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 19,
+    "rows": 19
+   },
+   "documents": 30,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 192,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.3,
+   "pred_rows": 163,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.849,
+   "unit_acc": 1.0,
+   "value_acc": 1.0
+  },
+  "two_page": {
+   "date_acc": 1.0,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 0,
+    "rows": 0
+   },
+   "documents": 30,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 205,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.8333,
+   "pred_rows": 200,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.9756,
+   "unit_acc": 1.0,
+   "value_acc": 1.0
+  }
+ },
+ "by_tag": {
+  "comma_thousands": {
+   "date_acc": 1.0,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 5,
+    "rows": 5
+   },
+   "documents": 9,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 58,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.2222,
+   "pred_rows": 50,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.8621,
+   "unit_acc": 1.0,
+   "value_acc": 1.0
+  },
+  "conflicting_repeat": {
+   "date_acc": 1.0,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 4,
+    "rows": 4
+   },
+   "documents": 12,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 88,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.5,
+   "pred_rows": 80,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.9091,
+   "unit_acc": 1.0,
+   "value_acc": 1.0
+  },
+  "decimal_comma": {
+   "date_acc": 0.9286,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 19,
+    "rows": 19
+   },
+   "documents": 14,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 96,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.0,
+   "pred_rows": 75,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.7812,
+   "unit_acc": 1.0,
+   "value_acc": 1.0
+  },
+  "missing_unit": {
+   "date_acc": 1.0,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 3,
+    "rows": 3
+   },
+   "documents": 17,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 118,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.6471,
+   "pred_rows": 111,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.9407,
+   "unit_acc": 1.0,
+   "value_acc": 1.0
+  },
+  "no_date": {
+   "date_acc": 1.0,
+   "decimal_comma": {
+    "misread": 0,
+    "read": 0,
+    "reported_unreadable": 0,
+    "rows": 0
+   },
+   "documents": 5,
+   "facility_acc": 1.0,
+   "flag_acc": 1.0,
+   "gold_rows": 32,
+   "hallucinated_rows": 0,
+   "hallucination_rate": 0.0,
+   "name_misread": 0,
+   "perfect_doc_rate": 0.6,
+   "pred_rows": 30,
+   "range_acc": 1.0,
+   "row_precision": 1.0,
+   "row_recall": 0.9375,
+   "unit_acc": 1.0,
+   "value_acc": 1.0
+  }
+ },
+ "dataset": "extraction-v1",
+ "date": "2026-11-26",
+ "documents": 60,
+ "input": "text",
+ "model": "b0-app-parser",
+ "note": "Fictional synthetic documents only. Not clinical validation.",
+ "overall": {
+  "date_acc": 0.9833,
+  "decimal_comma": {
+   "misread": 0,
+   "read": 0,
+   "reported_unreadable": 19,
+   "rows": 19
+  },
+  "documents": 60,
+  "facility_acc": 1.0,
+  "flag_acc": 1.0,
+  "gold_rows": 397,
+  "hallucinated_rows": 0,
+  "hallucination_rate": 0.0,
+  "name_misread": 0,
+  "perfect_doc_rate": 0.5667,
+  "pred_rows": 363,
+  "range_acc": 1.0,
+  "row_precision": 1.0,
+  "row_recall": 0.9144,
+  "unit_acc": 1.0,
+  "value_acc": 1.0
+ },
+ "split": "test"
+}

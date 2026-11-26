@@ -1,0 +1,15 @@
+GANGA PATHOLOGY LAB
+
+Patient: Fictional Person 50
+Age/Sex: 75 Y/M
+
+Report Date: 21/04/2026
+
+Test Result Flag Unit Range
+Serum Uric Acid 7.0 mg/dL 3.5 - 7.2
+Vitamin B12 288 pg/mL 200 - 900
+Vitamin D 15.0 L ng/mL 30 - 100
+Total Leucocyte Count 15,801 H /cumm 4000 - 11000
+LDL Cholesterol 156 H < 100
+Serum Uric Acid 5.2 mg/dL 3.5 - 7.2
+*#k End of report ***

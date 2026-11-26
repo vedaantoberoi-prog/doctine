@@ -1,0 +1,18 @@
+KAVERI CLINICAL LABORATORY
+Patient: Fictional Person 162
+
+Age/Sex: 68 Y /M
+
+Report Date: 2025-12-05
+
+Test Value Unit Reference Range
+Thyroid Stimulating Hormone 4.51 ulU/mL 0.40 - 4.00
+Fasting Blood Sugar 77 mg/dL 70 - 100
+Urea 28 mg/dL 15 - 40
+
+Serum Creatinine 1.94 mg/dL 0.70 - 1.30
+Hemoglobin 13.5 g/dL 13.0 - 17.0
+
+SGPT 121 U/L7-56
+
+*e End of report ***

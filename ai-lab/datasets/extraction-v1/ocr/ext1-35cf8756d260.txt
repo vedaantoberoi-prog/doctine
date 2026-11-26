@@ -1,0 +1,23 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 16
+
+Age/Sex: 75 Y/F
+
+Report Date: 2026-08-21
+
+Investigation Value Unit: Reference Range
+HbA1c 5.0% 4.0 - 5.6
+
+FBS 83-mg/dL 70-- 100
+
+Vitamin B12 205 pg/mL.200 - 900
+--- page 2 ---
+ASHOKA PATH LABS
+
+Investigation Value Unit Reference Range
+TSH 0.22 ulU/mL 0.40 - 4.00
+
+HbAlc 8.9 % 4.0 - 5.6
+
+** End of report ***

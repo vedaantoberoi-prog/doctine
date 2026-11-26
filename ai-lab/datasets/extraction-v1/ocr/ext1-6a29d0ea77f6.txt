@@ -1,0 +1,20 @@
+VEDANT DIAGNOSTIC CENTRE
+
+Patient: Fictional Person 9
+
+Age/Sex: 69 Y / F
+
+Report Date: 2025-09-17
+
+Test Name Result Units Bio. Ref. Interval
+Triglycerides 155 mg/dL < 150
+
+ALT (SGPT) 41 U/L 7 - 56
+
+Glycated Haemoglobin 10.7 % 4.0 - 5.6
+Total Leucocyte Count 3,207 /cumm 4000 - 11000
+Cyanocobalamin 468 pg/mL 200 - 900
+
+TSH 4.44 ulU/mL 0.40 - 4.00
+
+ek End of report ***

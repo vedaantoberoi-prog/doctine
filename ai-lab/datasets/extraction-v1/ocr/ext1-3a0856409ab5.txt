@@ -1,0 +1,22 @@
+ASHOKA PATH LABS
+
+Patient: Fictional Person 65
+Age/Sex: 34 Y /M
+
+Report Date: 14/04/2026
+
+Test Value Unit Reference Range
+ALT (SGPT) 13 U/L 7 - 56
+
+Thyroid Stimulating Hormone 5.83 ulU/mL 0.40 - 4.00
+Uric Acid 7,8 mg/dL 3.5 - 7.2
+Vitamin D 45,7 ng/mL 30 - 100
+FBS 96 mg/dL 70 - 100
+Triglycerides 231 mg/dL < 150
+LDL Direct 123 mg/dL < 100
+
+Hb 17.4 g/dL 13.0 - 17.0
+
+ALT (SGPT) 101 U/L 7 - 56
+
+*** End of report ***

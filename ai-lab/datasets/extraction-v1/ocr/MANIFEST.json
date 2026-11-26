@@ -1,0 +1,8 @@
+{
+ "engine": "tesseract 5.3.4",
+ "psm": 6,
+ "lang": "eng",
+ "seed": 7,
+ "documents": 240,
+ "note": "Rendered from the synthetic text, read back by Tesseract. Fictional data only."
+}

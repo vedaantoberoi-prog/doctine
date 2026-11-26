@@ -1,0 +1,15 @@
+SUNRISE DIAGNOSTICS
+
+Patient: Fictional Person 56
+Age/Sex: 79 Y / F
+
+Report Date: 2025-08-27
+
+Test Result Flag Unit Range
+Triglycerides 147 mg/dL < 150
+Cholesterol Total 277 H mg/dL < 200
+Uric Acid 6.3 mg/dL 3.5 - 7.2
+
+LDL Cholesterol 129 H mg/dL < 100
+HDL Cholesterol 38 L mg/dL 40 - 60
+*** End of report ***

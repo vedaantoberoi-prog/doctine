@@ -1,0 +1,65 @@
+{
+  "note": "Every model Doctine runs or is evaluating, what it is for, who owns what, and what it is allowed to do. tests/ai-registry.test.mjs fails if the server can route to a model that isn't listed here. Status words: deployed (in use by real people), configured_off (in the code, switched off or without a key), candidate (being evaluated), proposed (not built). No entry may be called Doctine-trained unless Doctine trained its weights.",
+  "models": [
+    {
+      "id": "b0-app-parser",
+      "kind": "rule_based",
+      "ownership": "Doctine-owned application logic (no model weights)",
+      "location": "public/index.html parseText, runs on the person's device",
+      "version": "app commit at release",
+      "tasks": ["lab_report_extraction"],
+      "status": "deployed",
+      "evaluation": "ai-lab/reports/b0-app-parser-*.json (extraction-v1)",
+      "limitations": ["Lab tables only; no prescriptions.", "Cannot read 'Test : value unit (range)' layouts.", "Leaves out decimal-comma values and tells the person (by design)."]
+    },
+    {
+      "id": "claude-sonnet-5-5",
+      "kind": "hosted_llm",
+      "ownership": "third-party hosted model (Anthropic); Doctine owns the prompts, schemas, routing and validation around it",
+      "location": "Anthropic API, called only from the server with ANTHROPIC_API_KEY",
+      "version": "claude-sonnet-5-5",
+      "tasks": ["document_reading (scan)", "chat", "orchestrator route C (standard)"],
+      "status": "configured_off",
+      "evaluation": "not run: no API key in any environment (gate 6 fails on staging for this reason)",
+      "limitations": ["Sends document images and text to Anthropic when switched on; needs the provider-terms review in DOCTINE_CLINICAL_SAFETY_AND_COMPLIANCE.md before real patient data."]
+    },
+    {
+      "id": "claude-haiku-5-5",
+      "kind": "hosted_llm",
+      "ownership": "third-party hosted model (Anthropic)",
+      "location": "Anthropic API (server only)",
+      "version": "claude-haiku-5-5",
+      "tasks": ["orchestrator route B (light)"],
+      "status": "configured_off",
+      "evaluation": "not run: no API key",
+      "limitations": ["Used only for short explanations of conflict-free results."]
+    },
+    {
+      "id": "claude-opus-5-5",
+      "kind": "hosted_llm",
+      "ownership": "third-party hosted model (Anthropic)",
+      "location": "Anthropic API (server only)",
+      "version": "claude-opus-5-5",
+      "tasks": ["orchestrator route D (careful)"],
+      "status": "configured_off",
+      "evaluation": "not run: no API key",
+      "limitations": ["Highest cost; only for conflicts, unit changes and long histories."]
+    },
+    {
+      "id": "doctine-labx-v0",
+      "kind": "adapter_on_open_weights",
+      "ownership": "would be Doctine-trained LoRA adapter weights on an open-weight base model (the base model stays third-party)",
+      "location": "not built",
+      "version": "none",
+      "base_model_shortlist": [
+        { "id": "Qwen/Qwen3-1.7B", "license": "Apache-2.0 (Hugging Face model card, checked 26 Nov 2026)", "params": "1.7B", "context": "32,768", "languages": "100+ stated" },
+        { "id": "Qwen/Qwen3-4B", "license": "Apache-2.0 (repository metadata, checked 26 Nov 2026)", "params": "4B", "context": "32,768", "languages": "100+ stated" },
+        { "id": "microsoft/Phi-4-mini-instruct", "license": "MIT (model card, checked 26 Nov 2026)", "params": "3.8B", "context": "128K", "languages": "23 listed; Hindi not listed", "note": "kept as a comparison only" }
+      ],
+      "tasks": ["lab_report_extraction"],
+      "status": "proposed",
+      "evaluation": "must beat b0-app-parser on extraction-v1 test (OCR input) with zero misread values before any shadow run",
+      "limitations": ["Not trained. No claim of a Doctine model may be made until it is."]
+    }
+  ]
+}

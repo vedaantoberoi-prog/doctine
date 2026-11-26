@@ -1,0 +1,24 @@
+GANGA. PATHOLOGY LAB.
+
+Patient: Fictional Person. 139
+
+Age/Sex: 42 Y./F
+
+Report Date: 20/07/2025
+
+Hemoglobin : 13.6 g/dL (13.0 - 17.0)
+
+LDL Direct : 157.mg/dL (< 100) ,
+SGPT.: 114 U/L (7 - 56)
+
+Blood Urea : 82 mg/dL.(15 - 40)
+
+Serum Creatinine : 0.62 mg/dL (0.70 - 1.30)
+HDL : 68 mg/dL (40 - 60)
+
+Cyanocobalamin : 350 pg/mL (200 - 900)
+WBC Count : 4657 /cumm (4000 - 11000)
+Fasting Blood Sugar’: 113 mg/dL (70 - 100)
+Hemoglobin 9.9 g/dL 13.0.-.17.0
+
+*e End of report ***

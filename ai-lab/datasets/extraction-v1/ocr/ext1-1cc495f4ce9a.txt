@@ -1,0 +1,19 @@
+VEDANT DIAGNOSTIC CENTRE PATHOLOGY
+Patient: Fictional Person 42
+
+Age/Sex: 37 Y/M .
+
+Report Date: 25/05/2025 .
+Test Value Unit Reference Range
+
+Serum Creatinine 1.36 mg/dL 0:70 - 1.30
+
+Cholesterol Total 199 mg/dL < 200 :
+Platelet Count 4.98 lakhs/cumm 1.50 -.4.50
+
+ALT (SGPT) 107 U/L7.- 56
+
+Thyroid Stimulating Hormone 3.83 ulU/mL 0.40 - 4.00
+Vitamin B12 1046 pg/mL 200:- 900
+
+*#e* End of report ***

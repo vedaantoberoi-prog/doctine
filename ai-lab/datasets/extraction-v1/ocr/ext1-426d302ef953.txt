@@ -1,0 +1,22 @@
+ASHOKA PATH LABS.
+
+Patient: Fictional Person 71
+
+Age/Sex: 29.Y / F
+
+Report Date: 24-04-2026
+Test Value Unit Reference Range
+Hemoglobin 12:7 g/dL 13.0 - 17.0
+
+TG 146 mg/dL < 150
+
+25-OH Vitamin D 24.5 ng/mL 30 - 100
+Vitamin B12 806-pg/mL 200 - 900
+HbA1c 5.8 % 4.0 - 5.6
+
+HDL Cholesterol 45 mg/dL 40 - 60
+Platelet Count-2.46 lakhs/cumm 1.50.- 4.50
+Blood Urea 22 mg/dL 15:- 40
+
+Serum Creatinine 2,36 mg/dL.0.70 - 1.30
+*** End of report ***

@@ -1,0 +1,21 @@
+VEDANT DIAGNOSTIC CENTRE PATHOLOGY
+Patient: Fictional Person 79
+
+Age/Sex: 55 Y/F
+
+Report Date: 18-12-2025
+
+Cholesterol Total : 261 mg/dL (< 200)
+
+Blood Urea : 76 mg/dL (15 - 40)
+
+HDL : 36 mg/dL (40 - 60)
+
+LDL Cholesterol : 173 mg/dL (< 100)
+Glucose Fasting : 107 mg/dL (70 - 100)
+Serum Creatinine : 2.31 mg/dL (0.70 - 1.30)
+Glycated Haemoglobin : 10.3 % (4.0 - 5.6)
+Hb : 11.2 g/dL (13.0 - 17.0)
+
+Total Leucocyte Count : 8,363 /cumm (4000 - 11000)
+** End of report ***

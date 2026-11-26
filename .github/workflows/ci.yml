@@ -87,6 +87,9 @@ jobs:
       - name: AI policy gate (prompts and rules match the recorded, versioned policy)
         if: always()
         run: node tools/ai-policy-gate.mjs
+      - name: Model Lab (registry, synthetic benchmark, leakage checks, metrics, baseline reproduces; no GPU, no AI key)
+        if: always()
+        run: node tests/ai-registry.test.mjs && python3 -m unittest discover -s ai-lab/tests -v
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: report-backend, path: reports/, if-no-files-found: warn, retention-days: 30 }

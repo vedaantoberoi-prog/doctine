@@ -1,0 +1,26 @@
+LOTUS DIAGNOSTIC.HOSPITAL
+
+Patient: Fictional Person 64
+
+Age/Sex: 39 Y/M
+
+Report Date: 2025-08-14
+
+Investigation Value Unit Reference Range
+
+Thyroid Stimulating Hormone 3.26 ulU/mL 0.40 - 4.00
+Platelets 2.45 lakhs/cumm 1.50 - 4.50
+
+Blood Urea 57 mg/dL 15 - 40
+
+Total Leucocyte Count 8,574 /cumm 4000 - 11000
+--- page 2 ---
+LOTUS DIAGNOSTIC HOSPITAL
+Investigation Value Unit Reference Range
+Vitamin B12 974 pg/mL 200 - 900
+
+Serum Uric Acid 6.6 mg/dL 3.5 - 7.2
+
+HDL 32 mg/dL 40 - 60
+
+* End of report ***

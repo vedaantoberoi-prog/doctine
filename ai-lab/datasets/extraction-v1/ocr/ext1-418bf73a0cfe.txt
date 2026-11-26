@@ -1,0 +1,16 @@
+LOTUS DIAGNOSTIC HOSPITAL
+Patient: Fictional Person 131
+Age/Sex: 73 Y/M
+
+Report Date: 2024-12-28
+
+Test Value Unit Reference Range
+Haemoglobin 16.6 g/dL 13.0 - 17.0
+Total Leucocyte Count 8,085 /cumm 4000 - 11000
+LDL Cholesterol 164 mg/dL < 100
+TG 357 mg/dL < 150
+
+Glucose Fasting 96 mg/dL 70 - 100
+Uric Acid 9,3 mg/dL 3.5 - 7.2
+
+** End of report ***

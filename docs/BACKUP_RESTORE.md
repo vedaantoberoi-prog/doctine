@@ -2,11 +2,13 @@
 
 ## What runs
 
-`.github/workflows/backup.yml` runs every night at 02:10 IST. It dumps the production database (all tables, accounts and file records), encrypts the dump with AES-256 using `BACKUP_PASSPHRASE`, checks that the encrypted copy opens, and keeps it for 30 days as a GitHub Actions artifact named **doctine-db-backup**.
+`.github/workflows/backup.yml` runs every night at 02:10 IST. It dumps the production database: the health tables (`public`), the app's own records (`private`: Guardian contacts and deliveries, doctor applications, record shares and their access log, the admin audit log, switches), accounts (`auth`) and file records (`storage`), encrypts the dump with AES-256 using `BACKUP_PASSPHRASE`, checks that the encrypted copy opens, and keeps it for 30 days as a GitHub Actions artifact named **doctine-db-backup**.
 
 The repository is public, so only the encrypted file ever leaves the runner. Without the passphrase, it can't be read.
 
-**Not included:** the bytes of uploaded photos and PDFs in the `health-documents` bucket. Their records are backed up, but the files themselves aren't. While the bucket is small, download it from Supabase → Storage. For full coverage, move to Supabase Pro, which adds daily backups and optional point-in-time recovery.
+**Before 26 Nov 2026 the `private` schema was missing from the backup.** Backups made before that date cannot restore Guardian contacts, doctor applications, shares or the audit log.
+
+**Not included:** the bytes of uploaded photos and PDFs in the `health-documents` and `practitioner-credentials` buckets. Their records are backed up, but the files themselves aren't. While the bucket is small, download it from Supabase → Storage. For full coverage, move to Supabase Pro, which adds daily backups and optional point-in-time recovery.
 
 ## One-time setup (account owner)
 
@@ -16,7 +18,22 @@ The repository is public, so only the encrypted file ever leaves the runner. Wit
    - `BACKUP_PASSPHRASE` = a new random passphrase of at least 32 characters. **Save it in your password manager first.** Without it, the backups can never be opened.
 3. Actions → **Nightly backup** → Run workflow. Then check that the run is green and has a `doctine-db-backup` artifact.
 
-## Restore drill (do this once a quarter, never into production)
+## Automatic restore drill (weekly)
+
+`.github/workflows/restore-drill.yml` runs every Tuesday and on demand. It downloads the newest backup, decrypts it inside the runner and runs `tools/restore-drill.sh`, which:
+
+- builds a throwaway database from the repository's migrations, never from the dump;
+- checks the dump holds data for every app table, plus accounts and file records;
+- restores all of the app's data and fails on any restore error;
+- compares row counts with production, using read-only counts;
+- checks that every reference between restored tables resolves and that every medical record belongs to an account in the backup;
+- with row-level security on, checks that a restored person sees all of their own records and none of anyone else's, and that a signed-out visitor sees nothing.
+
+The log and summary show only pass or fail. `tests/restore-drill.test.sh` runs in CI with a fictional backup. It proves the drill itself fails when the private schema is missing, when a table's rows are missing, or when an access rule leaks.
+
+The drill does not restore accounts into a working sign-in system. It only checks they are in the backup and match production. It does not cover file bytes. Restoring sign-in for real still needs the manual drill below, into a scratch Supabase project.
+
+## Manual restore drill (once a quarter, never into production)
 
 1. Create a scratch Supabase project, or use `doctine-staging` after confirming it holds nothing you need.
 2. Download the artifact from the run, unzip it, then:

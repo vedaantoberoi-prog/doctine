@@ -1,19 +1,19 @@
 # Doctine · backup restore drill (docs/BACKUP_RESTORE.md, "Restore drill").
 #
-# Proves the newest nightly backup can actually be opened and restored. It never touches production data:
+# Proves the newest nightly backup can actually be restored and used, not just that the backup job is green.
+# It never writes to production: production is only asked for read-only row counts.
 #   1. downloads the newest successful "doctine-db-backup" artifact from the Nightly backup workflow;
 #   2. decrypts it with BACKUP_PASSPHRASE inside this runner;
-#   3. builds a throwaway database from the repository's migrations and restores the backup's tables into it;
-#   4. compares the number of rows in every table with production (read-only counts) and checks the
-#      row-level security is in place;
-#   5. shreds the decrypted copy. The database disappears with the runner.
-# The repository is PUBLIC: the log shows only pass/fail per check, never data, counts or names.
+#   3. runs tools/restore-drill.sh: builds a throwaway database from the repository's migrations, restores every
+#      app table (public and private) into it, compares row counts with production, checks every reference resolves,
+#      every medical record has an account in the backup, and that row-level security shows a restored person all of
+#      their own records and none of anyone else's;
+#   4. shreds the decrypted copy. The database disappears with the runner.
+# The repository is PUBLIC: the log shows only pass/fail per check, never data, ids, names or counts.
 name: Backup restore drill
 on:
   workflow_dispatch:
-  push:
-    branches: [bolt-3d-hero]
-    paths: [.github/workflows/restore-drill.yml]
+  schedule: [{ cron: "20 23 * * 1" }] # Tuesdays 04:50 IST, after the nightly backup
 permissions: { contents: read, actions: read }
 concurrency: { group: restore-drill, cancel-in-progress: false }
 jobs:
@@ -23,15 +23,15 @@ jobs:
     services:
       pg:
         image: postgres:17
-        env: { POSTGRES_PASSWORD: drill-only-local, POSTGRES_DB: drill }
+        env: { POSTGRES_PASSWORD: drill-only-local, POSTGRES_DB: postgres }
         ports: ["5432:5432"]
         options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - name: Check the secrets are set
-        env: { DB: "${{ secrets.SUPABASE_DB_URL }}", PW: "${{ secrets.SUPABASE_DB_PASSWORD }}", PASS: "${{ secrets.BACKUP_PASSPHRASE }}" }
+        env: { PW: "${{ secrets.SUPABASE_DB_PASSWORD }}", PASS: "${{ secrets.BACKUP_PASSPHRASE }}" }
         run: |
-          if { [ -z "$DB" ] && [ -z "$PW" ]; } || [ -z "$PASS" ]; then echo "::error::SUPABASE_DB_PASSWORD and BACKUP_PASSPHRASE are needed (see backup.yml)."; exit 1; fi
+          if [ -z "$PW" ] || [ -z "$PASS" ]; then echo "::error::SUPABASE_DB_PASSWORD and BACKUP_PASSPHRASE are needed (see backup.yml)."; exit 1; fi
       - name: Install the Postgres 17 tools
         run: |
           sudo install -d /usr/share/postgresql-common/pgdg
@@ -42,54 +42,41 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           set -euo pipefail
-          run=$(gh run list -R "$GITHUB_REPOSITORY" --workflow backup.yml --status success -L 1 --json databaseId,createdAt --jq '.[0].databaseId')
-          created=$(gh run list -R "$GITHUB_REPOSITORY" --workflow backup.yml --status success -L 1 --json createdAt --jq '.[0].createdAt')
+          read -r run created < <(gh run list -R "$GITHUB_REPOSITORY" --workflow backup.yml --status success -L 1 --json databaseId,createdAt --jq '.[0] | "\(.databaseId) \(.createdAt)"')
           [ -n "$run" ] || { echo "::error::No successful backup run found."; exit 1; }
           gh run download "$run" -R "$GITHUB_REPOSITORY" -n doctine-db-backup -D "$RUNNER_TEMP/bk"
           age=$(( ( $(date -u +%s) - $(date -u -d "$created" +%s) ) / 3600 ))
           echo "Newest backup: run $run, $age hours old." >> "$GITHUB_STEP_SUMMARY"
           [ "$age" -le 48 ] || { echo "::error::The newest backup is $age hours old (expected nightly)."; exit 1; }
-      - name: Build an empty Doctine database from the migrations
-        env: { PGPASSWORD: drill-only-local }
-        run: |
-          set -euo pipefail
-          P="psql -h localhost -U postgres -d drill -q -v ON_ERROR_STOP=1"
-          $P -f tests/supabase-stubs.sql >/dev/null
-          for m in $(ls supabase/migrations/2*.sql | sort); do $P -f "$m" >/dev/null; done
-          echo "Schema built from $(ls supabase/migrations/2*.sql | wc -l) migrations." >> "$GITHUB_STEP_SUMMARY"
-      - name: Decrypt and restore (nothing printed)
-        env: { PASS: "${{ secrets.BACKUP_PASSPHRASE }}", PGPASSWORD: drill-only-local }
+      - name: Decrypt (nothing printed)
+        env: { PASS: "${{ secrets.BACKUP_PASSPHRASE }}" }
         run: |
           set -euo pipefail
           umask 077
           f=$(ls "$RUNNER_TEMP"/bk/*.dump.gpg | sort | tail -1)
           printf %s "$PASS" | gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 0 -d "$f" > "$RUNNER_TEMP/db.dump" \
             || { echo "::error::The backup could not be decrypted with BACKUP_PASSPHRASE."; exit 1; }
-          /usr/lib/postgresql/17/bin/pg_restore --list "$RUNNER_TEMP/db.dump" > /dev/null
-          # Data only, into the tables the migrations just created. Triggers (and so foreign keys to the stub
-          # auth.users) are off during the load, as in a real restore into a fresh project.
-          /usr/lib/postgresql/17/bin/pg_restore -h localhost -U postgres -d drill --data-only --schema=public \
-            --no-owner --no-privileges --disable-triggers "$RUNNER_TEMP/db.dump" 2> "$RUNNER_TEMP/err" \
-            && echo "Restore finished without errors." >> "$GITHUB_STEP_SUMMARY" \
-            || { echo "::error::pg_restore reported $(grep -c '^pg_restore: error' "$RUNNER_TEMP/err") error(s) (details withheld)."; shred -u "$RUNNER_TEMP/db.dump" "$RUNNER_TEMP/err"; exit 1; }
-          shred -u "$RUNNER_TEMP/db.dump" "$RUNNER_TEMP/err"
-      - name: Compare with production and check the access rules
-        env: { DB: "${{ secrets.SUPABASE_DB_URL }}", PW: "${{ secrets.SUPABASE_DB_PASSWORD }}", PGPASSWORD: drill-only-local }
+          echo "Decrypted with BACKUP_PASSPHRASE." >> "$GITHUB_STEP_SUMMARY"
+      - name: Restore and check
+        env:
+          PW: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PGBIN: /usr/lib/postgresql/17/bin
+          DRILL_HOST: localhost
+          DRILL_USER: postgres
+          DRILL_PASSWORD: drill-only-local
+          LIVE_HOST: aws-0-ap-south-1.pooler.supabase.com
+          LIVE_USER: postgres.ggqctflfwpfkemgehizq
+          LIVE_DB: postgres
+          LIVE_SSLMODE: require
         run: |
           set -euo pipefail
-          # Production is reached with the bare password when it is set (as in backup.yml); the local drill keeps PGPASSWORD.
-          if [ -n "$PW" ]; then PW="${PW%$'\n'}"; PW="${PW%$'\r'}"; live_conn() { PGPASSWORD="$PW" PGSSLMODE=require "$@" -h aws-0-ap-south-1.pooler.supabase.com -p 5432 -U postgres.ggqctflfwpfkemgehizq -d postgres; }
-          else live_conn() { "$@" "$DB"; }; fi
-          tables="health_profiles consents documents document_files lab_results prescriptions medicines medication_schedules dose_events conversations messages vital_readings health_records health_record_changes"
-          fail=0
-          for t in $tables; do
-            live=$(PGOPTIONS='-c default_transaction_read_only=on' live_conn /usr/lib/postgresql/17/bin/psql -tAc "select count(*) from public.$t" 2>/dev/null || echo x)
-            got=$(psql -h localhost -U postgres -d drill -tAc "select count(*) from public.$t" 2>/dev/null || echo y)
-            # Production keeps changing after 02:10 IST, so allow a small difference (3 rows or a fifth), but never an empty table.
-            if [ "$live" = x ] || [ "$got" = y ]; then echo "- $t: could not be counted" >> "$GITHUB_STEP_SUMMARY"; fail=1
-            elif d=$(( got > live ? got - live : live - got )); m=$(( live / 5 > 3 ? live / 5 : 3 )); [ "$d" -le "$m" ] && { [ "$live" = 0 ] || [ "$got" -gt 0 ]; }; then echo "- $t: restored, consistent with production" >> "$GITHUB_STEP_SUMMARY"
-            else echo "- $t: restored count differs from production by more than expected" >> "$GITHUB_STEP_SUMMARY"; fail=1; fi
-          done
-          rls=$(psql -h localhost -U postgres -d drill -tAc "select count(*) from pg_class where relnamespace='public'::regnamespace and relkind='r' and not relrowsecurity")
-          [ "$rls" = 0 ] && echo "- Row-level security is on for every restored table" >> "$GITHUB_STEP_SUMMARY" || { echo "- Some restored tables lack row-level security" >> "$GITHUB_STEP_SUMMARY"; fail=1; }
-          [ "$fail" = 0 ] && echo "**Restore drill passed.**" >> "$GITHUB_STEP_SUMMARY" || { echo "**Restore drill FAILED.**" >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+          PW="${PW%$'\n'}"; PW="${PW%$'\r'}"
+          mkdir -m 700 "$RUNNER_TEMP/drill"
+          DUMP="$RUNNER_TEMP/db.dump" SUMMARY="$GITHUB_STEP_SUMMARY" RUNNER_TEMP_DIR="$RUNNER_TEMP/drill" LIVE_PASSWORD="$PW" \
+            bash tools/restore-drill.sh > /dev/null 2> "$RUNNER_TEMP/drill/stderr" \
+            || { echo "::error::The restore drill failed; see the job summary (details withheld from this public log)."; exit 1; }
+      - name: Remove the decrypted copy
+        if: always()
+        run: |
+          [ -f "$RUNNER_TEMP/db.dump" ] && shred -u "$RUNNER_TEMP/db.dump" || true
+          rm -rf "$RUNNER_TEMP/drill" "$RUNNER_TEMP/bk"

@@ -19,6 +19,7 @@ import doctor from "../../netlify/functions/doctor.mjs";
 import share from "../../netlify/functions/share.mjs";
 import { reportServerError } from "../../netlify/lib/monitor.mjs";
 import { corsFor } from "../../netlify/lib/cors.mjs";
+import { securityLine, recordSecurity, securityLogOn } from "../../netlify/lib/seclog.mjs";
 
 const ROUTES = { config, account, chat, scan, admin, events, monitor, errors, gateway, assist, guardian, doctor, share };
 // Production answers /api only at its real addresses. Cloudflare keeps every past deployment reachable at
@@ -34,8 +35,21 @@ export function hostAllowed(request, env) {
 }
 const notFound = () => new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 
-export async function onRequest({ request, env, params, waitUntil }) {
+export async function onRequest(ctx) {
+  const t0 = Date.now(), { request, env, params, waitUntil } = ctx;
   for (const [k, v] of Object.entries(env || {})) if (typeof v === "string") process.env[k] = v;
+  const res = await route(ctx);
+  // Security log (netlify/lib/seclog.mjs): one line per request, written after the reply so it never delays or breaks it.
+  if (typeof waitUntil === "function" && securityLogOn(process.env)) {
+    const name = String([].concat(params && params.path || [])[0] || "").slice(0, 40);
+    const known = Object.prototype.hasOwnProperty.call(ROUTES, name) && [].concat(params.path).length === 1 ? name : "unknown";
+    const label = res.status === 421 ? "wrong_address:" + known : known;
+    waitUntil(recordSecurity([securityLine(request, { route: label, status: res.status, ms: Date.now() - t0 })]));
+  }
+  return res;
+}
+
+async function route({ request, env, params, waitUntil }) {
   if (!hostAllowed(request, env)) return new Response(JSON.stringify({ error: "wrong_address", message: "Use https://app.doctine.com." }), { status: 421, headers: { "content-type": "application/json", "cache-control": "no-store" } });
   const name = [].concat(params && params.path || [])[0];
   const handler = Object.prototype.hasOwnProperty.call(ROUTES, name) ? ROUTES[name] : null;

@@ -5,11 +5,13 @@
 
 export const TIME_LIMIT_MS = 25000;       // Netlify ends synchronous functions at about 30 s
 
-export const json = (body, status = 200) =>
+export const json = (body, status = 200, extra = {}) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", "cache-control": "no-store", "x-content-type-options": "nosniff" },
+    headers: { "content-type": "application/json", "cache-control": "no-store", "x-content-type-options": "nosniff", ...extra },
   });
+/** A refused request (429 rate limit, 503 capacity or limiter down) with the Retry-After header clients and tests rely on. */
+export const refused = (rl, body) => json(body, rl.status, { "retry-after": String(Math.max(1, Math.round(rl.retryAfter || 60))) });
 
 /**
  * Where Anthropic requests go. ANTHROPIC_BASE_URL lets local development and the browser tests point at a stand-in

@@ -14,7 +14,7 @@
  * shows the person how to reach their contacts themselves. Nothing here calls an AI model.
  * One log line per request: action, outcome, timings; never a name, number, location or message.
  */
-import { json, readJson } from "../lib/ai.mjs";
+import { json, readJson, refused } from "../lib/ai.mjs";
 import { getSettings } from "../lib/settings.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { createEngine, GuardianError, MAX_CONTACTS } from "../lib/guardian/engine.mjs";
@@ -145,7 +145,7 @@ export default async function handler(req, context, { env = process.env, fetchIm
   const uid = await verifiedUser(token, { env, fetchImpl });
   if (!uid) return done("auth", json({ error: "unauthorized", message: "Please sign in again." }, 401));
   const rate = await checkRate(req, context, "guardian", { env, fetchImpl });
-  if (!rate.allowed) return done("rate", json({ error: rate.error, retry_after: rate.retryAfter }, rate.status));
+  if (!rate.allowed) return done("rate", refused(rate, { error: rate.error, retry_after: rate.retryAfter }));
 
   try {
     if (req.method === "GET") {

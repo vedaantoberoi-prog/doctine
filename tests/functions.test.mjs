@@ -240,6 +240,13 @@ await test("provider errors name only the setting they objected to, from a fixed
   assert.equal(providerReason(JSON.stringify({ error: { type: "invalid_request_error", message: "my HbA1c is 9" } })).about, "unspecified");
   assert.deepEqual(providerReason("not json"), { type: "unknown", about: "unspecified" });
 });
+await test("an organisation-level key names its workspace (ANTHROPIC_WORKSPACE_ID); junk values are ignored", async () => {
+  const { anthropicHeaders } = await import("../netlify/lib/ai.mjs");
+  assert.equal(anthropicHeaders("k", { ANTHROPIC_WORKSPACE_ID: "wrkspc_01EMEiZzu5DqJ3EFZK6XMovb" })["anthropic-workspace-id"], "wrkspc_01EMEiZzu5DqJ3EFZK6XMovb");
+  assert.equal("anthropic-workspace-id" in anthropicHeaders("k", {}), false);
+  assert.equal("anthropic-workspace-id" in anthropicHeaders("k", { ANTHROPIC_WORKSPACE_ID: "x\r\nevil: 1" }), false);
+  assert.equal(anthropicHeaders("k", {})["x-api-key"], "k");
+});
 await test("GET ?test=1 makes a real tiny call and reports the result", async () => {
   anthropic(200, { content: [{ type: "text", text: "ok" }] });
   let [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.ok, true); assert.equal(j.model, "claude-sonnet-5-5"); assert.equal(lastReq.body.max_tokens, 64, "a tiny check still leaves room for thinking");

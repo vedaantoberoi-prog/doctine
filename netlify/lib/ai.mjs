@@ -17,6 +17,15 @@ export const refused = (rl, body) => json(body, rl.status, { "retry-after": Stri
  * Where Anthropic requests go. ANTHROPIC_BASE_URL lets local development and the browser tests point at a stand-in
  * server; it is ignored when DOCTINE_ENV is "production", so a production site always talks to Anthropic itself.
  */
+/**
+ * Headers for every Anthropic call. An organisation-level API key (one not created inside a workspace) must name the
+ * workspace to bill: set ANTHROPIC_WORKSPACE_ID (wrkspc_…, not a secret). Workspace-scoped keys don't need it.
+ */
+export function anthropicHeaders(key, env = process.env) {
+  const ws = String(env.ANTHROPIC_WORKSPACE_ID || "").trim();
+  return { "x-api-key": key, "anthropic-version": "2023-06-01", ...(/^wrkspc_[A-Za-z0-9]{8,64}$/.test(ws) ? { "anthropic-workspace-id": ws } : {}) };
+}
+
 export function anthropicUrl(env = process.env) {
   const base = env.DOCTINE_ENV !== "production" && env.ANTHROPIC_BASE_URL ? env.ANTHROPIC_BASE_URL.replace(/\/$/, "") : "https://api.anthropic.com";
   return base + "/v1/messages";
@@ -107,7 +116,7 @@ async function requestClaude({ key, model }, { system, messages, tool, maxTokens
     res = await fetchImpl(anthropicUrl(), {
       method: "POST",
       signal: ac.signal,
-      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+      headers: { "content-type": "application/json", ...anthropicHeaders(key) },
       body: JSON.stringify({
         model, max_tokens: maxTokens, system, messages,
         ...(tool ? { tools: [tool], tool_choice: { type: "auto" } } : {}),

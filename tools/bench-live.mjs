@@ -23,7 +23,7 @@ const TASKS = [...BASE,
     plan: { steps: [{ id: "c", call: "compare_lab_results", args: { test: "c-reactive protein" } }], return: [{ step: "c", path: "series" }] } }];
 import { gatewayTools, conventionalTools, runTool, DATA_RULES, ANSWER_RULES } from "../netlify/lib/gateway/tools.mjs";
 import { searchCapabilities } from "../netlify/lib/gateway/registry.mjs";
-import { anthropicUrl } from "../netlify/lib/ai.mjs";
+import { anthropicUrl, anthropicHeaders } from "../netlify/lib/ai.mjs";
 
 const MOCK = process.argv.includes("--mock");
 const MODEL = process.env.BENCH_MODEL || "claude-sonnet-5-5";
@@ -46,7 +46,7 @@ async function callModel({ tools, messages, mockScript }) {
   if (MOCK) return mockScript(messages);
   if (spent >= MAX_USD) throw Object.assign(new Error(`spending cap of US$${MAX_USD} reached`), { cap: true });
   const t0 = Date.now();
-  const r = await fetch(anthropicUrl(), { method: "POST", headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+  const r = await fetch(anthropicUrl(), { method: "POST", headers: { "content-type": "application/json", ...anthropicHeaders(process.env.ANTHROPIC_API_KEY) },
     body: JSON.stringify({ model: MODEL, max_tokens: 2000, system: SYSTEM, tools, messages }) });
   const j = await r.json();
   if (!r.ok) throw new Error(`model error ${r.status} ${j && j.error && j.error.type}`);

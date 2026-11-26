@@ -66,6 +66,7 @@ Netlify → **Site configuration → Environment variables**. Set the scope to i
 | Variable | Needed for | Where to get it |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | chat and scanning | console.anthropic.com → API keys. Add credit under Billing. |
+| `ANTHROPIC_WORKSPACE_ID` | chat and scanning | Only for an organisation-level key (one not created inside a workspace): the workspace ID, `wrkspc_…` (Console → Settings → Workspaces). Not a secret. |
 | `AI_MODEL` (optional) | chat model | A Claude model id. Default `claude-sonnet-5-5`. |
 | `AI_SCAN_MODEL` (optional) | scanning model | Defaults to `AI_MODEL` if that's a Claude model. |
 | `AI_MODEL_LIGHT`, `AI_MODEL_HIGH` (optional) | records assistant routing (/api/assist) | Category B and D models of the orchestrator; defaults `claude-haiku-5-5` and `claude-opus-5-5`. Category C uses `AI_MODEL`. A model that can't be reached is never replaced by a weaker one. |

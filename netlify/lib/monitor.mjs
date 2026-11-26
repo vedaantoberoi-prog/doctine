@@ -3,7 +3,7 @@
  * Every check is made now, by this server; nothing is assumed. Uses the server key; never exposed to browsers.
  */
 import { serviceHeaders } from "./supabase-keys.mjs";
-import { anthropicUrl } from "./ai.mjs";
+import { anthropicUrl, anthropicHeaders } from "./ai.mjs";
 
 const base = () => (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 async function timed(url, init, ms = 5000) {
@@ -22,7 +22,7 @@ export async function runChecks(origin) {
     timed(`${b}/rest/v1/rpc/public_settings`, { method: "POST", headers: serviceHeaders(key, { "content-type": "application/json" }), body: "{}" }),
     timed(`${b}/auth/v1/health`, { headers: { apikey: anon } }),
     timed(`${b}/storage/v1/bucket/health-documents`, { headers: serviceHeaders(key) }),
-    ai ? timed(anthropicUrl().replace(/\/v1\/messages$/, "/v1/models?limit=1"), { headers: { "x-api-key": ai, "anthropic-version": "2023-06-01" } }) : Promise.resolve(null),
+    ai ? timed(anthropicUrl().replace(/\/v1\/messages$/, "/v1/models?limit=1"), { headers: anthropicHeaders(ai) }) : Promise.resolve(null),
   ]);
   if (aiCheck && (aiCheck.status === 401 || aiCheck.status === 403)) Object.assign(aiCheck, { ok: false, error: "auth_failed" });
   else if (aiCheck && aiCheck.status === 429) Object.assign(aiCheck, { ok: false, error: "rate_limited" });

@@ -13,3 +13,5 @@ public/_headers
 dist/
 ai-lab/reports/.check/
 __pycache__/
+!ai-lab/reports/
+!ai-lab/reports/*.json

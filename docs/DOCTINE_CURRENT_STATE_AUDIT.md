@@ -4,24 +4,24 @@ This document is the maintained source of truth for what Doctine is and does rig
 change to a switch. The earlier `DOCTINE_ARCHITECTURE_AUDIT.md` (12 Nov, written for packaging the native apps) is kept
 as history.
 
-Last verified **26 Nov 2026**, against the live systems, read-only unless stated. The PDF "Doctine Redesign Preview" was
+Last verified **26 Nov 2026, 19:05 IST**, against the live systems, read-only unless stated. The PDF "Doctine Redesign Preview" was
 not attached to the session and was not read.
 
 ## 1. What is live
 
 | Item | Verified state | How |
 |---|---|---|
-| Production app | app.doctine.com serves commit **9e323c9** (Cloudflare Pages `doctine-app-direct`, deployment `2308df1b`) | Cloudflare API: canonical deployment and alias |
-| Rollback target | `d6903f04` (commit 26ed5e6). It refuses API calls at its own address (421). | Cloudflare API, live probe |
-| Other Cloudflare deployments | None. 61fc245e (no address guard) and c1ac7e39 were deleted on 26 Nov with the owner's approval. | Cloudflare API, 404 probe |
-| `main` | f95d682. It differs from production only in CI and backup workflows and docs, so there is no app change to release. | git |
+| Production app | app.doctine.com serves commit **5af48ea** (Cloudflare Pages `doctine-app-direct`, deployment `9e581498`), released 26 Nov with the owner's approval | Cloudflare API; `version.json`; `/api/monitor` ok |
+| Rollback target | `a05172f6` (commit 6a61f34). It refuses API calls at its own address (421). | Cloudflare API, live probe |
+| Other Cloudflare deployments | None. All older ones were deleted, the last on 26 Nov (61fc245e had no address guard). | Cloudflare API, 404 probe |
+| `main` | 5af48ea, the same as production | git |
 | Staging | doctine-staging.netlify.app, auto-deployed from `main`, on its own database | Netlify, `/api/config` |
 | Production database | Supabase `ggqctflfwpfkemgehizq`: 56 tables (public and private), row-level security on all of them, 66 policies, 177 functions | catalogue query |
 | Staging database | Supabase `hmlxqmhqfaxfgbizcjyg`, identical fingerprint of policies, functions, grants and buckets | catalogue hash comparison |
 | Migration history | There is no `supabase_migrations` table: migrations are applied by hand. Both databases match a database built from the repository's 25 migrations exactly: 177 functions with security mode, 601 columns and policies. | SHA-256 of sorted catalogue lists, computed locally and on both databases |
 | Production accounts | 16 (none new in 7 days); 4 admin team members, all with two-step sign-in | read-only counts |
 | Repository | Public on GitHub. No open Dependabot or secret-scanning alerts. | GitHub |
-| Open pull requests | #41 (security review docs) and #42 (Guardian test clock fix) | GitHub |
+| Open pull requests | None | GitHub |
 
 ### Production switches (`private.feature_flags`)
 
@@ -70,9 +70,10 @@ Status words follow the directive:
 | Consultations, prescriptions, payments | Future doctor system | — | — | — | — | **Designed/documented only** (DOCTOR_NETWORK.md) | Must not start before legal and operational approval |
 | Admin console | Team control plane; never shows medical contents | `/admin/` · `/api/admin` · `private.admin_*` | Invitation only, MFA always, permissions per member, append-only audit log | admin-api (25), admin browser (123) | On · On | **Implemented and verified** | A readiness view for the three proofs is not built yet |
 | Help, feedback, support | Messages to the team | app · `support_*` functions | Caller-only functions (another person's request returns "not found", tested 26 Nov) | functions | On · On | **Implemented and verified** | — |
+| Security request log | 370-day log of every API request, kept in India | Cloudflare adapter · `security_log_add` · `private.security_log` | Append-only; no grants; never bodies or tokens | DB (security_log), adapter, worker | Applied · **On**, lines verified arriving 26 Nov | **Implemented and verified** | Sign-ins at Supabase Auth are not covered |
 | Rate limiting | Abuse and cost control | shared limiter, `private.rate_limits` | Fails closed when the shared limiter is required | functions | On · On | **Implemented and verified** | — |
 | Monitoring | Uptime and database checks every 15 min | `/api/monitor`, cron Worker, GitHub Uptime | No data in the checks | uptime workflow | On · On | **Implemented and verified** | — |
-| Backups and restore | Nightly encrypted dump; weekly restore drill | `backup.yml`, `restore-drill.yml`, `tools/restore-drill.sh` | AES-256; only pass/fail logged | restore-drill.test.sh in CI | — · Green on 26 Nov; drill passed on the real backup | **Implemented and verified** (database) | File bytes are not backed up. Sign-in has never been restored into a new project. |
+| Backups and restore | Nightly encrypted dump; weekly restore drill; nightly file copy (needs `STORAGE_BACKUP_KEY`) | `backup.yml`, `restore-drill.yml`, `tools/restore-drill.sh` | AES-256; only pass/fail logged | restore-drill.test.sh in CI | — · Green on 26 Nov; drill passed on the real backup | **Implemented and verified** (database) · **Blocked** (files: owner secret) | Sign-in has never been restored into a new project |
 | Android and macOS apps | Native packaging | `apps.yml` | Keystore and Keychain plan | apps workflow green | Built in CI · Not released | **Partially implemented** | Store listings, signing, SMTP and deep links |
 | Family profiles | Several people under one account | "Coming soon" screen | — | — | — | **Not implemented** | — |
 

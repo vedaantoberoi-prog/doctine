@@ -393,6 +393,8 @@ Direct Upload deployment can't be "retried", so upload the zip again.
 
 **Rollback:** Deployments → an earlier deployment → Rollback (in `doctine-app-direct`).
 
+**After every upload, keep only the current deployment and one rollback target.** Delete older ones: Deployments, then the deployment's ⋯ menu, then Delete. Every Cloudflare Pages deployment stays reachable at its own `<id>.doctine-app-direct.pages.dev` address, and it runs with the production keys. Since 677ec64 the app refuses every API call on any address other than app.doctine.com (421 `wrong_address`). A deployment older than that has no such guard. On 26 Nov 2026 one of these (`61fc245e`) was still live and was deleted (see docs/DOCTINE_SECURITY_AND_INCIDENT_REVIEW.md). Check after deleting: `curl -s -o /dev/null -w "%{http_code}" https://<id>.doctine-app-direct.pages.dev/api/config` should return 404 for a deleted deployment and 421 for a kept one.
+
 **Don't** upload the complete project package by mistake: only `doctine-app.zip` belongs here. A wrong upload makes
 its files public at that deployment's address; delete that deployment.
 
@@ -401,7 +403,7 @@ its files public at that deployment's address; delete that deployment.
 real app (`app.doctine.com/?sample=1`).
 
 **CI:** the workflows in `.github/workflows/` run again on GitHub (CI on every push; `apps.yml` for Android/Mac; on `main`:
-nightly backup, uptime, staging). Staging deploys to Netlify fail since 11 Nov (Netlify credits). Still run the local
+nightly backup, restore drill, uptime, staging). Staging deploys to Netlify again (doctine-staging.netlify.app). Still run the local
 checks in section 17 before each upload.
 
 ## 17. Checks to run before an upload

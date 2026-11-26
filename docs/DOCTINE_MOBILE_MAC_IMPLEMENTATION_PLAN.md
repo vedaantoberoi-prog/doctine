@@ -1,6 +1,6 @@
 # Doctine — Android and macOS implementation plan (with architecture decision record)
 
-Read with `DOCTINE_ARCHITECTURE_AUDIT.md` and `DOCTINE_SECURITY_REVIEW.md`.
+Read with `DOCTINE_ARCHITECTURE_AUDIT.md` and `DOCTINE_SECURITY_AND_INCIDENT_REVIEW.md`.
 
 ## ADR-001: one app, packaged natively for Android (Capacitor) and macOS (Tauri)
 

@@ -85,9 +85,10 @@ jobs:
             echo "::error::Netlify deploy to staging failed (exit $code$([ "$code" = 124 ] && echo ', timed out')). Netlify said:"
             # Show what Netlify reported (tokens masked), so the cause is visible in the log.
             cat deploy.err deploy.json 2>/dev/null | sed -E 's/nfp_[A-Za-z0-9_-]+/[masked]/g; s/(token|authorization)([^:]*):[^,}]*/\1\2: [masked]/Ig' | tail -40
-            # Once more with --debug (no --json), so the CLI says what it was doing when it stopped; tokens masked.
-            echo "--- second attempt, with --debug ---"
-            timeout 6m npx --yes "$NETLIFY_CLI" deploy --build --prod --debug --message "staging ${GITHUB_SHA::12} run ${GITHUB_RUN_ID} (debug)" 2>&1 \
+            # Once more without --json, so the CLI prints its normal build log (the same as Netlify's own deploy log; no --debug,
+            # which can print resolved settings into this PUBLIC log), tokens masked.
+            echo "--- second attempt, plain output ---"
+            timeout 6m npx --yes "$NETLIFY_CLI" deploy --build --prod --message "staging ${GITHUB_SHA::12} run ${GITHUB_RUN_ID} (retry)" 2>&1 \
               | sed -E 's/nfp_[A-Za-z0-9_-]+/[masked]/g; s/(token|authorization|bearer)([^:= ]*)[:= ]+[^ ,}]*/\1\2 [masked]/Ig' | grep -v '^\s*$' | tail -60 || true
             # The site's own state and its last deploys, as Netlify records them (states and messages only).
             curl -sS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys?per_page=3" \

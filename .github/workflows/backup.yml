@@ -11,7 +11,8 @@
 #   BACKUP_PASSPHRASE     a long random passphrase (at least 32 characters) kept in your password manager
 # Until both are set, the job FAILS (red), so a missing backup can't hide behind a green tick.
 #
-# Covers: all tables (public), accounts (auth) and file records (storage metadata).
+# Covers: all tables (public), the app's own records (private: Guardian contacts, doctor applications, record shares,
+# access logs, admin audit log, switches), accounts (auth) and file records (storage metadata).
 # Not covered: the uploaded files' bytes in the storage bucket (see docs/BACKUP_RESTORE.md).
 name: Nightly backup
 on:
@@ -65,7 +66,7 @@ jobs:
           stamp=$(date -u +%Y-%m-%dT%H%MZ)
           mkdir -p out
           /usr/lib/postgresql/17/bin/pg_dump ${conn:+"$conn"} -Fc --no-owner --no-privileges \
-            --schema=public --schema=auth --schema=storage -f "$RUNNER_TEMP/db.dump" 2> "$RUNNER_TEMP/err" \
+            --schema=public --schema=private --schema=auth --schema=storage -f "$RUNNER_TEMP/db.dump" 2> "$RUNNER_TEMP/err" \
             || { e="$RUNNER_TEMP/err"; why="unknown reason"
                  grep -qi 'password authentication failed' "$e" && why="wrong database password (SUPABASE_DB_PASSWORD)"
                  grep -qi 'tenant or user not found' "$e" && why="wrong user or project in SUPABASE_DB_URL"
@@ -78,6 +79,8 @@ jobs:
                  shred -u "$e"; echo "::error::pg_dump failed: $why (other details withheld from this public log)"; exit 1; }
           n=$(/usr/lib/postgresql/17/bin/pg_restore --list "$RUNNER_TEMP/db.dump" | grep -c "TABLE DATA" || true)
           [ "$n" -ge 13 ] || { echo "::error::backup looks incomplete ($n tables with data entries)"; exit 1; }
+          np=$(/usr/lib/postgresql/17/bin/pg_restore --list "$RUNNER_TEMP/db.dump" | grep -c "TABLE DATA private " || true)
+          [ "$np" -ge 30 ] || { echo "::error::backup is missing the private schema ($np private tables)"; exit 1; }
           printf %s "$PASS" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
             --symmetric --cipher-algo AES256 --s2k-digest-algo SHA512 --s2k-count 65011712 \
             -o "out/doctine-db-$stamp.dump.gpg" "$RUNNER_TEMP/db.dump"
@@ -85,7 +88,7 @@ jobs:
           printf %s "$PASS" | gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 0 -d "out/doctine-db-$stamp.dump.gpg" \
             | /usr/lib/postgresql/17/bin/pg_restore --list > /dev/null
           shred -u "$RUNNER_TEMP/db.dump" "$RUNNER_TEMP/err"
-          echo "Backup $stamp: $n tables, $(du -h out/*.gpg | cut -f1) encrypted." >> "$GITHUB_STEP_SUMMARY"
+          echo "Backup $stamp: $n tables (private schema included), $(du -h out/*.gpg | cut -f1) encrypted." >> "$GITHUB_STEP_SUMMARY"
       - name: Keep for 30 days
         if: steps.cfg.outputs.ready == 'true'
         uses: actions/upload-artifact@v4

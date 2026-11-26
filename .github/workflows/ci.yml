@@ -121,6 +121,8 @@ jobs:
           ls -d /usr/lib/postgresql/*/bin
       - name: Migrations, RLS, two-account isolation, consent and deletion (throw-away cluster)
         run: bash tests/run-db-tests.sh
+      - name: Restore drill checks (fictional backup; catches missing schemas, missing rows and leaking access rules)
+        run: bash tests/restore-drill.test.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: report-database, path: reports/, if-no-files-found: warn, retention-days: 30 }

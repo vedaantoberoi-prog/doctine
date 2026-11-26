@@ -1,0 +1,43 @@
+# Doctine · live medical evaluation (tests/live-eval.mjs) of the STAGING site, started by hand only.
+# Spends a little AI credit on the staging site's own key: 77 synthetic messages, nothing else. Never targets production
+# (live-eval refuses a site that doesn't report environment "staging", and refuses PRODUCTION_URL).
+# The report is pushed to its own branch, eval-report/<run id>, so it can be loaded into the Doctor Review workbench and
+# signed off. The messages and answers are synthetic test data; no secret is written to the report or the log.
+name: Medical evaluation (staging)
+on:
+  workflow_dispatch:
+    inputs:
+      url: { description: "Staging site to evaluate", default: "https://doctine-staging.pages.dev", required: true }
+      expect_commit: { description: "Stop unless the site serves this full commit (leave empty to record whatever it serves)", default: "", required: false }
+permissions:
+  contents: write
+concurrency: { group: medical-eval, cancel-in-progress: false }
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Live medical evaluation (real AI on staging; synthetic messages; all cases)
+        env:
+          DOCTINE_URL: ${{ inputs.url }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          EXPECT_COMMIT: ${{ inputs.expect_commit }}
+          EVAL_ACCESS_TOKEN: ${{ secrets.EVAL_ACCESS_TOKEN }}
+          REPORT_DIR: reports
+        run: node tests/live-eval.mjs
+      - name: Publish the report to its own branch
+        if: always() && hashFiles('reports/medical-eval.json') != ''
+        env: { PUSH_TOKEN: "${{ github.token }}", REPO: "${{ github.repository }}" }
+        run: |
+          set -euo pipefail
+          run_id=$(node -p 'JSON.parse(require("fs").readFileSync("reports/medical-eval.json","utf8")).run_id')
+          [[ "$run_id" =~ ^run-[A-Za-z0-9-]{4,80}$ ]] || { echo "::error::unexpected run id"; exit 1; }
+          tmp=$(mktemp -d); cp reports/medical-eval.json reports/medical-eval.md "$tmp"/
+          cd "$tmp" && git init -q && git checkout -q --orphan "eval-report/$run_id"
+          git add . && git -c user.name=doctine-eval -c user.email=noreply@doctine.com commit -qm "medical evaluation $run_id"
+          git push -q "https://x-access-token:${PUSH_TOKEN}@github.com/${REPO}.git" "eval-report/$run_id"
+          echo "Report: branch eval-report/$run_id" | tee -a "$GITHUB_STEP_SUMMARY"

@@ -233,6 +233,13 @@ await test("every refused request carries Retry-After (all rate-limited routes)"
   for (const f of ["account", "admin", "assist", "doctor", "errors", "events", "gateway", "guardian", "monitor", "scan", "share"])
     assert.doesNotMatch(src(f), /allowed\) return (done\("rate", )?json\(/, f + " answers a refused request without Retry-After");
 });
+await test("provider errors name only the setting they objected to, from a fixed list", async () => {
+  const { providerReason } = await import("../netlify/lib/ai.mjs");
+  const r = providerReason(JSON.stringify({ error: { type: "invalid_request_error", message: "max_tokens: must be at least 1024 when PRIVATE my HbA1c is 9" } }));
+  assert.deepEqual(r, { type: "invalid_request_error", about: "max_tokens" });
+  assert.equal(providerReason(JSON.stringify({ error: { type: "invalid_request_error", message: "my HbA1c is 9" } })).about, "unspecified");
+  assert.deepEqual(providerReason("not json"), { type: "unknown", about: "unspecified" });
+});
 await test("GET ?test=1 makes a real tiny call and reports the result", async () => {
   anthropic(200, { content: [{ type: "text", text: "ok" }] });
   let [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.ok, true); assert.equal(j.model, "claude-sonnet-5-5"); assert.equal(lastReq.body.max_tokens, 64, "a tiny check still leaves room for thinking");

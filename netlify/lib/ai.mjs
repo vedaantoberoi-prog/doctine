@@ -54,6 +54,18 @@ export async function readJson(req, maxBytes) {
   try { return { body: JSON.parse(raw) }; } catch { return { error: "invalid", status: 400 }; }
 }
 
+/**
+ * For the log only: the provider's error type and WHICH request setting it objected to, picked from a fixed list.
+ * The provider's message itself is never logged, because it can repeat what the person wrote.
+ */
+const PARAMS = ["max_tokens", "thinking", "tool_choice", "tools", "temperature", "top_p", "top_k", "output_config", "effort", "prefill", "system", "messages", "model", "stop_sequences", "metadata", "anthropic-version", "anthropic-beta"];
+export function providerReason(text) {
+  let type = "unknown", msg = "";
+  try { const e = JSON.parse(text).error || {}; type = String(e.type || "unknown").replace(/[^\w.-]/g, "").slice(0, 40); msg = String(e.message || ""); } catch {}
+  const about = PARAMS.find((p) => new RegExp(`(^|[^\\w])${p.replace(/[-]/g, "\\-")}([^\\w]|$)`, "i").test(msg)) || "unspecified";
+  return { type, about };
+}
+
 /** Maps an Anthropic HTTP failure to the error codes the app already explains to people. */
 export function providerError(status, text, model) {
   if (status === 401) return { error: "invalid_key" };
@@ -110,7 +122,7 @@ async function requestClaude({ key, model }, { system, messages, tool, maxTokens
     const text = await res.text().catch(() => "");
     const out = providerError(res.status, text, model);
     // Log the outcome only: status and the provider's error type. Never the request, the reply body or any key.
-    if (out.error === "ai_error") { let type = "unknown"; try { type = String(JSON.parse(text).error.type || "unknown").replace(/[^\w.-]/g, "").slice(0, 40); } catch {} console.error("[ai] anthropic error", res.status, type); }
+    if (out.error === "ai_error") { const { type, about } = providerReason(text); console.error("[ai] anthropic error", res.status, type, "about:" + about); }
     return out;
   }
   const j = await res.json().catch(() => null);

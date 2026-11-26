@@ -35,7 +35,11 @@ ai-lab/
   eval/metrics.py          field-level metrics; no single "score"
   eval/run_baseline.py     runs a model over a split and writes reports/<model>-<input>-<split>.json
   tests/test_lab.py        hashes, determinism, leakage, fictional-only, metric behaviour, baseline reproduces
+  train/make_sft.py        builds the training set (train layouts and names only; refuses any overlap with val/test)
+  train/train_lora.py      the LoRA run for a rented GPU; --dry-run checks data and config anywhere
 ```
+
+The server's copy of the registry and latest results (`netlify/lib/model-registry.generated.mjs`, made by `tools/model-registry-sync.mjs`) feeds the admin console's AI page. CI fails if that copy is out of date.
 
 ## Benchmark `extraction-v1`
 
@@ -59,22 +63,27 @@ Leakage rules are enforced by the tests:
 
 When real, consented, de-identified documents are ever approved, they will be split by patient and by date, so that no patient's records appear on both sides and no later document predicts an earlier one.
 
-## Baseline results: the reader users have today (`b0-app-parser`), measured 26 Nov 2026
+## Baseline results: the reader in the app (`b0-app-parser`), 26 Nov 2026
 
 The test split has 60 lab reports in layouts never seen in train. Text-layer input is a PDF's own text; OCR input is a Tesseract 5.3.4 reading of the rendered page, the same engine the app runs on the device.
 
 | Measure | Text layer | OCR |
 |---|---|---|
 | Row precision (rows shown that are on the report) | 1.000 | 0.997 |
-| Row recall (rows on the report that were found) | 0.914 | 0.713 |
+| Row recall (rows on the report that were found) | 0.914 | 0.715 (was 0.713) |
 | Value accuracy on found rows | 1.000 | 1.000 |
-| Unit accuracy on found rows | 1.000 | 0.926 |
+| Unit accuracy on found rows | 1.000 | 0.933 (was 0.926) |
 | Decimal-comma rows (19): read / reported unreadable / **misread** | 0 / 19 / **0** | 0 / 19 / **0** |
 | Unmatched rows (misspelt test names, values correct) | 0 | 1 |
 | Report date correct | 0.983 | 0.983 |
 | Whole document perfect | 0.567 | 0.100 |
 
-Across all splits on the text layer (180 reports), the "Test : value unit (range)" layout is almost unreadable to the app: row recall is 0.04. The app tells the person those lines couldn't be read, so this is a gap, not a silent error. The full breakdowns by layout and by hard case are in `reports/`.
+**Fixed the same day in the app's reader (no model):**
+- the "Test : value unit (range)" layout went from row recall 0.04 to 0.985 (text layer, 30 reports);
+- a stray full stop or colon after a unit is dropped;
+- an OCR range like "7:2" is left out rather than shown as "3.5 – 7".
+
+The test split above has none of those layouts, so its numbers barely move; across all 180 reports, OCR recall went from 0.647 to 0.777. The full breakdowns by layout and by hard case are in `reports/`.
 
 What the numbers say:
 - The current reader is **safe**: it has never shown a wrong number on this benchmark.
@@ -103,15 +112,16 @@ Re-check licences and newer releases on the day the experiment starts.
 1. **Synthetic training data:** about 5,000 documents from a training-only generator, with new layouts, more tests (target 150) and more OCR variation. It is generated separately and checked for overlap against this test split.
 2. **Before any release:** a clinician-checked set of 200–500 real reports. These must be de-identified, collected with explicit consent for this purpose, and used for evaluation only at first. This needs your decision, the consent text and the lawyer's review.
 
-**Compute estimate (not measured).**
-- 5,000 documents of about 900 tokens over 3 epochs is about 13.5 M training tokens.
-- At about 2,000–4,000 tokens/s for LoRA on a 1.7B model on one 24 GB GPU (L4 or A10G class), that is roughly 1–2 GPU-hours per run.
-- For the 4B model with QLoRA, roughly 3–5 GPU-hours per run.
+**Compute estimate (the data size is measured, the speed is assumed).**
+- The training set builder (`train/make_sft.py`) makes 5,000 examples of about 1.9 M tokens. Three epochs is about 5.4 M training tokens.
+- At an assumed 2,000–4,000 tokens/s for LoRA on a 1.7B model on one 24 GB GPU (L4 or A10G class), that is roughly 0.4–0.75 GPU-hours per run.
+- For the 4B model with QLoRA, roughly 1.5–3 GPU-hours per run.
+- The training set must first be widened (more tests, more layouts, OCR text) or the model will learn the generator, not lab reports. That makes it larger and the runs longer.
 - Inference needs about 4 GB for the 1.7B model in bf16, or about 1.5 GB quantised.
 
 **Promotion bar.** The model is promoted only if, on the extraction-v1 test split with OCR input:
 - misread values stay at **0**;
-- row recall beats the baseline (above 0.713);
+- row recall beats the baseline (above 0.715);
 - the perfect-document rate beats the baseline (above 0.100);
 - no layout family or hard-case tag gets worse.
 

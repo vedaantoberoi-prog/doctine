@@ -16,11 +16,11 @@
    "hallucination_rate": 0.0,
    "name_misread": 2,
    "perfect_doc_rate": 0.1333,
-   "pred_rows": 132,
+   "pred_rows": 133,
    "range_acc": 1.0,
    "row_precision": 1.0,
-   "row_recall": 0.6875,
-   "unit_acc": 0.9242,
+   "row_recall": 0.6927,
+   "unit_acc": 0.9398,
    "value_acc": 1.0
   },
   "two_page": {
@@ -87,11 +87,11 @@
    "hallucination_rate": 0.0,
    "name_misread": 1,
    "perfect_doc_rate": 0.0833,
-   "pred_rows": 65,
+   "pred_rows": 66,
    "range_acc": 1.0,
    "row_precision": 1.0,
-   "row_recall": 0.7386,
-   "unit_acc": 0.8923,
+   "row_recall": 0.75,
+   "unit_acc": 0.9091,
    "value_acc": 1.0
   },
   "decimal_comma": {
@@ -186,11 +186,11 @@
   "hallucination_rate": 0.0035,
   "name_misread": 5,
   "perfect_doc_rate": 0.1,
-  "pred_rows": 284,
+  "pred_rows": 285,
   "range_acc": 1.0,
   "row_precision": 0.9965,
-  "row_recall": 0.7128,
-  "unit_acc": 0.9258,
+  "row_recall": 0.7154,
+  "unit_acc": 0.9331,
   "value_acc": 1.0
  },
  "split": "test"

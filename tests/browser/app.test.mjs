@@ -87,6 +87,12 @@ await pg.click(".scanov [data-k=x]");
   check("a single-letter unit (L for litres) on an in-range value stays the unit", v["Urine Volume"] === "1.5 L (ref 0.8–2.0)");
   check("a comma decimal isn't guessed at: the line is left out and a warning says to add it", !v.Hemoglobin && r.warns.some((w) => /couldn’t be read/.test(w)));
   check("a high/low mark that contradicts the value is flagged for checking", r.warns.some((w) => /^Potassium: .*doesn’t match/.test(w))); }
+// the "Test : value unit (range)" layout, and stray punctuation from text recognition
+{ const r = await pg.evaluate(() => parseText(["Haemoglobin : 12.4 g/dL (13.0 - 17.0)\nALT (SGPT) : 61 U/L (7 - 56)\nTotal Cholesterol : 214 mg/dL (< 200)\nUric Acid 4.4 mg/dL 3.5 - 7:2\nVitamin B12 446 pg/mL. 200 - 900\nReport Date: 02/01/2026"]));
+  const v = Object.fromEntries(r.rows.map((x) => [x.k, x.v]));
+  check("'Test : value unit (range)' lines are read, names with brackets included", v.Haemoglobin === "12.4 g/dL (ref 13.0–17.0)" && v["ALT (SGPT)"] === "61 U/L (ref 7–56)" && v["Total Cholesterol"] === "214 mg/dL (ref < 200)", JSON.stringify(v));
+  check("a range misread as '7:2' is left out, never shown as a range of 3.5–7", !v["Uric Acid"] && !Object.keys(v).some((k) => /Uric/.test(k)), JSON.stringify(v));
+  check("a stray full stop after the unit is dropped", v["Vitamin B12"] === "446 pg/mL (ref 200–900)", JSON.stringify(v)); }
 // data persists after reload
 await pg.reload(); await pg.waitForTimeout(500);
 check("records, medicines and doses survive a reload", await pg.evaluate("S.email==='ravi@example.com'&&S.reports.length===1&&S.meds.length===1"));

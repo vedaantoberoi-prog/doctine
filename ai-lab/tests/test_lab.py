@@ -98,6 +98,33 @@ class Baseline(unittest.TestCase):
             self.assertEqual(before, after, inp)
 
 
+class TrainingSet(unittest.TestCase):
+    def test_sft_examples_are_clean_deterministic_and_never_overlap_the_benchmark(self):
+        sys.path.insert(0, os.path.join(LAB, "train")); import make_sft
+        a, b = make_sft.build(60, 3), make_sft.build(60, 3)
+        self.assertEqual(a, b)
+        test_masked = {make_sft.mask(d["text"]) for s in ("val", "test") for d in load(s)}
+        for e in a:
+            self.assertEqual([m["role"] for m in e["messages"]], ["system", "user", "assistant"])
+            self.assertNotIn(make_sft.mask(e["messages"][1]["content"]), test_masked)
+            out = json.loads(e["messages"][2]["content"])
+            for r in out["lab_results"]:
+                self.assertTrue(metrics._in_source(r["value"], {"text": e["messages"][1]["content"]}), ("every taught value is on the page", r))
+                self.assertRegex(r["value"], r"^\d+(\.\d+)?$", "values are taught as plain numbers; a decimal comma is never turned into one")
+            self.assertNotIn(out["facility"], generate.LABS_HELD_OUT)
+        self.assertEqual({e["family"] for e in a}, {"table", "colon", "flag_column"})
+
+    def test_the_trainer_dry_run_checks_the_data_without_any_ml_library(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run([sys.executable, os.path.join(LAB, "train", "make_sft.py"), "--n", "40", "--out", tmp], check=True, capture_output=True)
+            r = subprocess.run([sys.executable, os.path.join(LAB, "train", "train_lora.py"), "--data", tmp, "--dry-run"], check=True, capture_output=True, text=True)
+            plan = json.loads(r.stdout)
+            self.assertEqual(plan["config"]["base_model"], "Qwen/Qwen3-1.7B"); self.assertEqual(plan["data"]["examples"], 40)
+            with open(os.path.join(tmp, "train.jsonl"), "a") as f: f.write("{}\n")
+            self.assertNotEqual(subprocess.run([sys.executable, os.path.join(LAB, "train", "train_lora.py"), "--data", tmp, "--dry-run"], capture_output=True).returncode, 0, "a changed file is refused")
+
+
 class Registry(unittest.TestCase):
     def test_no_model_is_called_doctine_trained(self):
         for m in json.load(open(os.path.join(LAB, "registry", "models.json")))["models"]:

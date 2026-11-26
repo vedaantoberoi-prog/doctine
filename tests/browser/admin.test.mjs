@@ -365,6 +365,7 @@ await go(pg, "#/ai", "table");
 { const t = await text(pg, "#view"); check("AI infrastructure: policy version, switches, routing, tools and states; configuration only", t.includes(AI_INFO.policy.version) && t.includes("Model routing") && t.includes("investigate_records") && t.includes("PERMISSION_CHECKED") && /Not configured/.test(t) && !/mg\/dL/.test(t));
   check("AI infrastructure: stored traces shown as totals, timings and cost (no person or content)", t.includes("95th percentile") && t.includes("4,120 ms") && t.includes("US$0.0104") && t.includes("claude-sonnet-5-5"));
   check("AI infrastructure: the Founder sees Guardian alert counts only (no person, place or contact)", t.includes("Guardian") && t.includes("People with Guardian on") && !/lat|phone|@/.test(t.split("Guardian")[1].split("Model routing")[0]));
+  check("AI infrastructure: the model registry and benchmark results are shown, with no trained Doctine model claimed", t.includes("Models and evaluation") && t.includes("b0-app-parser") && t.includes("doctine-labx-v0") && /proposed/.test(t) && t.includes("photographed (OCR)") && !/Doctine-trained model\b(?! weights)/.test(t));
   check("AI infrastructure: the Founder sees pilot accounts, with add and remove", t.includes("Pilot accounts") && t.includes("pilot-test@example.test") && !!(await pg.$("#pilot-add")) && !!(await pg.$("[data-pilot-remove]"))); }
 
 // audit, settings

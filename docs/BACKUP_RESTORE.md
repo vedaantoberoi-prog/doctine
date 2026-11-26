@@ -8,7 +8,7 @@ The repository is public, so only the encrypted file ever leaves the runner. Wit
 
 **Before 26 Nov 2026 the `private` schema was missing from the backup.** Backups made before that date cannot restore Guardian contacts, doctor applications, shares or the audit log.
 
-**Not included:** the bytes of uploaded photos and PDFs in the `health-documents` and `practitioner-credentials` buckets. Their records are backed up, but the files themselves aren't. While the bucket is small, download it from Supabase → Storage. For full coverage, move to Supabase Pro, which adds daily backups and optional point-in-time recovery.
+**Uploaded files** (photos, PDFs, doctors' credentials) are copied by a separate nightly job, `.github/workflows/storage-backup.yml`: every file plus a manifest of sizes and SHA-256 hashes, encrypted with the same passphrase, verified file by file after decryption, compared against the database's file records, kept 30 days as **doctine-file-backup**. **It runs only once the owner adds `STORAGE_BACKUP_KEY` to the GitHub environment `backup`** (see the top of that file); until then it fails red. Until then the files themselves are in no backup. Supabase Pro (daily backups, point-in-time recovery) is the paid alternative.
 
 ## One-time setup (account owner)
 

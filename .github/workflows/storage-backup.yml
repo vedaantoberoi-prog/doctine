@@ -1,0 +1,77 @@
+# Doctine · nightly encrypted backup of the uploaded FILES (photos, PDFs, doctors' credential files).
+#
+# The database backup (backup.yml) keeps the file records, not the files' bytes. This job copies every file in the
+# private buckets `health-documents` and `practitioner-credentials`, writes a manifest (size and SHA-256 of each file),
+# encrypts the lot with BACKUP_PASSPHRASE (AES-256, like the database backup), proves the encrypted copy opens and
+# every file matches its hash, checks the number of files against the database's own file records, and keeps it 30 days.
+# The repository is PUBLIC: the log shows only pass/fail, never names, ids or counts.
+#
+# Needs ONE secret that only the owner can add (Settings → Environments → "backup" → Add secret):
+#   STORAGE_BACKUP_KEY   the Supabase secret key (Project Settings → API Keys → Secret keys; sb_secret_…).
+# It also uses BACKUP_PASSPHRASE and SUPABASE_DB_PASSWORD, which backup.yml already has.
+# Put STORAGE_BACKUP_KEY in the "backup" environment, not as a repository secret, and set that environment's
+# Deployment branches to `main` only. Then only this job, on main, can read it. It is a full-access key, used here
+# only to list and download. Until it is set the job FAILS (red), so missing file backups can't hide behind a green tick.
+name: Nightly file backup
+on:
+  schedule: [{ cron: "10 21 * * *" }] # 02:40 IST, after the database backup
+  workflow_dispatch:
+permissions: { contents: read }
+concurrency: { group: storage-backup, cancel-in-progress: false }
+jobs:
+  files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: backup
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the secrets are set
+        env: { KEY: "${{ secrets.STORAGE_BACKUP_KEY }}", PASS: "${{ secrets.BACKUP_PASSPHRASE }}" }
+        run: |
+          if [ -z "$KEY" ] || [ -z "$PASS" ]; then
+            echo "::error::NO FILE BACKUP WAS MADE: add STORAGE_BACKUP_KEY to the 'backup' environment (see the top of storage-backup.yml)."
+            echo "No file backup was made: STORAGE_BACKUP_KEY is not set in the 'backup' environment." >> "$GITHUB_STEP_SUMMARY"; exit 1
+          fi
+          case "$KEY" in sb_publishable_*) echo "::error::STORAGE_BACKUP_KEY is the publishable key; it needs the secret key."; exit 1;; esac
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Copy, encrypt and check (nothing printed)
+        env:
+          SUPABASE_URL: https://ggqctflfwpfkemgehizq.supabase.co
+          STORAGE_BACKUP_KEY: ${{ secrets.STORAGE_BACKUP_KEY }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          stamp=$(date -u +%Y-%m-%dT%H%MZ); W="$RUNNER_TEMP/files"; mkdir -p out "$W"
+          node tools/storage-backup.mjs "$W/doctine-files"
+          tar -C "$W" -cf "$W/files.tar" doctine-files
+          printf %s "$PASS" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --symmetric --cipher-algo AES256 \
+            --s2k-digest-algo SHA512 --s2k-count 65011712 -o "out/doctine-files-$stamp.tar.gpg" "$W/files.tar"
+          # prove the encrypted copy opens and every file matches the manifest, then remove every plain copy
+          mkdir "$W/check"
+          printf %s "$PASS" | gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 0 -o "$W/check.tar" -d "out/doctine-files-$stamp.tar.gpg"
+          tar -C "$W/check" -xf "$W/check.tar"
+          node -e '
+            const fs=require("fs"),c=require("crypto"),p=require("path"),root=process.argv[1];
+            const m=JSON.parse(fs.readFileSync(p.join(root,"manifest.json")));let bad=0,n=0;
+            for(const [b,v] of Object.entries(m.buckets))for(const f of v.files){n++;const buf=fs.readFileSync(p.join(root,b,f.path));if(buf.length!==f.size||c.createHash("sha256").update(buf).digest("hex")!==f.sha256)bad++;}
+            fs.writeFileSync(process.env.RUNNER_TEMP+"/files/count",String(n));
+            if(bad){console.error("::error::"+bad+" file(s) in the encrypted copy do not match the manifest");process.exit(1);}' "$W/check/doctine-files"
+          find "$W" -type f ! -name count -exec shred -u {} +
+          echo "File backup $stamp: every file matches its hash after decryption." >> "$GITHUB_STEP_SUMMARY"
+      - name: Compare with the database's file records
+        env: { PW: "${{ secrets.SUPABASE_DB_PASSWORD }}" }
+        run: |
+          set -euo pipefail
+          [ -n "$PW" ] || { echo "::warning::SUPABASE_DB_PASSWORD not set; file count not compared"; exit 0; }
+          PW="${PW%$'\n'}"; PW="${PW%$'\r'}"
+          live=$(PGPASSWORD="$PW" PGSSLMODE=require PGOPTIONS='-c default_transaction_read_only=on' psql -h aws-0-ap-south-1.pooler.supabase.com -p 5432 \
+            -U postgres.ggqctflfwpfkemgehizq -d postgres -tAc "select count(*) from storage.objects where bucket_id in ('health-documents','practitioner-credentials')")
+          got=$(cat "$RUNNER_TEMP/files/count"); rm -f "$RUNNER_TEMP/files/count"
+          d=$(( got > live ? got - live : live - got ))
+          [ "$d" -le 2 ] && echo "- the copy holds every file the database lists (allowing for uploads during the run)" >> "$GITHUB_STEP_SUMMARY" \
+            || { echo "::error::the copy and the database's file records differ (details withheld)"; exit 1; }
+      - name: Keep for 30 days
+        uses: actions/upload-artifact@v4
+        with: { name: doctine-file-backup, path: out/, retention-days: 30, if-no-files-found: error }

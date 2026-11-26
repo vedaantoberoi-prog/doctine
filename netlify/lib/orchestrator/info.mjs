@@ -8,6 +8,7 @@ import { STATES, TRANSITIONS } from "./state.mjs";
 import { createToolGateway } from "./tools.mjs";
 import { modelFor } from "./router.mjs";
 import { priceOf } from "./budget.mjs";
+import { MODEL_REGISTRY } from "../model-registry.generated.mjs";
 
 export function infrastructure({ env = process.env, flags = {} } = {}) {
   const keySet = !!(env.ANTHROPIC_API_KEY || env.AI_API_KEY);
@@ -24,6 +25,7 @@ export function infrastructure({ env = process.env, flags = {} } = {}) {
     limits: POLICY.limits,
     observability: { traces: "one JSON log line per request (route \"assist\"): states, timings, counts, model, tokens; OpenTelemetry export shape in lib/orchestrator/state.mjs",
       stored_in_database: false },
+    models: MODEL_REGISTRY.models, evaluations: MODEL_REGISTRY.evaluations,
     release_gate: "tests/orchestrator.test.mjs and tools/ai-policy-gate.mjs run before every deploy; a policy change needs a new version in docs/ai-policy/manifest.json",
   };
 }

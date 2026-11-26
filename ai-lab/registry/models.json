@@ -10,7 +10,7 @@
       "tasks": ["lab_report_extraction"],
       "status": "deployed",
       "evaluation": "ai-lab/reports/b0-app-parser-*.json (extraction-v1)",
-      "limitations": ["Lab tables only; no prescriptions.", "Cannot read 'Test : value unit (range)' layouts.", "Leaves out decimal-comma values and tells the person (by design)."]
+      "limitations": ["Lab tables only; no prescriptions.", "Misses about 3 in 10 rows on photographed (OCR) reports.", "Leaves out decimal-comma values and tells the person (by design)."]
     },
     {
       "id": "claude-sonnet-5-5",
@@ -58,7 +58,7 @@
       ],
       "tasks": ["lab_report_extraction"],
       "status": "proposed",
-      "evaluation": "must beat b0-app-parser on extraction-v1 test (OCR input) with zero misread values before any shadow run",
+      "evaluation": "must beat b0-app-parser on extraction-v1 test (OCR input) with zero wrong values before any shadow run; training set: ai-lab/train/make_sft.py; run: ai-lab/train/train_lora.py",
       "limitations": ["Not trained. No claim of a Doctine model may be made until it is."]
     }
   ]

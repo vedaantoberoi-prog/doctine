@@ -82,13 +82,13 @@ export function providerError(status, text, model) {
  * One Claude call. With `tool`, the model must answer through that tool and the tool input is returned.
  * Returns {input} | {text} | {error, ...}. Never throws.
  */
-export async function callClaude({ key, model }, { system, messages, tool, maxTokens = 1500, timeoutMs = TIME_LIMIT_MS, fetchImpl = fetch, signal }) {
+export async function callClaude({ key, model }, { system, messages, tool, maxTokens = 1500, timeoutMs = TIME_LIMIT_MS, fetchImpl = fetch, signal, fixedCheck = false }) {
   // Claude 5.5 models (Sonnet, Haiku, Opus): no temperature/top_p/top_k, no forced tool_choice ("tool"/"any" are a 400),
   // and adaptive thinking is on by default (its tokens count towards max_tokens). So: tool_choice "auto" with a clear
   // instruction, a larger output budget, and one retry if the model answers in prose instead of calling the tool.
   // Platform docs: platform.claude.com/docs/en/models/sonnet-5-5/migration-guide (read 27 Nov 2026).
   const budget = Math.max(64, Math.ceil(maxTokens * THINKING_HEADROOM));
-  const ask = (sys) => requestClaude({ key, model }, { system: sys, messages, tool, maxTokens: budget, timeoutMs, fetchImpl, signal });
+  const ask = (sys) => requestClaude({ key, model }, { system: sys, messages, tool, maxTokens: budget, timeoutMs, fetchImpl, signal, fixedCheck });
   const sys = tool ? `${system || ""}\n\nAnswer only by calling the ${tool.name} tool, exactly once. Do not write a separate text reply.`.trim() : system;
   const first = await ask(sys);
   if (!tool || first.error !== "no_tool_call") return first;
@@ -98,7 +98,7 @@ export async function callClaude({ key, model }, { system, messages, tool, maxTo
 /** Thinking shares the output budget with the answer on Claude 5.5 models, so each caller's answer budget is scaled. */
 export const THINKING_HEADROOM = 2.5;
 
-async function requestClaude({ key, model }, { system, messages, tool, maxTokens, timeoutMs, fetchImpl, signal }) {
+async function requestClaude({ key, model }, { system, messages, tool, maxTokens, timeoutMs, fetchImpl, signal, fixedCheck }) {
   const ac = new AbortController();
   if (signal) { if (signal.aborted) return { error: "cancelled" }; signal.addEventListener("abort", () => ac.abort(), { once: true }); }
   const timer = setTimeout(() => ac.abort(), timeoutMs);
@@ -122,7 +122,10 @@ async function requestClaude({ key, model }, { system, messages, tool, maxTokens
     const text = await res.text().catch(() => "");
     const out = providerError(res.status, text, model);
     // Log the outcome only: status and the provider's error type. Never the request, the reply body or any key.
-    if (out.error === "ai_error") { const { type, about } = providerReason(text); console.error("[ai] anthropic error", res.status, type, "about:" + about); }
+    if (out.error === "ai_error") { const { type, about } = providerReason(text); console.error("[ai] anthropic error", res.status, type, "about:" + about);
+      // The fixed configuration check sends only Doctine's own words ("ping"), so the provider's message can't contain
+      // anything a person wrote: for that check alone, the message is logged (keys and long numbers removed).
+      if (fixedCheck) { let m = ""; try { m = String(JSON.parse(text).error.message || ""); } catch {} console.error("[ai] check refused:", m.replace(/sk-[\w-]{8,}|eyJ[\w.-]{20,}/g, "[key]").replace(/\d{6,}/g, "[n]").slice(0, 300)); } }
     return out;
   }
   const j = await res.json().catch(() => null);

@@ -6,6 +6,8 @@
  * The Pages project needs the nodejs_compat compatibility flag and the same variables as the Git-built app.
  *
  *   node tools/build-direct.mjs
+ *   node tools/build-direct.mjs --staging   also writes dist/doctine-staging(.zip): the same build, with security headers that
+ *                                           allow only the STAGING Supabase project (for the doctine-staging Pages project)
  */
 import { execFileSync } from "node:child_process";
 import { cpSync, rmSync, mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
@@ -28,4 +30,14 @@ for (const f of ["_headers", "version.json", "_worker.js", "_routes.json", "inde
 if (/SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*["'][^"']{20,}/.test(readFileSync(out + "/_worker.js", "utf8"))) { console.error("build-direct: a secret value is in the bundle"); process.exit(1); }
 sh(process.execPath, ["tests/worker.test.mjs"]);
 sh("zip", ["-qr", "-X", "../doctine-app.zip", "."], { cwd: out });
+if (process.argv.includes("--staging")) {
+  const PROD_DB = "https://ggqctflfwpfkemgehizq.supabase.co", STAGING_DB = "https://hmlxqmhqfaxfgbizcjyg.supabase.co";
+  const st = root + "dist/doctine-staging";
+  cpSync(out, st, { recursive: true });
+  const h = readFileSync(st + "/_headers", "utf8").split(PROD_DB).join(STAGING_DB);
+  if (h.includes("ggqctflfwpfkemgehizq") || !h.includes(STAGING_DB)) { console.error("build-direct: staging headers still name the production database"); process.exit(1); }
+  writeFileSync(st + "/_headers", h);
+  sh("zip", ["-qr", "-X", "../doctine-staging.zip", "."], { cwd: st });
+  console.log("build-direct: dist/doctine-staging.zip (staging database only in its security headers) for the doctine-staging project");
+}
 console.log(`build-direct: dist/doctine-app.zip for commit ${sha.slice(0, 12)} (drag into Cloudflare → Workers & Pages → project → Create deployment)`);

@@ -69,6 +69,14 @@ Production already runs on Cloudflare Pages. A second Pages project, `doctine-st
 - Production already runs on this account and plan, so staging adds no new vendor terms.
 - One thing to watch: on the Workers Free plan, staging would share the account's 100,000 requests a day with production. That's far above today's traffic.
 
+### Status (26 Nov 2026): chosen and created
+
+- Pages project `doctine-staging` exists (`doctine-staging.pages.dev`, direct upload, `nodejs_compat`, compatibility date 2026-11-07, same as production).
+- Plain variables, for both production and preview: `DOCTINE_ENV=staging`, `SUPABASE_URL` and `SUPABASE_ANON_KEY` of `hmlxqmhqfaxfgbizcjyg`, `AUTH_GOOGLE=true`, `AI_DAILY_REQUEST_CAP=100`. There's no AI key.
+- The staging service key is added by the owner as an encrypted variable (Settings → Variables and Secrets). It's never copied from production.
+- Build: `node tools/build-direct.mjs --staging` writes `dist/doctine-staging.zip`. It's the production bundle with the CSP's Supabase host switched to staging, and the build fails if any production host is left.
+- Netlify stays as it is, as a fallback.
+
 ## 5. Safest migration path, whichever host you choose
 
 1. **Keep Netlify staging as it is** until the new site passes every check below. Change nothing in production.

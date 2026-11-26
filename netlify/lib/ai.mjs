@@ -75,6 +75,42 @@ export function providerReason(text) {
   return { type, about };
 }
 
+/**
+ * Provider check, for the admin console (generate: true) and the Settings "Check connection" button (generate: false).
+ *   1. Looks the configured model up with the key (GET /v1/models/{model}): free, and proves the key, the workspace and
+ *      the model are accepted.
+ *   2. With generate: true, sends one tiny request ("ping", 5 output tokens): proves a real answer comes back.
+ * Returns only safe facts: configured, authenticated, model, model_accessible, test_request {ok, ms}, error (a code from
+ * a fixed list), checked_at. Never the key, the provider's message or any person's data.
+ */
+const CHECK_ERRORS = { invalid_key: "auth_failed", key_forbidden: "key_forbidden", model_not_found: "model_not_found", insufficient_credits: "insufficient_credits",
+  ai_rate_limited: "rate_limited", ai_busy: "provider_busy", ai_timeout: "timeout", ai_network: "network", ai_error: "invalid_request", bad_output: "bad_response", cancelled: "timeout" };
+export async function providerCheck({ generate = false, fetchImpl = fetch, timeoutMs = 8000 } = {}) {
+  const { key, model } = settings("chat");
+  const out = { provider: "anthropic", configured: !!key, authenticated: null, model, model_accessible: null, test_request: null, error: null, checked_at: new Date().toISOString() };
+  if (!key) return { ...out, error: "not_configured" };
+  const ac = new AbortController(); const timer = setTimeout(() => ac.abort(), timeoutMs); const t0 = Date.now();
+  try {
+    const r = await fetchImpl(anthropicUrl().replace(/\/v1\/messages$/, "/v1/models/" + encodeURIComponent(model)), { headers: anthropicHeaders(key), signal: ac.signal });
+    out.lookup_ms = Date.now() - t0;
+    if (r.ok) { out.authenticated = true; out.model_accessible = true; }
+    else {
+      out.authenticated = !(r.status === 401);
+      out.model_accessible = false;
+      out.error = r.status === 401 ? "auth_failed" : r.status === 403 ? "key_forbidden" : r.status === 404 ? "model_not_found" : r.status === 429 ? "rate_limited"
+        : r.status >= 500 ? "provider_busy" : "invalid_request";
+    }
+  } catch (e) { out.lookup_ms = Date.now() - t0; out.error = e && e.name === "AbortError" ? "timeout" : "network"; }
+  finally { clearTimeout(timer); }
+  if (!generate || out.error) return out;
+  const t1 = Date.now();
+  const r = await callClaude({ key, model }, { system: "Reply with the single word: ok", messages: [{ role: "user", content: "ping" }], maxTokens: 5, timeoutMs: 15000, fetchImpl, fixedCheck: true });
+  const ok = !r.error && typeof r.text === "string";
+  out.test_request = { ok, ms: Date.now() - t1 };
+  if (!ok) out.error = CHECK_ERRORS[r.error] || "bad_response";
+  return out;
+}
+
 /** Maps an Anthropic HTTP failure to the error codes the app already explains to people. */
 export function providerError(status, text, model) {
   if (status === 401) return { error: "invalid_key" };

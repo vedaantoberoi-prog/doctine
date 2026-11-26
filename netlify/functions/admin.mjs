@@ -13,7 +13,7 @@
  */
 import { randomUUID, createHash } from "node:crypto";
 import { serviceHeaders } from "../lib/supabase-keys.mjs";
-import { json, readJson, refused } from "../lib/ai.mjs";
+import { json, readJson, refused, providerCheck } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { _resetSettingsCache, getSettings } from "../lib/settings.mjs";
 import { runChecks, recordChecks, reportServerError } from "../lib/monitor.mjs";
@@ -237,6 +237,24 @@ const ACTIONS = {
   // pilot accounts for the records assistant (Founder only; add/remove audited with a reason)
   ai_pilot: async (uid, b, rid) => { const act = ["list", "add", "remove"].includes(b.op) ? b.op : "list";
     return rpc("admin_ai_pilot", { p_actor: uid, p_action: act, p_email: act === "list" ? null : s(b.email, 200), p_reason: act === "list" ? null : s(b.reason, 500), p_request: rid }); },
+  // A real provider check (health.view): the model lookup plus one tiny request with no person's data. Each result is
+  // recorded (migration 20261129000000_ai_provider_checks) so the console can show the last time the AI really answered.
+  ai_provider_check: async (uid, b) => {
+    await rpc("admin_incidents", { p_actor: uid });
+    const run = b.run === true;
+    const check = run ? await providerCheck({ generate: true }) : null;
+    let history = null;
+    try {
+      if (check) {
+        await rpc("ai_provider_check_add", { p_row: { kind: "model_lookup", ok: check.model_accessible === true, ms: check.lookup_ms ?? null, provider: check.provider, model: check.model,
+          error: check.model_accessible ? null : check.error, actor: uid } });
+        if (check.test_request) await rpc("ai_provider_check_add", { p_row: { kind: "test_request", ok: check.test_request.ok, ms: check.test_request.ms, provider: check.provider, model: check.model,
+          error: check.test_request.ok ? null : check.error, actor: uid } });
+      }
+      history = { available: true, ...(await rpc("admin_ai_provider_checks", { p_actor: uid })) };
+    } catch (e) { if (e.status === 503) history = { available: false }; else throw e; }
+    return { check, history };
+  },
   ai_infrastructure: async (uid) => { await rpc("admin_incidents", { p_actor: uid }); const st = await getSettings({ fresh: true }); return infrastructure({ flags: st.flags }); },
   errors: (uid, b) => rpc("admin_errors", { p_actor: uid, p_status: s(b.status, 20) || null }),
   error: (uid, b) => { if (!/^[0-9a-f]{32}$/.test(b.id || "")) throw httpError(400, "invalid_id"); return rpc("admin_error", { p_actor: uid, p_fp: b.id }); },

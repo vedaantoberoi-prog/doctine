@@ -476,10 +476,29 @@ const alignPrev = (prev, key) => (prev ? prev.map((r) => r[key]) : null);
 /* ───────────────────────── views ───────────────────────── */
 const VIEWS = {};
 
+/* Provider check: whether the AI provider really answers with the server's key (a free model lookup, then one tiny
+   request with no person's data). Nothing runs until "Run a real check" is pressed. */
+const PC_ERR = { not_configured: "no AI key on this site", auth_failed: "the provider refused the key", key_forbidden: "the key isn't allowed to use this model",
+  model_not_found: "the configured model isn't available to this key", insufficient_credits: "the AI account has no credit", rate_limited: "the provider is rate-limiting",
+  provider_busy: "the provider is busy or down", timeout: "the provider didn't answer in time", network: "the server couldn't reach the provider",
+  invalid_request: "the provider refused the request (for an organisation-level key, check ANTHROPIC_WORKSPACE_ID)", bad_response: "the answer couldn't be read", other: "other error" };
+function providerCheckSection(pc, dl) {
+  if (!pc) return "";
+  const h = pc.history || {}, when = (t) => new Date(t).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+  const ls = h.last_success, lf = h.last_failure;
+  return `${section("Provider check", "Does the AI provider really answer with this site's key? A free model lookup, then one tiny request with no person's data. Runs only when you press the button.")}
+  <div class="card"><div class="card-b">
+    ${!h.available ? `<p class="muted">Check results aren't stored on this site yet (migration 20261129000000_ai_provider_checks). The check still runs.</p>` : ""}
+    ${dl([["Last time the AI answered", ls ? `${esc(when(ls.at))} <span class="muted">· ${n(ls.ms)} ms · <span class="mono">${esc(ls.model || "")}</span></span>` : `<span class="muted">${h.available ? "never recorded" : "—"}</span>`],
+      ["Last failure", lf ? `${esc(when(lf.at))} <span class="st warn">${esc(PC_ERR[lf.error] || lf.error || "")}</span>` : `<span class="muted">none recorded</span>`]])}
+    <div class="row" style="margin-top:10px;gap:8px"><button class="btn" id="pc-run">Run a real check</button><span class="hint">Costs one very small AI request.</span></div>
+  </div></div>`;
+}
+
 /* AI infrastructure: configuration of the Intelligence Orchestrator only (lib/orchestrator/info.mjs). No health data. */
 VIEWS.ai = async (v, seq) => {
   v.innerHTML = skel(200);
-  const [d, tr, pl, gs] = await Promise.all([api("ai_infrastructure"), api("ai_traces", { days: 7 }).catch(() => ({ available: false })), can("ai.manage") ? api("ai_pilot", { op: "list" }).catch(() => null) : null, can("ai.manage") ? api("guardian_summary").catch(() => null) : null]);
+  const [d, tr, pl, gs, pc] = await Promise.all([api("ai_infrastructure"), api("ai_traces", { days: 7 }).catch(() => ({ available: false })), can("ai.manage") ? api("ai_pilot", { op: "list" }).catch(() => null) : null, can("ai.manage") ? api("guardian_summary").catch(() => null) : null, api("ai_provider_check").catch(() => null)]);
   if (stale(seq)) return;
   const dl = (rows) => `<dl class="dl" style="grid-template-columns:1fr auto;gap:5px 8px">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>`;
   const onoff = (b) => (b ? `<span class="st good">On</span>` : `<span class="st none">Off</span>`);
@@ -490,6 +509,7 @@ VIEWS.ai = async (v, seq) => {
     ${card("Switches", esc(d.switches.note), dl([["AI assistant", onoff(d.switches.ai_assistant)], ["Records gateway", onoff(d.switches.ai_gateway)], ["Orchestrated assistant", onoff(d.switches.ai_orchestrator)]]))}
     ${card("Provider", "The key itself is never shown", dl([["Provider", esc(d.provider.name)], ["Key on the server", d.provider.key_configured ? `<span class="st good">Configured</span>` : `<span class="st none">Not configured</span>`], ["Write tools", d.write_tools_enabled ? `<span class="st warn">Enabled</span>` : `<span class="st none">None enabled</span>`]]))}
   </div>
+  ${providerCheckSection(pc, dl)}
   ${section("Last 7 days", tr.available ? "One row per request to the records assistant: outcome, route, timing, tokens. No person, question or record is stored." : "")}
   ${!tr.available ? `<div class="card"><div class="card-b"><p class="muted">Request traces aren't stored on this site yet (migration 20261123050000_ai_traces). Traces are still written to the server logs.</p></div></div>`
     : !tr.total ? `<div class="card"><div class="card-b"><p class="muted">No requests in the last 7 days. The assistant is ${d.switches.ai_orchestrator ? "on" : "switched off"}.</p></div></div>`
@@ -524,6 +544,12 @@ VIEWS.ai = async (v, seq) => {
     ${card("Limits", "Per request and per person", dl([["Message length", n(d.limits.message_chars) + " characters"], ["Whole request", n(d.limits.request_ms) + " ms"], ["Answer tokens", n(d.limits.max_output_tokens)], ["Tokens per person per day", n(d.limits.daily_tokens_per_person)], ["Answer cache", n(d.limits.cache_ttl_s) + " s, per person"]]))}
     ${card("Traces and release gate", "", `<p>${esc(d.observability.traces)}</p><p class="hint">${esc(d.release_gate)}</p>`)}
   </div>`;
+  const pcb = $("#pc-run", v);
+  if (pcb) pcb.onclick = async () => { pcb.disabled = true; pcb.textContent = "Checking…";
+    try { const r = await api("ai_provider_check", { run: true }); const c = r.check;
+      toast(c && c.test_request && c.test_request.ok ? `The AI answered in ${n(c.test_request.ms)} ms.` : `Check failed: ${PC_ERR[c && c.error] || "unknown error"}.`, !(c && c.test_request && c.test_request.ok)); }
+    catch (er) { toast(ERR[er.code] || "The check couldn't run.", true); }
+    await VIEWS.ai(v, A.seq); };
   const f = $("#pilot-add", v);
   if (f) f.onsubmit = async (e) => { e.preventDefault(); const email = f.email.value.trim(); if (!email) return;
     const r = await confirmBox(`Add ${esc(email)} as a pilot account?`, "The records assistant will work for this account even while it is switched off for everyone else.", { reason: true, button: "Add" });

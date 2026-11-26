@@ -17,6 +17,15 @@ export const refused = (rl, body) => json(body, rl.status, { "retry-after": Stri
  * Where Anthropic requests go. ANTHROPIC_BASE_URL lets local development and the browser tests point at a stand-in
  * server; it is ignored when DOCTINE_ENV is "production", so a production site always talks to Anthropic itself.
  */
+/**
+ * Headers for every Anthropic call. An organisation-level API key (one not created inside a workspace) must name the
+ * workspace to bill: set ANTHROPIC_WORKSPACE_ID (wrkspc_…, not a secret). Workspace-scoped keys don't need it.
+ */
+export function anthropicHeaders(key, env = process.env) {
+  const ws = String(env.ANTHROPIC_WORKSPACE_ID || "").trim();
+  return { "x-api-key": key, "anthropic-version": "2023-06-01", ...(/^wrkspc_[A-Za-z0-9]{8,64}$/.test(ws) ? { "anthropic-workspace-id": ws } : {}) };
+}
+
 export function anthropicUrl(env = process.env) {
   const base = env.DOCTINE_ENV !== "production" && env.ANTHROPIC_BASE_URL ? env.ANTHROPIC_BASE_URL.replace(/\/$/, "") : "https://api.anthropic.com";
   return base + "/v1/messages";
@@ -54,6 +63,18 @@ export async function readJson(req, maxBytes) {
   try { return { body: JSON.parse(raw) }; } catch { return { error: "invalid", status: 400 }; }
 }
 
+/**
+ * For the log only: the provider's error type and WHICH request setting it objected to, picked from a fixed list.
+ * The provider's message itself is never logged, because it can repeat what the person wrote.
+ */
+const PARAMS = ["max_tokens", "thinking", "tool_choice", "tools", "temperature", "top_p", "top_k", "output_config", "effort", "prefill", "system", "messages", "model", "stop_sequences", "metadata", "anthropic-version", "anthropic-beta"];
+export function providerReason(text) {
+  let type = "unknown", msg = "";
+  try { const e = JSON.parse(text).error || {}; type = String(e.type || "unknown").replace(/[^\w.-]/g, "").slice(0, 40); msg = String(e.message || ""); } catch {}
+  const about = PARAMS.find((p) => new RegExp(`(^|[^\\w])${p.replace(/[-]/g, "\\-")}([^\\w]|$)`, "i").test(msg)) || "unspecified";
+  return { type, about };
+}
+
 /** Maps an Anthropic HTTP failure to the error codes the app already explains to people. */
 export function providerError(status, text, model) {
   if (status === 401) return { error: "invalid_key" };
@@ -70,13 +91,13 @@ export function providerError(status, text, model) {
  * One Claude call. With `tool`, the model must answer through that tool and the tool input is returned.
  * Returns {input} | {text} | {error, ...}. Never throws.
  */
-export async function callClaude({ key, model }, { system, messages, tool, maxTokens = 1500, timeoutMs = TIME_LIMIT_MS, fetchImpl = fetch, signal }) {
+export async function callClaude({ key, model }, { system, messages, tool, maxTokens = 1500, timeoutMs = TIME_LIMIT_MS, fetchImpl = fetch, signal, fixedCheck = false }) {
   // Claude 5.5 models (Sonnet, Haiku, Opus): no temperature/top_p/top_k, no forced tool_choice ("tool"/"any" are a 400),
   // and adaptive thinking is on by default (its tokens count towards max_tokens). So: tool_choice "auto" with a clear
   // instruction, a larger output budget, and one retry if the model answers in prose instead of calling the tool.
   // Platform docs: platform.claude.com/docs/en/models/sonnet-5-5/migration-guide (read 27 Nov 2026).
   const budget = Math.max(64, Math.ceil(maxTokens * THINKING_HEADROOM));
-  const ask = (sys) => requestClaude({ key, model }, { system: sys, messages, tool, maxTokens: budget, timeoutMs, fetchImpl, signal });
+  const ask = (sys) => requestClaude({ key, model }, { system: sys, messages, tool, maxTokens: budget, timeoutMs, fetchImpl, signal, fixedCheck });
   const sys = tool ? `${system || ""}\n\nAnswer only by calling the ${tool.name} tool, exactly once. Do not write a separate text reply.`.trim() : system;
   const first = await ask(sys);
   if (!tool || first.error !== "no_tool_call") return first;
@@ -86,7 +107,7 @@ export async function callClaude({ key, model }, { system, messages, tool, maxTo
 /** Thinking shares the output budget with the answer on Claude 5.5 models, so each caller's answer budget is scaled. */
 export const THINKING_HEADROOM = 2.5;
 
-async function requestClaude({ key, model }, { system, messages, tool, maxTokens, timeoutMs, fetchImpl, signal }) {
+async function requestClaude({ key, model }, { system, messages, tool, maxTokens, timeoutMs, fetchImpl, signal, fixedCheck }) {
   const ac = new AbortController();
   if (signal) { if (signal.aborted) return { error: "cancelled" }; signal.addEventListener("abort", () => ac.abort(), { once: true }); }
   const timer = setTimeout(() => ac.abort(), timeoutMs);
@@ -95,7 +116,7 @@ async function requestClaude({ key, model }, { system, messages, tool, maxTokens
     res = await fetchImpl(anthropicUrl(), {
       method: "POST",
       signal: ac.signal,
-      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+      headers: { "content-type": "application/json", ...anthropicHeaders(key) },
       body: JSON.stringify({
         model, max_tokens: maxTokens, system, messages,
         ...(tool ? { tools: [tool], tool_choice: { type: "auto" } } : {}),
@@ -110,7 +131,10 @@ async function requestClaude({ key, model }, { system, messages, tool, maxTokens
     const text = await res.text().catch(() => "");
     const out = providerError(res.status, text, model);
     // Log the outcome only: status and the provider's error type. Never the request, the reply body or any key.
-    if (out.error === "ai_error") { let type = "unknown"; try { type = String(JSON.parse(text).error.type || "unknown").replace(/[^\w.-]/g, "").slice(0, 40); } catch {} console.error("[ai] anthropic error", res.status, type); }
+    if (out.error === "ai_error") { const { type, about } = providerReason(text); console.error("[ai] anthropic error", res.status, type, "about:" + about);
+      // The fixed configuration check sends only Doctine's own words ("ping"), so the provider's message can't contain
+      // anything a person wrote: for that check alone, the message is logged (keys and long numbers removed).
+      if (fixedCheck) { let m = ""; try { m = String(JSON.parse(text).error.message || ""); } catch {} console.error("[ai] check refused:", m.replace(/sk-[\w-]{8,}|eyJ[\w.-]{20,}/g, "[key]").replace(/\d{6,}/g, "[n]").slice(0, 300)); } }
     return out;
   }
   const j = await res.json().catch(() => null);

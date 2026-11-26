@@ -159,7 +159,7 @@ export default async (req, context) => {
     if (!cfg.key) return json({ ok: false, error: "not_configured", missing: ["ANTHROPIC_API_KEY"] });
     const rlt = await checkRate(req, context, "test");
     if (!rlt.allowed) return json({ ok: false, error: rlt.error }, rlt.status);
-    const r = await callClaude(cfg, { system: "Reply with the single word: ok", messages: [{ role: "user", content: "ping" }], maxTokens: 5, timeoutMs: 15000 });
+    const r = await callClaude(cfg, { system: "Reply with the single word: ok", messages: [{ role: "user", content: "ping" }], maxTokens: 5, timeoutMs: 15000, fixedCheck: true });
     return r.error ? json({ ok: false, ...r }) : json({ ok: true, provider: "anthropic", model: cfg.model });
   }
   if (req.method !== "POST") return json({ error: "invalid" }, 405);

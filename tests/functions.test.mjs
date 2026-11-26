@@ -78,7 +78,7 @@ await test("general question: sends model, tool, history; returns frontend shape
   const [s, j] = await call(chat, "/api/chat", { messages: [user("What is anaemia?")] });
   assert.equal(s, 200); assert.match(j.reply, /red blood cells/); assert.equal(j.sections.length, 1); assert.equal(j.urgency, "routine"); assert.equal(j.state.topic, "anaemia");
   assert.equal(lastReq.body.model, "claude-sonnet-5-5", "non-Claude AI_MODEL falls back to a Claude model");
-  assert.equal(lastReq.body.tool_choice.name, "respond"); assert.equal(lastReq.headers["x-api-key"], "sk-test");
+  assert.deepEqual(lastReq.body.tool_choice, { type: "auto" }); assert.equal(lastReq.body.tools[0].name, "respond"); assert.equal("temperature" in lastReq.body, false, "5.5 models reject temperature"); assert.equal(lastReq.headers["x-api-key"], "sk-test");
   assert.match(lastReq.body.system, /not shared any saved records/);
 });
 await test("follow-up keeps history and the assistant's notes (state)", async () => {
@@ -205,9 +205,28 @@ await test("rate limit per address", async () => {
   for (let i = 0; i < 41; i++) [last] = await call(chat, "/api/chat", { messages: [user("What is BMI?")] }, { ip: "7.7.7.7" });
   assert.equal(last, 429);
 });
+await test("Claude 5.5 requests: no sampling parameters, tool_choice auto, one retry when the model skips the tool", async () => {
+  const { callClaude } = await import("../netlify/lib/ai.mjs");
+  const tool = { name: "respond", description: "x", input_schema: { type: "object", properties: { reply: { type: "string" } } } };
+  const sent = []; let n = 0;
+  const fake = (replies) => async (url, init) => { const body = JSON.parse(init.body); sent.push(body); const r = replies[Math.min(n++, replies.length - 1)]; return new Response(JSON.stringify(r), { status: 200, headers: { "content-type": "application/json" } }); };
+  const prose = { content: [{ type: "thinking", thinking: "", signature: "s" }, { type: "text", text: "Here is my answer" }], stop_reason: "end_turn" };
+  const called = { content: [{ type: "thinking", thinking: "", signature: "s" }, { type: "tool_use", name: "respond", input: { reply: "ok" } }], stop_reason: "tool_use" };
+  let r = await callClaude({ key: "k", model: "claude-sonnet-5-5" }, { system: "S", messages: [{ role: "user", content: "hi" }], tool, maxTokens: 1000, fetchImpl: fake([prose, called]) });
+  assert.deepEqual(r.input, { reply: "ok" }, "the second attempt's tool call is used");
+  assert.equal(sent.length, 2);
+  for (const b of sent) { for (const k of ["temperature", "top_p", "top_k", "thinking"]) assert.equal(k in b, false, k + " must not be sent"); assert.deepEqual(b.tool_choice, { type: "auto" }); assert.equal(b.max_tokens, 2500); assert.match(b.system, /calling the respond tool/); }
+  assert.equal(sent[0].messages.at(-1).role, "user", "no assistant prefill");
+  sent.length = 0; n = 0;
+  r = await callClaude({ key: "k", model: "claude-sonnet-5-5" }, { system: "S", messages: [{ role: "user", content: "hi" }], tool, fetchImpl: fake([prose]) });
+  assert.equal(r.error, "bad_output", "two answers without the tool are a bad output, not a crash"); assert.equal(sent.length, 2, "only one retry");
+  sent.length = 0; n = 0;
+  r = await callClaude({ key: "k", model: "claude-sonnet-5-5" }, { system: "S", messages: [{ role: "user", content: "hi" }], tool, fetchImpl: fake([{ content: [{ type: "thinking", thinking: "" }], stop_reason: "max_tokens" }]) });
+  assert.equal(r.error, "bad_output"); assert.equal(sent.length, 1, "running out of tokens is not retried");
+});
 await test("GET ?test=1 makes a real tiny call and reports the result", async () => {
   anthropic(200, { content: [{ type: "text", text: "ok" }] });
-  let [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.ok, true); assert.equal(j.model, "claude-sonnet-5-5"); assert.equal(lastReq.body.max_tokens, 5);
+  let [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.ok, true); assert.equal(j.model, "claude-sonnet-5-5"); assert.equal(lastReq.body.max_tokens, 64, "a tiny check still leaves room for thinking");
   anthropic(401, ""); [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.ok, false); assert.equal(j.error, "invalid_key");
 });
 
@@ -280,7 +299,7 @@ await test("read returns a cleaned document", async () => {
   anthropic(200, toolReply("record_document", { title: "Prescription – Dr. A. Kumar – 28 Oct 2026", type: "prescription", medicines: [{ raw: "Tab Pan-D", name: "Pan-D", confidence: "maybe" }], overall_confidence: "medium", transcription: "Rx", junk: 1 }));
   const [s, j] = await call(scan, "/api/scan", { action: "read", images: [{ media_type: "image/jpeg", data: "QUJD" }] }, { token: "signed-in-token" });
   assert.equal(s, 200); assert.equal(j.doc.title, "Prescription – Dr. A. Kumar – 28 Oct 2026"); assert.equal(j.doc.medicines[0].confidence, "low"); assert.ok(!("junk" in j.doc));
-  assert.equal(lastReq.body.tool_choice.name, "record_document"); assert.equal(lastReq.body.messages[0].content[0].type, "image");
+  assert.deepEqual(lastReq.body.tool_choice, { type: "auto" }); assert.equal(lastReq.body.tools[0].name, "record_document"); assert.equal(lastReq.body.messages[0].content[0].type, "image");
 });
 await test("explain answers about the document", async () => {
   anthropic(200, toolReply("explain", { reply: "This is a prescription for acidity.", urgency: "routine" }));

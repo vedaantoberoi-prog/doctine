@@ -25,7 +25,7 @@ tests/
   safety-cases.mjs           the emergency-rule evaluation set (61 cases), including known gaps
   run-db-tests.sh            database tests in a throw-away Postgres: security, saved chats, rate limits
   browser/                   app tests in headless Chromium (workflows, account isolation, persistence, demo mode)
-  medical-eval-cases.mjs     the live medical evaluation set (75 cases with ids and expected behaviour)
+  medical-eval-cases.mjs     the live medical evaluation set (77 cases with ids and expected behaviour)
   medical-eval-grader.mjs    grades live answers; eval-grader.test.mjs proves it fails unsafe answers
   live-eval.mjs              runs the evaluation against the real staging assistant (uses API credit)
 tools/
@@ -178,7 +178,7 @@ Run these on your own computer with Node 20 (`npm ci` once, then `npx playwright
 | `npm run eval:grader` | The medical-evaluation grader fails unsafe answers (missed emergencies, dose changes, child doses, missing helplines). | Offline, no AI |
 | `npm run test:db` | The migrations in a brand-new Postgres: RLS on and forced on every health table, two-account isolation, consent for saved chats, deletion cascades, rate-limit counters. | **Real PostgreSQL** with small stand-ins for Supabase's auth and storage schemas |
 | `npm run test:browser` | 112 checks in headless Chromium: sign-up, sign-in, every page, chat and follow-ups, emergency banner, error states, upload and scanner, medicines and reminders, account isolation, two-device persistence, mobile layout. See `tests/browser/README.md`. | **Real functions**; AI and Supabase **simulated** |
-| `DOCTINE_URL=… EVAL_ACCESS_TOKEN=… npm run eval:live` | The 75 medical evaluation cases against the **real** staging assistant. Writes `reports/medical-eval.json` and a clinician review sheet `reports/medical-eval.md`. | **Live**: real functions and real AI |
+| `DOCTINE_URL=… EVAL_ACCESS_TOKEN=… npm run eval:live` | The 77 medical evaluation cases against the **real** staging assistant. Writes `reports/medical-eval.json` and a clinician review sheet `reports/medical-eval.md`. | **Live**: real functions and real AI |
 | `SITE_URL=… node tools/staging-e2e.mjs` | On the **staging** site and its Supabase project, with two synthetic accounts created and deleted in the run: sign-up and sign-in, profile and consent, document record and private upload, medicines, reminders and doses, cross-account isolation of rows and files, refused writes in another person's name, signed-out access, saved-chat consent, `/api/chat` signed in, account deletion through `/api/account` (nothing left behind), and the account route's rate limit. Refuses production. | **Live** |
 | `SITE_URL=… EXPECT_ENV=staging npm run smoke` | A deployed site is up, is the right environment, and reaches the AI. | **Live** |
 | `python3 tools/failure-drills.py` | 21 drills that each break one thing in a throw-away copy and require the matching check to fail. They include a syntax error, a leaked key, a removed emergency rule, RLS not forced, chats saved without consent, the cross-account chat bug, mobile overflow, a gate that passes missing evidence, a sign-off without a commit, production approval removed, an `npm install` fallback, and a lockfile out of sync. | Real checks on deliberately broken copies |
@@ -227,7 +227,7 @@ People who used the earlier demo accounts on the same browser see **Settings →
 - Deploys can't be overtaken by an older one. Netlify publishes a `--prod` deploy when its own processing finishes, even if the GitHub job has already stopped. So before deploying, the Staging and Release workflows cancel that site's deploys that are still in progress; afterwards they confirm with Netlify that *this* deploy is the live one; if the deploy step fails or is stopped, they cancel its own unfinished deploy; and Staging checks at the end of verification that the site still serves the verified commit (`tools/netlify-guard.mjs`).
 - Staging starts with a settings check: the auth token is present; `EVAL_ACCESS_TOKEN` is present and 32+ characters; the staging and production site ids and addresses differ. If any fails, nothing is deployed.
 - Each deploy writes `public/version.json` with its commit. The smoke checks and the evaluation confirm the site serves exactly that commit, and Netlify must confirm the deploy (deploy id and site id).
-- The evaluation token goes only to a site that reports `staging`, never to `PRODUCTION_URL`. It is checked (`/api/chat?eval=1`, no AI call) before the 75 cases start. Production smoke checks refuse to run if the token is set, and confirm production refuses evaluation access.
+- The evaluation token goes only to a site that reports `staging`, never to `PRODUCTION_URL`. It is checked (`/api/chat?eval=1`, no AI call) before the 77 cases start. Production smoke checks refuse to run if the token is set, and confirm production refuses evaluation access.
 - A release must start from `main`. The Staging run it names must be a successful run of `staging.yml` on `main`, and the commit it verified must be an ancestor of the release commit. Only files in `docs/medical-review/` may differ. The gates are re-checked from that run's own reports, and then the `production` environment's reviewers must approve.
 
 **Release gates.** A gate passes only when its report exists and shows zero failures. A missing report counts as "not run", never as passed. So does a missing step: if Gitleaks or `npm audit` didn't run, gate 5 fails.
@@ -308,7 +308,7 @@ Site ids and addresses are not secrets. They are repository variables so that ev
 
 ## 12. Releasing to production
 
-1. **Merge to `main`.** The Staging workflow checks the settings, runs CI, deploys staging stamped with the commit, then runs the smoke check, the end-to-end check with synthetic accounts, and the live evaluation (all 75 cases). Finally it enforces gates 1–6. Wait until all jobs are green.
+1. **Merge to `main`.** The Staging workflow checks the settings, runs CI, deploys staging stamped with the commit, then runs the smoke check, the end-to-end check with synthetic accounts, and the live evaluation (all 77 cases). Finally it enforces gates 1–6. Wait until all jobs are green.
 2. **Get the review sheet.** Open that Staging run → **Artifacts → staging-verification** → `medical-eval.md`. At its top are the **run id** and the **evaluated commit** (full 40 characters). Give it to the doctor; they read every answer.
 3. **Record the sign-off.** Copy `docs/medical-review/TEMPLATE.md` to `docs/medical-review/<run id>.md`. Fill in `run_id`, the full `commit`, `reviewer`, `registration`, `date` (YYYY-MM-DD) and `decision`. Commit and merge it to `main`. Commits that only touch `docs/medical-review/` don't start a new Staging run. If the doctor asked for changes, make them and start again from step 1. The new run gets a new run id and a new review.
 4. **Start the release.** **Actions → Release to production → Run workflow**, branch `main`, `staging_run_id` = the number at the end of that Staging run's URL.
@@ -333,7 +333,7 @@ Site ids and addresses are not secrets. They are repository variables so that ev
 | Smoke check: `environment is "unset"` | `DOCTINE_ENV` isn't set on that Netlify site, or it wasn't redeployed after setting it. |
 | Smoke check: "serves …, expected …" | the deploy didn't go live, or a cache served an older one. Re-run the job. |
 | Smoke check: "the site refused the token" | `EVAL_ACCESS_TOKEN` differs between GitHub and the staging site, is shorter than 32 characters, or `DOCTINE_ENV` isn't `staging`. |
-| "Live evaluation not started: EVAL_ACCESS_TOKEN is not set" | add the secret to the `staging` environment. Running without it is refused in CI, because 75 cases would take about 40 minutes under the public limit. |
+| "Live evaluation not started: EVAL_ACCESS_TOKEN is not set" | add the secret to the `staging` environment. Running without it is refused in CI, because 77 cases would take about 40 minutes under the public limit. |
 | End-to-end: "no session after sign-up" | "Confirm email" is still on in the **staging** Supabase project. Turn it off there (never in production). |
 | End-to-end: "cleanup: synthetic account … NOT deleted" | delete that `doctine-e2e+…@example.com` user in the staging Supabase dashboard (Authentication → Users). |
 | Many `service_error` results | the staging Anthropic key has no credit, or `AI_DAILY_REQUEST_CAP` was reached. |

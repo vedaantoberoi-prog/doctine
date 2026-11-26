@@ -8,7 +8,7 @@ The repository is public, so only the encrypted file ever leaves the runner. Wit
 
 **Before 26 Nov 2026 the `private` schema was missing from the backup.** Backups made before that date cannot restore Guardian contacts, doctor applications, shares or the audit log.
 
-**Uploaded files** (photos, PDFs, doctors' credentials) are copied by a separate nightly job, `.github/workflows/storage-backup.yml`: every file plus a manifest of sizes and SHA-256 hashes, encrypted with the same passphrase, verified file by file after decryption, compared against the database's file records, kept 30 days as **doctine-file-backup**. **It runs only once the owner adds `STORAGE_BACKUP_KEY` to the GitHub environment `backup`** (see the top of that file); until then it fails red. Until then the files themselves are in no backup. Supabase Pro (daily backups, point-in-time recovery) is the paid alternative.
+**Uploaded files** (photos, PDFs, doctors' credentials) are copied by a separate nightly job, `.github/workflows/storage-backup.yml`: every file plus a manifest of sizes and SHA-256 hashes, encrypted with the same passphrase, verified file by file after decryption, compared against the database's file records, kept 30 days as **doctine-file-backup**. The key (`STORAGE_BACKUP_KEY`) is in the GitHub environment `backup`, limited to `main`; the first run passed on 26 Nov 2026.
 
 ## One-time setup (account owner)
 

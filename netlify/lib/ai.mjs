@@ -23,14 +23,16 @@ export const refused = (rl, body) => json(body, rl.status, { "retry-after": Stri
  */
 /* A key pasted into a host's settings often carries a trailing line break or space. Sent as is, the request is
    refused before it leaves the server and looks like a network failure (production, 27 Nov 2026), so it is trimmed. */
-export const cleanKey = (key) => String(key || "").trim();
+// Keys never contain whitespace, so any space, line break or invisible character anywhere in a pasted key (a copy that
+// wrapped across lines, production 27 Nov 2026) is removed, not just at the ends.
+export const cleanKey = (key) => String(key || "").replace(/[\s\u200B-\u200D\u2060\uFEFF]+/g, "");
 /** What the stored key looks like, never the key: for diagnosing a refused key in the admin console. */
 export function keyShape(key) {
   const raw = String(key || ""), k = cleanKey(raw);
   // The prefix is assembled here so the worker bundle never contains it literally (tests/worker.test.mjs forbids it).
   const P = ["sk", "ant", ""].join("-");
   return { set: !!k, length: k.length, starts_sk_ant: k.startsWith(P), kind: (new RegExp("^" + P + "(api|usr|admin)\\d*-").exec(k) || [])[1] || (k ? "other" : null),
-    had_surrounding_space: raw !== k, header_safe: !/[^\x21-\x7e]/.test(k), quoted: /^["'\u201c\u2018].*["'\u201d\u2019]$/.test(k) };
+    had_surrounding_space: raw.trim() !== raw, had_inner_space: /[\s\u200B-\u200D\u2060\uFEFF]/.test(raw.trim()), header_safe: !/[^\x21-\x7e]/.test(k), quoted: /^["'\u201c\u2018].*["'\u201d\u2019]$/.test(k) };
 }
 export function anthropicHeaders(key, env = process.env) {
   const ws = String(env.ANTHROPIC_WORKSPACE_ID || "").trim();

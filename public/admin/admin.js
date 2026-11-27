@@ -521,7 +521,7 @@ function keyShapeText(k, ws) {
   if (k.length < 60) p.push(`is only ${k.length} characters (a full key is about 100): probably the shortened form from the key list`);
   if (k.kind === "usr" && !ws) p.push("is an organisation key but ANTHROPIC_WORKSPACE_ID isn't set");
   return p.length ? `<span class="st warn">Looks wrong</span> <span class="muted">${esc(p.join("; "))}</span>`
-    : `<span class="st good">Looks like a full key</span> <span class="muted">${n(k.length)} characters${k.had_surrounding_space ? ", stray spaces trimmed" : ""}${ws ? ", workspace set" : ""}</span>`;
+    : `<span class="st good">Looks like a full key</span> <span class="muted">${n(k.length)} characters${k.had_surrounding_space || k.had_inner_space ? ", stray spaces or line breaks removed" : ""}${ws ? ", workspace set" : ""}</span>`;
 }
 function providerCheckSection(pc, dl) {
   if (!pc) return "";

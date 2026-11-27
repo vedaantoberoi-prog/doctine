@@ -42,6 +42,9 @@ jobs:
         run: node tools/run-step.mjs quality "Configuration check" -- node tools/check-config.mjs
       - name: Build (bundle every function the way Netlify does)
         run: node tools/run-step.mjs quality "Function bundles build" -- npm run build:check
+      - name: Direct-upload build, production and staging (includes the bundle's secret check, tests/worker.test.mjs)
+        if: always()
+        run: node tools/build-direct.mjs --staging
       - name: Safety rules in the page match the server
         run: node tools/run-step.mjs quality "Safety rules in sync" -- bash -c 'node tools/sync-safety-rules.mjs && git diff --exit-code -- public/index.html'
       - name: The website's sample link opens the real app (no copy of the app on the website)

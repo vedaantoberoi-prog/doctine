@@ -18,5 +18,5 @@ export const RELEASE_STATUS = {
   },
   doctor_review: { status: "pending", note: "No doctor has signed off the evaluation yet (docs/medical-review/TEMPLATE.md, release gate 7)." },
   production: { status: "not_approved", code: "deployed_2026-11-27",
-    note: "Code b8b15f9 and the two additive migrations are on production (27 Nov 2026, approved by the owner). The assistant stays off there: switching it on needs the doctor's sign-off, an AI key in production and the owner's go-ahead." },
+    note: "Code b8b15f9 and the two additive migrations are on production (27 Nov 2026, approved by the owner). The production AI key is in place and checked (27 Nov 2026; it expires 27 Dec 2026). The assistant stays off there: switching it on needs the doctor's sign-off and the owner's go-ahead." },
 };

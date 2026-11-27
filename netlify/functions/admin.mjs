@@ -22,6 +22,7 @@ import { infrastructure } from "../lib/orchestrator/info.mjs";
 import { linkSecret } from "../lib/guardian/links.mjs";
 import { deliveryAdapter } from "../lib/guardian/delivery.mjs";
 import { STATUSES as DOCTOR_STATUSES } from "../lib/doctors/verification.mjs";
+import { RELEASE_STATUS } from "../lib/release-status.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY = 86400000;
@@ -255,6 +256,25 @@ const ACTIONS = {
     } catch (e) { if (e.status === 503) history = { available: false }; else throw e; }
     return { check, history };
   },
+  // Assistant activity (migration 20261130000000_knowledge): counts and codes only, from one metadata row per reply.
+  ai_activity: async (uid, b) => {
+    const hours = Number.isInteger(b.hours) && b.hours >= 1 && b.hours <= 720 ? b.hours : 24;
+    try { return { available: true, hours, ...(await rpc("admin_ai_chat_activity", { p_actor: uid, p_hours: hours })) }; }
+    catch (e) { if (e.status === 503) { await rpc("admin_incidents", { p_actor: uid }); return { available: false, hours }; } throw e; }
+  },
+  // Medical sources the assistant may quote: what is loaded, what a doctor approved, and whether search is switched on.
+  knowledge: async (uid) => {
+    const provider = String(process.env.KNOWLEDGE_PROVIDER || "none").toLowerCase().replace(/[^a-z]/g, "").slice(0, 20) || "none";
+    try { return { available: true, provider, ...(await rpc("admin_knowledge_overview", { p_actor: uid })) }; }
+    catch (e) { if (e.status === 503) { await rpc("admin_incidents", { p_actor: uid }); return { available: false, provider }; } throw e; }
+  },
+  // Approve (with the reviewing doctor's name and the review date), send back to draft, or retire. ai.manage (founder).
+  knowledge_set_status: (uid, b) => {
+    if (!/^[0-9a-f-]{36}$/.test(b.id || "") || !["draft", "approved", "retired"].includes(b.status)) throw httpError(400, "invalid");
+    const reviewedOn = /^\d{4}-\d{2}-\d{2}$/.test(b.reviewed_on || "") ? b.reviewed_on : null;
+    return rpc("admin_knowledge_set_status", { p_actor: uid, p_source: b.id, p_status: b.status, p_reviewed_by: s(b.reviewed_by, 120) || null, p_reviewed_on: reviewedOn });
+  },
+  release_status: async (uid) => { await rpc("admin_incidents", { p_actor: uid }); return RELEASE_STATUS; },
   ai_infrastructure: async (uid) => { await rpc("admin_incidents", { p_actor: uid }); const st = await getSettings({ fresh: true }); return infrastructure({ flags: st.flags }); },
   errors: (uid, b) => rpc("admin_errors", { p_actor: uid, p_status: s(b.status, 20) || null }),
   error: (uid, b) => { if (!/^[0-9a-f]{32}$/.test(b.id || "")) throw httpError(400, "invalid_id"); return rpc("admin_error", { p_actor: uid, p_fp: b.id }); },

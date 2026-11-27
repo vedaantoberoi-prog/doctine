@@ -67,6 +67,10 @@ globalThis.fetch = async (url, init = {}) => {
     : body.p_to === "VERIFIED" && !(body.p_evidence && body.p_evidence.matched && body.p_evidence.matched.active) ? new Response(JSON.stringify({ code: "22023" }), { status: 400 }) : new Response(JSON.stringify({ ok: true, status: body.p_to, got: body }));
   if (url.endsWith("/rpc/admin_ai_traces")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ days: body.p_days, total: 0 })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/rpc/ai_provider_check_add")) return new Response("true");
+  if (url.endsWith("/rpc/admin_ai_chat_activity")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ replies: 12, failed: 1, errors: { ai_timeout: 1 }, context: { server: 9, none: 4 }, hourly: [] })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
+  if (url.endsWith("/rpc/admin_knowledge_overview")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ approved: 0, draft: 1, retired: 0, passages_searchable: 0, sources: [] })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
+  if (url.endsWith("/rpc/admin_knowledge_set_status")) return ROLES[body.p_actor] !== "founder" ? new Response(JSON.stringify({ code: "42501" }), { status: 403 })
+    : body.p_status === "approved" && (!body.p_reviewed_by || !body.p_reviewed_on) ? new Response(JSON.stringify({ code: "22023" }), { status: 400 }) : new Response(JSON.stringify({ id: body.p_source, status: body.p_status }));
   if (url.endsWith("/rpc/admin_ai_provider_checks")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ last_success: { at: "2026-11-27T00:00:00Z", kind: "test_request", ms: 800, model: "claude-sonnet-5-5" }, last_failure: null, recent: [] })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.startsWith("https://api.anthropic.com/v1/models/")) return new Response(JSON.stringify({ id: "claude-sonnet-5-5" }));
   if (url === "https://api.anthropic.com/v1/messages") return new Response(JSON.stringify({ content: [{ type: "text", text: "ok" }], stop_reason: "end_turn" }));
@@ -243,6 +247,28 @@ await test("AI provider check: health.view only; a real check only when asked; r
   const no = await read(await post(admin, tok("analyst"), { action: "ai_provider_check", run: true }, "10.3.1.3"));
   assert.equal(no.status, 403); assert.ok(!calls.some((c) => c.url.startsWith("https://api.anthropic.com/")), "refused before any provider call");
   delete process.env.ANTHROPIC_API_KEY;
+});
+await test("assistant activity, medical sources and release status: health.view; counts only; approving needs a reviewer and date", async () => {
+  const act = await read(await post(admin, tok("owner"), { action: "ai_activity", hours: 24 }, "10.3.2.1"));
+  assert.equal(act.status, 200); assert.equal(act.j.data.available, true); assert.equal(act.j.data.context.server, 9);
+  calls = [];
+  const bad = await read(await post(admin, tok("owner"), { action: "ai_activity", hours: 99999 }, "10.3.2.2"));
+  assert.equal(calls.find((c) => c.url.endsWith("/rpc/admin_ai_chat_activity")).body.p_hours, 24, "an out-of-range window falls back to 24 hours");
+  assert.equal((await read(await post(admin, tok("analyst"), { action: "ai_activity" }, "10.3.2.3"))).status, 403);
+  process.env.KNOWLEDGE_PROVIDER = "supabase";
+  const kn = await read(await post(admin, tok("owner"), { action: "knowledge" }, "10.3.2.4"));
+  delete process.env.KNOWLEDGE_PROVIDER;
+  assert.equal(kn.j.data.provider, "supabase"); assert.equal(kn.j.data.draft, 1);
+  const id = "11111111-2222-4333-8444-555555555555";
+  assert.equal((await read(await post(admin, tok("owner"), { action: "knowledge_set_status", id, status: "approved" }, "10.3.2.5"))).status, 400, "no reviewer, no approval");
+  const ap = await read(await post(admin, tok("owner"), { action: "knowledge_set_status", id, status: "approved", reviewed_by: "Dr Fictional Reviewer", reviewed_on: "2026-11-20" }, "10.3.2.6"));
+  assert.equal(ap.status, 200); assert.equal(ap.j.data.status, "approved");
+  assert.equal((await read(await post(admin, tok("owner"), { action: "knowledge_set_status", id: "x; drop", status: "approved" }, "10.3.2.7"))).status, 400);
+  assert.equal((await read(await post(admin, tok("owner"), { action: "knowledge_set_status", id, status: "published" }, "10.3.2.8"))).status, 400);
+  assert.equal((await read(await post(admin, tok("analyst"), { action: "knowledge_set_status", id, status: "retired" }, "10.3.2.9"))).status, 403);
+  const rs = await read(await post(admin, tok("owner"), { action: "release_status" }, "10.3.2.10"));
+  assert.equal(rs.status, 200); assert.equal(typeof rs.j.data.evaluation.critical, "number");
+  assert.equal((await read(await post(admin, tok("analyst"), { action: "release_status" }, "10.3.2.11"))).status, 403);
 });
 await test("AI infrastructure page: configuration only, behind health.view; no key or health data", async () => {
   process.env.ANTHROPIC_API_KEY = KEYLIKE;

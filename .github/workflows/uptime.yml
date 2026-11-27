@@ -29,6 +29,11 @@ jobs:
           code=$(get https://app.doctine.com/api/account); [ "$code" = 405 ] || [ "$code" = 401 ] || { echo "::error::/api/account without sign-in returned $code"; fail=1; }
           code=$(curl -sS -m 20 -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{"messages":[{"role":"user","content":"hi"}]}' https://app.doctine.com/api/chat || echo 000)
           case "$code" in 401|503) echo "ok   guest chat refused ($code)";; *) echo "::error::guest chat returned $code (expected 401 or 503)"; fail=1;; esac
+          # The AI provider key: a free model lookup, no question sent. Keys expire (the current ones on 27 Dec 2026);
+          # a refused, expired or missing key fails this run, so GitHub emails the owner before people notice.
+          code=$(get "https://app.doctine.com/api/chat?test=1")
+          if [ "$code" = 200 ] && grep -q '"ok":true' "$RUNNER_TEMP/b"; then echo "ok   AI provider key accepted"
+          else echo "::error::AI provider check failed ($code $(grep -o '"error":"[a-z_]*"' "$RUNNER_TEMP/b")): replace ANTHROPIC_API_KEY in Cloudflare (doctine-app-direct) and redeploy"; fail=1; fi
           # The admin console's scheduled round: the app checks itself, the database, sign-in and storage, records the
           # results (uptime history) and evaluates alert rules. New alerts that could not be emailed fail this run, so
           # GitHub emails the owner; acknowledging the alert in app.doctine.com/admin stops it.

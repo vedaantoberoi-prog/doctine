@@ -6,7 +6,7 @@ import "./hermetic-env.mjs";
 import assert from "node:assert/strict";
 import chat from "../netlify/functions/chat.mjs";
 import { _resetTokenCache } from "../netlify/lib/ratelimit.mjs";
-import { _resetSettingsCache } from "../netlify/lib/settings.mjs";
+import { _resetSettingsCache, getSettings } from "../netlify/lib/settings.mjs";
 import { patientContext, relevance } from "../netlify/lib/context/patient.mjs";
 import { retrieve, searchText } from "../netlify/lib/knowledge.mjs";
 import { userDb } from "../netlify/lib/gateway/db.mjs";
@@ -232,6 +232,22 @@ await test("emergencies skip the search", async () => {
 await test("search text: everyday words expand, punctuation can't change the query", () => {
   assert.match(searchText("is my sugar ok?"), /hba1c/);
   assert.ok(!/[()<>:&|!]/.test(searchText("fever)) | !(drop) <-> &")));
+});
+
+console.log("platform switches after a cold start");
+await test("a slow first read is retried; a recent real value stands in briefly; only then the safe defaults (assistant off)", async () => {
+  const envS = { SUPABASE_URL: "https://s.supabase.test", SUPABASE_SERVICE_ROLE_KEY: "sb_secret_x" };
+  const good = () => new Response(JSON.stringify({ flags: { ai_assistant: true }, maintenance: { on: false } }));
+  let n = 0;
+  _resetSettingsCache();
+  let st = await getSettings({ env: envS, fresh: true, fetchImpl: async () => { n++; if (n === 1) throw new Error("aborted"); return good(); } });
+  assert.equal(st.source, "database"); assert.equal(st.flags.ai_assistant, true); assert.equal(n, 2, "one retry");
+  st = await getSettings({ env: envS, fresh: true, fetchImpl: async () => { throw new Error("down"); } });
+  assert.equal(st.source, "database_recent"); assert.equal(st.flags.ai_assistant, true, "the last real value, not a sudden 'off'");
+  _resetSettingsCache();
+  st = await getSettings({ env: envS, fresh: true, fetchImpl: async () => { throw new Error("down"); } });
+  assert.equal(st.source, "default"); assert.equal(st.flags.ai_assistant, false, "never read: the assistant stays off");
+  _resetSettingsCache();
 });
 
 console.log("loading sources (tools/knowledge-ingest.mjs)");

@@ -13,7 +13,7 @@
  */
 import { randomUUID, createHash } from "node:crypto";
 import { serviceHeaders } from "../lib/supabase-keys.mjs";
-import { json, readJson, refused, providerCheck } from "../lib/ai.mjs";
+import { json, readJson, refused, providerCheck, keyShape } from "../lib/ai.mjs";
 import { checkRate } from "../lib/ratelimit.mjs";
 import { _resetSettingsCache, getSettings } from "../lib/settings.mjs";
 import { runChecks, recordChecks, reportServerError } from "../lib/monitor.mjs";
@@ -254,7 +254,8 @@ const ACTIONS = {
       }
       history = { available: true, ...(await rpc("admin_ai_provider_checks", { p_actor: uid })) };
     } catch (e) { if (e.status === 503) history = { available: false }; else throw e; }
-    return { check, history };
+    // The key's shape (length, prefix, stray spaces or quotes; never the key) explains a refused key without exposing it.
+    return { check, history, key_shape: keyShape(process.env.ANTHROPIC_API_KEY || process.env.AI_API_KEY || ""), workspace_set: /^wrkspc_[A-Za-z0-9]{8,64}$/.test(String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim()) };
   },
   // Assistant activity (migration 20261130000000_knowledge): counts and codes only, from one metadata row per reply.
   ai_activity: async (uid, b) => {

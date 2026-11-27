@@ -243,6 +243,9 @@ await test("AI provider check: health.view only; a real check only when asked; r
   const sent = calls.find((c) => c.url === "https://api.anthropic.com/v1/messages");
   assert.deepEqual(sent.body.messages, [{ role: "user", content: "ping" }], "the real request carries no person's data");
   assert.ok(!run.t.includes(KEYLIKE), "the key is never returned");
+  const ks = run.j.data.key_shape;
+  assert.equal(typeof ks.length, "number"); assert.equal(typeof ks.starts_sk_ant, "boolean");
+  assert.deepEqual(Object.keys(ks).sort(), ["had_surrounding_space", "header_safe", "kind", "length", "quoted", "set", "starts_sk_ant"], "only the key's shape, never any part of it");
   calls = [];
   const no = await read(await post(admin, tok("analyst"), { action: "ai_provider_check", run: true }, "10.3.1.3"));
   assert.equal(no.status, 403); assert.ok(!calls.some((c) => c.url.startsWith("https://api.anthropic.com/")), "refused before any provider call");

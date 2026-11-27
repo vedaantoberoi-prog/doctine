@@ -24,6 +24,12 @@ export const refused = (rl, body) => json(body, rl.status, { "retry-after": Stri
 /* A key pasted into a host's settings often carries a trailing line break or space. Sent as is, the request is
    refused before it leaves the server and looks like a network failure (production, 27 Nov 2026), so it is trimmed. */
 export const cleanKey = (key) => String(key || "").trim();
+/** What the stored key looks like, never the key: for diagnosing a refused key in the admin console. */
+export function keyShape(key) {
+  const raw = String(key || ""), k = cleanKey(raw);
+  return { set: !!k, length: k.length, starts_sk_ant: /^sk-ant-/.test(k), kind: (/^sk-ant-(api|usr|admin)\d*-/.exec(k) || [])[1] || (k ? "other" : null),
+    had_surrounding_space: raw !== k, header_safe: !/[^\x21-\x7e]/.test(k), quoted: /^["'\u201c\u2018].*["'\u201d\u2019]$/.test(k) };
+}
 export function anthropicHeaders(key, env = process.env) {
   const ws = String(env.ANTHROPIC_WORKSPACE_ID || "").trim();
   return { "x-api-key": cleanKey(key), "anthropic-version": "2023-06-01", ...(/^wrkspc_[A-Za-z0-9]{8,64}$/.test(ws) ? { "anthropic-workspace-id": ws } : {}) };
@@ -98,7 +104,7 @@ export async function providerCheck({ generate = false, fetchImpl = fetch, timeo
   const ac = new AbortController(); const timer = setTimeout(() => ac.abort(), timeoutMs); const t0 = Date.now();
   try {
     const r = await fetchImpl(anthropicUrl().replace(/\/v1\/messages$/, "/v1/models/" + encodeURIComponent(model)), { headers: anthropicHeaders(key), signal: ac.signal });
-    out.lookup_ms = Date.now() - t0;
+    out.lookup_ms = Date.now() - t0; out.lookup_status = r.status;
     if (r.ok) { out.authenticated = true; out.model_accessible = true; }
     else {
       out.authenticated = !(r.status === 401);

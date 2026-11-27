@@ -1121,6 +1121,10 @@ async function doctineAuthCallback(raw){
  if(reset){CLOUD.recovering=false;return enterRecovery(r.data.session)}
  if(S.email&&CLOUD.uid===r.data.session.user.id)return;
  if(S.email)leaveCloud();S.loadingCloud=true;render();return cloudEnter(r.data.session.user)}
+/* The server couldn't read the platform switches in time (a cold start) and sent its safe defaults (assistant off).
+   Ask again shortly, so the page doesn't keep saying the assistant is off when it is on. */
+function recheckConfig(n){if(n>3)return;setTimeout(async()=>{try{const r=await fetch(API+'/api/config',{cache:'no-store'});const c=r.ok?await r.json():null;
+ if(!c||c.settingsSource==='default')return recheckConfig(n+1);CLOUD.ai=CLOUD.assistPilot||c.aiAvailable!==false;CLOUD.features=c.features||{};CLOUD.maint=c.maintenance||{on:false};render()}catch{recheckConfig(n+1)}},[1500,4000,10000,30000][n])}
 async function initCloud(){
  if(!NATIVE&&(!/^https?:$/.test(location.protocol)||/claude\.ai|claudeusercontent/.test(location.hostname)))return false;
  let cfg=null;try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),4000);const r=await fetch(API+'/api/config',{signal:ac.signal}).finally(()=>clearTimeout(t));if(r.ok)cfg=await r.json()}catch{}
@@ -1132,6 +1136,7 @@ async function initCloud(){
   else S.oauthErr=/access_denied/.test(e)?'Google sign-in was cancelled.':'Google sign-in didn’t work. Try again, or use email and password.';try{sessionStorage.removeItem('doctine:google-consent')}catch{}for(const k of['error','error_code','error_description','reset'])q.delete(k);const rest=q.toString();history.replaceState(null,'',location.pathname+(rest?'?'+rest:''))}}
  CLOUD.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:NATIVE&&window.DoctineNative?{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,flowType:'pkce',storage:DoctineNative.authStorage}:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  CLOUD.on=true;CLOUD.google=cfg.googleSignIn===true;CLOUD.ai=cfg.aiAvailable!==false;CLOUD.features=cfg.features||{};CLOUD.maint=cfg.maintenance||{on:false};CLOUD.notices=Array.isArray(cfg.announcements)?cfg.announcements.slice(0,5):[];CLOUD.whatsNew=Array.isArray(cfg.whatsNew)?cfg.whatsNew.slice(0,5):[];
+ if(cfg.settingsSource==='default')recheckConfig(0);
  CLOUD.sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){if(!CLOUD.recovering)enterRecovery(session);return}if(CLOUD.recovering)return;if(ev==='SIGNED_OUT'&&S.cloud){leaveCloud()}if(ev==='SIGNED_IN'&&session&&S.cloud&&CLOUD.uid&&session.user.id!==CLOUD.uid){leaveCloud();cloudEnter(session.user)}});
  const launch=NATIVE&&window.DoctineNative?await DoctineNative.launchLink():null;
  if(NATIVE&&window.DoctineNative)DoctineNative.takeLinks(doctineAuthCallback);

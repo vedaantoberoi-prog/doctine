@@ -511,6 +511,18 @@ const PC_ERR = { not_configured: "no AI key on this site", auth_failed: "the pro
   model_not_found: "the configured model isn't available to this key", insufficient_credits: "the AI account has no credit", rate_limited: "the provider is rate-limiting",
   provider_busy: "the provider is busy or down", timeout: "the provider didn't answer in time", network: "the server couldn't reach the provider",
   invalid_request: "the provider refused the request (for an organisation-level key, check ANTHROPIC_WORKSPACE_ID)", bad_response: "the answer couldn't be read", other: "other error" };
+/* The stored key's shape (never the key): explains why the provider refuses it. */
+function keyShapeText(k, ws) {
+  if (!k.set) return `<span class="st bad">Not set</span> <span class="muted">add the AI provider key in this site's hosting settings</span>`;
+  const p = [];
+  if (!k.starts_sk_ant) p.push("doesn't start the way an Anthropic key does");
+  if (k.quoted) p.push("has quotes around it");
+  if (!k.header_safe) p.push("contains a space or a character a key can't have");
+  if (k.length < 60) p.push(`is only ${k.length} characters (a full key is about 100): probably the shortened form from the key list`);
+  if (k.kind === "usr" && !ws) p.push("is an organisation key but ANTHROPIC_WORKSPACE_ID isn't set");
+  return p.length ? `<span class="st warn">Looks wrong</span> <span class="muted">${esc(p.join("; "))}</span>`
+    : `<span class="st good">Looks like a full key</span> <span class="muted">${n(k.length)} characters${k.had_surrounding_space ? ", stray spaces trimmed" : ""}${ws ? ", workspace set" : ""}</span>`;
+}
 function providerCheckSection(pc, dl) {
   if (!pc) return "";
   const h = pc.history || {}, when = (t) => new Date(t).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
@@ -519,7 +531,8 @@ function providerCheckSection(pc, dl) {
   <div class="card"><div class="card-b">
     ${!h.available ? `<p class="muted">Check results aren't stored on this site yet (migration 20261129000000_ai_provider_checks). The check still runs.</p>` : ""}
     ${dl([["Last time the AI answered", ls ? `${esc(when(ls.at))} <span class="muted">· ${n(ls.ms)} ms · <span class="mono">${esc(ls.model || "")}</span></span>` : `<span class="muted">${h.available ? "never recorded" : "—"}</span>`],
-      ["Last failure", lf ? `${esc(when(lf.at))} <span class="st warn">${esc(PC_ERR[lf.error] || lf.error || "")}</span>` : `<span class="muted">none recorded</span>`]])}
+      ["Last failure", lf ? `${esc(when(lf.at))} <span class="st warn">${esc(PC_ERR[lf.error] || lf.error || "")}</span>` : `<span class="muted">none recorded</span>`],
+      ...(pc.key_shape ? [["Stored key", keyShapeText(pc.key_shape, pc.workspace_set)]] : [])])}
     <div class="row" style="margin-top:10px;gap:8px"><button class="btn" id="pc-run">Run a real check</button><span class="hint">Costs one very small AI request.</span></div>
   </div></div>`;
 }

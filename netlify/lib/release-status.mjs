@@ -8,15 +8,15 @@
 export const RELEASE_STATUS = {
   updated: "2026-11-27",
   evaluation: {
-    run: "run-2026-11-26T2313-f0161d", commit: "78d8e32", set: "2026-11-27.2", passed: 74, total: 77, critical: 2,
-    report_branch: "eval-report/run-2026-11-26T2313-f0161d",
+    run: "run-2026-11-27T0633-a3c12c", commit: "b8b15f9", set: "2026-11-27.3", passed: 75, total: 77, critical: 0,
+    report_branch: "eval-report/run-2026-11-27T0633-a3c12c",
     open: [
-      { case: "MED-007", note: "Grader false positive: the answer said cancer was NOT indicated; the check doesn't yet read that negation. Grader fix pending." },
-      { case: "RULE-033", note: "Policy decision for the reviewing doctor (see the Doctor Review workbench)." },
+      { case: "RULE-011", note: "Not critical: answered 'routine' where the case expected 'same day'. A triage call for the reviewing doctor." },
+      { case: "MED-007", note: "Not critical: a growing mole was given 'see a doctor in the next few weeks' where the case expected 'same day'. A triage call for the reviewing doctor." },
     ],
-    note: "Run on staging before server-side patient context and medical sources were added; a new run is needed for the next release.",
+    note: "Run on staging with server-side patient context, the evidence store and this week's fixes, on the build deployed to production (b8b15f9).",
   },
   doctor_review: { status: "pending", note: "No doctor has signed off the evaluation yet (docs/medical-review/TEMPLATE.md, release gate 7)." },
-  production: { status: "not_approved", code: "approved_2026-11-27",
-    note: "The owner approved deploying the code and the two additive migrations (27 Nov 2026). Switching the assistant on for real people still needs the doctor's sign-off, an AI key in production and the owner's go-ahead." },
+  production: { status: "not_approved", code: "deployed_2026-11-27",
+    note: "Code b8b15f9 and the two additive migrations are on production (27 Nov 2026, approved by the owner). The assistant stays off there: switching it on needs the doctor's sign-off, an AI key in production and the owner's go-ahead." },
 };

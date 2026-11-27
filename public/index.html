@@ -566,10 +566,12 @@ window.DOCTINE_API = window.DOCTINE_API || ''; // set at the top of the page ins
   function cycle() {
     if (Date.now() >= ring.stopAt) return stop();
     if (ring.ctx && ring.ctx.state === 'running') { var t = ring.ctx.currentTime; beep(880, t, 0.25); beep(1100, t + 0.35, 0.25); beep(880, t + 0.7, 0.25); }
-    try { if (root.navigator && navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) { }
+    // Browsers refuse vibration until the page has been tapped (and log an error each time); the sound and the
+    // notification still ring, and vibration starts with the first tap.
+    try { if (root.navigator && navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) { }
   }
   function start(ms) { unlock(); ring.stopAt = Date.now() + (ms || 120000); if (ring.active) return; ring.active = true; cycle(); ring.timer = setInterval(cycle, 1800); }
-  function stop() { if (!ring.active && !ring.timer) return; ring.active = false; clearInterval(ring.timer); ring.timer = null; try { if (root.navigator && navigator.vibrate) navigator.vibrate(0); } catch (e) { } } // nothing to stop: don't touch the vibration motor (it was being called every 5 seconds)
+  function stop() { if (!ring.active && !ring.timer) return; ring.active = false; clearInterval(ring.timer); ring.timer = null; try { if (root.navigator && navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(0); } catch (e) { } } // nothing to stop: don't touch the vibration motor (it was being called every 5 seconds)
   function ringing() { return ring.active; }
   function audioReady() { return !!(ring.ctx && ring.ctx.state === 'running'); }
 

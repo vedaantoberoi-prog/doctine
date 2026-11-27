@@ -297,6 +297,11 @@ await test("provider check (admin): model lookup, then one tiny real request; sa
   seen.length = 0;
   r = await providerCheck({ generate: false, fetchImpl: fake([[200, { id: "claude-sonnet-5-5" }]]) });
   assert.equal(r.error, null); assert.equal(seen[0].headers["x-api-key"], saved, "the header carries the key without the line break");
+  // a key copied as wrapped text, with a line break or space inside it, still works
+  process.env.ANTHROPIC_API_KEY = saved.slice(0, 5) + "\n" + saved.slice(5, 9) + " \u200b" + saved.slice(9);
+  seen.length = 0;
+  r = await providerCheck({ generate: false, fetchImpl: fake([[200, { id: "claude-sonnet-5-5" }]]) });
+  assert.equal(r.error, null); assert.equal(seen[0].headers["x-api-key"], saved, "spaces, line breaks and invisible characters inside the key are removed");
   // characters a header can't carry: "key refused", not "network", and nothing is sent
   process.env.ANTHROPIC_API_KEY = "\u201c" + saved + "\u201d";
   r = await providerCheck({ generate: true, fetchImpl: () => { throw new Error("must not be called"); } });

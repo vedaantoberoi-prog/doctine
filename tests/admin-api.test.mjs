@@ -66,6 +66,10 @@ globalThis.fetch = async (url, init = {}) => {
   if (url.endsWith("/rpc/admin_practitioner_transition")) return body.p_actor === body.p_user ? new Response(JSON.stringify({ code: "42501" }), { status: 403 })
     : body.p_to === "VERIFIED" && !(body.p_evidence && body.p_evidence.matched && body.p_evidence.matched.active) ? new Response(JSON.stringify({ code: "22023" }), { status: 400 }) : new Response(JSON.stringify({ ok: true, status: body.p_to, got: body }));
   if (url.endsWith("/rpc/admin_ai_traces")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ days: body.p_days, total: 0 })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
+  if (url.endsWith("/rpc/ai_provider_check_add")) return new Response("true");
+  if (url.endsWith("/rpc/admin_ai_provider_checks")) return ROLES[body.p_actor] === "founder" ? new Response(JSON.stringify({ last_success: { at: "2026-11-27T00:00:00Z", kind: "test_request", ms: 800, model: "claude-sonnet-5-5" }, last_failure: null, recent: [] })) : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
+  if (url.startsWith("https://api.anthropic.com/v1/models/")) return new Response(JSON.stringify({ id: "claude-sonnet-5-5" }));
+  if (url === "https://api.anthropic.com/v1/messages") return new Response(JSON.stringify({ content: [{ type: "text", text: "ok" }], stop_reason: "end_turn" }));
   if (url.endsWith("/rpc/admin_incidents")) return ROLES[body.p_actor] === "founder" ? new Response("[]") : new Response(JSON.stringify({ code: "42501" }), { status: 403 });
   if (url.endsWith("/version.json") || url.endsWith("/auth/v1/health") || url.includes("/storage/v1/bucket/") || url.endsWith("/rpc/public_settings")) return new Response("{}");
   if (url.startsWith("https://api.resend.com/")) return new Response("{}");
@@ -220,6 +224,26 @@ await test("free text is refused", async () => {
 });
 
 const KEYLIKE = ["fictional", "provider", "value", "for", "tests"].join("-");
+await test("AI provider check: health.view only; a real check only when asked; recorded; key never returned", async () => {
+  process.env.ANTHROPIC_API_KEY = KEYLIKE;
+  calls = [];
+  const view = await read(await post(admin, tok("owner"), { action: "ai_provider_check" }, "10.3.1.1"));
+  assert.equal(view.status, 200); assert.equal(view.j.data.check, null, "opening the page doesn't spend anything");
+  assert.ok(!calls.some((c) => c.url.startsWith("https://api.anthropic.com/")), "no provider call without run: true");
+  assert.equal(view.j.data.history.last_success.model, "claude-sonnet-5-5");
+  calls = [];
+  const run = await read(await post(admin, tok("owner"), { action: "ai_provider_check", run: true }, "10.3.1.2"));
+  assert.equal(run.status, 200); assert.equal(run.j.data.check.test_request.ok, true); assert.equal(run.j.data.check.model_accessible, true);
+  const recorded = calls.filter((c) => c.url.endsWith("/rpc/ai_provider_check_add")).map((c) => c.body.p_row.kind);
+  assert.deepEqual(recorded, ["model_lookup", "test_request"], "both steps are recorded");
+  const sent = calls.find((c) => c.url === "https://api.anthropic.com/v1/messages");
+  assert.deepEqual(sent.body.messages, [{ role: "user", content: "ping" }], "the real request carries no person's data");
+  assert.ok(!run.t.includes(KEYLIKE), "the key is never returned");
+  calls = [];
+  const no = await read(await post(admin, tok("analyst"), { action: "ai_provider_check", run: true }, "10.3.1.3"));
+  assert.equal(no.status, 403); assert.ok(!calls.some((c) => c.url.startsWith("https://api.anthropic.com/")), "refused before any provider call");
+  delete process.env.ANTHROPIC_API_KEY;
+});
 await test("AI infrastructure page: configuration only, behind health.view; no key or health data", async () => {
   process.env.ANTHROPIC_API_KEY = KEYLIKE;
   const ok = await read(await post(admin, tok("owner"), { action: "ai_infrastructure" }, "10.3.0.1"));

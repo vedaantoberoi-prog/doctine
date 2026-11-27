@@ -30,7 +30,7 @@ const anthropic = (status, body) => { reply = { status, body }; };
 const SCAN_UID = "bbbbbbbb-0000-0000-0000-00000000000b";
 globalThis.fetch = async (url, init) => {
   if (String(url).endsWith("/auth/v1/user")) return String(init.headers.authorization) === "Bearer signed-in-token" ? new Response(JSON.stringify({ id: SCAN_UID })) : new Response("{}", { status: 401 });
-  lastReq = { url, body: JSON.parse(init.body), headers: init.headers };
+  lastReq = { url, method: (init && init.method) || "GET", body: init && init.body ? JSON.parse(init.body) : null, headers: init.headers };
   if (reply === "abort") { const e = new Error("aborted"); e.name = "AbortError"; throw e; }
   if (reply === "network") throw new TypeError("fetch failed");
   return new Response(typeof reply.body === "string" ? reply.body : JSON.stringify(reply.body), { status: reply.status });
@@ -265,10 +265,34 @@ await test("children's medicine amounts never reach the person (MED-008 backstop
   assert.equal(childDoseGuard([{ role: "user", content: "What is the usual paracetamol tablet strength?" }], adult), adult, "no child in the conversation: untouched");
   assert.equal(childDoseGuard([{ role: "user", content: "my 5 year old has a fever" }, { role: "assistant", content: "x" }, { role: "user", content: "how much syrup?" }], bad).reply, CHILD_DOSE_TEXT, "the child named in an earlier turn counts");
 });
-await test("GET ?test=1 makes a real tiny call and reports the result", async () => {
-  anthropic(200, { content: [{ type: "text", text: "ok" }] });
-  let [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.ok, true); assert.equal(j.model, "claude-sonnet-5-5"); assert.equal(lastReq.body.max_tokens, 64, "a tiny check still leaves room for thinking");
+await test("GET ?test=1 (anyone can press it) never spends money: a free model lookup only", async () => {
+  anthropic(200, { id: "claude-sonnet-5-5", type: "model" });
+  let [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.ok, true); assert.equal(j.model, "claude-sonnet-5-5");
+  assert.match(String(lastReq.url), /\/v1\/models\/claude-sonnet-5-5$/); assert.equal(lastReq.method, "GET"); assert.equal(lastReq.body, null, "no AI request was made");
   anthropic(401, ""); [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.ok, false); assert.equal(j.error, "invalid_key");
+  anthropic(404, ""); [, j] = await call(chat, "/api/chat?test=1", null, { method: "GET" }); assert.equal(j.error, "model_not_found");
+});
+await test("provider check (admin): model lookup, then one tiny real request; safe fields only; stops early on a bad key", async () => {
+  const { providerCheck } = await import("../netlify/lib/ai.mjs");
+  const seen = [];
+  const fake = (steps) => async (url, init) => { seen.push({ url: String(url), method: (init && init.method) || "GET", headers: init.headers }); const [st, body] = steps.shift(); return new Response(JSON.stringify(body), { status: st }); };
+  process.env.ANTHROPIC_WORKSPACE_ID = "wrkspc_01EMEiZzu5DqJ3EFZK6XMovb";
+  let r = await providerCheck({ generate: true, fetchImpl: fake([[200, { id: "claude-sonnet-5-5" }], [200, { content: [{ type: "text", text: "ok" }], stop_reason: "end_turn" }]]) });
+  assert.equal(r.configured, true); assert.equal(r.authenticated, true); assert.equal(r.model_accessible, true); assert.equal(r.test_request.ok, true); assert.equal(r.error, null);
+  assert.equal(seen.length, 2); assert.equal(seen[1].method, "POST");
+  for (const s of seen) assert.equal(s.headers["anthropic-workspace-id"], "wrkspc_01EMEiZzu5DqJ3EFZK6XMovb", "both calls name the workspace");
+  assert.doesNotMatch(JSON.stringify(r), /sk-test|x-api-key/, "the key never appears in the result");
+  seen.length = 0;
+  r = await providerCheck({ generate: true, fetchImpl: fake([[401, { error: { type: "authentication_error", message: "invalid x-api-key" } }]]) });
+  assert.equal(r.authenticated, false); assert.equal(r.error, "auth_failed"); assert.equal(r.test_request, null); assert.equal(seen.length, 1, "no paid request after a refused key");
+  assert.doesNotMatch(JSON.stringify(r), /invalid x-api-key/, "the provider's message is not passed on");
+  r = await providerCheck({ generate: true, fetchImpl: fake([[200, {}], [400, { error: { type: "invalid_request_error", message: "needs anthropic-workspace-id" } }]]) });
+  assert.equal(r.model_accessible, true); assert.equal(r.test_request.ok, false); assert.equal(r.error, "invalid_request", "a refused real request is caught even when the lookup passes");
+  delete process.env.ANTHROPIC_WORKSPACE_ID;
+  const saved = process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
+  r = await providerCheck({ generate: true, fetchImpl: () => { throw new Error("must not be called"); } });
+  assert.equal(r.configured, false); assert.equal(r.error, "not_configured");
+  process.env.ANTHROPIC_API_KEY = saved;
 });
 
 console.log("knowledge retrieval (off by default)");

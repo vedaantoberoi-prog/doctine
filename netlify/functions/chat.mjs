@@ -3,7 +3,7 @@
  *
  * POST { messages: [{role, content}], state?: object, context?: { profile?, records? } }
  *   → { reply, sections, urgency, question, options, uncertainty, safety_note, record_claims, safety, state }
- * GET  ?test=1  → one tiny real request to check the key and model: { ok, provider, model } or { error }
+ * GET  ?test=1  → is the key and the model accepted? (a free model lookup, no AI request): { ok, provider, model } or { error }
  * GET  ?eval=1  → { eval_access: true | false } for the x-doctine-eval-token header (staging pipeline; no AI call)
  *
  * Needs ANTHROPIC_API_KEY (Netlify → Site configuration → Environment variables, scope Functions).
@@ -11,7 +11,7 @@
  * Optional knowledge retrieval (netlify/lib/knowledge.mjs): off unless KNOWLEDGE_PROVIDER is set. Answers cite
  * only passages that were actually retrieved, returned as `sources`; with no provider, `sources` is empty.
  */
-import { json, settings, limited, clientIp, readJson, callClaude, str, arr } from "../lib/ai.mjs";
+import { json, settings, limited, clientIp, readJson, callClaude, providerCheck, str, arr } from "../lib/ai.mjs";
 import { emergencyCheck, emergencyGuidance } from "../lib/safety.mjs";
 import { retrieve } from "../lib/knowledge.mjs";
 import { aiSwitchedOff } from "../lib/settings.mjs";
@@ -177,8 +177,12 @@ export default async (req, context) => {
     if (!cfg.key) return json({ ok: false, error: "not_configured", missing: ["ANTHROPIC_API_KEY"] });
     const rlt = await checkRate(req, context, "test");
     if (!rlt.allowed) return json({ ok: false, error: rlt.error }, rlt.status);
-    const r = await callClaude(cfg, { system: "Reply with the single word: ok", messages: [{ role: "user", content: "ping" }], maxTokens: 5, timeoutMs: 15000, fixedCheck: true });
-    return r.error ? json({ ok: false, ...r }) : json({ ok: true, provider: "anthropic", model: cfg.model });
+    // Anyone can press "Check connection", so this never spends money: it only asks the provider whether the key and
+    // the model are accepted. The admin console's provider check sends a real (tiny) request.
+    const c = await providerCheck({ generate: false });
+    const legacy = { auth_failed: "invalid_key", rate_limited: "ai_rate_limited", provider_busy: "ai_busy", timeout: "ai_timeout", network: "ai_network", invalid_request: "ai_error" };
+    return c.model_accessible ? json({ ok: true, provider: c.provider, model: c.model, ms: c.lookup_ms })
+      : json({ ok: false, error: legacy[c.error] || c.error, model: c.model });
   }
   if (req.method !== "POST") return json({ error: "invalid" }, 405);
 

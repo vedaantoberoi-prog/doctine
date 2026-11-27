@@ -21,9 +21,12 @@ export const refused = (rl, body) => json(body, rl.status, { "retry-after": Stri
  * Headers for every Anthropic call. An organisation-level API key (one not created inside a workspace) must name the
  * workspace to bill: set ANTHROPIC_WORKSPACE_ID (wrkspc_…, not a secret). Workspace-scoped keys don't need it.
  */
+/* A key pasted into a host's settings often carries a trailing line break or space. Sent as is, the request is
+   refused before it leaves the server and looks like a network failure (production, 27 Nov 2026), so it is trimmed. */
+export const cleanKey = (key) => String(key || "").trim();
 export function anthropicHeaders(key, env = process.env) {
   const ws = String(env.ANTHROPIC_WORKSPACE_ID || "").trim();
-  return { "x-api-key": key, "anthropic-version": "2023-06-01", ...(/^wrkspc_[A-Za-z0-9]{8,64}$/.test(ws) ? { "anthropic-workspace-id": ws } : {}) };
+  return { "x-api-key": cleanKey(key), "anthropic-version": "2023-06-01", ...(/^wrkspc_[A-Za-z0-9]{8,64}$/.test(ws) ? { "anthropic-workspace-id": ws } : {}) };
 }
 
 export function anthropicUrl(env = process.env) {
@@ -89,6 +92,9 @@ export async function providerCheck({ generate = false, fetchImpl = fetch, timeo
   const { key, model } = settings("chat");
   const out = { provider: "anthropic", configured: !!key, authenticated: null, model, model_accessible: null, test_request: null, error: null, checked_at: new Date().toISOString() };
   if (!key) return { ...out, error: "not_configured" };
+  // A key with characters a header can't carry (a curly quote, a space inside it) is refused by fetch itself; say so
+  // plainly instead of reporting a network failure.
+  if (/[^\x21-\x7e]/.test(cleanKey(key))) { out.authenticated = false; out.model_accessible = false; out.error = "auth_failed"; return out; }
   const ac = new AbortController(); const timer = setTimeout(() => ac.abort(), timeoutMs); const t0 = Date.now();
   try {
     const r = await fetchImpl(anthropicUrl().replace(/\/v1\/messages$/, "/v1/models/" + encodeURIComponent(model)), { headers: anthropicHeaders(key), signal: ac.signal });

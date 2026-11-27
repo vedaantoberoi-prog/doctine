@@ -528,7 +528,8 @@ function providerCheckSection(pc, dl) {
    came from, whether sources were found, time). Never text, accounts or health data. */
 const CTX_LABEL = { server: "read on the server, as the person", client: "sent by the app (no account)", none: "not used", unavailable: "couldn't be read" };
 const AI_ERR = { ai_error: "provider error", ai_timeout: "too slow", ai_busy: "provider busy", ai_rate_limited: "provider rate limit", invalid_key: "key refused", insufficient_credits: "no credit",
-  model_not_found: "model not available", ai_network: "network", bad_output: "unusable answer", capacity: "daily cap reached", rate_limited: "person sending too fast" };
+  model_not_found: "model not available", ai_network: "network", bad_output: "unusable answer", capacity: "daily cap reached", rate_limited: "person sending too fast",
+  ai_paused: "assistant switched off", limiter_unavailable: "usage limits unreachable" };
 function activitySection(a, dl) {
   if (!a || !a.available) return `${section("Assistant activity", "Live")}<div class="card"><div class="card-b"><p class="muted">Not recorded on this site yet (migration 20261130000000_knowledge).</p></div></div>`;
   const total = (a.replies || 0) + (a.failed || 0), ctx = a.context || {}, when = (t) => t ? new Date(t).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—";
@@ -584,7 +585,7 @@ function releaseSection(r, pc, k, a, dl) {
     ["Medical evaluation: 0 critical failures", `${ok(e.critical === 0)} <span class="muted">${n(e.passed)}/${n(e.total)} passed, ${n(e.critical)} critical · ${esc(e.run || "")} on ${esc(e.commit || "")}</span>`],
     ["Doctor's review and sign-off", `${ok(r.doctor_review && r.doctor_review.status === "signed")} <span class="muted">${esc((r.doctor_review || {}).note || "")}</span>`],
     ["Medical sources approved (optional for release)", k && k.available && k.approved ? `${ok(true)} <span class="muted">${n(k.approved)}</span>` : `<span class="st none">None</span>`],
-    ["Owner's go-ahead for production", `${ok(r.production && r.production.status === "approved")} <span class="muted">${esc((r.production || {}).note || "")}</span>`],
+    ["Owner's go-ahead for the assistant in production", `${ok(r.production && r.production.status === "approved")} <span class="muted">${esc((r.production || {}).note || "")}</span>`],
   ];
   return `${section("Release readiness", `What a production release still needs. Recorded ${esc(r.updated)}; live parts update by themselves.`)}
   <div class="card"><div class="card-b">${dl(gates)}

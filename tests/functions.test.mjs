@@ -292,6 +292,15 @@ await test("provider check (admin): model lookup, then one tiny real request; sa
   const saved = process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
   r = await providerCheck({ generate: true, fetchImpl: () => { throw new Error("must not be called"); } });
   assert.equal(r.configured, false); assert.equal(r.error, "not_configured");
+  // a key pasted with a trailing line break or space is trimmed (production, 27 Nov 2026: it looked like a network failure)
+  process.env.ANTHROPIC_API_KEY = saved + "\n ";
+  seen.length = 0;
+  r = await providerCheck({ generate: false, fetchImpl: fake([[200, { id: "claude-sonnet-5-5" }]]) });
+  assert.equal(r.error, null); assert.equal(seen[0].headers["x-api-key"], saved, "the header carries the key without the line break");
+  // characters a header can't carry: "key refused", not "network", and nothing is sent
+  process.env.ANTHROPIC_API_KEY = "\u201c" + saved + "\u201d";
+  r = await providerCheck({ generate: true, fetchImpl: () => { throw new Error("must not be called"); } });
+  assert.equal(r.error, "auth_failed");
   process.env.ANTHROPIC_API_KEY = saved;
 });
 

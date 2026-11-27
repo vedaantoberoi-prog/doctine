@@ -250,6 +250,7 @@ function renderShell() {
           <button class="iconbtn menu-btn" id="menu" aria-controls="side" aria-expanded="false" aria-label="Open navigation">${ic("menu")}</button>
           <div class="crumbs"><small id="crumb">Overview</small><h1 id="title">Dashboard</h1></div>
           <div class="search" id="search"><label class="sr" for="q">Search</label>${ic("search")}<input id="q" type="search" placeholder="Search people, errors, pages…" autocomplete="off"><span class="kbd">/</span></div>
+          <button class="live" id="live" type="button" aria-pressed="${liveOn()}" title="Monitoring pages update themselves every 30 seconds while this is on"><i></i><span>Live</span><small id="live-at"></small></button>
           <button class="iconbtn" id="refresh" title="Refresh this page" aria-label="Refresh">${ic("refresh")}</button>
           <div style="position:relative"><button class="iconbtn" id="bell" aria-label="Notifications" aria-expanded="false">${ic("bell")}<b class="dot" id="bell-n" hidden></b></button></div>
           <span class="env ${esc(env)}" title="Which site this console is connected to">${esc(env === "production" ? "Production" : env === "unset" ? "Environment not set" : env)}</span>
@@ -272,6 +273,34 @@ function renderShell() {
   route();
   refreshBadges();
   setInterval(refreshBadges, 120000);
+  $("#live").onclick = () => { const on = !liveOn(); ls.set("live", on); $("#live").setAttribute("aria-pressed", String(on)); paintLive(); toast(on ? "Live updates on." : "Live updates off."); if (on) liveTick(); };
+  setInterval(liveTick, LIVE_MS);
+  setInterval(paintLive, 5000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) liveTick(); });
+}
+
+/* Live updates: monitoring pages re-read their data every 30 seconds while the tab is visible, without a loading
+   flash and keeping the scroll position. Skipped while someone is typing, or a dialog, drawer or menu is open, so
+   nothing is lost. Other pages (people, team, settings, forms) update when opened or refreshed. */
+const LIVE_PAGES = new Set(["dashboard", "analytics", "health", "errors", "incidents", "alerts", "ai", "support", "feedback", "doctors"]);
+const LIVE_MS = 30000;
+function liveOn() { return ls.get("live", true) !== false; }
+function paintLive() {
+  const el = $("#live-at"), b = $("#live"); if (!el || !b) return;
+  const on = liveOn() && LIVE_PAGES.has(A.route);
+  b.classList.toggle("idle", !on);
+  el.textContent = !liveOn() ? "off" : !LIVE_PAGES.has(A.route) ? "" : A.liveAt ? `${Math.max(0, Math.round((Date.now() - A.liveAt) / 1000))}s ago` : "";
+}
+async function liveTick() {
+  if (!liveOn() || document.hidden || A.liveBusy || !A.route || !LIVE_PAGES.has(A.route)) return;
+  if (document.querySelector("dialog[open],.drawer,.pop")) return;
+  const ae = document.activeElement;
+  if (ae && /^(input|textarea|select)$/i.test(ae.tagName) && ae.id !== "q") return;
+  const v = $("#view"), route0 = A.route, seq = ++A.seq, y = window.scrollY, st = v.scrollTop;
+  A.liveBusy = true; A.quiet = true;
+  try { await VIEWS[route0](v, seq); if (!stale(seq)) { window.scrollTo(0, y); v.scrollTop = st; A.liveAt = Date.now(); } }
+  catch { /* the next tick or a manual refresh tries again */ }
+  finally { A.quiet = false; A.liveBusy = false; paintLive(); }
 }
 async function signOut() { try { await api("session", { event: "sign_out" }); } catch {} await A.sb.auth.signOut({ scope: "local" }); renderGate("You have signed out."); }
 
@@ -361,7 +390,7 @@ async function route() {
   renderFilters();
   const v = $("#view"), seq = ++A.seq;
   v.innerHTML = `<div class="grid kpis">${Array.from({ length: 4 }, () => `<div class="card" style="padding:16px">${skel(64)}</div>`).join("")}</div><div class="card" style="margin-top:12px;padding:16px">${skel(220)}</div>`;
-  try { await VIEWS[A.route](v, seq); }
+  try { await VIEWS[A.route](v, seq); if (!stale(seq)) { A.liveAt = Date.now(); paintLive(); } }
   catch (e) { if (e.message !== "signed_out" && seq === A.seq) { v.innerHTML = `<div class="state err" data-state="unavailable"><b>Unavailable</b><span>${errText(e)}</span><button class="btn sm" id="retry" style="margin-top:8px">Try again</button></div>`; const rb = $("#retry"); if (rb) rb.onclick = () => route(); } }
 }
 const stale = (seq) => seq !== A.seq;
@@ -495,15 +524,89 @@ function providerCheckSection(pc, dl) {
   </div></div>`;
 }
 
+/* Assistant activity: one metadata row per reply (status, error code, urgency, safety layer, where the health context
+   came from, whether sources were found, time). Never text, accounts or health data. */
+const CTX_LABEL = { server: "read on the server, as the person", client: "sent by the app (no account)", none: "not used", unavailable: "couldn't be read" };
+const AI_ERR = { ai_error: "provider error", ai_timeout: "too slow", ai_busy: "provider busy", ai_rate_limited: "provider rate limit", invalid_key: "key refused", insufficient_credits: "no credit",
+  model_not_found: "model not available", ai_network: "network", bad_output: "unusable answer", capacity: "daily cap reached", rate_limited: "person sending too fast" };
+function activitySection(a, dl) {
+  if (!a || !a.available) return `${section("Assistant activity", "Live")}<div class="card"><div class="card-b"><p class="muted">Not recorded on this site yet (migration 20261130000000_knowledge).</p></div></div>`;
+  const total = (a.replies || 0) + (a.failed || 0), ctx = a.context || {}, when = (t) => t ? new Date(t).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—";
+  const rate = total ? Math.round(100 * (a.replies || 0) / total) : null;
+  const hourly = (a.hourly || []), max = Math.max(1, ...hourly.map((h) => h.ok + h.failed));
+  const bars = hourly.length ? `<div class="bars" role="img" aria-label="Replies per hour, last 24 hours">${hourly.map((h) => `<span title="${esc(new Date(h.hour).toLocaleString("en-IN", { timeStyle: "short", dateStyle: "short" }))}: ${h.ok} answered, ${h.failed} failed"><i class="ok" style="height:${Math.round(100 * h.ok / max)}%"></i><i class="bad" style="height:${Math.round(100 * h.failed / max)}%"></i></span>`).join("")}</div>` : "";
+  return `${section("Assistant activity · last 24 hours", `Every reply from the health assistant, as counts. Updates every 30 seconds while Live is on. Last reply: ${esc(when(a.last_at))}.`)}
+  <div class="grid kpis">
+    ${kpiTile("Answered", n(a.replies), total ? `${rate}% of ${n(total)} requests` : "no requests yet")}
+    ${kpiTile("Failed", n(a.failed), Object.entries(a.errors || {}).map(([k, x]) => `${esc(AI_ERR[k] || k.replace(/_/g, " "))} ${n(x)}`).join(" · ") || "none", a.failed ? "warn" : "")}
+    ${kpiTile("Emergency guidance", n(a.emergency), Object.entries(a.safety || {}).map(([k, x]) => `${esc({ rule: "safety rules", model: "AI judged urgent", child_dose: "child-dose guard" }[k] || k)} ${n(x)}`).join(" · ") || "safety layers: none acted")}
+    ${kpiTile("Time to answer", a.p50_ms == null ? "—" : `${n(a.p50_ms)} ms`, a.p95_ms == null ? "" : `95th percentile ${n(a.p95_ms)} ms`)}
+  </div>
+  ${bars ? `<div class="card"><div class="card-b">${bars}<p class="hint">Answered (green) and failed (red) per hour.</p></div></div>` : ""}
+  <div class="grid cols-2">
+    ${card("Patient context", "For signed-in people who chose to use their records, the server reads them itself, as that person (row-level security), and sends the AI only what is relevant, each item tagged with where it came from.", dl(Object.keys(CTX_LABEL).map((k) => [esc(CTX_LABEL[k]), n(ctx[k] || 0)])))}
+    ${card("Medical sources in answers", "How often an answer could quote an approved source.", dl([["Answers with sources", n(a.with_sources || 0)], ...Object.entries(a.knowledge || {}).map(([k, x]) => [esc({ off: "search off", ok: "sources found", no_results: "nothing matched", skipped: "skipped (emergency)", unavailable: "search unavailable", misconfigured: "search misconfigured", not_installed: "store not installed" }[k] || k), n(x)])]))}
+  </div>`;
+}
+const kpiTile = (label, value, sub = "", tone = "") => `<div class="card kpi"><div class="k-label">${label}</div><div class="k-row"><span class="k-value">${value}</span>${tone ? `<span class="st ${tone}" style="margin-left:auto">check</span>` : ""}</div><div class="k-meta">${sub}</div></div>`;
+
+/* Medical sources: trusted guidance the assistant may quote (docs/EVIDENCE_SOURCES.md). Loaded as drafts by
+   tools/knowledge-ingest.mjs; the Founder approves each one with the reviewing doctor's name and date. */
+function knowledgeSection(k, dl) {
+  const head = section("Medical sources", "Quoted under answers only after a doctor's review and the Founder's approval. How to load: docs/EVIDENCE_SOURCES.md.");
+  if (!k || !k.available) return `${head}<div class="card"><div class="card-b"><p class="muted">The source store isn't installed on this site yet (migration 20261130000000_knowledge).</p></div></div>`;
+  const on = k.provider === "supabase", today = new Date().toISOString().slice(0, 10), mgr = can("ai.manage");
+  const st = { approved: `<span class="st good">Approved</span>`, draft: `<span class="st warn">Draft</span>`, retired: `<span class="st none">Retired</span>` };
+  const rows = (k.sources || []).map((x) => `<tr><td><b>${esc(x.title)}</b><div class="hint">${esc(x.publisher)} · <a href="${/^https:\/\//.test(x.url) ? esc(x.url) : "#"}" target="_blank" rel="noopener noreferrer">${esc(String(x.url).replace(/^https:\/\//, "").slice(0, 60))}</a></div></td>
+    <td>${esc(x.licence)}</td><td>${n(x.passages)}</td><td>${st[x.status] || esc(x.status)}${x.reviewed_by ? `<div class="hint">${esc(x.reviewed_by)}, ${esc(x.reviewed_on || "")}</div>` : ""}</td>
+    <td>${!mgr ? "" : x.status === "approved" ? `<button class="btn sm" data-kn="retired" data-id="${esc(x.id)}">Retire</button>`
+      : `<div class="row" style="gap:6px;flex-wrap:wrap"><input name="rev" placeholder="Reviewing doctor" aria-label="Reviewing doctor" style="width:150px"><input name="revon" type="date" max="${today}" aria-label="Review date">
+         <button class="btn sm primary" data-kn="approved" data-id="${esc(x.id)}">Approve</button>${x.status === "draft" ? `<button class="btn sm" data-kn="retired" data-id="${esc(x.id)}">Retire</button>` : `<button class="btn sm" data-kn="draft" data-id="${esc(x.id)}">To draft</button>`}</div>`}</td></tr>`).join("");
+  return `${head}
+  <div class="grid cols-3">
+    ${card("Search in answers", "", dl([["Status", on ? `<span class="st good">On</span>` : `<span class="st none">Off</span> <span class="muted">KNOWLEDGE_PROVIDER=supabase turns it on</span>`]]))}
+    ${card("Sources", "", dl([["Approved", n(k.approved)], ["Waiting for review", n(k.draft)], ["Retired", n(k.retired)]]))}
+    ${card("Searchable passages", "", dl([["Passages", n(k.passages_searchable)], ["Last loaded", k.last_ingest ? esc(new Date(k.last_ingest).toLocaleDateString("en-IN", { dateStyle: "medium" })) : "never"]]))}
+  </div>
+  ${rows ? `<div class="card"><div class="tbl-wrap" style="border-top:0"><table><thead><tr><th>Source</th><th>Licence</th><th>Passages</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>`
+    : `<div class="card"><div class="card-b"><p class="muted">No sources loaded. Answers say "Doctine has not attached medical sources", which is true. Choosing sources is a licensing decision and each needs a doctor's review: see docs/EVIDENCE_SOURCES.md.</p></div></div>`}`;
+}
+
+/* Release readiness: the evidence a production release needs. Evaluation, doctor sign-off and approval come from
+   lib/release-status.mjs (updated with the evidence in the repository); the provider, sources and activity are live. */
+function releaseSection(r, pc, k, a, dl) {
+  if (!r) return "";
+  const ok = (b) => (b ? `<span class="st good">Done</span>` : `<span class="st warn">Needed</span>`);
+  const ls = pc && pc.history && pc.history.last_success, e = r.evaluation || {};
+  const gates = [
+    ["The AI answers with this site's key", ls ? `${ok(true)} <span class="muted">last real check ${esc(new Date(ls.at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }))}</span>` : `${ok(false)} <span class="muted">press "Run a real check" below</span>`],
+    ["Real answers today", a && a.available && a.replies ? `${ok(true)} <span class="muted">${n(a.replies)} in 24 hours</span>` : `<span class="st none">None yet</span>`],
+    ["Medical evaluation: 0 critical failures", `${ok(e.critical === 0)} <span class="muted">${n(e.passed)}/${n(e.total)} passed, ${n(e.critical)} critical · ${esc(e.run || "")} on ${esc(e.commit || "")}</span>`],
+    ["Doctor's review and sign-off", `${ok(r.doctor_review && r.doctor_review.status === "signed")} <span class="muted">${esc((r.doctor_review || {}).note || "")}</span>`],
+    ["Medical sources approved (optional for release)", k && k.available && k.approved ? `${ok(true)} <span class="muted">${n(k.approved)}</span>` : `<span class="st none">None</span>`],
+    ["Owner's go-ahead for production", `${ok(r.production && r.production.status === "approved")} <span class="muted">${esc((r.production || {}).note || "")}</span>`],
+  ];
+  return `${section("Release readiness", `What a production release still needs. Recorded ${esc(r.updated)}; live parts update by themselves.`)}
+  <div class="card"><div class="card-b">${dl(gates)}
+    ${(e.open || []).length ? `<p class="hint" style="margin-top:10px">Open in the last evaluation: ${e.open.map((o) => `<b>${esc(o.case)}</b> ${esc(o.note)}`).join(" · ")}</p>` : ""}
+    ${e.note ? `<p class="hint">${esc(e.note)}</p>` : ""}</div></div>`;
+}
+
 /* AI infrastructure: configuration of the Intelligence Orchestrator only (lib/orchestrator/info.mjs). No health data. */
 VIEWS.ai = async (v, seq) => {
-  v.innerHTML = skel(200);
+  if (!A.quiet) v.innerHTML = skel(200);
+  const [act, kn, rs] = await Promise.all([api("ai_activity", { hours: 24 }).catch(() => ({ available: false })), api("knowledge").catch(() => ({ available: false, provider: "none" })),
+    api("release_status").catch(() => null)]);
   const [d, tr, pl, gs, pc] = await Promise.all([api("ai_infrastructure"), api("ai_traces", { days: 7 }).catch(() => ({ available: false })), can("ai.manage") ? api("ai_pilot", { op: "list" }).catch(() => null) : null, can("ai.manage") ? api("guardian_summary").catch(() => null) : null, api("ai_provider_check").catch(() => null)]);
   if (stale(seq)) return;
   const dl = (rows) => `<dl class="dl" style="grid-template-columns:1fr auto;gap:5px 8px">${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>`;
   const onoff = (b) => (b ? `<span class="st good">On</span>` : `<span class="st none">Off</span>`);
   const levels = ["Read", "Draft", "Request", "Execute after confirmation", "Human only"];
-  v.innerHTML = `<p class="lead">How the records assistant (/api/assist) is set up on this site. Configuration only: no health data, accounts or conversations are shown here.</p>
+  v.innerHTML = `<p class="lead">The assistant on this site: how it is answering right now, where its health context and medical sources come from, what a release still needs, and how it is set up. Counts and settings only: no health data, accounts or conversations are shown here.</p>
+  ${activitySection(act, dl)}
+  ${knowledgeSection(kn, dl)}
+  ${releaseSection(rs, pc, kn, act, dl)}
+  ${section("Configuration")}
   <div class="grid cols-3">
     ${card("Policy", "Rules and prompts, versioned with the code", dl([["Version", `<span class="mono">${esc(d.policy.version)}</span>`], ["Content hash", `<span class="mono">${esc(d.policy.hash)}</span>`], ["Status", esc(d.policy.status)]]))}
     ${card("Switches", esc(d.switches.note), dl([["AI assistant", onoff(d.switches.ai_assistant)], ["Records gateway", onoff(d.switches.ai_gateway)], ["Orchestrated assistant", onoff(d.switches.ai_orchestrator)]]))}
@@ -550,6 +653,19 @@ VIEWS.ai = async (v, seq) => {
       toast(c && c.test_request && c.test_request.ok ? `The AI answered in ${n(c.test_request.ms)} ms.` : `Check failed: ${PC_ERR[c && c.error] || "unknown error"}.`, !(c && c.test_request && c.test_request.ok)); }
     catch (er) { toast(ERR[er.code] || "The check couldn't run.", true); }
     await VIEWS.ai(v, A.seq); };
+  $$("[data-kn]", v).forEach((b) => b.onclick = async () => {
+    const id = b.dataset.id, status = b.dataset.kn, row = b.closest("tr");
+    const body = { id, status };
+    if (status === "approved") {
+      body.reviewed_by = ($("[name=rev]", row) || {}).value || ""; body.reviewed_on = ($("[name=revon]", row) || {}).value || "";
+      if (body.reviewed_by.trim().length < 2 || !body.reviewed_on) return toast("Enter the reviewing doctor's name and the review date first.", true);
+    }
+    const r = await confirmBox(status === "approved" ? "Approve this source for the assistant?" : status === "retired" ? "Retire this source?" : "Send back to draft?",
+      status === "approved" ? `From now on the assistant may quote it and credit it under answers. Reviewed by ${esc(body.reviewed_by)} on ${esc(body.reviewed_on)}.` : "The assistant stops using it straight away.",
+      { danger: status !== "approved", button: status === "approved" ? "Approve" : status === "retired" ? "Retire" : "Send to draft" });
+    if (r === null) return;
+    try { await api("knowledge_set_status", body); toast(status === "approved" ? "Approved." : status === "retired" ? "Retired." : "Back to draft."); await VIEWS.ai(v, A.seq); }
+    catch (er) { toast(er.code === "forbidden" ? "Only the Founder can approve or retire medical sources." : ERR[er.code] || "Not changed.", true); } });
   const f = $("#pilot-add", v);
   if (f) f.onsubmit = async (e) => { e.preventDefault(); const email = f.email.value.trim(); if (!email) return;
     const r = await confirmBox(`Add ${esc(email)} as a pilot account?`, "The records assistant will work for this account even while it is switched off for everyone else.", { reason: true, button: "Add" });

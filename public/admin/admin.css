@@ -325,3 +325,20 @@ dialog form{max-height:calc(100dvh - 48px);overflow:auto}
 .pfields li.opt{color:var(--ink-3)}
 table.feat td,table.feat th{white-space:nowrap}
 @media (max-width:640px){.psec summary{grid-template-columns:minmax(0,1fr) auto}.psec summary .st{display:none}.dl{grid-template-columns:1fr}.dl dt{margin-top:6px}}
+
+/* Live updates toggle (top bar) and the hourly activity bars on AI infrastructure */
+.live{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 10px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink-2);font:600 12.5px var(--sans);cursor:pointer;white-space:nowrap}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ink-4)}
+.live[aria-pressed=true] i{background:var(--good);box-shadow:0 0 0 3px var(--good-bg);animation:livepulse 2s ease-in-out infinite}
+.live[aria-pressed=true].idle i{animation:none;box-shadow:none;background:var(--ink-4)}
+.live small{color:var(--ink-4);font-weight:500;min-width:0}
+.live small:empty{display:none}
+.live:hover{background:var(--panel-2)}
+@keyframes livepulse{50%{box-shadow:0 0 0 5px transparent}}
+@media (prefers-reduced-motion:reduce){.live[aria-pressed=true] i{animation:none}}
+@media (max-width:720px){.live small,.live span{display:none}.live{padding:0 11px}}
+.bars{display:flex;align-items:flex-end;gap:3px;height:64px}
+.bars span{flex:1;min-width:3px;height:100%;display:flex;flex-direction:column-reverse;gap:1px}
+.bars i{display:block;border-radius:2px 2px 0 0;min-height:0}
+.bars i.ok{background:var(--good)}
+.bars i.bad{background:var(--bad)}

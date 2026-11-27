@@ -41,7 +41,7 @@ const PSECTIONS = (now) => { const secs = [
 const NEEDS = { overview: "dashboard.view", series: "analytics.view", funnel: "analytics.view", retention: "analytics.view", adoption: "analytics.view", adoption_trend: "analytics.view", engagement: "analytics.view", profile_analytics: "analytics.view", activity: "dashboard.view", search: "dashboard.view",
   users: "users.view", user: "users.view", user_suspend: "users.suspend", user_restore: "users.suspend", user_revoke_sessions: "users.suspend", user_reset_password: "users.reset_password", user_note: "users.notes",
   documents: "documents.view", flags: "flags.view", set_flag: "flags.manage", set_maintenance: "maintenance.manage", announcements: "dashboard.view", announcement_save: "content.edit", incidents: "health.view",
-  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view", ai_infrastructure: "health.view", ai_traces: "health.view", ai_pilot: "ai.manage", guardian_summary: "ai.manage",
+  incident_save: "incidents.manage", alerts: "health.view", alert_update: "alerts.manage", team: "team.view", audit: "audit.view", security: "security.view", health: "health.view", uptime: "health.view", ai_infrastructure: "health.view", ai_traces: "health.view", ai_activity: "health.view", knowledge: "health.view", knowledge_set_status: "ai.manage", release_status: "health.view", ai_pilot: "ai.manage", guardian_summary: "ai.manage",
   data_overview: "data.view", perm_catalog: "dashboard.view", invite: "team.manage", invite_revoke: "team.manage", member_set: "team.manage", session: "dashboard.view", page_denied: "dashboard.view", product_overview: "dashboard.view",
   support_list: "support.view", support_item: "support.view", support_update: "support.view", support_message: "support.respond", feedback: "feedback.view", feedback_update: "feedback.manage",
   work: "bugs.view|feedback.view", work_save: "bugs.manage|feedback.manage", content: "content.view|releases.view", content_save: "content.edit",
@@ -98,6 +98,13 @@ function data(action, body) {
     flags: [{ key: "ai_assistant", enabled: false, value: {}, updated_at: null }, { key: "document_upload", enabled: true, value: {}, updated_at: null }, { key: "guardian", enabled: false, value: {}, updated_at: null }, { key: "maintenance", enabled: false, value: {}, updated_at: null, on_now: false }],
     set_flag: { ok: true }, set_maintenance: { ok: true, on_now: !!body.enabled },
     ai_infrastructure: AI_INFO,
+    ai_activity: { available: true, hours: 24, replies: 37, failed: 2, errors: { ai_timeout: 2 }, emergency: 1, safety: { rule: 1 }, context: { server: 21, none: 16 }, with_sources: 4,
+      knowledge: { ok: 4, no_results: 30, skipped: 1 }, p50_ms: 6100, p95_ms: 14200, last_at: iso(now - 60e3), hourly: [{ hour: iso(now - 7200e3), ok: 20, failed: 1 }, { hour: iso(now - 3600e3), ok: 17, failed: 1 }] },
+    knowledge: { available: true, provider: "supabase", approved: 1, draft: 1, retired: 0, passages_searchable: 12, last_ingest: iso(now - 864e5), sources: [
+      { id: "11111111-2222-4333-8444-555555555551", publisher: "Fictional Health Agency", title: "Blood sugar basics (fictional)", url: "https://example.gov/sugar", licence: "Public domain (fictional)", status: "draft", passages: 6, ingested_at: iso(now - 864e5) },
+      { id: "11111111-2222-4333-8444-555555555552", publisher: "Fictional Health Agency", title: "Fever in adults (fictional)", url: "https://example.gov/fever", licence: "Public domain (fictional)", status: "approved", reviewed_by: "Dr Fictional", reviewed_on: "2026-11-20", passages: 12, ingested_at: iso(now - 2 * 864e5) }] },
+    knowledge_set_status: { id: body.id, status: body.status },
+    release_status: { updated: "2026-11-27", evaluation: { run: "run-fictional", commit: "abc1234", passed: 74, total: 77, critical: 2, open: [{ case: "MED-007", note: "grader" }] }, doctor_review: { status: "pending", note: "not signed" }, production: { status: "not_approved", note: "needs the owner" } },
     doctors: { counts: { DOCUMENTS_SUBMITTED: 1, UNDER_REVIEW: 1, VERIFIED: 0 }, items: [{ user_id: "f3000000-0000-0000-0000-0000000000a1", email: "dr.asha.fictional@example.test", full_name: "Dr Asha Fictional", status: "UNDER_REVIEW", registration_council: "Maharashtra Medical Council", specialties: ["General physician"], submitted_at: iso(now - 864e5), updated_at: iso(now), expires_at: null, documents: 3 }] },
     doctor: { user_id: "f3000000-0000-0000-0000-0000000000a1", email: "dr.asha.fictional@example.test", status: "UNDER_REVIEW", full_name: "Dr Asha Fictional", registration_number: "MMC/2010/12345", registration_council: "Maharashtra Medical Council", registration_year: 2010,
       qualifications: [{ degree: "MBBS", institution: "Fictional Medical College", year: 2009 }], specialties: ["General physician"], languages: ["English"], consultation_modes: ["video"], experience_years: 12, bio: null, declaration_at: iso(now - 864e5),
@@ -366,6 +373,14 @@ await go(pg, "#/ai", "table");
   check("AI infrastructure: stored traces shown as totals, timings and cost (no person or content)", t.includes("95th percentile") && t.includes("4,120 ms") && t.includes("US$0.0104") && t.includes("claude-sonnet-5-5"));
   check("AI infrastructure: the Founder sees Guardian alert counts only (no person, place or contact)", t.includes("Guardian") && t.includes("People with Guardian on") && !/lat|phone|@/.test(t.split("Guardian")[1].split("Model routing")[0]));
   check("AI infrastructure: the model registry and benchmark results are shown, with no trained Doctine model claimed", t.includes("Models and evaluation") && t.includes("b0-app-parser") && t.includes("doctine-labx-v0") && /proposed/.test(t) && t.includes("photographed (OCR)") && !/Doctine-trained model\b(?! weights)/.test(t));
+  check("AI infrastructure: live assistant activity as counts, with where the patient context came from", t.includes("Assistant activity") && t.includes("37") && t.includes("read on the server, as the person") && t.includes("6,100 ms"));
+  check("AI infrastructure: medical sources with licence and status; the Founder can approve a draft only with a reviewer and date", t.includes("Medical sources") && t.includes("Public domain (fictional)") && !!(await pg.$('[data-kn="approved"]')));
+  check("AI infrastructure: release readiness lists evaluation, doctor review and owner approval as still needed", t.includes("Release readiness") && t.includes("74/77") && t.includes("Owner's go-ahead"));
+  check("the Live toggle is in the top bar and on by default", (await pg.getAttribute("#live", "aria-pressed")) === "true");
+  if (process.env.ADMIN_SHOT) await pg.screenshot({ path: process.env.ADMIN_SHOT, fullPage: true });
+  { const before = log.calls.filter((c) => c.action === "knowledge_set_status").length;
+    await pg.click('[data-kn="approved"]'); await settle(pg);
+    check("approving without the reviewing doctor's name and date is stopped in the page", log.calls.filter((c) => c.action === "knowledge_set_status").length === before); }
   check("AI infrastructure: the Founder sees pilot accounts, with add and remove", t.includes("Pilot accounts") && t.includes("pilot-test@example.test") && !!(await pg.$("#pilot-add")) && !!(await pg.$("[data-pilot-remove]"))); }
 
 // audit, settings

@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "node tools/dev-server.mjs",
     "check": "node tools/check-syntax.mjs && node tools/check-config.mjs && node tools/scan-secrets.mjs",
-    "test:server": "node tests/functions.test.mjs && node tests/admin-api.test.mjs && node tests/admin-reports.test.mjs && node tests/gateway.test.mjs && node tests/evidence-lib.test.mjs && node tests/orchestrator.test.mjs && node tests/guardian.test.mjs && node tests/doctor.test.mjs && node tests/sharing.test.mjs && node tools/ai-policy-gate.mjs",
+    "test:server": "node tests/functions.test.mjs && node tests/server-context.test.mjs && node tests/admin-api.test.mjs && node tests/admin-reports.test.mjs && node tests/gateway.test.mjs && node tests/evidence-lib.test.mjs && node tests/orchestrator.test.mjs && node tests/guardian.test.mjs && node tests/doctor.test.mjs && node tests/sharing.test.mjs && node tools/ai-policy-gate.mjs",
     "test:db": "bash tests/run-db-tests.sh",
     "eval:rag": "bash tools/rag-eval-db.sh reports/rag && node tools/rag-eval.mjs reports/rag --md docs/EVIDENCE_EVAL.md",
     "test:browser": "node tools/run-browser-tests.mjs",
@@ -23,7 +23,7 @@
     "smoke": "node tools/smoke-check.mjs",
     "build:direct": "node tools/build-direct.mjs",
     "test:gates": "node tests/release-gates.test.mjs",
-    "test:tools": "node tests/netlify-guard.test.mjs && node tests/cloudflare-adapter.test.mjs && node tests/storage-backup.test.mjs && node tests/ai-registry.test.mjs && node tests/vercel-adapter.test.mjs",
+    "test:tools": "node tests/netlify-guard.test.mjs && node tests/oracle-infra.test.mjs && node tests/cloudflare-adapter.test.mjs && node tests/storage-backup.test.mjs && node tests/ai-registry.test.mjs && node tests/vercel-adapter.test.mjs",
     "build:website": "node tools/build-website.mjs"
   },
   "devDependencies": {

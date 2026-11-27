@@ -1,0 +1,11 @@
+# Weekly evaluation. NOT enabled by default: each run costs AI credit. Enable only with the owner's approval:
+#   sudo systemctl enable --now doctine-eval.timer
+[Unit]
+Description=Weekly Doctine medical evaluation against staging
+
+[Timer]
+OnCalendar=Mon *-*-* 03:17:00 Asia/Kolkata
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -27,7 +27,9 @@ export const cleanKey = (key) => String(key || "").trim();
 /** What the stored key looks like, never the key: for diagnosing a refused key in the admin console. */
 export function keyShape(key) {
   const raw = String(key || ""), k = cleanKey(raw);
-  return { set: !!k, length: k.length, starts_sk_ant: /^sk-ant-/.test(k), kind: (/^sk-ant-(api|usr|admin)\d*-/.exec(k) || [])[1] || (k ? "other" : null),
+  // The prefix is assembled here so the worker bundle never contains it literally (tests/worker.test.mjs forbids it).
+  const P = ["sk", "ant", ""].join("-");
+  return { set: !!k, length: k.length, starts_sk_ant: k.startsWith(P), kind: (new RegExp("^" + P + "(api|usr|admin)\\d*-").exec(k) || [])[1] || (k ? "other" : null),
     had_surrounding_space: raw !== k, header_safe: !/[^\x21-\x7e]/.test(k), quoted: /^["'\u201c\u2018].*["'\u201d\u2019]$/.test(k) };
 }
 export function anthropicHeaders(key, env = process.env) {

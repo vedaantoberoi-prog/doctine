@@ -1,0 +1,58 @@
+# Doctine · Oracle Ampere A1 (ARM64) — private AI-support services. See infra/oracle-a1/README.md.
+#
+# Nothing here listens on a network port: the VM accepts SSH only (OCI security list), and these containers only make
+# outbound HTTPS calls. No patient data, no database keys and no AI provider key live on this machine.
+#
+#   evaluator  — runs Doctine's medical evaluation (tests/live-eval.mjs, synthetic cases only) against STAGING.
+#                Started by hand or by the (disabled by default) systemd timer: each run spends a little AI credit.
+#   llm-bench  — optional, profile "bench": builds llama.cpp natively for ARM64 and benchmarks a small local model.
+#                Inference experiments only; never connected to the app or to patient data.
+
+services:
+  evaluator:
+    build:
+      context: ../..
+      dockerfile: infra/oracle-a1/evaluator.Dockerfile
+    image: doctine-evaluator:local
+    platform: linux/arm64
+    env_file: /etc/doctine/evaluator.env          # EVAL_ACCESS_TOKEN only; root-owned, mode 600, never in the image or git
+    environment:
+      DOCTINE_URL: https://doctine-staging.pages.dev
+      PRODUCTION_URL: https://app.doctine.com      # the runner refuses to start if pointed at production
+      REPORT_DIR: /reports
+    volumes:
+      - /var/lib/doctine/reports:/reports
+    user: "10001:10001"
+    read_only: true
+    tmpfs: [/tmp:size=64m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 128
+    restart: "no"
+    logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }
+
+  llm-bench:
+    profiles: [bench]
+    build:
+      context: .
+      dockerfile: llama-bench.Dockerfile
+      args:
+        LLAMA_CPP_REF: ${LLAMA_CPP_REF:?set LLAMA_CPP_REF to a llama.cpp release tag you have reviewed}
+    image: doctine-llama-bench:local
+    platform: linux/arm64
+    volumes:
+      - /var/lib/doctine/models:/models:ro          # you place the model file here after checking its licence
+      - /var/lib/doctine/bench:/bench
+    user: "10001:10001"
+    read_only: true
+    tmpfs: [/tmp:size=256m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    network_mode: none                               # a benchmark needs no network at all
+    mem_limit: 7g                                    # leaves ~4 GB for the OS, Docker and the evaluator
+    cpus: 1.5
+    pids_limit: 256
+    restart: "no"
+    logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }

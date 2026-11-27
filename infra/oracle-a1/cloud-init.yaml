@@ -1,0 +1,59 @@
+#cloud-config
+# Doctine · Oracle Ampere A1 first boot (Canonical Ubuntu 24.04, aarch64). Paste into Create instance → Advanced
+# options → Initialization script. Contains no secrets. See infra/oracle-a1/README.md.
+package_update: true
+package_upgrade: true
+packages: [ca-certificates, curl, git, unattended-upgrades, fail2ban, jq]
+
+write_files:
+  # SSH: keys only, no root login, no forwarding.
+  - path: /etc/ssh/sshd_config.d/10-doctine.conf
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      X11Forwarding no
+      AllowTcpForwarding no
+      AllowAgentForwarding no
+      MaxAuthTries 3
+  # Security updates install themselves; reboots are left to you.
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+  # Docker: logs rotate, no remote API, no userland proxy.
+  - path: /etc/docker/daemon.json
+    permissions: "0644"
+    content: |
+      {"log-driver":"json-file","log-opts":{"max-size":"10m","max-file":"3"},"userland-proxy":false,"no-new-privileges":true,"live-restore":true}
+  # Disk warning: a line in the system log when the root disk is over 80% full (checked hourly).
+  - path: /usr/local/sbin/doctine-disk-check
+    permissions: "0755"
+    content: |
+      #!/bin/sh
+      use=$(df --output=pcent / | tail -1 | tr -dc 0-9)
+      [ "$use" -ge 80 ] && logger -p user.warning "doctine: root disk ${use}% full" || true
+  - path: /etc/cron.hourly/doctine-disk-check
+    permissions: "0755"
+    content: |
+      #!/bin/sh
+      /usr/local/sbin/doctine-disk-check
+
+runcmd:
+  - systemctl restart ssh || systemctl restart sshd
+  - systemctl enable --now fail2ban
+  # Docker Engine from Docker's own repository (published for arm64)
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - sh -c 'echo "deb [arch=arm64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list'
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+  # Folders the containers use (uid 10001 inside the containers)
+  - install -d -m 0750 -o 10001 -g 10001 /var/lib/doctine/reports /var/lib/doctine/bench
+  - install -d -m 0755 /var/lib/doctine/models
+  - install -d -m 0700 /etc/doctine
+  - touch /etc/doctine/evaluator.env && chmod 600 /etc/doctine/evaluator.env

@@ -513,7 +513,7 @@ const PC_ERR = { not_configured: "no AI key on this site", auth_failed: "the pro
   invalid_request: "the provider refused the request (for an organisation-level key, check ANTHROPIC_WORKSPACE_ID)", bad_response: "the answer couldn't be read", other: "other error" };
 /* The stored key's shape (never the key): explains why the provider refuses it. */
 function keyShapeText(k, ws) {
-  if (!k.set) return `<span class="st bad">Not set</span> <span class="muted">add ANTHROPIC_API_KEY to this site's settings</span>`;
+  if (!k.set) return `<span class="st bad">Not set</span> <span class="muted">add the AI provider key in this site's hosting settings</span>`;
   const p = [];
   if (!k.starts_sk_ant) p.push("doesn't start with sk-ant- (an Anthropic key does)");
   if (k.quoted) p.push("has quotes around it");

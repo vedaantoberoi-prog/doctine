@@ -17,5 +17,6 @@ export const RELEASE_STATUS = {
     note: "Run on staging before server-side patient context and medical sources were added; a new run is needed for the next release.",
   },
   doctor_review: { status: "pending", note: "No doctor has signed off the evaluation yet (docs/medical-review/TEMPLATE.md, release gate 7)." },
-  production: { status: "not_approved", note: "Production deploys, and the 20261129/20261130 migrations on the production database, need the owner's explicit approval." },
+  production: { status: "not_approved", code: "approved_2026-11-27",
+    note: "The owner approved deploying the code and the two additive migrations (27 Nov 2026). Switching the assistant on for real people still needs the doctor's sign-off, an AI key in production and the owner's go-ahead." },
 };

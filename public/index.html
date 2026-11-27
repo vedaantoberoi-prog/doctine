@@ -1095,6 +1095,10 @@ function pwStrength(v){const b=$('#pwstr'),l=$('#pwstrl');if(!b||!l)return;const
  const s=!v?0:v.length<8?1:v.length>=14&&kinds>=2||v.length>=12&&kinds>=3?4:v.length>=10&&kinds>=2?3:2;
  b.dataset.s=String(s);l.textContent=['Password strength','Too short: use at least 8 characters','Fair: a longer password would be stronger','Good','Strong'][s]}
 const NATIVE=window.DOCTINE_NATIVE||'',AUTH_CB='doctine://auth/callback';
+/* Until /api/config answers, the page doesn't know whether this site has real accounts. Showing the browser-only demo
+   sign-in meanwhile let someone create a demo account on the real site (seen on staging, 27 Nov 2026), so the sign-in
+   waits. Only pages that will ask (hosted, not inside claude.ai) wait. */
+let CLOUD_PENDING=!!(NATIVE||(/^https?:$/.test(location.protocol)&&!/claude\.ai|claudeusercontent/.test(location.hostname)));
 const RESET_URL=()=>NATIVE?AUTH_CB+'?next=reset':location.origin+'/?reset=password';
 const RETURN_URL=()=>NATIVE?AUTH_CB:location.origin+location.pathname;
 const RECOVERY=(()=>{try{const h=new URLSearchParams(location.hash.slice(1)),q=new URLSearchParams(location.search);return{link:h.get('type')==='recovery'&&!!h.get('access_token'),path:q.get('reset')==='password'}}catch{return{link:false,path:false}}})();
@@ -1315,10 +1319,12 @@ const CHAT_ERR={sign_in_required:'Your sign-in has expired. Sign out and sign in
 const errText=(c,i)=>{i=i||{};return(CHAT_ERR[c]||CHAT_ERR.network).replace('{missing}',(i.missing||[]).join(', ')||'the AI key').replace('{model}',i.model||'configured')};
 /* Signed in, the server reads the health context itself and says which documents each record id (R1…) came from. */
 function serverCtxMap(list){const m={};for(const x of list.slice(0,20)){if(!x||!/^R\d{1,2}$/.test(x.id))continue;const r=S.reports.find(y=>String(y.id)===String(x.client_id));if(r)m[x.id]={rid:r.id,title:r.title,date:r.date}}return m}
+/* Everyday words that say nothing about health; the same list as CTX_STOP in netlify/lib/context/patient.mjs. */
+const CTX_STOP=new Set('the and for are was were have has had does did how what which when where who why whom whose with from this that these those about above after again also any been before being but can could should would will shall may might must not now off once only other our out over own same some such than then there their them they too very just like into onto upon your yours you its all each few more most much many per since still while because until ago yet get got getting take taking took make made doing done feel feeling felt think know want need tell show please help thing things something anything really quite bit lot lots one two today yesterday tomorrow day days week weeks month months year years time times ok okay yes no hi hello thanks thank doctor doctors report reports record records test tests result results normal mean means meaning good bad high low level levels value values'.split(' '));
 function buildCtx(){
  if(!S.useRecords)return null;
  const ctx={},p=S.profile;
- const toks=[...new Set(S.msgs.filter(m=>m.r==='u').slice(-3).flatMap(m=>(m.t.toLowerCase().match(/[a-z0-9][a-z0-9+-]{2,}/g)||[]).map(nz)).filter(t=>t.length>=3))];
+ const toks=[...new Set(S.msgs.filter(m=>m.r==='u').slice(-3).flatMap(m=>(m.t.toLowerCase().match(/[a-z0-9][a-z0-9+-]{2,}/g)||[]).map(nz)).filter(t=>t.length>=3&&!CTX_STOP.has(t)))];
  const prof=profileCtx(p,toks);if(Object.keys(prof).length)ctx.profile=prof;
  const items=[],focus=S.reports.find(r=>r.id===S.focusRid);
  if(focus)Object.entries(focus.fields).slice(0,12).forEach(([k,v])=>items.push({r:focus,k,v}));
@@ -1585,6 +1591,7 @@ function cloudAuthView(){
 function authView(){
  if(S.auth==='about')return`<div class="ab-wrap" style="padding-block:1rem 0;display:flex;justify-content:space-between;align-items:center;gap:1rem"><span class="flex items-center gap-2">${LOGO}<span class="serif text-xl">Doctine</span></span><button class="btn" data-auth="login">Sign in</button></div>${aboutBody('public')}`;
  if(CLOUD.on||S.auth==='noserver')return cloudAuthView(); // the apps never show demo accounts
+ if(CLOUD_PENDING&&S.auth!=='about')return authShell(`<div class="au-card" aria-busy="true"><h1>Opening Doctine…</h1><p class="au-sub">Connecting to your account service.</p></div>`);
  // Demo accounts (no Supabase configured): same screens, kept in this browser only.
  const m=S.auth,T={login:'Welcome back',register:'Create your account',forgot:'Reset your password'}[m]||'Welcome back';
  const demo=`<div class="au-demo" role="note"><b>This is a demo.</b> Accounts and saved reports stay in this browser and aren’t secure. If you allow the AI assistant, messages you send it are processed by an AI provider through this site’s server. Don’t enter real health information, and don’t reuse a real password.</div>`;
@@ -2631,7 +2638,7 @@ const openSampleLink=()=>{if(!SAMPLE_LINK)return;try{const q=new URLSearchParams
  if(CLOUD.recovering||S.auth==='expired'||S.auth==='newpw')return;
  if(S.email||S.cloud||S.guest){toast('You’re signed in, so your own account is open. Sign out to explore the sample records.');return}
  if(!S.sample)enter(null,sampleData(),true)};
-initCloud().then(on=>{if(!on&&NATIVE){S.email=null;S.sample=false;S.guest=false;S.auth='noserver';return render()}if(on&&S.email&&!S.cloud&&!S.sample&&!S.guest){DB.session=null;store.set(DB);S={...S,...blank(''),email:null,auth:'login'};render()}openSampleLink()});
+initCloud().catch(()=>false).then(on=>{CLOUD_PENDING=false;if(!on&&NATIVE){S.email=null;S.sample=false;S.guest=false;S.auth='noserver';return render()}if(on&&S.email&&!S.cloud&&!S.sample&&!S.guest){DB.session=null;store.set(DB);S={...S,...blank(''),email:null,auth:'login'};render()}else if(!S.email&&!S.sample&&!S.guest)render();openSampleLink()});
 /* Buttons on a dose notification. When the phone opens Doctine fresh from one, the press arrives before the account has
    loaded, so it waits here and is applied once the records are in (enter() calls applyAlarmActs). */
 // var, not const: a session restored while the page starts can reach this before this line runs (it then waits for the next call)

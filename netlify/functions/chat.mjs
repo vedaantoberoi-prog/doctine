@@ -229,15 +229,18 @@ export default async (req, context) => {
     if (context && typeof context.waitUntil === "function") context.waitUntil(ev);
     return resp;
   };
-  if (!rl.allowed) return flags.length ? json({ ...emergencyGuidance(flags), state, ai_unavailable: rl.error })
-    : new Response(JSON.stringify({ error: rl.error, retry_after: rl.retryAfter }), { status: rl.status, headers: { "content-type": "application/json", "cache-control": "no-store", "retry-after": String(rl.retryAfter || 60) } });
+  // Refusals are recorded for signed-in people only (the daily cap matters to operators); recording anonymous refusals
+  // would let anyone fill the activity table by sending requests.
+  const refusal = (resp, error) => (rl.who === "user" ? logged(resp, { error, ...(flags.length ? { urgency: "emergency", safety: "rule" } : {}) }) : resp);
+  if (!rl.allowed) return refusal(flags.length ? json({ ...emergencyGuidance(flags), state, ai_unavailable: rl.error })
+    : new Response(JSON.stringify({ error: rl.error, retry_after: rl.retryAfter }), { status: rl.status, headers: { "content-type": "application/json", "cache-control": "no-store", "retry-after": String(rl.retryAfter || 60) } }), rl.error);
   // With real accounts switched on, the assistant answers signed-in accounts only. Emergency wording still gets the
   // fixed guidance, so nobody is left without it. (Evaluation runs on staging are exempt.)
   const accountsOn = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) || /^prod/i.test(process.env.DOCTINE_ENV || "");
   if (accountsOn && rl.who !== "user" && rl.who !== "eval") return flags.length ? json({ ...emergencyGuidance(flags), state, ai_unavailable: "sign_in_required" }) : json({ error: "sign_in_required", message: "Please sign in to use the assistant." }, 401);
 
   // Switched off in the admin console (or maintenance mode): enforced here on the server. Emergency guidance still works.
-  if (await aiSwitchedOff()) return flags.length ? json({ ...emergencyGuidance(flags), state, ai_unavailable: "ai_paused" }) : json({ error: "ai_paused", message: "The assistant is paused at the moment." }, 503);
+  if (await aiSwitchedOff()) return refusal(flags.length ? json({ ...emergencyGuidance(flags), state, ai_unavailable: "ai_paused" }) : json({ error: "ai_paused", message: "The assistant is paused at the moment." }, 503), "ai_paused");
 
   // Health context. Signed in: read on the server, as the person. No account: the app's own (cleaned).
   let ctx = null, refs = null;

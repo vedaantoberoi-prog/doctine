@@ -40,12 +40,22 @@ export function ageOn(dob, on = today()) {
   return a >= 0 && a < 130 ? a : null;
 }
 
+/* Everyday words that say nothing about health. Without this list "the", "with" or "what" in a question matched any
+   history entry containing them, so unrelated history was sent (found in review, 27 Nov 2026). The app's demo mode
+   uses the same list (public/index.html, CTX_STOP). */
+export const CTX_STOP = new Set(("the and for are was were have has had does did how what which when where who why whom whose with from this that these those "
+  + "about above after again also any been before being but can could should would will shall may might must not now off once only other our out over own "
+  + "same some such than then there their them they too very just like into onto upon your yours you its "
+  + "all each few more most much many own per since still while because until again ago yet get got getting take taking took make made doing done "
+  + "feel feeling felt think know want need tell show please help thing things something anything really quite bit lot lots one two today yesterday "
+  + "tomorrow day days week weeks month months year years time times ok okay yes no hi hello thanks thank doctor doctors report reports record records "
+  + "test tests result results normal mean means meaning good bad high low level levels value values").split(" "));
 /** Words from the last three things the person said, plus the lab tests the question may be about. */
 export function relevance(userTurns) {
   const recent = userTurns.slice(-3).join(" \n ");
   const plan = understand(recent);
-  const words = [...new Set((norm(recent).match(/[a-z0-9][a-z0-9+-]{2,}/g) || []).filter((w) => w.length >= 3))];
-  return { words, tests: new Set(plan.tests), terms: plan.terms.map(norm).filter((t) => t.length >= 3) };
+  const words = [...new Set((norm(recent).match(/[a-z0-9][a-z0-9+-]{2,}/g) || []).filter((w) => w.length >= 3 && !CTX_STOP.has(w)))];
+  return { words, tests: new Set(plan.tests), terms: plan.terms.map(norm).filter((t) => t.length >= 3 && !CTX_STOP.has(t)) };
 }
 const hits = (rel, text) => {
   const n = norm(text);

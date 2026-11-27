@@ -7,7 +7,8 @@ import assert from "node:assert/strict";
 import chat from "../netlify/functions/chat.mjs";
 import { _resetTokenCache } from "../netlify/lib/ratelimit.mjs";
 import { _resetSettingsCache, getSettings } from "../netlify/lib/settings.mjs";
-import { patientContext, relevance } from "../netlify/lib/context/patient.mjs";
+import { patientContext, relevance, CTX_STOP } from "../netlify/lib/context/patient.mjs";
+import { readFileSync } from "node:fs";
 import { retrieve, searchText } from "../netlify/lib/knowledge.mjs";
 import { userDb } from "../netlify/lib/gateway/db.mjs";
 import { parseSource, chunk } from "../tools/knowledge-ingest.mjs";
@@ -47,11 +48,11 @@ const DB = {
   },
 };
 
-let seen = [], aiSystem = [], events = [], dbDown = false, knowledgeRows = [];
+let seen = [], aiSystem = [], events = [], dbDown = false, knowledgeRows = [], limited = false;
 const supabase = async (url, init = {}) => {
   const u = new URL(url), h = init.headers || {};
   if (u.pathname === "/auth/v1/user") { const uid = TOKENS[String(h.authorization || "").replace("Bearer ", "")]; return uid ? new Response(JSON.stringify({ id: uid })) : new Response("{}", { status: 401 }); }
-  if (u.pathname === "/rest/v1/rpc/rate_limit_hit") return new Response(JSON.stringify([{ allowed: true, reset_at: new Date(Date.now() + 6e5).toISOString() }]));
+  if (u.pathname === "/rest/v1/rpc/rate_limit_hit") return new Response(JSON.stringify([{ allowed: !limited, reset_at: new Date(Date.now() + 6e5).toISOString() }]));
   if (u.pathname === "/rest/v1/rpc/public_settings") return new Response(JSON.stringify({ flags: { ai_assistant: true }, maintenance: { on: false } }));
   if (u.pathname === "/rest/v1/rpc/ai_chat_event_add") { events.push(JSON.parse(init.body).p_row); return new Response("true"); }
   if (u.pathname === "/rest/v1/rpc/knowledge_search") { seen.push({ path: u.pathname, body: JSON.parse(init.body), auth: h.authorization || h.apikey }); return new Response(JSON.stringify(knowledgeRows)); }
@@ -169,6 +170,21 @@ await test("without accounts (browser-only demo), the app's own context is used,
     assert.ok(aiSystem[0].includes("Amlodipine"), "the current medicines the app sends reach the AI (they were dropped before 27 Nov 2026)");
   } finally { Object.assign(process.env, env); _resetSettingsCache(); _resetTokenCache(); }
 });
+await test("everyday words never pull in unrelated history (\"the\", \"with\", \"what\")", async () => {
+  DB[A].health_records.push({ id: "r9", kind: "other_history", category: "injury", title: "Fracture of the wrist with plaster", source: "user" });
+  try {
+    await ask({ messages: [msg("What should I do about the pain in my knee with this weather?")], use_records: true }, "token-a");
+    assert.ok(!aiSystem[0].includes("Fracture of the wrist"), "unrelated history stays out");
+    await ask({ messages: [msg("My wrist hurts where I had the fracture")], use_records: true }, "token-a");
+    assert.ok(aiSystem[0].includes("Fracture of the wrist"), "related history comes in");
+  } finally { DB[A].health_records.pop(); }
+});
+await test("the app's demo mode uses the same everyday-word list as the server", () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  const m = /const CTX_STOP=new Set\('([^']*)'\.split/.exec(html);
+  assert.ok(m, "CTX_STOP in the app");
+  assert.deepEqual(m[1].split(" ").sort(), [...CTX_STOP].sort());
+});
 await test("relevance expands everyday words to tests", () => {
   const r = relevance(["is my sugar ok"]);
   assert.ok(r.tests.has("hba1c"));
@@ -190,6 +206,16 @@ await test("each reply leaves one metadata row: no message, no answer, no accoun
   assert.ok(!/HbA1c|penicillin|Metformin|aaaaaaaa|token/i.test(s), s);
   const allowed = ["context_items", "context_source", "env", "error", "knowledge", "ms", "model", "safety", "sources", "status", "urgency"];
   assert.deepEqual(Object.keys(e).filter((k) => !allowed.includes(k)), [], "only these fields are ever sent");
+});
+await test("refusals are recorded for signed-in people (e.g. the daily cap), never for anonymous visitors", async () => {
+  limited = true;
+  try {
+    const [st] = await ask({ messages: [msg("hello")] }, "token-a");
+    assert.ok(st === 429 || st === 503);
+    assert.equal(events.length, 1); assert.ok(["rate_limited", "capacity"].includes(events[0].error));
+    await ask({ messages: [msg("hello")] });
+    assert.equal(events.length, 0, "an anonymous refusal writes nothing");
+  } finally { limited = false; }
 });
 await test("CHAT_EVENTS=off stops it", async () => {
   process.env.CHAT_EVENTS = "off";

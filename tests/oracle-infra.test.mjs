@@ -3,7 +3,7 @@
  * Static checks only: the images themselves are built and verified on the VM (infra/oracle-a1/verify.sh).
  */
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 
 const dir = new URL("../infra/oracle-a1/", import.meta.url), read = (f) => readFileSync(new URL(f, dir), "utf8");
 let passed = 0, failed = 0;
@@ -41,7 +41,7 @@ test("first boot: SSH keys only, no root login, automatic security updates, no D
   assert.ok(!/tcp:\/\/|2375|2376/.test(init));
 });
 test("no secrets or key material anywhere in infra/oracle-a1", () => {
-  for (const f of readdirSync(dir)) {
+  for (const f of [...readdirSync(dir).filter((f) => statSync(new URL(f, dir)).isFile()), ...readdirSync(new URL("terraform/", dir)).map((f) => "terraform/" + f)]) {
     const t = read(f);
     assert.ok(!/sk-ant-|sb_secret_|eyJhbGciOi|BEGIN (OPENSSH|RSA|EC) PRIVATE KEY|EVAL_ACCESS_TOKEN=[A-Za-z0-9]/.test(t), f);
   }
@@ -49,6 +49,36 @@ test("no secrets or key material anywhere in infra/oracle-a1", () => {
 test("the weekly evaluation timer is off unless someone enables it (it costs AI credit)", () => {
   assert.match(read("doctine-eval.timer"), /NOT enabled by default/);
   assert.ok(!/doctine-eval/.test(init), "first boot never installs or enables the evaluation timer");
+});
+
+// The Resource Manager stack (infra/oracle-a1/terraform). Static checks: Terraform isn't installed here, so the stack's
+// first real check is Oracle's own Plan job, which creates nothing.
+const tf = ["main.tf", "variables.tf", "outputs.tf"].map((f) => read("terraform/" + f)).join("\n"), main = read("terraform/main.tf");
+const resources = [...main.matchAll(/^resource "([a-z_]+)"/gm)].map((m) => m[1]);
+test("stack: only network basics, one A1 instance and the free budget guard (no LB, database, bucket, vault)", () => {
+  const allowed = new Set(["oci_core_vcn", "oci_core_internet_gateway", "oci_core_route_table", "oci_core_security_list", "oci_core_subnet", "oci_core_instance", "oci_budget_budget", "oci_budget_alert_rule"]);
+  for (const r of resources) assert.ok(allowed.has(r), r);
+  assert.equal(resources.filter((r) => r === "oci_core_instance").length, 1);
+});
+test("stack: the instance is A1.Flex, limited to 2 OCPU / 12 GB / 100 GB boot by validation", () => {
+  assert.match(main, /shape\s+= "VM.Standard.A1.Flex"/);
+  assert.match(tf, /var\.ocpus <= 2/); assert.match(tf, /var\.memory_gb <= 12/); assert.match(tf, /var\.boot_volume_gb <= 100/);
+});
+test("stack: inbound is SSH (22) from a single /32 only; no rule opens anything to the whole internet", () => {
+  const ingress = [...main.matchAll(/ingress_security_rules \{([\s\S]*?)\n  \}/g)].map((m) => m[1]);
+  assert.equal(ingress.length, 1);
+  assert.match(ingress[0], /source\s+= var\.ssh_source_cidr/); assert.match(ingress[0], /min = 22\s+max = 22/);
+  assert.match(tf, /endswith\(var\.ssh_source_cidr, "\/32"\)/);
+});
+test("stack: no secret variables; only a public SSH key, and a private key is refused", () => {
+  const vars = [...tf.matchAll(/^variable "([a-z_]+)"/gm)].map((m) => m[1]);
+  for (const v of vars) assert.ok(!/token|secret|password|api_key|private/.test(v), v);
+  assert.match(tf, /!can\(regex\("PRIVATE KEY"/);
+});
+test("stack: legacy metadata endpoint off, first boot from cloud-init.yaml, and the zip builder includes it", () => {
+  assert.match(main, /are_legacy_imds_endpoints_disabled = true/);
+  assert.match(main, /file\("\$\{path\.module\}\/cloud-init\.yaml"\)/);
+  assert.match(readFileSync(new URL("../tools/oracle-stack.mjs", import.meta.url), "utf8"), /cloud-init\.yaml/);
 });
 
 console.log(`${passed} oracle-infra tests passed${failed ? `, ${failed} failed` : ""}`);

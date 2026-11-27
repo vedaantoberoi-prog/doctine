@@ -1,6 +1,6 @@
 # Doctine on Oracle Ampere A1: setup guide
 
-**Status: prepared, not running.** Claude cannot reach Oracle Cloud, so no VM exists yet. Everything below is
+**Status: prepared, not running.** No VM exists yet: nothing has been planned or applied in Oracle. Everything below is
 configuration and instructions for the owner to run. Nothing in this guide touches production or patient data.
 
 ## What the server is for (and what it is not)
@@ -60,14 +60,25 @@ None of these were built or run on ARM64 by Claude; the build steps below check 
 
 ## Setup, step by step
 
-### 1. Oracle Console (you)
+### 1. Create the server: the Resource Manager stack (recommended)
+The stack in `terraform/` creates only what this guide needs, refuses more than the free A1 allowance, and opens SSH
+to a single address. It never asks for a secret.
+1. Here: `node tools/oracle-stack.mjs` → `dist/doctine-oracle-stack.zip`.
+2. Oracle Console → **Developer Services → Resource Manager → Stacks → Create stack** → *My configuration* → upload
+   the zip. Variables: your SSH **public** key, your own IP as `x.x.x.x/32`, optionally an email for the
+   any-charge budget alert. Leave 2 OCPU / 12 GB / 50 GB.
+3. Run **Plan** only. A plan creates nothing; it lists what Apply would create. Share the plan's resource list (it has
+   no secrets) and review it before anything else.
+4. **Apply** only after the owner approves the plan. **Destroy** removes everything the stack made.
+
+### 1 (alternative). Oracle Console by hand (you)
 1. **Networking → Virtual cloud networks → Start VCN wizard → "Create VCN with Internet Connectivity"**.
 2. In the VCN's **public subnet → security list**, keep a single ingress rule: TCP 22 from **your own IP**
    (`<your-ip>/32`), not `0.0.0.0/0`. Remove any other ingress rule. Egress: all (needed for HTTPS out).
 3. **Compute → Instances → Create instance**: Image *Canonical Ubuntu 24.04* (aarch64); Shape *VM.Standard.A1.Flex*,
    2 OCPU, 12 GB; the public subnet above; **paste your SSH public key** (the `.pub` file, never the private key);
    **Advanced options → Initialization script**: paste `infra/oracle-a1/cloud-init.yaml`.
-4. Boot volume: the default 47 GB is enough.
+4. Boot volume: 50 GB (Oracle's documented default; it counts toward the 200 GB Always Free block storage).
 
 Expected: the instance reaches *Running* in a few minutes; cloud-init then needs 5–10 more minutes.
 

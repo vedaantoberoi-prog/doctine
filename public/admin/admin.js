@@ -515,7 +515,7 @@ const PC_ERR = { not_configured: "no AI key on this site", auth_failed: "the pro
 function keyShapeText(k, ws) {
   if (!k.set) return `<span class="st bad">Not set</span> <span class="muted">add the AI provider key in this site's hosting settings</span>`;
   const p = [];
-  if (!k.starts_sk_ant) p.push("doesn't start with sk-ant- (an Anthropic key does)");
+  if (!k.starts_sk_ant) p.push("doesn't start the way an Anthropic key does");
   if (k.quoted) p.push("has quotes around it");
   if (!k.header_safe) p.push("contains a space or a character a key can't have");
   if (k.length < 60) p.push(`is only ${k.length} characters (a full key is about 100): probably the shortened form from the key list`);
